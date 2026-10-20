@@ -27,7 +27,7 @@
 pnpm install
 
 # 環境変数ファイルの用意
-cp .env.example .env.local
+cp env.example .env.local
 ```
 
 ## 開発

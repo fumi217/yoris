@@ -1,2 +1,19 @@
+# 改行コードを LF にそろえる（WSL / macOS / Windows 側のエディタの混在で CRLF が入るのを防ぐ）
+* text=auto eol=lf
+
 # bash スクリプトは Windows でも LF のまま扱う（CRLF だと bash で動かない）
 *.sh text eol=lf
+.githooks/* text eol=lf
+
+# バイナリ（改行変換しない）
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.pptx binary
+*.zip binary

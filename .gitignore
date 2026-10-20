@@ -1,0 +1,44 @@
+# secrets（scripts/check-secrets.sh・.claude/settings.json の Read の deny とそろえる）
+# 環境変数のキー名の一覧は env.example（先頭にドットなし）に書く
+.env
+.env.*
+credentials*.json
+token.json
+client_secret*.json
+service*account*.json
+*.pem
+*.p12
+
+# Node.js / Vite（frontend）
+node_modules/
+dist/
+*.tsbuildinfo
+*.local
+
+# Playwright（E2E）
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+
+# Python（backend）
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage/
+
+# Claude Code personal settings
+.claude/settings.local.json
+
+# OS・エディタ
+.DS_Store
+._*
+Thumbs.db
+desktop.ini
+*.swp

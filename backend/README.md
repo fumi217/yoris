@@ -29,7 +29,7 @@
 pnpm install
 
 # 環境変数ファイルの用意
-cp .env.example .env
+cp env.example .env
 
 # DB をローカルで起動
 docker compose up -d

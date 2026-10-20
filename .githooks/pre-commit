@@ -1,0 +1,3 @@
+#!/bin/sh
+# 人が直接コミットした場合の保険（有効化: git config core.hooksPath .githooks）。判定は scripts/check-secrets.sh
+exec sh "$(git rev-parse --show-toplevel)/scripts/check-secrets.sh"

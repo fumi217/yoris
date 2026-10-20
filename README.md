@@ -80,4 +80,17 @@
 
 ## コントリビュート
 
-- ブランチ戦略・コミット規約・PR レビュー方針は各アプリの README とリポジトリの CI 設定に従う。
+ブランチ・コミット・Issue・PR・マージのルールは [.claude/skills/github-workflow/SKILL.md](.claude/skills/github-workflow/SKILL.md) を見てください。Claude Code 向けの前提は [CLAUDE.md](CLAUDE.md) にあります。
+
+- `main` への直接 push は禁止。実装は Issue を立て、`feature/<Issue番号>-<短い英語名>` のブランチで作業する
+- コミット・PR のタイトル: `<type>(<scope>): #<Issue番号> <要約>`（docs・chore は scope と Issue 番号を省いてよい）
+- レビュー: 関わる人を PR ごとに決めて Reviewers に入れる。目安は半日以内
+- マージ: Reviewers のうち誰か 1 名の Approve・AI チューターの指摘に対応済み・CI が緑で、Squash and merge。Approve のあとの指摘対応・誤字修正は、コメントに一言書けば再 Approve は不要
+
+### はじめに（1 回だけ）
+
+Claude Code でコミットする場合、`.env` やトークンのコミットを止める仕組みは clone するだけで有効になります。人が直接コミットする場合は、最初に一度だけ次を実行してください。
+
+```bash
+git config core.hooksPath .githooks
+```
