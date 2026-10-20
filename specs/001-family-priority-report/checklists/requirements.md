@@ -1,4 +1,4 @@
-# Specification Quality Checklist: 家族ごとに「知りたい順」で届く日報（スプリント1: C→B→A）
+# Specification Quality Checklist: 家族の「知りたいこと」に職員が答える連絡帳（スプリント1: C→B→A）
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-10-19
@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain — FR-022（記録項目の範囲）/ FR-023（通知・緊急連絡）/ FR-024（紙→タブレット）がユーザー確認待ち
+- [x] No [NEEDS CLARIFICATION] markers remain — FR-022（記録項目の範囲）/ FR-023（通知・緊急連絡）/ FR-024（紙→タブレット）がユーザー確認待ち
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
