@@ -175,7 +175,7 @@ CurrentUser:
 
 - **一意**：`(facility_id, target_type, target_code)`
 - 献立表は記録項目ではないので、ここには入れない（常に見せる。FR-009）。
-- 共通の関数 3 つは、開示設定を Redis のキャッシュ（`cache:disclosure:<施設ID>`、期限 1 時間）から読む。**開示設定を保存したら、そのキャッシュを必ず消す**。
+- 共通の関数 3 つは、開示設定を Redis のキャッシュ（`cache:disclosure:<施設ID>`、期限 5 分）から読む。**開示設定を保存したら、そのキャッシュを必ず消す**。
   家族の連絡帳（組み立て結果）はキャッシュしない（[research.md R-12](./research.md#r-12-redis-の使い道課題要件のキャッシュサーバー)、開発前MTG の決定事項）。
 
 ### `disclosure_setting_histories`
