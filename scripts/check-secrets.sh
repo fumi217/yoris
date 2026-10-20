@@ -76,8 +76,28 @@ if [ -n "$new_files" ]; then
   added=$(printf '%s\n%s\n' "$added" "$added_new")
 fi
 
-# ルール: 名前<TAB>大文字小文字の区別（i = 区別しない / s = 区別する）<TAB>正規表現
-rules=$(cat <<'EOF'
+
+# 「キーと値の組み合わせ」で、値が環境変数・設定の参照になっている行は対象外（正しい書き方のため）
+env_ref='[:=][[:space:]]*["'"'"']?(process\.env|import\.meta\.env|os\.|settings\.|config\.|env\.)'
+
+tab=$(printf '\t')
+found=""
+# ルール: 名前<TAB>大文字小文字の区別（i = 区別しない / s = 区別する）<TAB>正規表現（ループの下のヒアドキュメント）
+# macOS の /bin/sh（bash 3.2）は、$( ) の中のヒアドキュメントに ' があると構文エラーになるため、ループに直接渡す
+while IFS="$tab" read -r name cs re; do
+  if [ "$cs" = i ]; then opt=-iE; else opt=-E; fi
+  hits=$(printf '%s\n' "$added" | cut -f2- | grep -n $opt -e "$re")
+  if [ "$cs" = i ]; then
+    hits=$(printf '%s\n' "$hits" | grep -viE -e "$env_ref")
+  fi
+  files=$(printf '%s\n' "$hits" | cut -d: -f1 | grep -E '^[0-9]+$' \
+    | while read -r n; do printf '%s\n' "$added" | sed -n "${n}p" | cut -f1; done | sort -u)
+  if [ -n "$files" ]; then
+    # macOS の sed は UTF-8 の環境で日本語の置き換えが化けるため、printf で組み立てる
+    found="$found$(printf '%s\n' "$files" | while IFS= read -r f; do printf '  %s（%s）\n' "$f" "$name"; done)
+"
+  fi
+done <<'EOF'
 キーと値の組み合わせ	i	(access[_-]?token|client[_-]?secret|api[_-]?key|refresh[_-]?token|signing[_-]?secret|webhook[_-]?secret|secret[_-]?key|session[_-]?secret)["']?[[:space:]]*[:=][[:space:]]*["']?[A-Za-z0-9+/=_.-]{16,}
 Anthropic の API キー	s	sk-ant-[A-Za-z0-9_-]{20,}
 OpenAI・OpenRouter の API キー	s	sk-(proj-|or-v1-)?[A-Za-z0-9_-]{32,}
@@ -89,28 +109,6 @@ Google の API キー	s	AIza[0-9A-Za-z_-]{35}
 Google のクライアントシークレット	s	GOCSPX-[A-Za-z0-9_-]{20,}
 GitHub のトークン	s	gh[pousr]_[A-Za-z0-9]{36}
 秘密鍵	s	-----BEGIN [A-Z ]*PRIVATE KEY-----
-EOF
-)
-
-# 「キーと値の組み合わせ」で、値が環境変数・設定の参照になっている行は対象外（正しい書き方のため）
-env_ref='[:=][[:space:]]*["'"'"']?(process\.env|import\.meta\.env|os\.|settings\.|config\.|env\.)'
-
-tab=$(printf '\t')
-found=""
-while IFS="$tab" read -r name cs re; do
-  if [ "$cs" = i ]; then opt=-iE; else opt=-E; fi
-  hits=$(printf '%s\n' "$added" | cut -f2- | grep -n $opt -e "$re")
-  if [ "$cs" = i ]; then
-    hits=$(printf '%s\n' "$hits" | grep -viE -e "$env_ref")
-  fi
-  files=$(printf '%s\n' "$hits" | cut -d: -f1 | grep -E '^[0-9]+$' \
-    | while read -r n; do printf '%s\n' "$added" | sed -n "${n}p" | cut -f1; done | sort -u)
-  if [ -n "$files" ]; then
-    found="$found$(printf '%s\n' "$files" | sed "s/\$/（$name）/; s/^/  /")
-"
-  fi
-done <<EOF
-$rules
 EOF
 
 if [ -n "$found" ]; then
