@@ -171,7 +171,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T070 [US4] `PUT /api/admin/menus/{year_month}` を `backend/app/api/admin/menus.py` に作る（役割：事務員・相談員・施設長）（FR-004）（さとこ・ミ）
 - [ ] T071 [US4] `GET /api/files/{id}` を `backend/app/api/files.py` に作る：ログインと役割を確かめてから返す。`Content-Type` は保存した形式に固定し、`X-Content-Type-Options: nosniff` を付ける（FR-025・FR-033・research.md R-10）（さとこ・ミ）
 - [ ] T072 [US4] `GET /api/family/menus/{year_month}` を `backend/app/api/family/menus.py` に作り（ないときは 404）、`GET /api/family/contact-book` に「その月の献立表があるか」を足す（FR-033）（さとこ・ミ）
-- [ ] T073 [P] [US4] 献立表のアップロードの画面を `frontend/src/pages/admin/MenuUpload.tsx` に、連絡帳の食事の行の「献立を見る」と「この月の献立表は、まだ登録されていません」、そばに「施設全体の献立です。食べやすい形や、代わりのメニューに変えることがあります」を `frontend/src/pages/family/ContactBook.tsx` に足す（FR-033・SC-014）（さとこ・ミ）
+- [ ] T073 [P] [US4] 献立表のアップロードの画面を `frontend/src/pages/admin/MenuUpload.tsx` に、連絡帳の食事の行の「献立を見る」と「この月の献立表は、まだ登録されていません」、そばに「施設全体の献立です。食べやすい形や、代わりのメニューに変えることがあります」を `frontend/src/pages/family/ContactBook.tsx` に足す（FR-033）（さとこ・ミ）
 - [ ] T074 [US4] 架空の献立表の PDF を iPhone の Safari と Android の Chrome で、別タブと画面の中の両方で開けるかを確かめ、結果を research.md R-10 に書く。表示できない環境があれば、PDF を `Content-Disposition: attachment` にする（さとこ・ミ・Day 3）
 - [ ] T075 [US4] 画像の Exif を取り除く処理（Pillow で開き直して保存）を `backend/app/services/uploads.py` に足し、テストを `backend/tests/api/test_uploads.py` に足す（FR-004）（さとこ・作）
 - [ ] T076 [US4] 本番の保存先（S3 互換のオブジェクトストレージ、非公開のバケット）への切り替えを `backend/app/services/uploads.py` に足す（環境変数で切り替える）（さとこ・作）
