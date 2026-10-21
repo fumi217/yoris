@@ -118,6 +118,7 @@ CurrentUser:
 | item | text | `meal`（食事量）／`mood`（機嫌・様子）／`sleep`（眠り） |
 | slot | text | 食事：`breakfast`／`lunch`／`dinner`／`snack`。機嫌・眠り：`day` |
 | value | text | 下の表 |
+| note | text | 備考（100 文字まで、任意）。食事のときだけ使う（代替メニューなど。FR-035）。辞書を通さずそのまま出す |
 | recorded_by | bigint → staff | |
 | recorded_at | timestamptz | |
 | deleted_at | timestamptz | 当日中に取り消したら入れる |
@@ -130,7 +131,7 @@ CurrentUser:
 | sleep | `good`（よく眠れた）／`normal`（いつもどおり）／`poor`（あまり眠れなかった） |
 
 - **一意**：`(resident_id, date, item, slot) WHERE deleted_at IS NULL`（部分インデックス。取り消したあとに記録し直せる。[research.md R-04](./research.md#r-04-記録のテーブルを-1-つにまとめる)）
-- 押し直したら `value` を上書きし、前の値を `care_record_histories` に残す（FR-005）。
+- 押し直したら `value`・`note` を上書きし、前の値を `care_record_histories` に残す（FR-005）。
 - 取り消し・修正できるのは、`date` が今日（日本時間）の記録だけ（エッジケース）。
 - 画面に出す文言は、`value` のコードから辞書で引く（[research.md R-11](./research.md#r-11-多言語とふりがな)）。
 
@@ -140,6 +141,7 @@ CurrentUser:
 | id | bigint | |
 | care_record_id | bigint → care_records | |
 | old_value / new_value | text | 取り消しは `new_value` を空にする |
+| old_note / new_note | text | 備考の変更（食事のときだけ） |
 | changed_by | bigint → staff | |
 | changed_at | timestamptz | |
 

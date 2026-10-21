@@ -64,7 +64,7 @@
 |---|---|---|---|---|
 | `GET /api/staff/residents?date=` | CW・L・CO・D | ミ | 入居者の一覧。食事区分ごとの記録済み／未記録、返事待ちのリクエストの件数 | FR-008・FR-029 |
 | `GET /api/staff/residents/{id}/contact-book?date=` | CW・L・CO・D | ミ | その日の記録と返事を時刻順に（非開示も含む。職員向け） | FR-024 |
-| `PUT /api/staff/residents/{id}/records` | CW・L・CO・D | ミ | 記録する・押し直す（`date`・`item`・`slot`・`value`） | FR-001・FR-002・FR-005・FR-022 |
+| `PUT /api/staff/residents/{id}/records` | CW・L・CO・D | ミ | 記録する・押し直す（`date`・`item`・`slot`・`value`、食事は任意で `note`（100 文字まで）） | FR-001・FR-002・FR-005・FR-022・FR-035 |
 | `DELETE /api/staff/records/{record_id}` | CW・L・CO・D | 作 | 当日中に取り消す | Edge Cases |
 | `GET /api/staff/residents/{id}/requests` | CW・L・CO・D | ミ | 返事待ちのリクエスト（テーマ・送られた日・日数・定型文の一覧） | FR-029 |
 | `POST /api/staff/requests/{id}/reply` | CW・L・CO・D | ミ | 返事をする（`template_ids`・`note`）。409：`already_replied`・`request_cancelled` | FR-030 |
