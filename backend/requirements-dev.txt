@@ -1,0 +1,6 @@
+# 開発・テスト・CI で使う依存（CI はこのファイルがあるときだけバックエンドの確認を動かす）
+-r requirements.txt
+pytest==9.1.1
+# TestClient が使う HTTP クライアント（starlette が httpx から httpx2 への移行を勧めている）
+httpx2==2.15.1
+ruff==0.17.1

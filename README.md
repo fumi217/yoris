@@ -39,6 +39,10 @@
 - フロントエンド：[frontend/README.md](./frontend/README.md)
 - バックエンド：[backend/README.md](./backend/README.md)
 
+**保存しても自動で読み直されないとき（Windows 側のフォルダで動かしているときなど）**：
+リポジトリの一番上の `.env` に `WATCH_POLLING=true` を書いて、`docker compose up -d` で起動し直す。
+フロント（Vite）とバックエンド（uvicorn）が、変更を定期的に見に行くようになる（少し重くなるので、困ったときだけ使う）。
+
 ## ドキュメント
 
 ### 企画・要件

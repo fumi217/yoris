@@ -21,7 +21,7 @@
 
 ## Technical Context
 
-**Language/Version**: Python 3.12（バックエンド）、TypeScript 5（フロントエンド）
+**Language/Version**: Python 3.13（バックエンド）、TypeScript 6・Node 24（フロントエンド）。版を決めた理由は docs/技術選定.md の 7 章
 
 **Primary Dependencies**:
 - バックエンド：FastAPI、SQLAlchemy 2、Alembic（マイグレーション）、Pydantic 2、redis-py、Pillow（画像の Exif の削除）、structlog（ログ）

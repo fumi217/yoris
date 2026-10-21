@@ -1,0 +1,13 @@
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+# E・W: 書き方、F: 使っていない変数など、I: import の順番、B: よくあるバグ、UP: 新しい書き方
+select = ["E", "W", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# .pytest_cache を作らない（コンテナの中で動かすと、WSL・Linux では手元に root の持ち物のフォルダが残るため）
+addopts = "-p no:cacheprovider"
+pythonpath = ["."]

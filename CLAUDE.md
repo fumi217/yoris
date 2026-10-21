@@ -25,8 +25,8 @@
 
 | 領域 | 採用技術 |
 | --- | --- |
-| フロントエンド | React（Vite）・TypeScript、React Router、Tailwind CSS、react-i18next（日本語・インドネシア語・英語）、TanStack Query。テストは Vitest、E2E は Playwright |
-| バックエンド | Python 3.12 ＋ FastAPI、SQLAlchemy、Pydantic、structlog。テストは pytest、lint は ruff |
+| フロントエンド | Node 24、React（Vite）・TypeScript、React Router、Tailwind CSS、react-i18next（日本語・インドネシア語・英語）、TanStack Query。テストは Vitest、E2E は Playwright、lint は ESLint、整形は Prettier |
+| バックエンド | Python 3.13 ＋ FastAPI、SQLAlchemy、Pydantic、structlog。テストは pytest、lint と整形は ruff |
 | データ・キャッシュ | PostgreSQL、Redis（セッション・開示設定のキャッシュ・AI 問い合わせの回数制限。作り込みでログインの試行回数の制限） |
 | 認証 | バックエンドが発行するセッション（Cookie、Redis に保存）。役割と権限は自前の DB で管理 |
 | AI | OpenRouter（学校配布のキー）＋ OpenAI Python SDK のツール呼び出し。モデル名は環境変数 |
@@ -60,7 +60,7 @@
 
 ## テストと CI
 
-- CI（`.github/workflows/ci.yml`）は PR ごとに、秘密情報の確認、`backend/` の `ruff check .`・`ruff format --check .`・`python -m pytest`、`frontend/` の `npm run lint`・`npm run test`・`npm run build` を動かす。
+- CI（`.github/workflows/ci.yml`）は PR ごとに、秘密情報の確認、`backend/` の `ruff check .`・`ruff format --check .`・`python -m pytest`、`frontend/` の `npm run lint`・`npm run format:check`・`npm run test`・`npm run build` を動かす。
 - CI は `backend/requirements-dev.txt`・`frontend/package-lock.json` があるときだけ動く。骨格を作るときは、この名前で依存を管理するか、CI もあわせて直す。
 - 手元でも、push の前に同じコマンドを通す。
 

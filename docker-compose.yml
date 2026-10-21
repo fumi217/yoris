@@ -1,0 +1,111 @@
+# 開発環境。`docker compose up -d` で frontend・backend・db・redis・mailpit が起動する。
+# 開くところ：アプリ http://localhost:5173 / API の一覧 http://localhost:8000/docs / メール http://localhost:8025
+# 秘密ではない開発用の値はここに書く。API キーなどは .env に書く（キー名の一覧は env.example）。
+
+x-backend-env: &backend-env
+  APP_ENV: development
+  DATABASE_URL: postgresql+psycopg://app:app@db:5432/app
+  REDIS_URL: redis://redis:6379/0
+  MAIL_TRANSPORT: smtp
+  SMTP_HOST: mailpit
+  SMTP_PORT: "1025"
+  MAIL_FROM: no-reply@example.com
+  APP_BASE_URL: http://localhost:5173
+  # 名前つきのボリューム（uploads）に置き、手元の backend/ のフォルダに残さない（spec 001 の research.md R-10）
+  UPLOAD_DIR: /data/uploads
+  # .env に WATCH_POLLING=true を書くと、変更を定期的に見に行く（Windows 側のフォルダで、自動の読み直しが効かないとき）
+  # 空のままなら uvicorn（watchfiles）が自分で判定する（false を入れると、WSL での自動の切り替えも止まるので入れない）
+  WATCHFILES_FORCE_POLLING: ${WATCH_POLLING:-}
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      # /api の中継先（サービス名で呼ぶ）
+      API_PROXY_TARGET: http://backend:8000
+      # true なら、変更を定期的に見に行く（backend の WATCHFILES_FORCE_POLLING と同じ .env の WATCH_POLLING を使う）
+      WATCH_POLLING: ${WATCH_POLLING:-}
+    volumes:
+      - ./frontend:/app
+      # コンテナの中で入れた node_modules を、手元のフォルダで上書きしない
+      - /app/node_modules
+      # コンテナの中でビルドしたものを手元に残さない（WSL・Linux では root の持ち物になるため）
+      - /app/dist
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment: *backend-env
+    volumes:
+      - ./backend:/app
+      - uploads:/data/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  # メールの送信・20 時のまとめ（T057・T065）。中身ができるまでは `--profile worker` を付けたときだけ起動する。
+  # T057 で app/jobs/worker.py ができたら、profiles の 2 行を消して、ほかと一緒に起動するようにする
+  # 自動では読み直さないので、コードを変えたら `docker compose restart worker`（backend/README.md）
+  worker:
+    build: ./backend
+    command: python -m app.jobs.worker
+    profiles:
+      - worker
+    env_file:
+      - path: .env
+        required: false
+    environment: *backend-env
+    volumes:
+      - ./backend:/app
+      - uploads:/data/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    ports:
+      # 自分の PC からだけ開く（DB のツールでつなぐとき用）
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:8.10
+    # セッションとキャッシュを同じ Redis に入れるので、いっぱいになったら期限のあるキーだけを消す（research.md R-12）
+    command: redis-server --maxmemory 256mb --maxmemory-policy volatile-lru
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  mailpit:
+    image: axllent/mailpit:v1.31
+    ports:
+      # 招待のリンクやログイン用の ID のメールが溜まるので、画面も自分の PC からだけ開く
+      - "127.0.0.1:8025:8025"
+      - "127.0.0.1:1025:1025"
+
+volumes:
+  db-data:
+  uploads:
