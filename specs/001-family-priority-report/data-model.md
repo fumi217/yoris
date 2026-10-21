@@ -52,7 +52,7 @@ PR #17 のレビューを反映している。列の名前や型は、実装の�
 |---|---|---|
 | id | bigint | |
 | kind | text | `staff`／`family` |
-| login_id | text | 職員がログインに使う ID（職員だけ）。一意 |
+| login_id | text | 職員がログインに使う ID（職員だけ）。一意。`s` ＋ 5 桁の数字（`s00001`。シーケンス `staff_login_id_seq` から作る。spec 002 の R-06） |
 | email | text | 家族がログインと通知に使うメールアドレス（家族だけ。代表者）。一意 |
 | password_hash | text | bcrypt |
 | language | text | `ja`／`id`／`en`（初期値 `ja`） |
@@ -65,20 +65,20 @@ PR #17 のレビューを反映している。列の名前や型は、実装の�
 | facility_id | bigint → facilities | |
 | name | text | 氏名（架空） |
 | display_name | text | 表示用の呼び名（例：「佐藤さんの母」） |
-| room | text | 居室 |
+| room | text | 居室（必須） |
 
 ### `family_accounts`
 | 列 | 型 | 説明 |
 |---|---|---|
 | id | bigint | |
-| user_id | bigint → users | |
+| user_id | bigint → users | **一意**（1 つのログインで見られる入居者は 1 人。ログイン中の家族から入居者を決めるため） |
 | resident_id | bigint → residents | **一意**（入居者に 1 つ。Session 2026-10-20） |
 
 ### `staff`
 | 列 | 型 | 説明 |
 |---|---|---|
 | id | bigint | |
-| user_id | bigint → users | |
+| user_id | bigint → users | **一意**（1 つのログインは職員 1 人分） |
 | facility_id | bigint → facilities | |
 | display_name | text | 返事に出す名前（FR-030） |
 | role | text | `care_worker`（介護職員）／`leader`（リーダー）／`counselor`（生活相談員）／`clerk`（事務員）／`director`（施設長） |

@@ -1,3 +1,7 @@
 # 本番でも使う依存。版は == で固定する（全員と CI で同じ版にするため）
 fastapi==0.153.0
 uvicorn[standard]==0.54.0
+# DB：SQLAlchemy 2（ORM）・Alembic（マイグレーション）・psycopg 3（PostgreSQL につなぐ。組み立て済みの binary を使う）
+sqlalchemy==2.1.5
+alembic==1.20.0
+psycopg[binary]==3.3.6
