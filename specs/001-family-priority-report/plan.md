@@ -33,9 +33,9 @@
 - Redis：ログインのセッションと、開示設定のキャッシュ（期限 5 分）。家族の連絡帳はキャッシュしない（開発前MTG の決定事項）。作り込みで、ログインの試行回数の制限を足す（[research.md R-12](./research.md#r-12-redis-の使い道課題要件のキャッシュサーバー)）
 - ファイル：開発はコンテナのボリューム、本番は S3 互換のオブジェクトストレージ（[research.md R-10](./research.md#r-10-ファイルの保存先と配り方)）
 
-**Testing**: pytest ＋ httpx（バックエンドの単体・API）、Vitest（フロントエンドの単体）、Playwright（E2E。受け入れシナリオから作る）
+**Testing**: pytest ＋ httpx2（バックエンドの単体・API）、Vitest（フロントエンドの単体）、Playwright（E2E。受け入れシナリオから作る）
 
-**Target Platform**: Docker Compose（開発：frontend・backend・worker・PostgreSQL・Redis・Mailpit）、Render（本番。コンテナのまま）。
+**Target Platform**: Docker Compose（開発：frontend・backend・worker・PostgreSQL・Redis・Mailpit）、Render（本番。コンテナのまま。無料のプランなので worker は置かず、決まった時刻の処理は外部のスケジューラーが API を呼ぶ。[research.md R-09](./research.md#r-09-メールとアプリ内のお知らせの送り方)）。
 ブラウザからは `/api` をフロントと同じオリジンで呼び、バックエンドへ中継する（Cookie を確実に送るため。[research.md R-03](./research.md#r-03-ログインとセッション)）。
 家族はスマートフォンのブラウザ、職員は施設のタブレットのブラウザ
 
@@ -128,7 +128,8 @@ backend/
 │   │   ├── notifications.py    # お知らせとメールの送信予定を作る
 │   │   └── uploads.py          # ファイルの形式チェック・Exif の削除・保存（お知らせ・アルバムで共通）
 │   ├── jobs/
-│   │   ├── worker.py           # メールの送信予定を 1 分ごとに送る、20 時のまとめを作る
+│   │   ├── run.py              # run_jobs()：メールを送る・送り直す、20 時のまとめを作る（呼ばれたときに、やることを済ませる）
+│   │   ├── worker.py           # 開発だけ：1 分ごとに run_jobs() を呼ぶ（本番は外部のスケジューラーが API を呼ぶ）
 │   │   └── digest.py           # まとめ（1 日・1 週間）を作る
 │   └── seed/                   # 初期データ（入居者・職員・テーマ・定型文・記録のサンプル）
 ├── alembic/                    # マイグレーション
@@ -157,7 +158,8 @@ docker-compose.yml              # frontend・backend・worker・db・redis・mai
 **Structure Decision**: 課題要件どおり `frontend/` と `backend/` を分けたWeb アプリにする。
 担当は README の「体制」と [作業分担MTG](../../docs/context/meeting/作業分担MTG.md) に合わせ、
 フォルダを担当ごとに分けて、同じファイルを同時に触らないようにする。
-メールの送信と 20 時のまとめは、API とは別の `worker` プロセス（同じ backend のイメージを別のコマンドで起動）で動かす。
+メールの送信と 20 時のまとめは `run_jobs()` にまとめる。開発は `worker` プロセス（同じ backend のイメージを別のコマンドで起動）が 1 分ごとに呼び、
+本番は外部のスケジューラー（cron-job.org）が 1 分ごとに `POST /api/internal/jobs/run` を呼ぶ（Render の無料のプランには worker がないため。[research.md R-09](./research.md#r-09-メールとアプリ内のお知らせの送り方)）。
 
 ## 担当とつながり（作業分担MTG・開発前MTG の案より）
 
@@ -188,11 +190,11 @@ Day 1〜3 のミニマム版で作るものと、Day 4 以降の作り込みで�
 |---|---|---|
 | 開発前MTG の「打ち合わせで決めること」 | 「コメントで決まったこと」（職員は ID でログイン、眠りは記録した朝の日付、時刻は UTC、メール送信の部品はさとこ）と、PR #19 の決定事項（連絡帳はキャッシュせず、開示設定をキャッシュする）に合わせた。残り（F が返事を読むか、Day 1 の issue の立て方、spec がない J・G の扱い、PR の行数のルール）は打ち合わせで決める | 開発前MTG |
 | `users` テーブルの細かい形 | 職員は `login_id`、家族は `email` で 1 つのテーブルにまとめる形で書いた（[data-model.md](./data-model.md#users)） | ようこ |
-| `/api` の中継の構成 | 開発は Vite の proxy、本番はフロントの配信側で中継（[research.md R-03](./research.md#r-03-ログインとセッション)） | ようこ |
+| `/api` の中継の構成 | （決定）開発は Vite の proxy、本番はフロントを Render の Static Site に置き、書き換えのルールで `/api/*` をバックエンドの公開 URL に中継する。無料の Web Service はバックエンドの 1 つだけ（[research.md R-03](./research.md#r-03-ログインとセッション)、PR #34） | ようこ |
 | 家族がパスワードを忘れたとき | ミニマム版は施設がもう一度招待する。再設定の画面は作り込みで検討 | ようこ |
 | PDF の表示 | `sandbox` は付けず、Day 3 に iPhone の Safari と Android の Chrome で確かめる。表示できなければダウンロードにする（[research.md R-10](./research.md#r-10-ファイルの保存先と配り方)） | さとこ（Day 3） |
 | 返事のお知らせの呼び方 | 開発前MTG の案（保存を確定したあとに呼ぶ）ではなく、PR #17 のさとこの提案（同じセッションを渡して呼び、中では commit しない）を採った（[research.md R-09](./research.md#r-09-メールとアプリ内のお知らせの送り方)） | ゆう・さとこ |
-| 本番のメール送信サービス・ファイルの保存先 | SMTP で送る（本番のサービスは Resend などを環境変数で差し替え）、ファイルは S3 互換（Cloudflare R2 など） | ようこ（本番デプロイのとき） |
+| 本番のメール送信サービス・ファイルの保存先 | （決定）メールは本番は Resend の API、開発は Mailpit に SMTP（[PRD](../../docs/PRD.md) 9 章の案 A、PR #28。[research.md R-09](./research.md#r-09-メールとアプリ内のお知らせの送り方)）。ファイルは S3 互換（Cloudflare R2 など） | ようこ（本番デプロイのとき） |
 
 ## Complexity Tracking
 

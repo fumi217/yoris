@@ -113,7 +113,20 @@ API の名前は開発前MTG に合わせて `contact-book`（連絡帳）にす
 |---|---|---|---|---|
 | `GET /api/files/{id}` | ログイン中の家族・職員 | 作 | ファイルを返す。ログインしていなければ 401、取り消したお知らせの添付は 404。`Content-Type` 固定、`X-Content-Type-Options: nosniff`。PDF は Day 3 の確認しだいで `Content-Disposition: attachment`（R-10） | FR-025・FR-034 |
 
-## メール（worker）
+## 決まった時刻の処理
+
+本番で、外部のスケジューラー（cron-job.org）が 1 分ごとに呼ぶ（[research.md R-09](../research.md#r-09-メールとアプリ内のお知らせの送り方)）。開発では `worker` が同じ `run_jobs()` を直接呼ぶので、この API は使わない。
+
+| メソッド・パス | 呼ぶもの | 時期 | 中身 |
+|---|---|---|---|
+| `POST /api/internal/jobs/run` | 外部のスケジューラー（ログインなし） | ミ（本番デプロイのとき） | `run_jobs()` を 1 回動かす。返すのは `204` だけ（何を送ったかは返さない） |
+
+- `Authorization: Bearer <JOBS_TOKEN>` がないか違えば **401**。比べるときは `hmac.compare_digest` を使う。環境変数 `JOBS_TOKEN` が空のとき（開発など）は、ルーターを登録せず **404**。
+- `JOBS_TOKEN` は 32 バイト以上のランダムな値にし、Render と cron-job.org の設定にだけ置く。ログ・応答に出さない。
+- ブラウザから呼ぶ API ではないので、書き込みの確認（`X-Requested-With`、T014）の対象から外す（合言葉で確かめる）。
+- 1 回の処理は 30 秒以内に終える（送るメールは 1 回に数十件まで）。
+
+## メール
 
 API ではないが、送るメールの種類と、テンプレートに渡すものを決めておく（[research.md R-09](../research.md#r-09-メールとアプリ内のお知らせの送り方)）。
 

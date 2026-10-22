@@ -273,7 +273,7 @@ CurrentUser:
 | attempts | int | 失敗した回数（5 回まで） |
 | last_error | text | |
 
-- worker は `sent_at IS NULL` の行を `FOR UPDATE SKIP LOCKED` で取り出す（同じメールを 2 回送らない。R-09）。
+- `run_jobs()` と、保存したあとにその場で送る処理は、どちらも `sent_at IS NULL` の行を `FOR UPDATE SKIP LOCKED` で取り出す（同じメールを 2 回送らない。R-09）。
 
 ### `notification_settings`（作り込み）
 | 列 | 型 | 説明 |

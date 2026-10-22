@@ -31,7 +31,7 @@
 | 認証 | バックエンドが発行するセッション（Cookie、Redis に保存）。役割と権限は自前の DB で管理 |
 | AI | OpenRouter（学校配布のキー）＋ OpenAI Python SDK のツール呼び出し。モデル名は環境変数 |
 | 決済 | Stripe Billing（テストモード。実課金はしない） |
-| 通知 | アプリ内のお知らせ ＋ メール（開発・デモは Mailpit） |
+| 通知 | アプリ内のお知らせ ＋ メール（開発・デモは Mailpit、本番は Resend の API。決まった時刻の処理は本番では外から API を呼ぶ。spec 001 の research.md R-09） |
 | 開発環境・本番 | Docker / Docker Compose。本番は Render（https）。ブラウザからは `/api` をフロントと同じオリジンで呼んで中継し、CORS は開けない（開発は Vite の proxy。本番の具体的な構成はようこが決める。spec 001 の research.md R-03） |
 
 実装で守ること（constitution と技術選定 4〜5 章）:

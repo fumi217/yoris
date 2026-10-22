@@ -30,7 +30,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T004 Alembic を `backend/alembic/` に用意し、`docker compose exec backend alembic upgrade head` で動くようにする（research.md R-17）（ようこ・ミ）
 - [ ] T005 [P] lint・format を設定する：`backend/pyproject.toml`（ruff）、`frontend/eslint.config.js`（ようこ・ミ）
 - [ ] T006 [P] ログの出し方を `backend/app/logging.py` に作る：structlog、開発は読みやすい形式、本番は JSON で INFO 以上。氏名・メールアドレス・記録の値・返事の文・お知らせの本文・招待のトークンは出さず id だけ出す（FR-027・research.md R-18）（ようこ・ミ）
-- [ ] T007 [P] `env.example` に環境変数のキー名を足す：`APP_ENV`・`DATABASE_URL`・`REDIS_URL`・`SMTP_HOST`・`SMTP_PORT`・`MAIL_FROM`・`APP_BASE_URL`・`UPLOAD_DIR`・`OPENROUTER_API_KEY`・`OPENROUTER_MODEL`（値は書かない）（ようこ・ミ）
+- [ ] T007 [P] `env.example` に環境変数のキー名を足す：`APP_ENV`・`DATABASE_URL`・`REDIS_URL`・`MAIL_TRANSPORT`（`smtp`／`resend`）・`SMTP_HOST`・`SMTP_PORT`・`RESEND_API_KEY`・`MAIL_FROM`・`APP_BASE_URL`・`UPLOAD_DIR`・`OPENROUTER_API_KEY`・`OPENROUTER_MODEL`・`JOBS_TOKEN`（値は書かない。research.md R-09）（ようこ・ミ）
 
 ---
 
@@ -46,7 +46,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T011 [P] Redis の接続を `backend/app/redis.py` に作る。キーには用途の接頭辞を付け、必ず期限を付ける決まりをコメントに書く（research.md R-12）（ようこ・ミ）
 - [ ] T012 [P] エラーの形（`{"error": {"code", "message_key"}}`）とコード（`not_logged_in`・`forbidden`・`not_found`・`request_limit`・`theme_waiting`・`already_replied`・`request_cancelled`・`not_today`・`invalid_file`・`validation_error`）を `backend/app/errors.py` に作る（contracts/api.md）（ようこ・ミ）
 - [ ] T013 開発用のユーザー切り替え `POST /api/dev/switch-user` を `backend/app/api/dev.py` に作る。`APP_ENV=development` のときだけルーターを登録する（research.md R-02）（ようこ・ミ）
-- [ ] T014 書き込みの API で `X-Requested-With: fetch` ヘッダーを確かめるミドルウェアを `backend/app/auth/csrf.py` に作る（research.md R-03）（ようこ・ミ）
+- [ ] T014 書き込みの API で `X-Requested-With: fetch` ヘッダーを確かめるミドルウェアを `backend/app/auth/csrf.py` に作る。ブラウザから呼ばない `POST /api/internal/jobs/run`（合言葉で確かめる。contracts/api.md）は対象から外す（research.md R-03）（ようこ・ミ）
 - [ ] T015 初期データの仕組みを `backend/app/seed/__main__.py` に作り、入居者 30 人・職員（`login_id` つき、各役割）・家族アカウント 30（入居者に 1 つ）を入れる（`python -m app.seed`）。**施設がまだなければ作り（契約中として）、すでにあればその施設に足す**（J の申し込みで施設ができたあとにも流せるように。PR #23 ようこ・spec 002）。ほかの人はここに自分の分を足す（ようこ・ミ）
 - [ ] T016 [P] 多言語の辞書の仕組みを `frontend/src/i18n/index.ts`・`frontend/src/i18n/ja.json` に作る。ミニマム版は日本語だけ。文言は必ず辞書から引く。日本語のふりがなは `{漢字|かんじ}` の書き方で書く（research.md R-11）（みさき・ミ）
 - [ ] T017 [P] ふりがなの部品 `frontend/src/i18n/Ruby.tsx` を作る：`{漢字|かんじ}` を `<ruby>` に変える。日本語以外では書き方を使わない。メール用に漢字だけにする関数も `backend/app/i18n.py` に作る（みさき・ミ）
@@ -133,13 +133,15 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T048 [P] [US3] `notifications`・`email_outbox` を `backend/app/models/notifications.py` に作り、マイグレーションを足す。`notifications.kind`：`reply`／`daily_digest`／`weekly_digest`／`announcement`。`email_outbox.params` には種類・タイトル・リンクだけを入れる（data-model.md）（さとこ・ミ）
 - [ ] T049 [US3] リクエストの作成・取り消しを `backend/app/services/requests.py` に作る：作るときは `family_accounts` の行を `FOR UPDATE` で押さえて返事待ちを数え、テーマが `get_disclosed_themes()` にあるかを確かめる（research.md R-08）（さとこ・ミ）
 - [ ] T050 [US3] `GET /api/family/themes`・`GET /api/family/requests`・`POST /api/family/requests`・`DELETE /api/family/requests/{id}` を `backend/app/api/family/requests.py` に作る。入居者は `CurrentUser.resident_id` から決める（FR-013・FR-014・FR-020）（さとこ・ミ）
-- [ ] T051 [US3] お知らせとメールの送る予定を作る関数 `create_reply_notice(session, reply_id)` を `backend/app/services/notifications.py` に作る：関数の中では commit しない。メールのテンプレート（`backend/app/templates/email/`）には種類とリンクだけを渡す（research.md R-09）（さとこ・ミ）
+- [ ] T051 [US3] お知らせとメールの送る予定を作る関数 `create_reply_notice(session, reply_id)` を `backend/app/services/notifications.py` に作る：関数の中では commit しない。作った `email_outbox` の id を返す（呼んだ側が、コミットのあとにその場で送るため。T057）。メールのテンプレート（`backend/app/templates/email/`）には種類とリンクだけを渡す（research.md R-09）（さとこ・ミ）
 - [ ] T052 [US3] 返事の保存を `backend/app/services/replies.py` に作る：`UPDATE requests SET status='answered' WHERE id=:id AND status='waiting'` が 0 件なら保存しない（`answered` なら `already_replied`、`cancelled` なら `request_cancelled`）。返事の追加と `create_reply_notice(session, reply_id)` を同じトランザクションで行う（research.md R-07・R-09）（ゆう・ミ）
-- [ ] T053 [US3] `GET /api/staff/residents/{id}/requests`・`POST /api/staff/requests/{id}/reply` を `backend/app/api/staff/requests.py` に作り、`GET /api/staff/residents` に返事待ちの件数を足す。職員への通知・音は出さない（FR-029・FR-030・SC-013）（ゆう・ミ）
+- [ ] T053 [US3] `GET /api/staff/residents/{id}/requests`・`POST /api/staff/requests/{id}/reply` を `backend/app/api/staff/requests.py` に作り、`GET /api/staff/residents` に返事待ちの件数を足す。返事の保存をコミットしたあとに、BackgroundTasks で T057 の `send_email_now(outbox_id)` を呼ぶ（`outbox_id` は `create_reply_notice` の返り値）。職員への通知・音は出さない（FR-029・FR-030・SC-013、research.md R-09）（ゆう・ミ）
 - [ ] T054 [US3] 共通の関数 `get_active_replies(resident_id, date_from, date_to)` を `backend/app/services/disclosure.py` に足す（保存された返事。テーマ・定型文のコード・短い文・職員の表示名・時刻・既読か）（research.md R-06）（ゆう・ミ）
 - [ ] T055 [US3] `GET /api/family/contact-book?date=` を `backend/app/api/family/contact_book.py` に作る：まだ読んでいない返事を（日付に関わらず）先頭に、`get_disclosed_records` の記録を食事 → 機嫌・様子 → 眠りの順に、未記録の欄を「まだ記録されていません」のコードで返す。記録を直接読まない（FR-015・FR-017・FR-019）（さとこ・ミ）
 - [ ] T056 [US3] `POST /api/family/replies/{reply_id}/read`・`GET /api/family/notifications` を `backend/app/api/family/notifications.py` に作る。ログイン中の家族のものかを確かめる（FR-015・FR-023）（さとこ・ミ）
-- [ ] T057 [US3] メールを送る worker を `backend/app/jobs/worker.py` に作る：1 分ごとに `email_outbox` の未送信を `FOR UPDATE SKIP LOCKED` で取り出して SMTP（開発は Mailpit）で送り、`sent_at` を入れる。失敗は 5 回まで送り直す（research.md R-09）（さとこ・ミ）
+- [ ] T057 [US3] メールを送る処理を作る：`backend/app/jobs/run.py` の `run_jobs()` が、`email_outbox` の未送信を `FOR UPDATE SKIP LOCKED` で数十件まで取り出して送り、`sent_at` を入れる（失敗は 5 回まで送り直す）。
+  送り方は `MAIL_TRANSPORT` で切り替える（`smtp`：開発の Mailpit、`resend`：本番の Resend の API に https で POST。呼ぶ道具は作るときに決める。research.md R-09）。メールを 1 件だけ送る関数 `send_email_now(outbox_id)` も作り、その行だけを同じく押さえて送る（すでに送ってあれば何もしない）。返事・お知らせを保存した API は、**保存をコミットしたあとに**、応答のあとの BackgroundTasks でこれを呼ぶ（コミットの前に呼ぶと、行がまだ見えず送れない）。
+  開発用に、1 分ごとに `run_jobs()` を呼ぶ `backend/app/jobs/worker.py` を作る（本番は T092 の API を外から呼ぶ。research.md R-09）（さとこ・ミ）
 - [ ] T058 [P] [US3] リクエストと返事のサンプル（返事待ち・返事あり・取り消し）を `backend/app/seed/requests.py` に作る（さとこ・ミ）
 - [ ] T059 [US3] 家族の連絡帳の画面を `frontend/src/pages/family/ContactBook.tsx` に作る：返事のカードを一番上に（職員の名前つき）、カードが画面に出たら自動で既読にする、未記録の欄、画面の下に「緊急のときは、施設から電話します」（FR-015・FR-017・FR-028・research.md R-15）。ミニマム版は「今日」だけ（過去の日付は T094）（さとこ・ミ）
 - [ ] T060 [US3] 「知りたいこと」を頼む画面と送ったリクエストの一覧を `frontend/src/pages/family/Requests.tsx` に作る：テーマのボタン（3 タップ以内）、「施設に届きました」と送った日時・日数、3 日たったら「お急ぎのときは、施設にお電話ください」、返事の前の取り消し（FR-013・FR-014・SC-002）（さとこ・ミ）
@@ -147,8 +149,8 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T062 [US3] 職員の返事の画面を `frontend/src/pages/staff/ReplyPage.tsx` に作る：テーマ・送られた日・日数、定型文のボタン（1 つ以上）、100 文字までの書き足し。リクエストを開いてから 3 タップ以内で保存（FR-030・SC-007）（ゆう・ミ）
 - [ ] T063 [US3] 当日中の返事の修正 `PATCH /api/staff/replies/{reply_id}` を `backend/app/api/staff/requests.py` に足す：`template_ids`・`note` を上書きして `edited_at` を入れる、再通知はしない、今日でなければ 409 `not_today`。画面に「直す」を足す（返事の取り消しはしない）（FR-030）（ゆう・作）
 - [ ] T064 [US3] `notification_settings` を `backend/app/models/notifications.py` に足し（`notify_reply` 初期値 `true`、`notify_items` 初期値 `{meal,mood,sleep}`、`frequency`：`daily`（初期値）／`weekly`／`none`）、`GET/PUT /api/family/notification-settings` と画面 `frontend/src/pages/family/NotificationSettings.tsx` を作る。送り先のメールアドレスを表示する（FR-023・Edge Cases）（さとこ・作）
-- [ ] T065 [US3] まとめの通知を `backend/app/jobs/digest.py` に作る：毎日 20:00（日本時間）に「1 日 1 回」、日曜 20:00 に「1 週間に 1 回」の家族へ、`get_disclosed_records` で新しい記録があるときだけまとめを作る。`digest_runs`（一意：`(family_account_id, kind, period_end)`）で 2 回送らない。止まっていたらその日のうちだけ取り戻す。`--at` で時刻を指定して動かせる（research.md R-13・quickstart.md）（さとこ・作）
-- [ ] T066 [P] [US3] テスト `backend/tests/api/test_digest.py`：同じ時刻で 2 回動かしても 1 回だけ、記録がない日は送らない、非開示の項目だけの日は送らない、worker とコマンドが重なっても 2 回送らない（SC-010）（さとこ・作）
+- [ ] T065 [US3] まとめの通知を `backend/app/jobs/digest.py` に作り、`run_jobs()` から呼ぶ：日本時間で 20:00 を過ぎて最初に呼ばれたときに、毎日「1 日 1 回」、日曜は「1 週間に 1 回」の家族へ（締めは 20:00）、`get_disclosed_records` で新しい記録があるときだけまとめを作る。`digest_runs`（一意：`(family_account_id, kind, period_end)`）で 2 回送らない。止まっていたらその日のうちだけ取り戻す。`--at` で時刻を指定して動かせる（research.md R-13・quickstart.md）（さとこ・作）
+- [ ] T066 [P] [US3] テスト `backend/tests/api/test_digest.py`：同じ時刻で 2 回動かしても 1 回だけ、記録がない日は送らない、非開示の項目だけの日は送らない、20 時台に `run_jobs()` が何度も呼ばれても 1 回だけ、`run_jobs()` と `--at` のコマンドが重なっても 2 回送らない（SC-010・research.md R-13）（さとこ・作）
 - [ ] T094 [US3] 家族の連絡帳で過去の日付を選べるようにする（日数の制限なし。過去の日の記録と返事を出す）を `frontend/src/pages/family/ContactBook.tsx` に足す（FR-019。T059 から分けた。PR #23 さとこ）（さとこ・作）
 - [ ] T095 [P] [US3] 家族の画面の単体テスト `frontend/tests/unit/ContactBook.test.tsx`（Vitest）：未記録の欄に「まだ記録されていません」が出る、未読の返事のカードが一番上に出る（FR-015・FR-017。PR #23 さとこ）（さとこ・ミ）
 
@@ -217,7 +219,8 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T089 家族の招待：`invitations`（家族だけ、7 日で切れる、1 回だけ使える）を `backend/app/models/core.py` に足し、`POST /api/admin/invitations`・`POST /api/invitations/accept`（トークンは本文で受ける、メールのリンクは `#token=`）と画面を作る。招待のメールは `email_outbox`（`invitation`）を使う（research.md R-03）（ようこ・作）
 - [ ] T090 CI（`.github/workflows/ci.yml`）に `alembic heads` が 1 つであることの確認を足す（PostgreSQL・Redis のサービスは T020 で入れる。research.md R-17）（ようこ・作）
 - [ ] T091 E2E テストを `frontend/tests/e2e/` に Playwright で作る：quickstart.md の通しの確認（記録 → 開示 → 頼む → 返事 → メール → お知らせ）と、家族が職員の画面を開けないこと（ようこ・作）
-- [ ] T092 本番デプロイ（Render）：`/api` を同じオリジンで中継する構成、https、本番のメール送信サービスとファイルの保存先の環境変数（research.md R-03・R-09・R-10）（ようこ・作）
+- [ ] T092 本番デプロイ（Render の無料のプラン）：フロントは Static Site に置き、書き換えのルールで `/api/*` をバックエンド（無料の Web Service 1 つだけ）に中継する構成（最初に、中継を通してログインの Cookie が付くかを確かめる）、https、本番のメール送信サービス（Resend。送信元のドメインの確認）とファイルの保存先の環境変数（research.md R-03・R-09・R-10）。
+  決まった時刻の処理の受け口 `POST /api/internal/jobs/run` を `backend/app/api/internal.py` に作り（`JOBS_TOKEN` が空なら登録しない。テストつき。contracts/api.md）、cron-job.org から 1 分ごとに呼ぶ設定をする（ようこ・作）
 - [ ] T093 quickstart.md の確認をすべて通し、`docs/テスト設計書.md` に結合・総合テストのシナリオと結果を書く（Constitution の課題要件のテスト）（全員・作）
 
 ---
@@ -245,7 +248,8 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 |---|---|---|
 | `CurrentUser` と役割のチェック | ようこ → 全員 | T010 → 全 API |
 | 共通の関数 3 つ | ゆう → さとこ・みさき（F） | T038・T054 → T049・T055・T065 |
-| `create_reply_notice(session, reply_id)` | さとこ → ゆう | T051 → T052 |
+| `create_reply_notice(session, reply_id)`（`email_outbox` の id を返す） | さとこ → ゆう | T051 → T052 |
+| `send_email_now(outbox_id)`（メールを 1 件だけその場で送る。返事の保存をコミットしたあとに呼ぶ） | さとこ → ゆう | T057 → T053 |
 | メールの送る予定（`email_outbox`） | さとこ → ようこ（招待） | T048・T057 → T089 |
 | 辞書と `Ruby` の部品 | みさき → 全員の画面 | T016・T017 → 全画面 |
 | アップロードの共通の処理 | さとこ → さとこ（お知らせ）・アルバム（H） | T069 → T079 |
