@@ -42,7 +42,7 @@ spec 001 では「食事量が 2 食続けて『少し（2割）』以下だっ�
 
 ## User Scenarios & Testing *(mandatory)*
 
-> E は作り込み（Day 4〜8）の機能（作業分担MTG）。最初に作るのは User Story 1。
+> E は作り込み（Day 5・10/28。作業分担MTG・docs/マイルストーン.md）の機能。最初に作るのは User Story 1。
 
 ### User Story 1 - 職員がアプリを開くと、いつもと違う様子の入居者に目印が付いている (Priority: P1)
 

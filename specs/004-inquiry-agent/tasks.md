@@ -9,7 +9,7 @@ description: "spec 004（F：問い合わせ AI エージェント）のタス�
 
 **Tests**: テストのタスクを含める（Constitution の課題要件、spec の FR-030・SC-011）。自動テストは**偽物の LLM** を使い、本物の AI を呼ばない。AI の答えの質は、評価のスクリプト（T031・T040）を手で動かして確かめる。
 
-**Organization**: User Story ごとにまとめる。各タスクの末尾に **（担当・時期）** を書く。「ミ」は Day 2〜3 のミニマム版、「作」は Day 4 以降の作り込み（[plan.md の「ミニマム版と作り込み」](./plan.md#ミニマム版と作り込み)）。
+**Organization**: User Story ごとにまとめる。各タスクの末尾に **（担当・時期）** を書く。「ミ」は Day 2〜4 のミニマム版（F の最小版は Day 2、全機能が 1 本につながるのは Day 4。docs/マイルストーン.md）、「作」は Day 5 以降の作り込み（[plan.md の「ミニマム版と作り込み」](./plan.md#ミニマム版と作り込み)）。
 担当はほとんどみさき。つなぎ目のタスクだけ、さとこ・ゆうの担当として書く。spec 001 のタスクは「001-T026」のように書く。
 
 ## Format: `[ID] [P?] [Story] Description`
@@ -35,7 +35,7 @@ US1 は、001-T038（`get_disclosed_records`）と 001-T054（`get_active_replie
 
 **⚠️ CRITICAL**: ここが終わるまで、US1・US2 の API は作り始められない
 
-- [ ] T003 OpenRouter のクライアントを `backend/app/inquiry/llm.py` に作る：`LLMClient.chat(messages, tools) -> 応答` だけを持つ。接続先 `https://openrouter.ai/api/v1`、`timeout=30`、再試行 0 回、ストリーミングなし、`tool_choice="auto"`、`parallel_tool_calls=False`、`extra_body={"provider": {"require_parameters": True}}`。つながらない・30 秒を超えたら `LLMUnavailable` を出す（research.md R-01）（みさき・ミ）
+- [ ] T003 OpenRouter のクライアントを `backend/app/inquiry/llm.py` に作る：`LLMClient.chat(messages, tools) -> 応答` だけを持つ。接続先 `https://openrouter.ai/api/v1`、`timeout=30`、再試行 0 回、ストリーミングなし、`tool_choice="auto"`、`parallel_tool_calls=False`、`extra_body={"provider": {"require_parameters": True}}`。つながらない・30 秒を超えたら `LLMUnavailable` を出す。あわせて、学校配布のキーで OpenRouter に 1 回つながり、ツール呼び出しの応答が返ることを手で確かめる（Day 1 の目標。キーは `.env` に入れ、コード・ログ・PR に出さない。自動テストでは呼ばない）（research.md R-01）（みさき・ミ）
 - [ ] T004 [P] テスト用の偽物の LLM を `backend/tests/fakes/llm.py` に作る：決まった応答（ツール呼び出し・答え）を順に返し、呼ばれた中身を記録する。テストの土台（001-T020）で、本物の `LLMClient` をこれに差し替える（FR-030・SC-011）（みさき・ミ）
 - [ ] T005 テーブルを `backend/app/models/inquiry.py` に作り、マイグレーションを足す：`inquiry_conversations`（`family_account_id` は一意）、`inquiry_messages`（`sender`：`family`／`ai`／`staff`、`body` は家族は 500 文字まで、`ai_result`：`answered`／`handed_off`／`no_record`、`source_ids` は `text[]`、`template_ids` は `bigint[]`、`note` は「100 文字まで、任意」、`response_type`：`app`／`phone`）、
   `staff_messages`（`category`：`medical`／`complaint`／`money`／`care_request`／`urgent`／`other`、`summary` は 500 文字まで、`status`：`waiting`／`answered`、`assignee_id` は渡した時点では空、`handed_at`・`reopened_at`）、`staff_message_events`、`staff_message_templates`（`code` は一意）（data-model.md）（みさき・ミ）
@@ -103,7 +103,7 @@ US1 は、001-T038（`get_disclosed_records`）と 001-T054（`get_active_replie
 - [ ] T035 [US2] 24 時間・3 日の表示：一覧で `COALESCE(reopened_at, handed_at)` から 24 時間を過ぎたものに「1 日以上待っています」、担当が空ならいちばん上に。家族の会話で 3 日を過ぎたら「お急ぎのときは、施設にお電話ください」。状態は変えない（FR-016b・research.md R-13）（みさき・作）
 - [ ] T036 [P] [US2] テスト `backend/tests/api/test_staff_messages_more.py`：電話で対応した、担当を外す・変える、苦情から変えられるのは生活相談員・施設長だけ、家族の続きで対応待ちに戻る、24 時間・3 日の判定（みさき・作）
 
-**Checkpoint**: 家族の質問が職員に渡り、職員が引き受けて返事ができる（quickstart の 4〜7。Day 3 の通しのデモ）
+**Checkpoint**: 家族の質問が職員に渡り、職員が引き受けて返事ができる（quickstart の 4〜7。Day 4 の通しのデモ）
 
 ---
 
@@ -127,9 +127,9 @@ US1 は、001-T038（`get_disclosed_records`）と 001-T054（`get_active_replie
 
 **Independent Test**: 家族で 1 日に 11 回送ると、11 回目は受け付けられず、AI も呼ばれない
 
-- [ ] T040 [US4] 1 日の回数の制限を `backend/app/inquiry/ratelimit.py` に作る：`ratelimit:inquiry:family:<家族アカウントID>:<YYYYMMDD>` と `ratelimit:inquiry:facility:<YYYYMMDD>`（日本時間・期限 2 日）を `INCR` と `EXPIRE` を同じパイプラインで行う。超えたら `DECR` で戻して 429 `inquiry_limit`。AI は呼ばない（research.md R-07、FR-024・FR-027）（みさき・作）
-- [ ] T041 [US4] AI が止まったとき：`LLMUnavailable` で 503 `ai_unavailable` を返し、回数を戻す。画面に「いまお答えできません…」を出す（FR-026）（みさき・作）
-- [ ] T042 [P] [US4] テスト `backend/tests/api/test_inquiry_limits.py`：11 回目は 429 で偽物の LLM が呼ばれない、日付が変わるとまた送れる、AI が止まったら 503 で回数に数えない（SC-009）（みさき・作）
+- [ ] T040 [US4] 1 日の回数の制限を `backend/app/inquiry/ratelimit.py` に作る：`ratelimit:inquiry:family:<家族アカウントID>:<YYYYMMDD>` と `ratelimit:inquiry:facility:<YYYYMMDD>`（日本時間・期限 2 日）を `INCR` と `EXPIRE` を同じパイプラインで行う。超えたら `DECR` で戻して 429 `inquiry_limit`。AI は呼ばない。Day 4 の通しのデモで何度も呼ぶ前に、学校の共有キーを使い切らないよう入れる（research.md R-07、FR-024・FR-027）（みさき・ミ）
+- [ ] T041 [US4] AI が止まったとき：`LLMUnavailable` で 503 `ai_unavailable` を返し、回数を戻す。画面に「いまお答えできません…」を出す。テスト `backend/tests/api/test_inquiry_limits.py` に「AI が止まったら 503 で回数に数えない」を足す（FR-026・SC-009）（みさき・作）
+- [ ] T042 [P] [US4] テスト `backend/tests/api/test_inquiry_limits.py`：11 回目は 429 で偽物の LLM が呼ばれない、日付が変わるとまた送れる（SC-009）（みさき・ミ）
 
 **Checkpoint**: 使いすぎ・止まったときの案内ができた（quickstart の確認）
 
@@ -170,15 +170,39 @@ Day 3：T024 → T025・T026・T027（T028 はさとこが並べて）→ T029�
 
 ## Implementation Strategy
 
-### ミニマム版（Day 2〜3）
+### ミニマム版（Day 2〜4）
 
-1. Phase 1・2（「ミ」）
-2. US1 → US2 の「ミ」のタスク
-3. **Day 3 の通しのデモ**：quickstart の 2〜7（家族が質問 → 記録で答える → 医療の質問は職員に渡る → 相談員が引き受けて返事 → 家族の会話に出る）
+1. Phase 1・2（「ミ」）。Day 1 に T001〜T004（AI につなぐ）と、OpenRouter の接続確認（T003）
+2. US1 → US2 の「ミ」のタスク（F の最小版は Day 2 が目標）
+3. US4 の回数の制限（T040・T042）。Day 4 の通しのデモの前に入れる
+4. **Day 4 の通しのデモ**：quickstart の 2〜7（家族が質問 → 記録で答える → 医療の質問は職員に渡る → 相談員が引き受けて返事 → 家族の会話に出る）
 
-### 作り込み（Day 4〜）
+### 作り込み（Day 5〜）
 
-- US2 の「作」→ US3（攻撃の例）→ US4（回数）→ Phase 7（モデルの比較・多言語・ログ）
+- US3（攻撃の例）→ US2 の「作」→ US4 の残り（AI が止まったとき）→ Phase 7（モデルの比較・多言語・ログ）
+
+### issue のまとまりの目安
+
+1 つの issue は 1 PR で 1,100 行以内に収まる量にする（`.claude/skills/github-workflow/SKILL.md`）。テストとその実装は同じ issue に入れる。
+
+| issue | タスク | 時期 |
+|---|---|---|
+| AI につなぐ（ライブラリ・設定・クライアント・偽物の LLM・接続確認） | T001〜T004 | ミ（Day 1） |
+| 会話のテーブルと苦情の見え方 | T005〜T007 | ミ |
+| AI への指示・言葉の決まり・定型文 | T008〜T012 | ミ |
+| ツールと自前のループ | T013・T014・T016・T017 | ミ |
+| 会話の保存と家族の API | T015・T018・T019 | ミ |
+| 家族の「質問する」画面 | T020・T021 | ミ |
+| 職員に渡す処理とメッセージの一覧の API | T022〜T025 | ミ |
+| 「自分が対応する」とアプリで返事 | T026・T027 | ミ |
+| 職員の「家族からのメッセージ」画面と評価の土台 | T029・T031 | ミ |
+| 1 日の回数の制限 | T040・T042 | ミ（Day 4 の前） |
+| 電話で対応・担当の変更・続きの書き込み・経過の表示 | T032〜T036 | 作 |
+| プロンプトインジェクションの確認 | T037〜T039（spec 006 の T023 と一緒に） | 作 |
+| AI が止まったとき | T041 | 作 |
+| 仕上げ（モデルの比較・文言・ログ・テスト設計書） | T043〜T046 | 作 |
+
+T028（さとこ）・T030（ゆう）は、それぞれの担当の issue に入れる。
 
 ## Notes
 

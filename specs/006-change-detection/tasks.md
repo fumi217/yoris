@@ -9,7 +9,7 @@ description: "spec 006（E：変化の検知）のタスク一覧"
 
 **Tests**: テストのタスクを含める（Constitution の課題要件「単体テストはテストコードを書く」、research.md R-08）。各 User Story で、テストを先に書いて失敗することを確かめてから作る。
 
-**Organization**: User Story ごとにまとめる。各タスクの末尾に **（担当）** を書く。この spec は **すべて作り込み（Day 4〜8）** で、ミニマム版（Day 1〜3）には入れない（spec の User Scenarios）。
+**Organization**: User Story ごとにまとめる。各タスクの末尾に **（担当）** を書く。この spec は **すべて作り込み（Day 5・10/28）** で、ミニマム版（Day 1〜4）には入れない（spec の User Scenarios・docs/マイルストーン.md）。
 タスク番号はこの spec の中の番号。spec 001 のタスクは **001-T026** のように書いて区別する。issue のタイトルには「spec 006」を入れる。
 issue は担当者が、ここから自分のタスクを選んで立てる（1 issue は 1 PR で 1,100 行以内に収まる量。`.claude/skills/github-workflow/SKILL.md`）。
 
@@ -209,7 +209,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 ### そのあと
 
 - US2（T016〜T018）→ US3（T019〜T021）の順。US3 は US2 と並べてもよい
-- 仕上げ（Day 9〜10）：ふりがなと多言語、AI のテストへの足し、テストシナリオ（T022〜T024）
+- 仕上げ（Day 5〜6。ふりがな・多言語は Day 5、テストは Day 6）：ふりがなと多言語、AI のテストへの足し、テストシナリオ（T022〜T024）
 
 ---
 
