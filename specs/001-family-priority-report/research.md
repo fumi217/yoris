@@ -72,11 +72,12 @@ plan.md の Technical Context と、spec の FR を作るときに決める必�
 
 ## R-06 家族に出すときの共通の関数
 
-- **決めたこと**：`backend/app/services/disclosure.py` に次の 3 つを置く（作る人はゆう。開発前MTG）。
+- **決めたこと**：`backend/app/services/disclosure.py` に次の共通の関数を置く（作る人はゆう。開発前MTG。`is_item_disclosed` は PR #44 で追加）。
   - `get_disclosed_records(resident_id, date_from, date_to, items=None)`：開示済みの、取り消していない記録。id・日付・項目・区分・値・記録した時刻・記録した職員の表示名を返す。`items` で項目を絞れる
   - `get_disclosed_themes()`：開示済みの「知りたいこと」のテーマ
+  - `is_item_disclosed(code)`：その記録項目を家族に見せる設定か。spec 007（D）の `get_disclosed_memos` が「様子のメモ」（`memo`）の判断に使う（PR #44。spec 005 の `is_feature_disclosed(code)` と同じ形で、同じ開示設定のキャッシュを読む）
   - `get_active_replies(resident_id, date_from, date_to)`：保存された返事（返事は取り消せないので、保存されたものはすべて有効）
-  **家族に出すもの（連絡帳・テーマのボタン・通知のまとめ・F の AI）は、必ずこの 3 つを通す**。職員向け（記録の見返し・E の変化の検知）は、非開示の項目も含めて直接読んでよい。
+  **家族に出すもの（連絡帳・テーマのボタン・通知のまとめ・F の AI）は、必ずここの共通の関数を通す**。職員向け（記録の見返し・E の変化の検知）は、非開示の項目も含めて直接読んでよい。
   入居者 id は、呼び出す側がログイン中の家族から決めて渡す（家族が指定した値は使わない）。
 - **理由**：非開示の記録が家族や AI に漏れないことを 1 か所で守れる（Constitution 原則 IV、SC-006）。記録の id を返すのは、F で「AI の回答がどの記録にもとづくか」を追跡するため（原則 III）。期間で取れると、AI が「最近」の質問に答えられる（AI 側で最大 7 日などに制限する）。記録した時刻は、20 時のまとめで「新しい記録があるか」を見るために使う。
 - **ほかに考えた案**：各 API がそれぞれ開示設定を見て絞る（どこか 1 つで忘れると漏れる）。
