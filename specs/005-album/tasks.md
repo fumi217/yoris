@@ -65,10 +65,10 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 ### Implementation for User Story 1
 
 - [ ] T009 [US1] 職員の API を `backend/app/api/staff/album.py` に作る：`POST /api/staff/residents/{id}/album`（`multipart/form-data`、写真 **1 枚**＋任意の `comment`。T002 の処理を通して保存し、`album_photos` に足す。載せた職員と日時を残す）、
-  `GET /api/staff/residents/{id}/album`（削除されていない写真の一覧と、`family_visible`）。役割：職員のすべて（CW・L・CO・CL・D）。422：`invalid_file`・`validation_error`（FR-001・FR-002）（さとこ）
+  `GET /api/staff/residents/{id}/album`（削除されていない写真の一覧と、`family_visible`）。役割：職員（CW・L・CO・D）。422：`invalid_file`・`validation_error`（FR-001・FR-002）（さとこ）
 - [ ] T010 [US1] 家族の API を `backend/app/api/family/album.py` に作る：`GET /api/family/album?before=&limit=`（`get_visible_album_photos` を通す。載せた日（日本時間）ごとにまとめ、1 回で最大 30 枚、`next_before` で続きを読む。アルバムを見せない設定のときは 404）、
   `GET /api/family/features`（`{ "album": true }`。開示設定の `feature` の状態だけ）。入居者は送らせず、ログイン中の家族から決める（FR-005・FR-006・FR-010）（T004 のあと）（さとこ）
-- [ ] T011 [US1] `GET /api/files/{id}` に、アルバムの写真の条件を `backend/app/api/files.py` に足す（001-T071 のあと）：職員は削除されていないものを開ける。家族は `can_family_view_photo` が真のときだけ開ける。それ以外は 404、ログインなしは 401。`Content-Type` は保存した形式に固定し、`X-Content-Type-Options: nosniff` を付ける（FR-006・FR-007・FR-022）（さとこ）
+- [ ] T011 [US1] `GET /api/files/{id}` に、アルバムの写真の条件を `backend/app/api/files.py` に足す（001-T071 のあと）：職員（CW・L・CO・D）は削除されていないものを開ける。事務員は 404。家族は `can_family_view_photo` が真のときだけ開ける。それ以外は 404、ログインなしは 401。`Content-Type` は保存した形式に固定し、`X-Content-Type-Options: nosniff` を付ける（FR-006・FR-007・FR-022）（さとこ）
 - [ ] T012 [US1] 家族のアルバムの画面を `frontend/src/pages/family/Album.tsx` に作る：載せた日ごとにサムネイルを並べ、タップで元の写真を大きく出す。コメントは**文字としてのみ**写真の下に出す（辞書を通さず、HTML として解釈しない）。「もっと見る」で続きを読む。写真がないときは「まだ写真はありません」。
   固定の文言は辞書（`frontend/src/i18n/ja.json`）から引き、ふりがなは spec 001 の R-11 の書き方にする（FR-005・FR-008・FR-021・FR-022）（さとこ）
 - [ ] T013 [US1] 家族の画面の枠に、「☰ その他」の中の「アルバム」のリンクと `/family/album` のルートを足す（`frontend/src/pages/family/` の枠。001-T019 のあと）。`GET /api/family/features` が `album: false` のときは出さない。spec 003 の面会の置き方と同じ形にする（FR-010）（さとこ）
@@ -90,13 +90,13 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T017 [P] [US2] API テスト `backend/tests/api/test_album.py`（削除）：職員（各役割）が削除できる／削除後、家族の一覧から消え、ファイルの URL（元・サムネイル）が 404／**保存先のファイルが消えている**／`album_photos` に `deleted_by`・`deleted_at` が残り、`file_id`・`thumb_file_id`・`comment` が空／
+- [ ] T017 [P] [US2] API テスト `backend/tests/api/test_album.py`（削除）：職員（CW・L・CO・D の各役割）が削除できる。事務員（CL）は 403／削除後、家族の一覧から消え、ファイルの URL（元・サムネイル）が 404／**保存先のファイルが消えている**／`album_photos` に `deleted_by`・`deleted_at` が残り、`file_id`・`thumb_file_id`・`comment` が空／
   家族のロールで削除の API を呼ぶと 403／削除済みの写真をもう一度削除しても壊れない（FR-011・FR-012）（さとこ）
 
 ### Implementation for User Story 2
 
 - [ ] T018 [US2] 削除の処理を `backend/app/services/album.py` に足す：1 つのトランザクションで `deleted_by`・`deleted_at` を入れ、`file_id`・`thumb_file_id`・`comment` を空にして `uploaded_files` の 2 行を消す。**そのあとで**保存先のファイル 2 つを消す。消せなかったときは、`storage_key` の id をログに出す（ファイル名・コメントは出さない）（research.md R-05）（さとこ）
-- [ ] T019 [US2] `DELETE /api/staff/album/{id}` を `backend/app/api/staff/album.py` に足す（役割：職員のすべて。家族のロールは 403）（FR-011）（さとこ）
+- [ ] T019 [US2] `DELETE /api/staff/album/{id}` を `backend/app/api/staff/album.py` に足す（役割：職員（CW・L・CO・D）。家族のロール・事務員は 403）（FR-011）（さとこ）
 - [ ] T020 [US2] 載せた写真の一覧と削除のボタンを `frontend/src/pages/staff/AlbumUpload.tsx` に足す（削除の前に確認を出す）。アルバムを家族に見せていないとき（`family_visible = false`）は、「いま家族には見せていません」を出す（FR-011・FR-016）（さとこ）
 
 **Checkpoint**: 削除した写真は、画面からも URL からも見えず、保存先のファイルも消える
