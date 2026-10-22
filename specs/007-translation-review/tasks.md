@@ -9,7 +9,7 @@ description: "spec 007（D：翻訳・整文・訳し戻し・承認）のタス
 
 **Tests**: テストのタスクを含める（Constitution の課題要件、FR-019・SC-007）。自動テストは spec 004 の**偽物の LLM** を使う。整える質（SC-003）は評価のスクリプト（T032）を手で動かして確かめる。
 
-**Organization**: User Story ごとにまとめる。各タスクの末尾に **（担当・時期）**。「ミ」は Day 3 のミニマム版（翻訳 1 回）、「作」は Day 4 以降。
+**Organization**: User Story ごとにまとめる。各タスクの末尾に **（担当・時期）**。「ミ」は Day 3〜4 のミニマム版（翻訳 1 回）、「作」は Day 5 の作り込み（Day は docs/マイルストーン.md の表が正。#53）。
 担当はほとんどみさき。つなぎ目のタスクだけ、ゆう・さとこの担当として書く。ほかの spec のタスクは「001-T026」「004-T003」のように書く。
 
 ## Format: `[ID] [P?] [Story] Description`
@@ -65,7 +65,7 @@ spec 004 の 004-T003（`LLMClient`）・004-T004（偽物の LLM）のあとに
 - [ ] T014 [US1] やり直しの上限：1 つのメモで `care_memo_revisions` が 5 件に達したら 409 `rewrite_limit`（research.md R-08）（みさき・作）
 - [ ] T015 [P] [US1] テスト `backend/tests/unit/test_memo_checks.py`：原文にない医療の言葉が整えた日本語にあると `medical_added`、原文に医療の言葉があると `medical_in_original`、ほかの入居者の呼び名で `other_name`、長さの大きな変化で `length_changed`。あわせて 1 日 3 件・やり直し 5 回のテスト（みさき・作）
 
-**Checkpoint**: 職員が母国語で書いて、整った日本語にできる（quickstart の 1〜3。Day 3 のデモの D の最小版）
+**Checkpoint**: 職員が母国語で書いて、整った日本語にできる（quickstart の 1〜3。Day 4 の通しのデモの D の最小版）
 
 ---
 
@@ -139,13 +139,13 @@ spec 004 の 004-T003（`LLMClient`）・004-T004（偽物の LLM）のあとに
 
 ## Implementation Strategy
 
-### ミニマム版（Day 3）
+### ミニマム版（Day 3〜4）
 
 1. T001〜T006
 2. US1 の「ミ」：T007・T009・T010・T011・T012
-3. **Day 3 の通しのデモ**：quickstart の 1〜3（母国語で書く → 日本語になる。家族にはまだ出ない）
+3. **Day 4 の通しのデモ**：quickstart の 1〜3（母国語で書く → 日本語になる。家族にはまだ出ない）
 
-### 作り込み（Day 4〜）
+### 作り込み（Day 5）
 
 - US1 の「作」（機械の目・1 日 3 件・やり直しの上限）→ US2（訳し戻しと確かめる）→ US3（承認と連絡帳）→ Polish
 

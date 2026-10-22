@@ -9,7 +9,7 @@ description: "spec 001（連絡帳・知りたいこと・通知・施設から�
 
 **Tests**: テストのタスクを含める（Constitution の課題要件「単体テストはテストコードを書く」、plan の research.md R-19）。LLM・Stripe・メールはモックにする。
 
-**Organization**: User Story ごとにまとめる。各タスクの末尾に **（担当・時期）** を書く。時期の「ミ」は Day 1〜3 のミニマム版、「作」は Day 4 以降の作り込み（[plan.md の「ミニマム版と作り込み」](./plan.md#ミニマム版と作り込み)）。
+**Organization**: User Story ごとにまとめる。各タスクの末尾に **（担当・時期）** を書く。時期の「ミ」は Day 1〜4 のミニマム版、「作」は Day 5 の作り込み（Day は docs/マイルストーン.md の表が正。#53）（[plan.md の「ミニマム版と作り込み」](./plan.md#ミニマム版と作り込み)）。
 issue は担当者が、ここから自分のタスクを選んで立てる（1 issue は 1 PR で 1,100 行以内に収まる量。`.claude/skills/github-workflow/SKILL.md`）。
 
 ## Format: `[ID] [P?] [Story] Description`
@@ -58,6 +58,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T021 [P] テスト `backend/tests/api/test_dev_switch.py`：`APP_ENV` を付けない設定で `POST /api/dev/switch-user` が 404 になる（research.md R-02）（ようこ・ミ）
 - [ ] T022 本物のログインを `backend/app/auth/routes.py` に作る：`POST /api/auth/login`（職員は ID、家族はメールアドレス、bcrypt）、`POST /api/auth/logout`（セッションをすぐ消す）、`GET /api/me`。セッションは Redis（`session:<ランダムなID>`）、Cookie は `HttpOnly`・`Secure`（本番）・`SameSite=Lax`（research.md R-01・R-03）（ようこ・ミ・Day 2）
 - [ ] T023 [P] テスト `backend/tests/api/test_auth.py`：職員は ID、家族はメールアドレスでログインできる。家族が職員の API を呼ぶと 403。ログアウトでセッションが消える（ようこ・ミ）
+- [ ] T096 [P] 画面設計 `docs/画面設計.md` を作る：画面の一覧と遷移、職員の入居者一覧に出すもの（未記録・返事待ち・家族からのメッセージ・承認待ち・目印）の並べ方と置き場所、記録の画面に並ぶ部品（E の目印・D の「様子のメモを書く」・H の「写真を載せる」）の並べ方も決める（spec 006 の Assumptions、PR #40・#45）（ゆう・ミ）
 
 **Checkpoint**: 土台ができた。User Story ごとの作業を並べて始められる
 
@@ -232,7 +233,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - **Setup（Phase 1）**：最初に。ようこが Day 1 の午前に進める
 - **Foundational（Phase 2）**：Setup のあと。T009（共通のテーブル）・T010（ログイン中の人）・T015（初期データ）ができると、各 User Story の API を始められる。T022（本物のログイン）は Day 2 で、それまでは T013（ユーザー切り替え）で進める
 - **User Story（Phase 3〜7）**：Foundational のあと。担当が分かれているので、US1・US2・US4 は並べて進められる
-- **Polish（Phase 8）**：ミニマム版の通しのデモ（Day 3）のあと
+- **Polish（Phase 8）**：ミニマム版の通しのデモ（Day 4）のあと
 
 ### User Story のつながり
 
@@ -275,7 +276,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ようこは T001・T002・T003（フロントのひな形と ESLint＝T005 を含む）を朝いちばんに作り、T012 は T010 と一緒に入れる。T018・T019 もようこが持つ（PR #23 ようこ）。
 
-### User Story 3（Day 2〜3）
+### User Story 3（Day 2〜4）
 
 ```text
 並べて進める：T043（さとこ）・T044（ゆう）・T045（さとこ）のテスト
@@ -288,18 +289,18 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ## Implementation Strategy
 
-### ミニマム版（Day 1〜3）
+### ミニマム版（Day 1〜4）
 
 1. Phase 1・2（「ミ」のタスク）
 2. US1・US2・US3 の「ミ」のタスク
-3. **Day 3 の終わりに通しのデモ**：quickstart.md の 1〜9（職員が記録 → 開示 → 家族が頼む → 職員が返事 → メールが届く）。F（AI）・J（決済）は別の spec で同じ日にミニマム版を動かす（Constitution 原則 V）
+3. **Day 4 の終わりに通しのデモ**：quickstart.md の 1〜9（職員が記録 → 開示 → 家族が頼む → 職員が返事 → メールが届く）。F（AI）・J（決済）は別の spec で同じ日にミニマム版を動かす（Constitution 原則 V）
 
-### 作り込み（Day 4〜8）
+### 作り込み（Day 5）
 
 - 「作」のタスクを、担当ごとの優先順位で進める。さとこは「返事のお知らせ → 通知設定とまとめ → ファイルの共通の処理 → 施設からのお知らせ（献立表の投稿も含む）」の順（plan.md）
 - 各 User Story の Checkpoint で、quickstart.md の該当する確認を通してから次へ進む
 
-### 仕上げ（Day 9〜10）
+### 仕上げ（Day 5〜6）
 
 - Phase 8 のふりがな・多言語の仕上げ、E2E、テストシナリオの実施（T093）、本番デプロイの確認
 

@@ -9,7 +9,7 @@ description: "spec 003（面会予約）のタスク一覧"
 
 **Tests**: テストのタスクを含める（Constitution の課題要件「単体テストはテストコードを書く」、research.md R-09）。各 User Story で、テストを先に書いて失敗することを確かめてから作る。メールはモックにする。
 
-**Organization**: User Story ごとにまとめる。各タスクの末尾に **（担当・時期）** を書く。時期の「ミ」は Day 1〜3 のミニマム版、「作」は Day 4 以降の作り込み（[plan.md の「ミニマム版と作り込み」](./plan.md#ミニマム版と作り込み)）。
+**Organization**: User Story ごとにまとめる。各タスクの末尾に **（担当・時期）** を書く。時期の「ミ」は Day 1〜4 のミニマム版、「作」は Day 5 の作り込み（Day は docs/マイルストーン.md の表が正。#53）（[plan.md の「ミニマム版と作り込み」](./plan.md#ミニマム版と作り込み)）。
 タスク番号はこの spec の中の番号。spec 001 のタスクは **001-T009** のように書いて区別する。
 issue は担当者が、ここから自分のタスクを選んで立てる（1 issue は 1 PR で 1,100 行以内に収まる量。`.claude/skills/github-workflow/SKILL.md`）。
 
@@ -79,7 +79,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T013 [P] [US1] Vitest `frontend/tests/unit/VisitBooking.test.tsx`：`selectable: false` の開始時刻が押せない、`mine: true` の日は「予約済み」と出る（research.md R-09）（ゆう・ミ）
 - [ ] T014 [US1] 家族の画面の枠（001-T019）に、面会の予約の画面へのルート（例：`/family/visits`）を足し、「☰ その他」のメニューの中に「面会」を足す（家族の画面のメニューは、下に連絡帳・知りたいこと・お知らせの 3 つ、そのほかは「☰ その他」。spec 001 の Clarifications、PR #29）。連絡帳（ホーム）の画面は触らない。家族の画面のほかのファイルは触らない（plan.md の Structure Decision）。メニューの枠は、ようこ（001-T019）が作る（ゆう・ミ。001-T019 の担当のようこと相談）
 
-**Checkpoint**: quickstart.md の 1〜9 が通る。ここまでが Day 3 の通しのデモに入る
+**Checkpoint**: quickstart.md の 1〜9 が通る。ここまでが Day 4 の通しのデモに入る
 
 ---
 
@@ -175,9 +175,9 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 ### Phase の順番
 
 - **Phase 2（Foundational）**：spec 001 の 001-T009・001-T010・001-T012・001-T015 のあと。T001 のあとに T004、T002・T003 は並べて進められる
-- **Phase 3（US1）**：Phase 2 のあと。ミニマム版（Day 3 まで）
-- **Phase 4〜6（US2〜US4）**：US1 のあと。作り込み（Day 4 以降）。US2・US3 は並べて進められる。US4 は T030（さとこ）が先
-- **Phase 7（Polish）**：Day 3 の通しのデモのあと
+- **Phase 3（US1）**：Phase 2 のあと。ミニマム版（Day 4 まで）
+- **Phase 4〜6（US2〜US4）**：US1 のあと。作り込み（Day 5）。US2・US3 は並べて進められる。US4 は T030（さとこ）が先
+- **Phase 7（Polish）**：Day 4 の通しのデモのあと
 
 ### User Story のつながり
 
@@ -211,7 +211,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ## Parallel Example
 
-### User Story 1（Day 2〜3）
+### User Story 1（Day 2〜4）
 
 ```text
 並べて進める（テスト）：T005・T006・T007
@@ -219,7 +219,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 順番に進める          ：T008 → T009 → T010 → T011 → T014
 ```
 
-### 作り込み（Day 4 以降）
+### 作り込み（Day 5）
 
 ```text
 並べて進める：US2（T015〜T018）と US3（T019〜T027）
@@ -230,18 +230,18 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ## Implementation Strategy
 
-### ミニマム版（Day 1〜3）
+### ミニマム版（Day 1〜4）
 
 1. Phase 2（T001〜T004。spec 001 の土台のあと）
 2. Phase 3（US1：T005〜T014）
-3. **Day 3 の通しのデモ**：quickstart.md の 1〜7（家族 A が予約 → 家族 B から重なる時刻が選べない → 2 組で満員）。同時の予約（8・9）はテストで見せる
+3. **Day 4 の通しのデモ**：quickstart.md の 1〜7（家族 A が予約 → 家族 B から重なる時刻が選べない → 2 組で満員）。同時の予約（8・9）はテストで見せる
 
-### 作り込み（Day 4〜8）
+### 作り込み（Day 5）
 
 - US2 → US3 → US4 の順。US4 はさとこの T030 ができてから
 - 各 User Story の Checkpoint で、quickstart.md の該当する確認を通してから次へ進む
 
-### 仕上げ（Day 9〜10）
+### 仕上げ（Day 5〜6）
 
 - Phase 7 のふりがな、E2E、テスト設計書、quickstart の通し
 

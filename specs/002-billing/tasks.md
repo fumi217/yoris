@@ -9,7 +9,7 @@ description: "spec 002（J：システム利用料）のタスク一覧"
 
 **Tests**: テストのタスクを含める（Constitution の課題要件「単体テストはテストコードを書く」、research.md R-11）。Stripe はモックにし、鍵を使わない。
 
-**Organization**: User Story ごとにまとめる。担当はすべてようこなので、各タスクの末尾には **時期** だけを書く。「ミ」は Day 1〜3 のミニマム版、「作」は Day 4 以降の作り込み（[plan.md の「ミニマム版と作り込み」](./plan.md#ミニマム版と作り込み)）。
+**Organization**: User Story ごとにまとめる。担当はすべてようこなので、各タスクの末尾には **時期** だけを書く。「ミ」は Day 1〜4 のミニマム版、「作」は Day 5 の作り込み（Day は docs/マイルストーン.md の表が正。#53）（[plan.md の「ミニマム版と作り込み」](./plan.md#ミニマム版と作り込み)）。
 spec 001 のタスクは「001-T009」のように書く（[spec 001 の tasks.md](../001-family-priority-report/tasks.md)）。issue のタイトルには「spec 002」を入れ、spec 001 の T 番号と区別する。
 
 ## Format: `[ID] [P?] [Story] Description`
@@ -88,7 +88,7 @@ spec 001 のタスクは「001-T009」のように書く（[spec 001 の tasks.m
 - [ ] T031 [US1] 申し込みの回数の制限：Redis の `ratelimit:signup:<接続元>`（期限つき）で、短い時間に何度も申し込まれたら 429 `too_many_attempts`。テストを T014 に足す（FR-027）（作）
 - [ ] T032 [US1] 申し込み直し `POST /api/admin/billing/checkout` を `backend/app/api/admin/billing.py` に足す：解約済みのときだけ、施設の `stripe_customer_id` で Checkout Session を作り、`open_checkout_session_id` が期限内ならその URL を返す（施設長と事務員が同時に押しても同じ画面）。それ以外は 409 `already_subscribed`。`checkout.session.completed` の処理（T019）で、申し込み直しのときは契約を結び直す。画面の「申し込む」ボタンを T026 に足す（US1 のシナリオ 6・8、FR-013、R-10）（作）
 
-**Checkpoint**: 申し込みページから払うと「契約中」になる。Day 3 の通しのデモの J の部分ができる
+**Checkpoint**: 申し込みページから払うと「契約中」になる。Day 4 の通しのデモの J の部分ができる
 
 ---
 
@@ -138,7 +138,7 @@ spec 001 のタスクは「001-T009」のように書く（[spec 001 の tasks.m
 - **Foundational（Phase 2）**：spec 001 の 001-T009・001-T010・001-T014 が main に入ってから。T005〜T013 が終わると、US1 を始められる
 - **US1（Phase 3）**：Foundational のあと。ミニマム版は T014〜T028
 - **US2・US3（Phase 4・5）**：US1 のあと（契約ができていないと確かめられない）。US2 と US3 は並べて進められる
-- **Polish（Phase 6）**：ミニマム版の通しのデモ（Day 3）のあと
+- **Polish（Phase 6）**：ミニマム版の通しのデモ（Day 4）のあと
 
 ### spec 001 とのつながり（すべてようこ自身）
 
@@ -184,20 +184,20 @@ Day 2 の午後：T009 → T010・T011（並べて）→ T014・T015・T016（�
 
 ## Implementation Strategy
 
-### ミニマム版（Day 1〜3）
+### ミニマム版（Day 1〜4）
 
 1. Setup と Foundational（T001〜T013）。spec 001 の基盤のタスクと一緒に進める
 2. US1 の「ミ」のタスク（T014〜T028）
-3. **Day 3 の通しのデモ**：空の DB で申し込む → 払う → ID でログイン → 「契約中」→ 初期データを入れて spec 001 のデモへ（quickstart.md）
+3. **Day 4 の通しのデモ**：空の DB で申し込む → 払う → ID でログイン → 「契約中」→ 初期データを入れて spec 001 のデモへ（quickstart.md）
 
 いちばん詰まりやすいのは、Webhook を手元で受けるところ（Stripe CLI と署名の秘密）。Day 1 の空き時間に T003・T004 を済ませ、知らせが届くことだけでも先に確かめておく。
 
-### 作り込み（Day 4〜8）
+### 作り込み（Day 5）
 
 - US1 の「作」（T029〜T032）→ US2（T033〜T036）→ US3（T037〜T039）の順。ID を書いたメール（T029）は、さとこの `email_outbox` ができてから
 - 遅れそうなときは、US3 を後回しにする（決済の MUST は US1 で満たせる）
 
-### 仕上げ（Day 9〜10）
+### 仕上げ（Day 5〜6）
 
 - 制限付きの鍵、ふりがなと多言語、本番の Webhook、テストシナリオ（T040〜T043）
 

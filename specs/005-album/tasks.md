@@ -9,7 +9,7 @@ description: "spec 005（アルバム）のタスク一覧"
 
 **Tests**: テストのタスクを含める（Constitution の課題要件「単体テストはテストコードを書く」、research.md R-08）。各 User Story で、テストを先に書いて失敗することを確かめてから作る。
 
-**Organization**: User Story ごとにまとめる。各タスクの末尾に **（担当）** を書く。この spec は **すべて作り込み（Day 4〜8）** で、ミニマム版（Day 1〜3）には入れない（Clarifications）。
+**Organization**: User Story ごとにまとめる。各タスクの末尾に **（担当）** を書く。この spec は **すべて作り込み（Day 5）** で、ミニマム版（Day 1〜4）には入れない（Day は docs/マイルストーン.md の表が正。#53）（Clarifications）。
 タスク番号はこの spec の中の番号。spec 001 のタスクは **001-T069** のように書いて区別する。
 issue は担当者が、ここから自分のタスクを選んで立てる（1 issue は 1 PR で 1,100 行以内に収まる量。`.claude/skills/github-workflow/SKILL.md`）。
 
@@ -191,26 +191,26 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ## Parallel Example
 
-### Phase 2（Day 4）
+### Phase 2（Day 5）
 
 - T001（`models/album.py`）、T002（`uploads.py`）、T003（`disclosure.py`・ゆう）、T005（`tests/helpers/images.py`）は並べて進められる。T004 は T001・T003 のあと
 
-### User Story 1（Day 4〜5）
+### User Story 1（Day 5）
 
 - T006・T007・T008（テスト）は並べて書ける
 - T009（職員の API）と T012（家族の画面）は、T004 のあとなら並べて作れる
 
-### 作り込み（Day 5〜8）
+### US2・US3（Day 5）
 
 - US2（T017〜T020）と US3 のゆうの作業（T022・T023）は並べて進められる
 
 ## Implementation Strategy
 
-### ミニマム版（Day 1〜3）
+### ミニマム版（Day 1〜4）
 
 この spec は入れない。
 
-### 作り込み（Day 4〜8）
+### 作り込み（Day 5）
 
 1. Phase 2（T001〜T005）：テーブル・写真の処理・開示設定の「アルバム」・共通の関数
 2. US1（T006〜T016）：載せる・見る。**ここまでで、デモ（SC-008）ができる**
@@ -218,7 +218,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 4. US3（T021〜T024）：開示設定
 5. US4（T025〜T029）：通知（なくても写真は見られるので、最後に作る）
 
-### 仕上げ（Day 9〜10）
+### 仕上げ（Day 5〜6）
 
 - Phase 7（T030〜T035）：テスト、デモ用の写真、通しの確認
 
