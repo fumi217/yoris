@@ -24,13 +24,13 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 **Purpose**: リポジトリの骨組みを作り、全員が `docker compose up` で動かせるようにする
 
-- [ ] T001 `docker-compose.yml` に frontend・backend・worker・db（PostgreSQL）・redis・mailpit を定義する。worker は backend と同じイメージを `python -m app.jobs.worker` で起動する。redis は `maxmemory-policy volatile-lru` にする（research.md R-12）（ようこ・ミ）
-- [ ] T002 バックエンドのひな形を作る：`backend/app/main.py`（FastAPI）、`backend/app/config.py`（環境変数。`APP_ENV` が未設定なら production 扱い）、依存は `backend/requirements.txt`・`backend/requirements-dev.txt`（CI がこの名前を見る）（ようこ・ミ）
-- [ ] T003 フロントエンドのひな形を作る：Vite ＋ React ＋ TypeScript、React Router、TanStack Query、Tailwind CSS。`frontend/vite.config.ts` で `/api` をバックエンドへ中継する（同じオリジン。research.md R-03）。`frontend/package-lock.json` をコミットする（ようこ・ミ）
-- [ ] T004 Alembic を `backend/alembic/` に用意し、`docker compose exec backend alembic upgrade head` で動くようにする（research.md R-17）（ようこ・ミ）
-- [ ] T005 [P] lint・format を設定する：`backend/pyproject.toml`（ruff）、`frontend/eslint.config.js`（ようこ・ミ）
+- [X] T001 `docker-compose.yml` に frontend・backend・worker・db（PostgreSQL）・redis・mailpit を定義する。worker は backend と同じイメージを `python -m app.jobs.worker` で起動する。redis は `maxmemory-policy volatile-lru` にする（research.md R-12）（ようこ・ミ）
+- [X] T002 バックエンドのひな形を作る：`backend/app/main.py`（FastAPI）、`backend/app/config.py`（環境変数。`APP_ENV` が未設定なら production 扱い）、依存は `backend/requirements.txt`・`backend/requirements-dev.txt`（CI がこの名前を見る）（ようこ・ミ）
+- [X] T003 フロントエンドのひな形を作る：Vite ＋ React ＋ TypeScript、React Router、TanStack Query、Tailwind CSS。`frontend/vite.config.ts` で `/api` をバックエンドへ中継する（同じオリジン。research.md R-03）。`frontend/package-lock.json` をコミットする（ようこ・ミ）
+- [X] T004 Alembic を `backend/alembic/` に用意し、`docker compose exec backend alembic upgrade head` で動くようにする（research.md R-17）（ようこ・ミ）
+- [X] T005 [P] lint・format を設定する：`backend/pyproject.toml`（ruff）、`frontend/eslint.config.js`（ようこ・ミ）
 - [ ] T006 [P] ログの出し方を `backend/app/logging.py` に作る：structlog、開発は読みやすい形式、本番は JSON で INFO 以上。氏名・メールアドレス・記録の値・返事の文・お知らせの本文・招待のトークンは出さず id だけ出す（FR-027・research.md R-18）（ようこ・ミ）
-- [ ] T007 [P] `env.example` に環境変数のキー名を足す：`APP_ENV`・`DATABASE_URL`・`REDIS_URL`・`MAIL_TRANSPORT`（`smtp`／`resend`）・`SMTP_HOST`・`SMTP_PORT`・`RESEND_API_KEY`・`MAIL_FROM`・`APP_BASE_URL`・`UPLOAD_DIR`・`OPENROUTER_API_KEY`・`OPENROUTER_MODEL`・`JOBS_TOKEN`（値は書かない。research.md R-09）（ようこ・ミ）
+- [X] T007 [P] `env.example` に環境変数のキー名を足す：`APP_ENV`・`DATABASE_URL`・`REDIS_URL`・`MAIL_TRANSPORT`（`smtp`／`resend`）・`SMTP_HOST`・`SMTP_PORT`・`RESEND_API_KEY`・`MAIL_FROM`・`APP_BASE_URL`・`UPLOAD_DIR`・`OPENROUTER_API_KEY`・`OPENROUTER_MODEL`・`JOBS_TOKEN`（値は書かない。research.md R-09）（ようこ・ミ）
 
 ---
 
@@ -40,8 +40,8 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 **⚠️ CRITICAL**: ここが終わるまで、各 User Story の API は作り始められない（画面のひな形は並べて進めてよい）
 
-- [ ] T008 DB のセッションを `backend/app/db.py` に作る（SQLAlchemy 2）（ようこ・ミ）
-- [ ] T009 共通のテーブルを `backend/app/models/core.py` に作り、マイグレーションを足す：`facilities`、`users`（`kind`：`staff`／`family`、職員は `login_id`、家族は `email`、`password_hash`、`language`：`ja`／`id`／`en` 初期値 `ja`）、`residents`、`staff`（`role`：`care_worker`／`leader`／`counselor`／`clerk`／`director`、`display_name`）、`family_accounts`（`resident_id` は一意＝入居者に 1 つ）（data-model.md）（ようこ・ミ）
+- [X] T008 DB のセッションを `backend/app/db.py` に作る（SQLAlchemy 2）（ようこ・ミ）
+- [X] T009 共通のテーブルを `backend/app/models/core.py` に作り、マイグレーションを足す：`facilities`、`users`（`kind`：`staff`／`family`、職員は `login_id`、家族は `email`、`password_hash`、`language`：`ja`／`id`／`en` 初期値 `ja`）、`residents`、`staff`（`role`：`care_worker`／`leader`／`counselor`／`clerk`／`director`、`display_name`）、`family_accounts`（`resident_id` は一意＝入居者に 1 つ）（data-model.md）（ようこ・ミ）
 - [ ] T010 ログイン中の人（`CurrentUser`：user_id・kind・role・resident_id・language）と、役割のチェック（`require_family`・`require_staff(roles)`）を `backend/app/auth/deps.py` に作る（ようこ・ミ）
 - [ ] T011 [P] Redis の接続を `backend/app/redis.py` に作る。キーには用途の接頭辞を付け、必ず期限を付ける決まりをコメントに書く（research.md R-12）（ようこ・ミ）
 - [ ] T012 [P] エラーの形（`{"error": {"code", "message_key"}}`）とコード（`not_logged_in`・`forbidden`・`not_found`・`request_limit`・`theme_waiting`・`already_replied`・`request_cancelled`・`not_today`・`invalid_file`・`validation_error`）を `backend/app/errors.py` に作る（contracts/api.md）（ようこ・ミ）
