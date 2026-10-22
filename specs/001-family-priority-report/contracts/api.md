@@ -22,7 +22,7 @@
 
 | HTTP | code | いつ | spec |
 |---|---|---|---|
-| 401 | `not_logged_in` | ログインしていない（ファイルの URL を直接開いたときも） | FR-033・FR-034 |
+| 401 | `not_logged_in` | ログインしていない（ファイルの URL を直接開いたときも） | FR-034 |
 | 429 | `too_many_attempts` | ログインの試行回数が多すぎる（作り込み） | research.md R-03 |
 | 403 | `forbidden` | 役割がない（家族が職員・管理画面の API を呼んだ、など） | FR-024 |
 | 404 | `not_found` | ほかの家族のもの・ないものを id で指定した（存在するかどうかも知らせない。下の「家族の画面」の決まり） | FR-020 |
@@ -31,7 +31,7 @@
 | 409 | `already_replied` | ほかの職員が先に返事した | FR-030 |
 | 409 | `request_cancelled` | 家族がリクエストを取り消していた | Edge Cases |
 | 409 | `not_today` | 当日ではない記録・返事を直そうとした | FR-030・Edge Cases |
-| 422 | `invalid_file` | 形式が PDF・JPG・PNG でない、10MB を超える | FR-004・FR-034 |
+| 422 | `invalid_file` | 形式が PDF・JPG・PNG でない、10MB を超える | FR-034 |
 | 422 | `validation_error` | 文字数（返事 100、タイトル 40、本文 1,000）など | FR-030・FR-034 |
 
 ### 役割の略号
@@ -65,7 +65,7 @@
 |---|---|---|---|---|
 | `GET /api/staff/residents?date=` | CW・L・CO・D | ミ | 入居者の一覧。食事区分ごとの記録済み／未記録、返事待ちのリクエストの件数 | FR-008・FR-029 |
 | `GET /api/staff/residents/{id}/contact-book?date=` | CW・L・CO・D | ミ | その日の記録と返事を時刻順に（非開示も含む。職員向け） | FR-024 |
-| `PUT /api/staff/residents/{id}/records` | CW・L・CO・D | ミ | 記録する・押し直す（`date`・`item`・`slot`・`value`、食事は任意で `note`（100 文字まで）） | FR-001・FR-002・FR-005・FR-022・FR-035 |
+| `PUT /api/staff/residents/{id}/records` | CW・L・CO・D | ミ | 記録する・押し直す（`date`・`item`・`slot`・`value`） | FR-001・FR-002・FR-005・FR-022 |
 | `DELETE /api/staff/records/{record_id}` | CW・L・CO・D | 作 | 当日中に取り消す | Edge Cases |
 | `GET /api/staff/residents/{id}/requests` | CW・L・CO・D | ミ | 返事待ちのリクエスト（テーマ・送られた日・日数・定型文の一覧） | FR-029 |
 | `POST /api/staff/requests/{id}/reply` | CW・L・CO・D | ミ | 返事をする（`template_ids`・`note`）。409：`already_replied`・`request_cancelled` | FR-030 |
@@ -85,7 +85,7 @@ API の名前は開発前MTG に合わせて `contact-book`（連絡帳）にす
 
 | メソッド・パス | 役割 | 時期 | 中身 | spec |
 |---|---|---|---|---|
-| `GET /api/family/contact-book?date=` | F | ミ | その日の連絡帳。まだ読んでいない返事を（日付に関わらず）先頭に、開示済みの記録（食事 → 機嫌・様子 → 眠り）、未記録の欄、その月の献立表があるか | FR-015・FR-017・FR-019・FR-033 |
+| `GET /api/family/contact-book?date=` | F | ミ | その日の連絡帳。まだ読んでいない返事を（日付に関わらず）先頭に、開示済みの記録（食事 → 機嫌・様子 → 眠り）、未記録の欄 | FR-015・FR-017・FR-019 |
 | `GET /api/family/themes` | F | ミ | 頼めるテーマ（`get_disclosed_themes` を通す） | FR-013 |
 | `GET /api/family/requests` | F | ミ | 送ったリクエスト（状態・送った日時・日数・3 日たったか） | FR-014 |
 | `POST /api/family/requests` | F | ミ | テーマを選んで送る（`theme_id`）。409：`request_limit`・`theme_waiting` | FR-013・FR-014 |
@@ -96,15 +96,13 @@ API の名前は開発前MTG に合わせて `contact-book`（連絡帳）にす
 | `GET /api/family/notification-settings` | F | 作 | 通知設定と送り先のメールアドレス | FR-023 |
 | `PUT /api/family/notification-settings` | F | 作 | 通知設定を変える（`notify_reply`・`notify_items`・`frequency`） | FR-023 |
 | `GET /api/family/announcements/{id}` | F | 作 | 施設からのお知らせの本文と添付 | FR-034 |
-| `GET /api/family/menus/{year_month}` | F | ミ | その月の献立表（ないときは `404`、画面で「まだ登録されていません」） | FR-033 |
 
 - id で指定する API（`requests/{id}`・`replies/{id}`・`notifications/{id}`・`announcements/{id}`）は、ログイン中の家族のものかを必ず確かめる（id は連番で推測できるため。ほかの家族のものは 404）。
 
-## 献立表・施設からのお知らせ（さとこ）
+## 施設からのお知らせ（さとこ。毎月の献立表も、お知らせの添付で出す）
 
 | メソッド・パス | 役割 | 時期 | 中身 | spec |
 |---|---|---|---|---|
-| `PUT /api/admin/menus/{year_month}` | CL・CO・D | ミ | 献立表をアップロードする（あれば置き換え）。422：`invalid_file` | FR-004 |
 | `GET /api/admin/announcements` | CL・CO・D | 作 | 投稿したお知らせの一覧 | FR-034 |
 | `POST /api/admin/announcements` | CL・CO・D | 作 | 投稿する（`title`・`body`・ファイル 1 つまで）。全家族にお知らせとメールの送る予定を作る | FR-034 |
 | `DELETE /api/admin/announcements/{id}` | CL・CO・D | 作 | 取り消す（だれが投稿したものでも） | FR-034 |
@@ -113,7 +111,7 @@ API の名前は開発前MTG に合わせて `contact-book`（連絡帳）にす
 
 | メソッド・パス | 役割 | 時期 | 中身 | spec |
 |---|---|---|---|---|
-| `GET /api/files/{id}` | ログイン中の家族・職員 | ミ | ファイルを返す。ログインしていなければ 401、取り消したお知らせの添付は 404。`Content-Type` 固定、`X-Content-Type-Options: nosniff`。PDF は Day 3 の確認しだいで `Content-Disposition: attachment`（R-10） | FR-025・FR-033・FR-034 |
+| `GET /api/files/{id}` | ログイン中の家族・職員 | 作 | ファイルを返す。ログインしていなければ 401、取り消したお知らせの添付は 404。`Content-Type` 固定、`X-Content-Type-Options: nosniff`。PDF は Day 3 の確認しだいで `Content-Disposition: attachment`（R-10） | FR-025・FR-034 |
 
 ## メール（worker）
 

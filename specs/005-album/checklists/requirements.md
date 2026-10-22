@@ -32,4 +32,4 @@
 ## Notes
 
 - `[NEEDS CLARIFICATION]` は 0 件。決めきれていない点は、Assumptions に「clarify・plan で決める」と書いた（通知のまとめ方・頻度との関係 = FR-018、サムネイル・保存先 = plan）。
-- spec 001 の用語（`uploaded_files`・Exif・URL）への参照は、既存の決定への参照として残した（FR-004）。新しい実装の指定はしていない。
+- spec 001 の用語（`uploaded_files`・Exif・URL）への参照は、既存の決定への参照として残した（FR-034）。新しい実装の指定はしていない。

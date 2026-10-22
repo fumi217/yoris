@@ -27,8 +27,7 @@ PR #17 のレビューを反映している。列の名前や型は、実装の�
 | `replies` | 職員の返事 | ゆう | ミニマム | FR-030 |
 | `notifications` | 家族のお知らせ一覧（アプリ内） | さとこ | ミニマム（返事のお知らせ） | FR-023・FR-034 |
 | `email_outbox` | メールの送る予定 | さとこ | ミニマム（返事のメール） | FR-023（[research.md R-09](./research.md#r-09-メールとアプリ内のお知らせの送り方)） |
-| `uploaded_files` | アップロードしたファイル（共通） | さとこ | ミニマム（ローカル保存、形式と大きさの確認だけ） | FR-004・FR-034（R-10） |
-| `monthly_menus` | 月ごとの献立表 | さとこ | ミニマム | FR-004・FR-033 |
+| `uploaded_files` | アップロードしたファイル（お知らせの添付・アルバム。共通） | さとこ | 作り込み（ローカル保存、形式と大きさの確認だけ） | FR-034（R-10） |
 | `notification_settings` | 通知設定 | さとこ | 作り込み | FR-023 |
 | `digest_runs` | まとめを作った記録（2 回送らないため） | さとこ | 作り込み | FR-023（R-13） |
 | `facility_announcements` | 施設からのお知らせ | さとこ | 作り込み | FR-034 |
@@ -118,7 +117,6 @@ CurrentUser:
 | item | text | `meal`（食事量）／`mood`（機嫌・様子）／`sleep`（眠り） |
 | slot | text | 食事：`breakfast`／`lunch`／`dinner`／`snack`。機嫌・眠り：`day` |
 | value | text | 下の表 |
-| note | text | 備考（100 文字まで、任意）。食事のときだけ使う（代替メニューなど。FR-035）。辞書を通さずそのまま出す |
 | recorded_by | bigint → staff | |
 | recorded_at | timestamptz | |
 | deleted_at | timestamptz | 当日中に取り消したら入れる |
@@ -131,7 +129,7 @@ CurrentUser:
 | sleep | `good`（よく眠れた）／`normal`（いつもどおり）／`poor`（あまり眠れなかった） |
 
 - **一意**：`(resident_id, date, item, slot) WHERE deleted_at IS NULL`（部分インデックス。取り消したあとに記録し直せる。[research.md R-04](./research.md#r-04-記録のテーブルを-1-つにまとめる)）
-- 押し直したら `value`・`note` を上書きし、前の値を `care_record_histories` に残す（FR-005）。
+- 押し直したら `value` を上書きし、前の値を `care_record_histories` に残す（FR-005）。
 - 取り消し・修正できるのは、`date` が今日（日本時間）の記録だけ（エッジケース）。
 - 画面に出す文言は、`value` のコードから辞書で引く（[research.md R-11](./research.md#r-11-多言語とふりがな)）。
 
@@ -141,7 +139,6 @@ CurrentUser:
 | id | bigint | |
 | care_record_id | bigint → care_records | |
 | old_value / new_value | text | 取り消しは `new_value` を空にする |
-| old_note / new_note | text | 備考の変更（食事のときだけ） |
 | changed_by | bigint → staff | |
 | changed_at | timestamptz | |
 
@@ -176,7 +173,6 @@ CurrentUser:
 | updated_by / updated_at | | |
 
 - **一意**：`(facility_id, target_type, target_code)`
-- 献立表は記録項目ではないので、ここには入れない（常に見せる。FR-009）。
 - 共通の関数 3 つは、開示設定を Redis のキャッシュ（`cache:disclosure:<施設ID>`、期限 5 分）から読む。**開示設定を保存したら、そのキャッシュを必ず消す**。
   家族の連絡帳（組み立て結果）はキャッシュしない（[research.md R-12](./research.md#r-12-redis-の使い道課題要件のキャッシュサーバー)、開発前MTG の決定事項）。
 
@@ -297,7 +293,7 @@ CurrentUser:
 
 - **一意**：`(family_account_id, kind, period_end)`（同じまとめを 2 回送らない。[research.md R-13](./research.md#r-13-1-日-1-回1-週間に-1-回のまとめ)）
 
-## ファイル・献立表・施設からのお知らせ（さとこ）
+## ファイル・施設からのお知らせ（さとこ）
 
 ### `uploaded_files`
 | 列 | 型 | 説明 |
@@ -306,20 +302,9 @@ CurrentUser:
 | storage_key | text | 保存先の中の名前（推測できないランダムな文字列） |
 | content_type | text | `application/pdf`／`image/jpeg`／`image/png`（先頭のバイトで確かめた形式） |
 | size_bytes | int | 10MB まで |
-| purpose | text | `menu`／`announcement`（あとで `album`） |
+| purpose | text | `announcement`（お知らせの添付。毎月の献立表も、これで出す）／`album`（spec 005） |
 | uploaded_by | bigint → staff | |
 | uploaded_at | timestamptz | |
-
-### `monthly_menus`
-| 列 | 型 | 説明 |
-|---|---|---|
-| id | bigint | |
-| facility_id | bigint → facilities | |
-| year_month | text | `2026-11` |
-| file_id | bigint → uploaded_files | アップロードし直したら新しいファイルに置き換える |
-| uploaded_by / uploaded_at | | |
-
-- **一意**：`(facility_id, year_month)`
 
 ### `facility_announcements`（作り込み）
 | 列 | 型 | 説明 |
@@ -336,7 +321,6 @@ CurrentUser:
 
 | ファイル | 開ける人 |
 |---|---|
-| 献立表 | ログインした家族・職員（すべて） |
 | お知らせの添付 | ログインした家族・職員。お知らせが取り消されていたら、誰も開けない |
 
 ## F（みさき）で足すテーブル

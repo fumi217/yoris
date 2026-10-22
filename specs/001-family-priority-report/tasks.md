@@ -1,6 +1,6 @@
 ---
 
-description: "spec 001（連絡帳・知りたいこと・通知・献立表・施設からのお知らせ）のタスク一覧"
+description: "spec 001（連絡帳・知りたいこと・通知・施設からのお知らせ（献立表も、お知らせの添付で出す））のタスク一覧"
 ---
 
 # Tasks: 家族の「知りたいこと」に職員が答える連絡帳（スプリント1: C→B→A）
@@ -71,18 +71,18 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ### Tests for User Story 1
 
-- [ ] T024 [P] [US1] テスト `backend/tests/api/test_records.py`：記録の保存、押し直したら上書きされて `care_record_histories` に前の値が残る、同じ「入居者×日付×項目×区分」は 1 つだけ、食事の備考（`note`）は 100 文字まで・任意で、変えたら履歴に残る、家族アカウントでは 403（FR-001・FR-002・FR-005・FR-024・FR-035）（ゆう・ミ）
+- [ ] T024 [P] [US1] テスト `backend/tests/api/test_records.py`：記録の保存、押し直したら上書きされて `care_record_histories` に前の値が残る、同じ「入居者×日付×項目×区分」は 1 つだけ、家族アカウントでは 403（FR-001・FR-002・FR-005・FR-024）（ゆう・ミ）
 
 ### Implementation for User Story 1
 
-- [ ] T025 [US1] `care_records` と `care_record_histories` を `backend/app/models/records.py` に作り、マイグレーションを足す。`item`：`meal`／`mood`／`sleep`、`slot`：食事は `breakfast`／`lunch`／`dinner`／`snack`、機嫌・眠りは `day`、`note`：備考「100 文字まで、任意」（食事のときだけ）、`value`：meal は `10`／`8`／`5`／`2`／`0`／`none`、mood は `smile`／`normal`／`low`、sleep は `good`／`normal`／`poor`。一意は `(resident_id, date, item, slot) WHERE deleted_at IS NULL`（部分インデックス）。眠りの `date` は記録した朝の日付（data-model.md・research.md R-04・R-05）（ゆう・ミ）
-- [ ] T026 [US1] 記録の保存・押し直しを `backend/app/services/records.py` に作る：上書きのときは前の値（`value`・`note`）を履歴に残す。日付は日本時間で決める（research.md R-14）（ゆう・ミ）
+- [ ] T025 [US1] `care_records` と `care_record_histories` を `backend/app/models/records.py` に作り、マイグレーションを足す。`item`：`meal`／`mood`／`sleep`、`slot`：食事は `breakfast`／`lunch`／`dinner`／`snack`、機嫌・眠りは `day`、`value`：meal は `10`／`8`／`5`／`2`／`0`／`none`、mood は `smile`／`normal`／`low`、sleep は `good`／`normal`／`poor`。一意は `(resident_id, date, item, slot) WHERE deleted_at IS NULL`（部分インデックス）。眠りの `date` は記録した朝の日付（data-model.md・research.md R-04・R-05）（ゆう・ミ）
+- [ ] T026 [US1] 記録の保存・押し直しを `backend/app/services/records.py` に作る：上書きのときは前の値（`value`）を履歴に残す。日付は日本時間で決める（research.md R-14）（ゆう・ミ）
 - [ ] T027 [US1] `PUT /api/staff/residents/{id}/records` を `backend/app/api/staff/records.py` に作る（役割：介護職員・リーダー・相談員・施設長）（contracts/api.md）（ゆう・ミ）
 - [ ] T028 [US1] `GET /api/staff/residents?date=` を `backend/app/api/staff/residents.py` に作る：食事区分ごとの記録済み／未記録（FR-008）。返事待ちの件数は US3 で足す（ゆう・ミ）
 - [ ] T029 [US1] `GET /api/staff/residents/{id}/contact-book?date=` を `backend/app/api/staff/contact_book.py` に作る：その日の記録を時刻順に（非開示も含む。職員向けなので共通の関数は通さない）（FR-024）（ゆう・ミ）
 - [ ] T030 [P] [US1] 記録のサンプル（数日分）を `backend/app/seed/records.py` に作る（ゆう・ミ）
 - [ ] T031 [P] [US1] 入居者一覧の画面を `frontend/src/pages/staff/ResidentList.tsx` に作る（未記録が分かる）（ゆう・ミ）
-- [ ] T032 [US1] 記録の画面を `frontend/src/pages/staff/RecordPage.tsx` に作る：食事区分を選んで 5 段階＋「食事なし（外泊・入院など）」のボタン、機嫌・眠りの 3 段階のボタン。食事には任意の備考（100 文字まで。代替メニューなど。FR-035）を書き足せる（書かなくても保存できる）。入居者を選んでから保存まで 3 タップ以内（FR-006・SC-003）。文言は辞書から引く（ゆう・ミ）
+- [ ] T032 [US1] 記録の画面を `frontend/src/pages/staff/RecordPage.tsx` に作る：食事区分を選んで 5 段階＋「食事なし（外泊・入院など）」のボタン、機嫌・眠りの 3 段階のボタン。入居者を選んでから保存まで 3 タップ以内（FR-006・SC-003）。文言は辞書から引く（ゆう・ミ）
 - [ ] T033 [P] [US1] その日の連絡帳の見返しの画面を `frontend/src/pages/staff/StaffContactBook.tsx` に作る（ゆう・ミ）
 - [ ] T034 [US1] 当日中の記録の取り消し `DELETE /api/staff/records/{record_id}` を `backend/app/api/staff/records.py` に足す（`deleted_at`・`deleted_by` を入れる。今日でなければ 409 `not_today`）と、画面の取り消しボタン（Edge Cases）（ゆう・作）
 
@@ -137,11 +137,11 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T052 [US3] 返事の保存を `backend/app/services/replies.py` に作る：`UPDATE requests SET status='answered' WHERE id=:id AND status='waiting'` が 0 件なら保存しない（`answered` なら `already_replied`、`cancelled` なら `request_cancelled`）。返事の追加と `create_reply_notice(session, reply_id)` を同じトランザクションで行う（research.md R-07・R-09）（ゆう・ミ）
 - [ ] T053 [US3] `GET /api/staff/residents/{id}/requests`・`POST /api/staff/requests/{id}/reply` を `backend/app/api/staff/requests.py` に作り、`GET /api/staff/residents` に返事待ちの件数を足す。職員への通知・音は出さない（FR-029・FR-030・SC-013）（ゆう・ミ）
 - [ ] T054 [US3] 共通の関数 `get_active_replies(resident_id, date_from, date_to)` を `backend/app/services/disclosure.py` に足す（保存された返事。テーマ・定型文のコード・短い文・職員の表示名・時刻・既読か）（research.md R-06）（ゆう・ミ）
-- [ ] T055 [US3] `GET /api/family/contact-book?date=` を `backend/app/api/family/contact_book.py` に作る：まだ読んでいない返事を（日付に関わらず）先頭に、`get_disclosed_records` の記録を食事 → 機嫌・様子 → 眠りの順に（食事は備考も）、未記録の欄を「まだ記録されていません」のコードで返す。記録を直接読まない（FR-015・FR-017・FR-019・FR-035）（さとこ・ミ）
+- [ ] T055 [US3] `GET /api/family/contact-book?date=` を `backend/app/api/family/contact_book.py` に作る：まだ読んでいない返事を（日付に関わらず）先頭に、`get_disclosed_records` の記録を食事 → 機嫌・様子 → 眠りの順に、未記録の欄を「まだ記録されていません」のコードで返す。記録を直接読まない（FR-015・FR-017・FR-019）（さとこ・ミ）
 - [ ] T056 [US3] `POST /api/family/replies/{reply_id}/read`・`GET /api/family/notifications` を `backend/app/api/family/notifications.py` に作る。ログイン中の家族のものかを確かめる（FR-015・FR-023）（さとこ・ミ）
 - [ ] T057 [US3] メールを送る worker を `backend/app/jobs/worker.py` に作る：1 分ごとに `email_outbox` の未送信を `FOR UPDATE SKIP LOCKED` で取り出して SMTP（開発は Mailpit）で送り、`sent_at` を入れる。失敗は 5 回まで送り直す（research.md R-09）（さとこ・ミ）
 - [ ] T058 [P] [US3] リクエストと返事のサンプル（返事待ち・返事あり・取り消し）を `backend/app/seed/requests.py` に作る（さとこ・ミ）
-- [ ] T059 [US3] 家族の連絡帳の画面を `frontend/src/pages/family/ContactBook.tsx` に作る：返事のカードを一番上に（職員の名前つき）、カードが画面に出たら自動で既読にする、未記録の欄、食事の備考、画面の下に「緊急のときは、施設から電話します」（FR-015・FR-017・FR-028・FR-035・research.md R-15）。ミニマム版は「今日」だけ（過去の日付は T094）（さとこ・ミ）
+- [ ] T059 [US3] 家族の連絡帳の画面を `frontend/src/pages/family/ContactBook.tsx` に作る：返事のカードを一番上に（職員の名前つき）、カードが画面に出たら自動で既読にする、未記録の欄、画面の下に「緊急のときは、施設から電話します」（FR-015・FR-017・FR-028・research.md R-15）。ミニマム版は「今日」だけ（過去の日付は T094）（さとこ・ミ）
 - [ ] T060 [US3] 「知りたいこと」を頼む画面と送ったリクエストの一覧を `frontend/src/pages/family/Requests.tsx` に作る：テーマのボタン（3 タップ以内）、「施設に届きました」と送った日時・日数、3 日たったら「お急ぎのときは、施設にお電話ください」、返事の前の取り消し（FR-013・FR-014・SC-002）（さとこ・ミ）
 - [ ] T061 [P] [US3] お知らせの一覧の画面を `frontend/src/pages/family/Notifications.tsx` に作る（さとこ・ミ）
 - [ ] T062 [US3] 職員の返事の画面を `frontend/src/pages/staff/ReplyPage.tsx` に作る：テーマ・送られた日・日数、定型文のボタン（1 つ以上）、100 文字までの書き足し。リクエストを開いてから 3 タップ以内で保存（FR-030・SC-007）（ゆう・ミ）
@@ -150,35 +150,35 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T065 [US3] まとめの通知を `backend/app/jobs/digest.py` に作る：毎日 20:00（日本時間）に「1 日 1 回」、日曜 20:00 に「1 週間に 1 回」の家族へ、`get_disclosed_records` で新しい記録があるときだけまとめを作る。`digest_runs`（一意：`(family_account_id, kind, period_end)`）で 2 回送らない。止まっていたらその日のうちだけ取り戻す。`--at` で時刻を指定して動かせる（research.md R-13・quickstart.md）（さとこ・作）
 - [ ] T066 [P] [US3] テスト `backend/tests/api/test_digest.py`：同じ時刻で 2 回動かしても 1 回だけ、記録がない日は送らない、非開示の項目だけの日は送らない、worker とコマンドが重なっても 2 回送らない（SC-010）（さとこ・作）
 - [ ] T094 [US3] 家族の連絡帳で過去の日付を選べるようにする（日数の制限なし。過去の日の記録と返事を出す）を `frontend/src/pages/family/ContactBook.tsx` に足す（FR-019。T059 から分けた。PR #23 さとこ）（さとこ・作）
-- [ ] T095 [P] [US3] 家族の画面の単体テスト `frontend/tests/unit/ContactBook.test.tsx`（Vitest）：未記録の欄に「まだ記録されていません」が出る、未読の返事のカードが一番上に出る、食事の備考がそのまま（文字として）出る（FR-015・FR-017・FR-035。PR #23 さとこ）（さとこ・ミ）
+- [ ] T095 [P] [US3] 家族の画面の単体テスト `frontend/tests/unit/ContactBook.test.tsx`（Vitest）：未記録の欄に「まだ記録されていません」が出る、未読の返事のカードが一番上に出る（FR-015・FR-017。PR #23 さとこ）（さとこ・ミ）
 
 **Checkpoint**: 記録 → 開示 → 頼む → 返事 → メール の通しのデモ（quickstart.md の 1〜9）ができる
 
 ---
 
-## Phase 6: User Story 4 - 施設が月ごとの献立表を載せ、家族が連絡帳から見る（Priority: P4）
+## Phase 6: ファイルの共通の処理（User Story 4 は削除。User Story 5 とアルバム（H）が使う）
 
-**Goal**: 事務員・相談員・施設長が月ごとの献立表を PDF・画像で載せ、ログインした家族が連絡帳から見られる
+**Goal**: （User Story 4「献立表」は削除。Session 2026-10-22）お知らせの添付とアルバムの写真で使う、ファイルの形式の確認・Exif の削除・保存・配信を作る。毎月の献立表も、お知らせの添付で出す
 
-**Independent Test**: 事務員で 11 月の献立表（PDF）を載せ、家族で 11 月の日の連絡帳から「献立を見る」で開ける。ログインしていないと開けない（spec の US4）
+**Independent Test**: 事務員で、行事の案内（PDF）を添付してお知らせを投稿し、家族で開ける。ログインしていないと開けない（spec の US5）
 
-### Tests for User Story 4
+### Tests（ファイルの共通の処理）
 
-- [ ] T067 [P] [US4] テスト `backend/tests/api/test_uploads.py`：PDF・JPG・PNG 以外（先頭のバイトで判定）や 10MB を超えるファイルは 422 `invalid_file`、ログインしていないと `GET /api/files/{id}` は 401、同じ月にアップロードし直すと置き換わる（FR-004・FR-033・SC-015）（さとこ・ミ）
+- [ ] T067 [P] [US5] テスト `backend/tests/api/test_uploads.py`：PDF・JPG・PNG 以外（先頭のバイトで判定）や 10MB を超えるファイルは 422 `invalid_file`、ログインしていないと `GET /api/files/{id}` は 401（FR-034・SC-016）（さとこ・作）
 
-### Implementation for User Story 4
+### Implementation（ファイルの共通の処理）
 
-- [ ] T068 [P] [US4] `uploaded_files`・`monthly_menus` を `backend/app/models/files.py` に作り、マイグレーションを足す。`content_type`：`application/pdf`／`image/jpeg`／`image/png`、`size_bytes` は 10MB まで、`monthly_menus` の一意は `(facility_id, year_month)`（data-model.md）（さとこ・ミ）
-- [ ] T069 [US4] アップロードの共通の処理を `backend/app/services/uploads.py` に作る：先頭のバイトで形式を確かめる（PDF は `%PDF-`、JPEG は `FF D8 FF`、PNG は `89 50 4E 47`）、10MB まで、推測できない `storage_key` で `UPLOAD_DIR` に保存（献立表・お知らせ・アルバムで共通。research.md R-10）（さとこ・ミ）
-- [ ] T070 [US4] `PUT /api/admin/menus/{year_month}` を `backend/app/api/admin/menus.py` に作る（役割：事務員・相談員・施設長）（FR-004）（さとこ・ミ）
-- [ ] T071 [US4] `GET /api/files/{id}` を `backend/app/api/files.py` に作る：ログインと役割を確かめてから返す。`Content-Type` は保存した形式に固定し、`X-Content-Type-Options: nosniff` を付ける（FR-025・FR-033・research.md R-10）（さとこ・ミ）
-- [ ] T072 [US4] `GET /api/family/menus/{year_month}` を `backend/app/api/family/menus.py` に作り（ないときは 404）、`GET /api/family/contact-book` に「その月の献立表があるか」を足す（FR-033）（さとこ・ミ）
-- [ ] T073 [P] [US4] 献立表のアップロードの画面を `frontend/src/pages/admin/MenuUpload.tsx` に、連絡帳の食事の行の「献立を見る」と「この月の献立表は、まだ登録されていません」、そばに「施設全体の献立です。食べやすい形や、代わりのメニューに変えることがあります」を `frontend/src/pages/family/ContactBook.tsx` に足す（FR-033）（さとこ・ミ）
-- [ ] T074 [US4] 架空の献立表の PDF を iPhone の Safari と Android の Chrome で、別タブと画面の中の両方で開けるかを確かめ、結果を research.md R-10 に書く。表示できない環境があれば、PDF を `Content-Disposition: attachment` にする（さとこ・ミ・Day 3）
-- [ ] T075 [US4] 画像の Exif を取り除く処理（Pillow で開き直して保存）を `backend/app/services/uploads.py` に足し、テストを `backend/tests/api/test_uploads.py` に足す（FR-004）（さとこ・作）
-- [ ] T076 [US4] 本番の保存先（S3 互換のオブジェクトストレージ、非公開のバケット）への切り替えを `backend/app/services/uploads.py` に足す（環境変数で切り替える）（さとこ・作）
+- [ ] T068 [P] [US5] `uploaded_files` を `backend/app/models/files.py` に作り、マイグレーションを足す。`content_type`：`application/pdf`／`image/jpeg`／`image/png`、`size_bytes` は 10MB まで、`purpose`：`announcement`／`album`（data-model.md）（さとこ・作）
+- [ ] T069 [US5] アップロードの共通の処理を `backend/app/services/uploads.py` に作る：先頭のバイトで形式を確かめる（PDF は `%PDF-`、JPEG は `FF D8 FF`、PNG は `89 50 4E 47`）、10MB まで、推測できない `storage_key` で `UPLOAD_DIR` に保存（お知らせ・アルバムで共通。research.md R-10）（さとこ・作）
+- T070 [US4] （削除: 献立表の専用の機能をやめたため。毎月の献立表は、お知らせの添付で出す（FR-034）。Session 2026-10-22）
+- [ ] T071 [US5] `GET /api/files/{id}` を `backend/app/api/files.py` に作る：ログインと役割を確かめてから返す。`Content-Type` は保存した形式に固定し、`X-Content-Type-Options: nosniff` を付ける（FR-025・FR-034・research.md R-10）（さとこ・作）
+- T072 [US4] （削除: 献立表の専用の機能をやめたため。毎月の献立表は、お知らせの添付で出す（FR-034）。Session 2026-10-22）
+- T073 [US4] （削除: 献立表のアップロードの画面と、連絡帳の「献立を見る」をやめたため。Session 2026-10-22）
+- [ ] T074 [US5] 架空のお知らせの PDF（献立表など）を iPhone の Safari と Android の Chrome で、別タブと画面の中の両方で開けるかを確かめ、結果を research.md R-10 に書く。表示できない環境があれば、PDF を `Content-Disposition: attachment` にする（さとこ・作）
+- [ ] T075 [US5] 画像の Exif を取り除く処理（Pillow で開き直して保存）を `backend/app/services/uploads.py` に足し、テストを `backend/tests/api/test_uploads.py` に足す（FR-034）（さとこ・作）
+- [ ] T076 [US5] 本番の保存先（S3 互換のオブジェクトストレージ、非公開のバケット）への切り替えを `backend/app/services/uploads.py` に足す（環境変数で切り替える）（さとこ・作）
 
-**Checkpoint**: 家族が連絡帳から献立表を開け、ログインしていない人は開けない
+**Checkpoint**: ファイルの形式の確認・Exif の削除・保存・配信ができ、ログインしていない人は開けない
 
 ---
 
@@ -208,7 +208,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 **Purpose**: 多言語・ふりがな、ログインの作り込み、E2E、本番デプロイ
 
 - [ ] T082 [P] インドネシア語・英語の辞書 `frontend/src/i18n/id.json`・`frontend/src/i18n/en.json` を作る（テーマ・定型文・ボタン・見出し・案内文。ふりがなの書き方は使わない）（FR-021）（みさき・作）
-- [ ] T083 全画面の日本語の文言に `{漢字|かんじ}` でふりがなを付ける（固定の文言だけ。利用者が自由に入力した文・献立表は対象外）（FR-021）（みさき・作）
+- [ ] T083 全画面の日本語の文言に `{漢字|かんじ}` でふりがなを付ける（固定の文言だけ。利用者が自由に入力した文・お知らせの添付ファイルは対象外）（FR-021）（みさき・作）
 - [ ] T084 表示言語の切り替え `PUT /api/me/language` を `backend/app/auth/routes.py` に、切り替えの部品を `frontend/src/components/LanguageSwitcher.tsx` に作る。メールは家族の言語の文言で、漢字だけにして送る（FR-021）（みさき・作）
 - [ ] T085 [P] テスト `frontend/tests/unit/i18n.test.ts`：`ja.json` にふりがなの付いていない漢字が残っていない、`id.json`・`en.json` に `{|}` の書き方がない（SC-011）（みさき・作）
 - [ ] T086 職員は操作がないまま 30 分で自動ログアウト、家族は 30 日、を `backend/app/auth/` に足す（research.md R-01）（ようこ・作）
@@ -216,7 +216,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T088 職員のアカウントを作る `POST /api/admin/staff`（ID と初期パスワード）と画面 `frontend/src/pages/admin/StaffAccounts.tsx` を作る（ようこ・作）
 - [ ] T089 家族の招待：`invitations`（家族だけ、7 日で切れる、1 回だけ使える）を `backend/app/models/core.py` に足し、`POST /api/admin/invitations`・`POST /api/invitations/accept`（トークンは本文で受ける、メールのリンクは `#token=`）と画面を作る。招待のメールは `email_outbox`（`invitation`）を使う（research.md R-03）（ようこ・作）
 - [ ] T090 CI（`.github/workflows/ci.yml`）に `alembic heads` が 1 つであることの確認を足す（PostgreSQL・Redis のサービスは T020 で入れる。research.md R-17）（ようこ・作）
-- [ ] T091 E2E テストを `frontend/tests/e2e/` に Playwright で作る：quickstart.md の通しの確認（記録 → 開示 → 頼む → 返事 → メール → 献立表 → お知らせ）と、家族が職員の画面を開けないこと（ようこ・作）
+- [ ] T091 E2E テストを `frontend/tests/e2e/` に Playwright で作る：quickstart.md の通しの確認（記録 → 開示 → 頼む → 返事 → メール → お知らせ）と、家族が職員の画面を開けないこと（ようこ・作）
 - [ ] T092 本番デプロイ（Render）：`/api` を同じオリジンで中継する構成、https、本番のメール送信サービスとファイルの保存先の環境変数（research.md R-03・R-09・R-10）（ようこ・作）
 - [ ] T093 quickstart.md の確認をすべて通し、`docs/テスト設計書.md` に結合・総合テストのシナリオと結果を書く（Constitution の課題要件のテスト）（全員・作）
 
@@ -236,7 +236,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - **US1（P1）**：Foundational のあとすぐ始められる
 - **US2（P2）**：テーブルは US1 と別。`get_disclosed_records`（T038）は `care_records`（T025）が要る
 - **US3（P3）**：`get_disclosed_records`・`get_disclosed_themes`（T038）、テーマ・定型文（T037）が要る。記録がない状態でも、テーマと返事だけでデモできる
-- **US4（P4）**：Foundational だけで始められる。連絡帳への「献立を見る」（T073）は T059 のあと
+- **US4（P4）**：削除（Session 2026-10-22）。ファイルの共通の処理（T067〜T069・T071・T074〜T076）は、US5 の前に作る
 - **US5（P5）**：`uploaded_files`・`services/uploads.py`（T068・T069）と、`notifications`・`email_outbox`・worker（T048・T057）が要る
 
 ### 人をまたぐつなぎ目（先に形を合わせる）
@@ -287,12 +287,12 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 ### ミニマム版（Day 1〜3）
 
 1. Phase 1・2（「ミ」のタスク）
-2. US1・US2・US3・US4 の「ミ」のタスク
-3. **Day 3 の終わりに通しのデモ**：quickstart.md の 1〜11（職員が記録 → 開示 → 家族が頼む → 職員が返事 → メールが届く → 献立表）。F（AI）・J（決済）は別の spec で同じ日にミニマム版を動かす（Constitution 原則 V）
+2. US1・US2・US3 の「ミ」のタスク
+3. **Day 3 の終わりに通しのデモ**：quickstart.md の 1〜9（職員が記録 → 開示 → 家族が頼む → 職員が返事 → メールが届く）。F（AI）・J（決済）は別の spec で同じ日にミニマム版を動かす（Constitution 原則 V）
 
 ### 作り込み（Day 4〜8）
 
-- 「作」のタスクを、担当ごとの優先順位で進める。さとこは「返事のお知らせ → 献立表 → 通知設定とまとめ → 施設からのお知らせ」の順（plan.md）
+- 「作」のタスクを、担当ごとの優先順位で進める。さとこは「返事のお知らせ → 通知設定とまとめ → ファイルの共通の処理 → 施設からのお知らせ（献立表の投稿も含む）」の順（plan.md）
 - 各 User Story の Checkpoint で、quickstart.md の該当する確認を通してから次へ進む
 
 ### 仕上げ（Day 9〜10）
