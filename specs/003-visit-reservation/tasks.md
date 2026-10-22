@@ -145,7 +145,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
   職員の取り消しは理由が必須（ないと 422）、取り消した職員・日時・理由が残る／取り消しの理由に `<script>` を入れても文字として返る／
   予約の確定と職員の取り消しで、`notifications` と `email_outbox` が同じトランザクションで 1 件ずつできる（取り消しが失敗したら、お知らせもできない）／
   家族が自分で取り消したときは、お知らせができない／`email_outbox` の `params` に入居者名・理由が入っていない（FR-012〜FR-014・FR-016・SC-003）（ゆう・作）
-- [ ] T029 [P] [US4] テスト `backend/tests/unit/test_visit_reminder.py`：前日 20 時の処理を 2 回動かしても、同じ予約への `visit_reminder` は 1 件だけ。取り消された予約には送らない（FR-013）（さとこ・作）
+- [ ] T029 [P] [US4] テスト `backend/tests/unit/test_visit_reminder.py`：前日 20 時の処理を 2 回動かしても（20 時台に `run_jobs()` が何度呼ばれても）、同じ予約への `visit_reminder` は 1 件だけ。取り消された予約には送らない（FR-013）（さとこ・作）
 
 ### Implementation for User Story 4
 
@@ -155,7 +155,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
   予約の一覧の画面（T026）に、理由を入れて取り消すボタンを足す。締め切りは設けない（FR-012・FR-013）（ゆう・作。T030 のあと）
 - [ ] T032 [US4] `book_visit`（T009）で、予約を追加したあと同じトランザクションで `create_visit_notice(..., "visit_confirmed")` を呼ぶ（ゆう・作。T030 のあと）
 - [ ] T033 [P] [US4] メールのテンプレート `visit_confirmed`（面会の予約が確定しました）・`visit_cancelled`（面会の予約が取り消されました）・`visit_reminder`（明日は面会の予定があります。本文に「変更・取り消しは、施設にお電話ください」）を足す。渡すのは**日時とリンクだけ**（入居者名・理由は渡さない。FR-014）（さとこ・作）
-- [ ] T034 [US4] 前日 20 時の知らせを `backend/app/jobs/visit_reminder.py` に作り、worker の 20:00（日本時間）の処理から呼ぶ：翌日の `booked` ごとに `visit_reminder` を作る（同じ予約に 1 回だけ）（さとこ・作）
+- [ ] T034 [US4] 前日 20 時の知らせを `backend/app/jobs/visit_reminder.py` に作り、`run_jobs()`（001-T057）から呼ぶ：日本時間で 20:00 を過ぎて最初に呼ばれたときに、翌日の `booked` ごとに `visit_reminder` を作る（同じ予約に 1 回だけ。20 時台に何度呼ばれても増えない）。`--at` で時刻を指定して動かせる（spec 001 R-13 と同じ形）（さとこ・作）
 
 **Checkpoint**: quickstart.md の 16〜19 が通る
 
@@ -199,7 +199,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 | 家族の画面の枠（メニュー・ルーティング） | ようこ → ゆう | 001-T019 → T014 |
 | `visit_reservations` | ゆう → さとこ | T001 → T030 |
 | `create_visit_notice(session, reservation_id, kind)` | さとこ → ゆう | T030 → T031・T032 |
-| `email_outbox`・worker の 20:00 の処理 | さとこ → さとこ | spec 001 の通知（001-T048・001-T057・001-T065）→ T033・T034 |
+| `email_outbox`・`run_jobs()` の 20:00 の処理 | さとこ → さとこ | spec 001 の通知（001-T048・001-T057・001-T065）→ T033・T034 |
 | E2E の仕組み | ようこ → ゆう | 001-T091 → T036 |
 
 ### User Story の中の順番

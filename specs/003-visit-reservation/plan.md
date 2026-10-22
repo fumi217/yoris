@@ -36,7 +36,7 @@
 
 **Performance Goals**:
 - 家族が予約の画面を開いてから確定するまで 1 分以内・5 タップ以内（SC-001）
-- 職員が取り消してから、家族にお知らせとメールが 5 分以内に届く（SC-003。worker が 1 分ごとに送る）
+- 職員が取り消してから、家族にお知らせとメールが 5 分以内に届く（SC-003。`run_jobs()` が 1 分ごとに送る。spec 001 R-09）
 
 **Constraints**:
 - 面会の時間が重なる予約・1 日 3 組目の予約が、同時に予約されても 1 件も確定しない（SC-002）
@@ -135,7 +135,7 @@ frontend/
 | 担当 | この spec で作るもの | ほかの人から使うもの |
 |---|---|---|
 | ゆう | 面会予約のテーブル・初期データ、`book_visit`、家族の予約の API と画面、職員の取り消し・予約の一覧・今日の予定、開始時刻の候補と休みの日の設定 | ようこ：`CurrentUser`（`resident_id`）・`require_staff(roles)`・共通のテーブル（施設・入居者・家族アカウント・職員）。みさき：辞書と `Ruby` |
-| さとこ | `create_visit_notice(session, reservation_id, kind)`、`notifications` に `visit_reservation_id` と種類を足す、メールのテンプレート 3 つ、`worker` の前日 20 時の知らせ（作り込み） | ゆう：`visit_reservations` |
+| さとこ | `create_visit_notice(session, reservation_id, kind)`、`notifications` に `visit_reservation_id` と種類を足す、メールのテンプレート 3 つ、`run_jobs()` の前日 20 時の知らせ（作り込み） | ゆう：`visit_reservations` |
 
 ## ミニマム版と作り込み
 
