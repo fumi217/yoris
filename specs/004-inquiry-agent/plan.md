@@ -136,7 +136,7 @@ spec 007（D：翻訳）からも `inquiry/llm.py` を使い回せるように�
 |---|---|---|
 | `get_disclosed_records`・`get_active_replies` | ゆう → みさき | AI のツールの中から呼ぶ（spec 001 T038・T054） |
 | `CurrentUser`・役割のチェック | ようこ → みさき | 家族か職員か、職員の役割（spec 001 T010） |
-| 対応待ちの件数を数える関数 `count_waiting_staff_messages(user, resident_id=None)`・入居者ごとに 1 回で数える `count_waiting_staff_messages_by_resident(user)` | みさき → ゆう | 職員の入居者一覧（spec 001 T028・T053）から呼ぶ |
+| 対応待ちの件数を数える関数 `count_waiting_staff_messages(session, user, resident_id=None)`・入居者ごとに 1 回で数える `count_waiting_staff_messages_by_resident(session, user)` | みさき → ゆう | 職員の入居者一覧（spec 001 T028・T053）から呼ぶ |
 | 職員の返事のお知らせ `create_staff_message_reply_notice(session, staff_message_id)` | さとこ → みさき | spec 001 の `notifications` に種類 `staff_message_reply` と列 `staff_message_id` を足し（通知設定に関係なく送る）、`email_outbox` に「施設からメッセージの返事が届きました」を作る（R-09） |
 | OpenRouter のキー・モデル名の環境変数 | みさき → ようこ | `env.example` にはもうある（`OPENROUTER_API_KEY`・`OPENROUTER_MODEL`） |
 

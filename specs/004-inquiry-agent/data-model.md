@@ -113,10 +113,11 @@ PostgreSQL のテーブルの形と、状態の動き。土台の `users`・`fam
 ## 件数を数える関数（ゆうの画面から呼ぶ）
 
 ```text
-count_waiting_staff_messages(user, resident_id=None) -> int
-count_waiting_staff_messages_by_resident(user) -> dict[int, int]
+count_waiting_staff_messages(session, user, resident_id=None) -> int
+count_waiting_staff_messages_by_resident(session, user) -> dict[int, int]
 ```
 
+- `session` は呼ぶ側の DB のセッション（中では commit しない。spec 001 の `create_reply_notice(session, ...)` と同じ形）。
 - `visible_staff_messages(user)` を通して、`status='waiting'` を数える（苦情は生活相談員・施設長にだけ数える。FR-013）。
 - `count_waiting_staff_messages`：`resident_id` を渡すとその入居者の分だけ、渡さないと施設全体を数える。
 - `count_waiting_staff_messages_by_resident`：入居者ごとの件数を 1 回の問い合わせ（`GROUP BY resident_id`）で返す（入居者 id → 件数。0 件の入居者は入れない）。入居者一覧で 1 人ずつ呼ぶと問い合わせが人数分になるため（PR #42 のゆうのコメント）。

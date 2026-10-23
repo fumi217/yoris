@@ -6,6 +6,7 @@ Alembic がすべてのテーブルを見つけられるよう、機能のファ
 from app.models import (  # noqa: F401
     core,
     disclosure,
+    inquiry,
     notifications,
     records,
     requests,
