@@ -35,3 +35,8 @@ def test_docs_only_in_development(monkeypatch):
 
     monkeypatch.setenv("APP_ENV", "development")
     assert TestClient(create_app()).get("/docs").status_code == 200
+
+
+def test_tests_never_see_ai_key():
+    # tests/conftest.py が、どのテストでも OPENROUTER_API_KEY を空にしている
+    assert get_settings().openrouter_api_key is None

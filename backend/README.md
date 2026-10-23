@@ -38,6 +38,11 @@ docker compose exec backend ruff format --check .   # 整形するときは --ch
 docker compose exec backend python -m pytest
 ```
 
+- テストは本物の PostgreSQL と Redis を使う（`backend/tests/conftest.py`）。DB はテストごとに取り消すので、開発のデータは変わらない。Redis はテスト用の 15 番を使い、開発のログイン（0 番）は消さない。
+- DB・Redis を使うテストは、`session`・`client`・`make_staff`・`make_family`・`login_as` を引数に書けば使える（使い方は conftest.py の先頭）。
+- 手元では、開発の初期データが入った DB でテストが動く。件数を確かめるときは、テストで作った行だけを数える（テーブル全体を数えると、CI の空の DB と結果が変わる）。
+- 新しいテーブルのテストの前に、`alembic upgrade head` を当てておく（CI は pytest の前に自動で当てる）。
+
 ## 依存
 
 - 本番でも使うものは `requirements.txt`、開発・テストだけで使うものは `requirements-dev.txt` に、`==` で版を固定して書く。

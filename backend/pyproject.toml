@@ -13,5 +13,6 @@ known-third-party = ["alembic"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 # .pytest_cache を作らない（コンテナの中で動かすと、WSL・Linux では手元に root の持ち物のフォルダが残るため）
-addopts = "-p no:cacheprovider"
+# importlib：別のフォルダに同じ名前のテストのファイル（api/test_records.py と services/test_records.py など）があっても、ぶつからない
+addopts = "-p no:cacheprovider --import-mode=importlib"
 pythonpath = ["."]

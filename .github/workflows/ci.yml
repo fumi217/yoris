@@ -31,6 +31,34 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    # テストは本物の PostgreSQL と Redis を使う（spec 001 の research.md R-19）。版は docker-compose.yml と同じ。
+    # 中身は CI の中だけで使う使い捨ての値（秘密ではない）
+    services:
+      db:
+        image: postgres:18
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d app"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 10
+      redis:
+        image: redis:8.10
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://app:app@localhost:5432/app
+      REDIS_URL: redis://localhost:6379/0
     steps:
       - uses: actions/checkout@v4
       - name: バックエンドがあるかを確認
@@ -52,6 +80,19 @@ jobs:
         run: |
           ruff check .
           ruff format --check .
+      # 2 人が同時にマイグレーションを作ると、親がぶつかって head が 2 つになる（spec 001 の research.md R-17・T090）
+      - name: マイグレーションの head が 1 つか
+        if: steps.exists.outputs.found == 'true'
+        run: |
+          alembic heads
+          heads=$(alembic heads 2>/dev/null | wc -l)
+          if [ "$heads" -ne 1 ]; then
+            echo "alembic の head が ${heads} 個あります。main を取り込み、alembic merge heads で 1 つにまとめてください"
+            exit 1
+          fi
+      - name: マイグレーション（テストの前にテーブルを作る）
+        if: steps.exists.outputs.found == 'true'
+        run: alembic upgrade head
       - name: Test（pytest）
         if: steps.exists.outputs.found == 'true'
         run: python -m pytest

@@ -32,3 +32,23 @@ def test_switch_user_exists_in_development(monkeypatch):
     paths = create_app().openapi()["paths"]
 
     assert "/api/dev/switch-user" in paths
+
+
+def test_switch_user_logs_in_and_drops_old_session(make_client, make_staff, make_family, redis):
+    client = make_client(app_env="development")
+    staff = make_staff(role="counselor")
+    family = make_family()
+
+    assert client.post("/api/dev/switch-user", json={"user_id": staff.user_id}).status_code == 204
+    assert client.get("/api/me").json()["kind"] == "staff"
+
+    assert client.post("/api/dev/switch-user", json={"user_id": family.user_id}).status_code == 204
+    assert client.get("/api/me").json()["kind"] == "family"
+    # 前の人のセッションは消え、残るのは 1 つだけ（古い Cookie で前の人に戻れない）
+    assert len(redis.keys("session:*")) == 1
+
+
+def test_switch_user_to_unknown_user_is_not_found(make_client):
+    client = make_client(app_env="development")
+
+    assert client.post("/api/dev/switch-user", json={"user_id": 0}).status_code == 404

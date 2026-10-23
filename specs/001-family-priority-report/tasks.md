@@ -54,7 +54,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T019 画面の枠を作る：`frontend/src/pages/family/`・`frontend/src/pages/staff/`・`frontend/src/pages/admin/` のレイアウトと、役割で画面を分けるルーティングを `frontend/src/App.tsx` に、開発用のユーザー切り替えを `frontend/src/components/DevUserSwitcher.tsx` に作る。
   家族の画面のメニューは、下に「連絡帳・知りたいこと・お知らせ」の 3 つ、そのほか（面会・アルバム・設定）は「☰ その他」にまとめる（Clarifications）。「☰ その他」は、ほかの機能が項目を足しやすい形にする（spec 003 の T014 が「面会」を足す）。
   家族には職員・管理画面へのリンクを出さず、URL を直接開いても家族の画面に戻す（API は 403 `forbidden`。spec 003 の plan.md）（ようこ・ミ）
-- [ ] T020 テストの土台を `backend/tests/conftest.py` に作る：テスト用の PostgreSQL・Redis（コンテナ）、ログイン済みのクライアントを作るヘルパー。あわせて CI（`.github/workflows/ci.yml`）に PostgreSQL・Redis のサービスを足す（同じ PR で入れる。入れないと全員の CI が赤になるため）（research.md R-19）（ようこ・ミ）
+- [x] T020 テストの土台を `backend/tests/conftest.py` に作る：テスト用の PostgreSQL・Redis（コンテナ）、ログイン済みのクライアントを作るヘルパー。あわせて CI（`.github/workflows/ci.yml`）に PostgreSQL・Redis のサービスを足す（同じ PR で入れる。入れないと全員の CI が赤になるため）（research.md R-19）（ようこ・ミ）
 - [x] T021 [P] テスト `backend/tests/api/test_dev_switch.py`：`APP_ENV` を付けない設定で `POST /api/dev/switch-user` が 404 になる（research.md R-02）（ようこ・ミ）
 - [ ] T022 本物のログインを `backend/app/auth/routes.py` に作る：`POST /api/auth/login`（職員は ID、家族はメールアドレス、bcrypt）、`POST /api/auth/logout`（セッションをすぐ消す）、`GET /api/me`。セッションは Redis（`session:<ランダムなID>`）、Cookie は `HttpOnly`・`Secure`（本番）・`SameSite=Lax`（research.md R-01・R-03）（ようこ・ミ・Day 2）
 - [ ] T023 [P] テスト `backend/tests/api/test_auth.py`：職員は ID、家族はメールアドレスでログインできる。家族が職員の API を呼ぶと 403。ログアウトでセッションが消える（ようこ・ミ）
@@ -218,7 +218,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T087 ログインの試行回数の制限（Redis の `ratelimit:login:<ID>`、例：15 分に 10 回、超えたら 429 `too_many_attempts`）を `backend/app/auth/routes.py` に足す（research.md R-03）（ようこ・作）
 - [ ] T088 職員のアカウントを作る `POST /api/admin/staff`（ID と初期パスワード）と画面 `frontend/src/pages/admin/StaffAccounts.tsx` を作る（ようこ・作）
 - [ ] T089 家族の招待：`invitations`（家族だけ、7 日で切れる、1 回だけ使える）を `backend/app/models/core.py` に足し、`POST /api/admin/invitations`・`POST /api/invitations/accept`（トークンは本文で受ける、メールのリンクは `#token=`）と画面を作る。招待のメールは `email_outbox`（`invitation`）を使う（research.md R-03）（ようこ・作）
-- [ ] T090 CI（`.github/workflows/ci.yml`）に `alembic heads` が 1 つであることの確認を足す（PostgreSQL・Redis のサービスは T020 で入れる。research.md R-17）（ようこ・作）
+- [x] T090 CI（`.github/workflows/ci.yml`）に `alembic heads` が 1 つであることの確認を足す（PostgreSQL・Redis のサービスは T020 で入れる。research.md R-17）（ようこ・作）
 - [ ] T091 E2E テストを `frontend/tests/e2e/` に Playwright で作る：quickstart.md の通しの確認（記録 → 開示 → 頼む → 返事 → メール → お知らせ）と、家族が職員の画面を開けないこと（ようこ・作）
 - [ ] T092 本番デプロイ（Render の無料のプラン）：フロントは Static Site に置き、書き換えのルールで `/api/*` をバックエンド（無料の Web Service 1 つだけ）に中継する構成（最初に、中継を通してログインの Cookie が付くかを確かめる）、https、本番のメール送信サービス（Resend。送信元のドメインの確認）とファイルの保存先の環境変数（research.md R-03・R-09・R-10）。
   決まった時刻の処理の受け口 `POST /api/internal/jobs/run` を `backend/app/api/internal.py` に作り（`JOBS_TOKEN` が空なら登録しない。テストつき。contracts/api.md）、cron-job.org から 1 分ごとに呼ぶ設定をする（ようこ・作）
