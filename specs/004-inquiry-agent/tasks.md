@@ -26,8 +26,8 @@ US1 は、001-T038（`get_disclosed_records`）と 001-T054（`get_active_replie
 
 ## Phase 1: Setup
 
-- [ ] T001 `openai`（OpenAI Python SDK）を `backend/requirements.txt` に版を固定して足す。技術選定の表にあることを PR に書く（research.md R-01）（みさき・ミ）
-- [ ] T002 [P] `backend/app/config.py` に `OPENROUTER_API_KEY`・`OPENROUTER_MODEL`（未設定なら `openai/gpt-oss-120b`）・`INQUIRY_FAMILY_DAILY_LIMIT`（10）・`INQUIRY_FACILITY_DAILY_LIMIT`（300）を足す。キーはログに出さない（`env.example` にはキー名がすでにある）（みさき・ミ）
+- [X] T001 `openai`（OpenAI Python SDK）を `backend/requirements.txt` に版を固定して足す。技術選定の表にあることを PR に書く（research.md R-01）（みさき・ミ）
+- [X] T002 [P] `backend/app/config.py` に `OPENROUTER_API_KEY`・`OPENROUTER_MODEL`（未設定なら `openai/gpt-oss-120b`）・`INQUIRY_FAMILY_DAILY_LIMIT`（10）・`INQUIRY_FACILITY_DAILY_LIMIT`（300）を足す。キーはログに出さない（`env.example` にはキー名がすでにある）（みさき・ミ）
 
 ---
 
@@ -35,8 +35,8 @@ US1 は、001-T038（`get_disclosed_records`）と 001-T054（`get_active_replie
 
 **⚠️ CRITICAL**: ここが終わるまで、US1・US2 の API は作り始められない
 
-- [ ] T003 OpenRouter のクライアントを `backend/app/inquiry/llm.py` に作る：`LLMClient.chat(messages, tools) -> 応答` だけを持つ。接続先 `https://openrouter.ai/api/v1`、`timeout=30`、再試行 0 回、ストリーミングなし、`tool_choice="auto"`、`parallel_tool_calls=False`、`extra_body={"provider": {"require_parameters": True}}`。つながらない・30 秒を超えたら `LLMUnavailable` を出す。あわせて、学校配布のキーで OpenRouter に 1 回つながり、ツール呼び出しの応答が返ることを手で確かめる（Day 1 の目標。キーは `.env` に入れ、コード・ログ・PR に出さない。自動テストでは呼ばない）（research.md R-01）（みさき・ミ）
-- [ ] T004 [P] テスト用の偽物の LLM を `backend/tests/fakes/llm.py` に作る：決まった応答（ツール呼び出し・答え）を順に返し、呼ばれた中身を記録する。テストの土台（001-T020）で、本物の `LLMClient` をこれに差し替える（FR-030・SC-011）（みさき・ミ）
+- [X] T003 OpenRouter のクライアントを `backend/app/inquiry/llm.py` に作る：`LLMClient.chat(messages, tools) -> 応答` だけを持つ。接続先 `https://openrouter.ai/api/v1`、`timeout=30`、再試行 0 回、ストリーミングなし、`tool_choice="auto"`（`parallel_tool_calls` は送らない。学校のキーの提供元が対応しておらず 404 になるため。research.md R-01）、`extra_body={"provider": {"require_parameters": True}}`。つながらない・30 秒を超えたら `LLMUnavailable` を出す。あわせて、学校配布のキーで OpenRouter に 1 回つながり、ツール呼び出しの応答が返ることを手で確かめる（Day 1 の目標。キーは `.env` に入れ、コード・ログ・PR に出さない。自動テストでは呼ばない）（research.md R-01）（みさき・ミ）
+- [X] T004 [P] テスト用の偽物の LLM を `backend/tests/fakes/llm.py` に作る：決まった応答（ツール呼び出し・答え）を順に返し、呼ばれた中身を記録する。テストの土台（001-T020）で、本物の `LLMClient` をこれに差し替える（FR-030・SC-011）（みさき・ミ）
 - [ ] T005 テーブルを `backend/app/models/inquiry.py` に作り、マイグレーションを足す：`inquiry_conversations`（`family_account_id` は一意）、`inquiry_messages`（`sender`：`family`／`ai`／`staff`、`body` は家族は 500 文字まで、`ai_result`：`answered`／`handed_off`／`no_record`、`source_ids` は `text[]`、`template_ids` は `bigint[]`、`note` は「100 文字まで、任意」、`response_type`：`app`／`phone`）、
   `staff_messages`（`category`：`medical`／`complaint`／`money`／`care_request`／`urgent`／`other`、`summary` は 500 文字まで、`status`：`waiting`／`answered`、`assignee_id` は渡した時点では空、`handed_at`・`reopened_at`）、`staff_message_events`、`staff_message_templates`（`code` は一意）（data-model.md）（みさき・ミ）
 - [ ] T006 苦情の見え方を `backend/app/inquiry/visibility.py` に作る：`visible_staff_messages(user)` は、生活相談員・施設長以外では `category = 'complaint'` を最初から除いた絞り込みを返す。一覧・件数・詳細・操作のすべてがここを通る。対応待ちの件数 `count_waiting_staff_messages(user, resident_id=None)` と、入居者ごとの件数を 1 回で返す `count_waiting_staff_messages_by_resident(user)` も同じファイルに作る（research.md R-12・data-model.md）（みさき・ミ）

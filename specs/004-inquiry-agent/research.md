@@ -12,7 +12,8 @@ AI の基本の作り方は [技術選定 5 章](../../docs/技術選定.md#5-ai
   - クライアントは `backend/app/inquiry/llm.py` の `LLMClient` 1 つにまとめ、`chat(messages, tools) -> 応答` だけを持つ。テストでは同じ形の偽物（決まった応答を順に返す）に差し替える。
   - 呼び出しごとに `timeout=30`（秒）、SDK の自動の再試行は 0 回（待ち時間が延びるため）。ストリーミングは使わない（技術選定 5 章）。
   - リクエストに `extra_body={"provider": {"require_parameters": True}}` を付け、ツール呼び出しに対応した提供元にだけ送る（技術選定 4 章のリスク）。
-  - `tool_choice="auto"`、`parallel_tool_calls=False`（ツールを 1 つずつ順に呼ばせ、ループを読みやすくする）。
+  - `tool_choice="auto"`。`parallel_tool_calls` は送らない。学校配布のキーで `openai/gpt-oss-120b` を出している提供元は `parallel_tool_calls` に対応しておらず、`require_parameters` と一緒に送ると、送れる先がなくなって 404（No endpoints found that can handle the requested parameters）になるため（2026-10-23 に確かめた。#80）。
+    そのため、1 回の応答でツールが 2 つ以上まとめて呼ばれることがある。ループは、呼ばれたツールを 1 つずつ順に実行して結果を足す（contracts/agent-tools.md のループ）。
 - **理由**：spec 007（D）も同じクライアントを使い回せる。偽物に差し替えられる形にすると、自動テストで本物を 1 回も呼ばずに済む（SC-011）。
 - **増えるライブラリ**：`openai`（技術選定の表にある。チャットの呼び出しだけを使うので、10 日間で使える）。
 

@@ -28,7 +28,18 @@ class Settings:
     mail_from: str | None = field(default_factory=_env("MAIL_FROM"))
     app_base_url: str | None = field(default_factory=_env("APP_BASE_URL"))
     upload_dir: str | None = field(default_factory=_env("UPLOAD_DIR"))
-    openrouter_model: str | None = field(default_factory=_env("OPENROUTER_MODEL"))
+    # AI：学校配布の OpenRouter のキー（ログに出さない）と、使うモデル。spec 004 の research.md R-01
+    openrouter_api_key: str | None = field(default_factory=_env("OPENROUTER_API_KEY"), repr=False)
+    openrouter_model: str = field(
+        default_factory=lambda: os.environ.get("OPENROUTER_MODEL") or "openai/gpt-oss-120b"
+    )
+    # 問い合わせ AI の 1 日の回数の上限（家族ごと・施設全体）。spec 004 の research.md R-07
+    inquiry_family_daily_limit: int = field(
+        default_factory=lambda: int(os.environ.get("INQUIRY_FAMILY_DAILY_LIMIT") or "10")
+    )
+    inquiry_facility_daily_limit: int = field(
+        default_factory=lambda: int(os.environ.get("INQUIRY_FACILITY_DAILY_LIMIT") or "300")
+    )
     # 決まった時刻の処理の API（POST /api/internal/jobs/run）の合言葉。空なら API を登録しない
     jobs_token: str | None = field(default_factory=_env("JOBS_TOKEN"), repr=False)
 
