@@ -7,16 +7,15 @@
 - 関数の中では commit しない（呼んだ API が最後に 1 回だけ commit する）
 """
 
-from datetime import UTC, date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.clock import today_jst
 from app.models.records import DAY_SLOT, MEAL_SLOTS, VALUES, CareRecord, CareRecordHistory
 
-# 日本は夏時間がないので、+9 時間で決める
-JST = timezone(timedelta(hours=9), "Asia/Tokyo")
 # 付け忘れを、何日前の分まで新しく付けられるか
 BACKFILL_DAYS = 3
 
@@ -37,11 +36,6 @@ class NotToday(RecordError):
     """今日でない記録を押し直そうとした（409）。"""
 
     code = "not_today"
-
-
-def today_jst(now: datetime | None = None) -> date:
-    """日本時間の今日。now はテスト用（タイムゾーン付きの日時）。"""
-    return (now or datetime.now(UTC)).astimezone(JST).date()
 
 
 def _validate(item: str, slot: str, value: str) -> None:

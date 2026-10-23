@@ -33,13 +33,13 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 **⚠️ CRITICAL**: spec 001 の 001-T009（共通のテーブル）・001-T010（`CurrentUser` と役割のチェック）・001-T012（エラーの形）・001-T015（初期データの仕組み）のあとに始める
 
-- [ ] T001 面会予約のテーブルを `backend/app/models/visits.py` に作り、マイグレーションを足す（data-model.md）。マイグレーションの最初に `CREATE EXTENSION IF NOT EXISTS btree_gist` を入れる。
+- [x] T001 面会予約のテーブルを `backend/app/models/visits.py` に作り、マイグレーションを足す（data-model.md）。マイグレーションの最初に `CREATE EXTENSION IF NOT EXISTS btree_gist` を入れる。
   `visit_settings`（`facility_id` が主キー、`daily_limit` は「1 日に受け付ける組数。初期値 2。1 以上」）、
   `visit_start_times`（`start_time` は日本時間の `time`、`active` は boolean、一意は `(facility_id, start_time)`）、
   `visit_reservations`（`visit_date`・`start_time`・`starts_at`・`ends_at`（`ends_at = starts_at + 1 時間 30 分`）・`party_size`「1 以上、上限なし」・`status`：`booked`／`cancelled_by_family`／`cancelled_by_staff`・`created_at`・`cancelled_at`・`cancelled_by_staff_id`・`cancel_reason`）。
   決まり：`UNIQUE (resident_id, visit_date) WHERE status = 'booked'`、`EXCLUDE USING gist (facility_id WITH =, tstzrange(starts_at, ends_at, '[)') WITH &&) WHERE (status = 'booked')`、
   `CHECK (party_size >= 1)`、`CHECK (status <> 'cancelled_by_staff' OR (cancel_reason IS NOT NULL AND cancelled_by_staff_id IS NOT NULL))`（research.md R-01・R-02）（ゆう・ミ）
-- [ ] T002 [P] 日本時間の「今」を返す関数を使えるようにする：spec 001 で作られていればそれを使い、なければ `backend/app/clock.py` に `now_jst()` を作る。テストで時刻を固定できるよう、差し替えられる形にする（research.md R-04・R-09）（ゆう・ミ）
+- [x] T002 [P] 日本時間の「今」を返す関数を使えるようにする：spec 001 で作られていればそれを使い、なければ `backend/app/clock.py` に `now_jst()` を作る。テストで時刻を固定できるよう、差し替えられる形にする（research.md R-04・R-09）（ゆう・ミ）
 - [ ] T003 [P] エラーのコードを、001-T012 のエラーの形に足す（`forbidden`・`not_found` は 001-T012 でようこが足すので、ここでは足さない）：`visit_overlap`・`visit_day_full`・`visit_already_booked_day`・`visit_deadline_passed`・`visit_closed_day`・`visit_day_has_reservations`（409）、`visit_out_of_range`（422）。日本語の文言は `frontend/src/i18n/ja.json` の `error.*` に足す（contracts/api.md）（ゆう・ミ）
 - [ ] T004 [P] 初期データを `backend/app/seed/visits.py` に作り、001-T015 の仕組みに足す：`visit_settings`（`daily_limit = 2`）、`visit_start_times`（10:00・10:30・13:00・13:30・14:00・14:30・15:00・15:30、すべて `active = true`）、デモ用の予約（来週の平日に 1〜2 件、架空の家族）。施設がすでにあれば、その施設に足す（001-T015 の決まりに合わせる）（ゆう・ミ）
 
@@ -55,7 +55,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ### Tests for User Story 1（先に書いて、失敗することを確かめる）⚠️
 
-- [ ] T005 [P] [US1] 単体テスト `backend/tests/unit/test_visit_rules.py`：予約できる日（明日 ≦ 日付 ≦ 今日＋28 日）、明日の予約は今日の 17:00 より前だけ、面会の時間が重なるかの判定（10:30 の予約に対して 10:00・10:30 は重なり、13:00 は重ならない）、開始時刻が候補にないとき。時刻は T002 の関数を差し替えて固定する（FR-004・FR-007・FR-008、research.md R-04）（ゆう・ミ）
+- [x] T005 [P] [US1] 単体テスト `backend/tests/unit/test_visit_rules.py`：予約できる日（明日 ≦ 日付 ≦ 今日＋28 日）、明日の予約は今日の 17:00 より前だけ、面会の時間が重なるかの判定（10:30 の予約に対して 10:00・10:30 は重なり、13:00 は重ならない）、開始時刻が候補にないとき。時刻は T002 の関数を差し替えて固定する（FR-004・FR-007・FR-008、research.md R-04）（ゆう・ミ）
 - [ ] T006 [P] [US1] API テスト `backend/tests/api/test_visits.py`（予約）：
   予約が確定する／**2 つの家族が同じ日の 13:00 と 13:30 をスレッドで同時に予約すると、1 件だけ確定し、もう一方は 409 `visit_overlap`**／
   **1 組入っている日に、2 つの家族が 13:00 と 15:00 を同時に予約すると、1 件だけ確定し、もう一方は 409 `visit_day_full`**／
@@ -66,7 +66,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] 判定の関数を `backend/app/services/visit_rules.py` に作る：予約できる日か、締め切り前か、開始時刻が候補にあるか、面会の時間の範囲（開始＋1 時間 30 分）、重なるか。DB を読まない純粋な関数にする（T005 を通す）（ゆう・ミ）
+- [x] T008 [US1] 判定の関数を `backend/app/services/visit_rules.py` に作る：予約できる日か、締め切り前か、開始時刻が候補にあるか、面会の時間の範囲（開始＋1 時間 30 分）、重なるか。DB を読まない純粋な関数にする（T005 を通す）（ゆう・ミ）
 - [ ] T009 [US1] 予約を作る唯一の道 `book_visit(session, current_user, visit_date, start_time, party_size)` を `backend/app/services/visits.py` に作る（research.md R-01）：
   1 つのトランザクションの中で、`pg_advisory_xact_lock(<visit_date から作った数>)` → その日の `booked` の件数 < `daily_limit` → 同じ入居者のその日の `booked` がない → 重なりがない → 追加。
   入居者は `current_user.resident_id` から決める。DB の決まり（一意制約・排他制約）に引っかかったときも、それぞれ 409 `visit_already_booked_day`・`visit_overlap` に変える（T006 を通す）（ゆう・ミ）
