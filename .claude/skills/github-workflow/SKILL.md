@@ -67,8 +67,10 @@ description: このリポジトリで Git のコミット、ブランチ作成�
 
 - 実装の Issue は、`specs/<機能>/tasks.md` のタスクを元に立てる（1 Issue に入れるタスクは、1 PR で 1,100 行以内に収まる量にする）。
 - テンプレート（`.github/ISSUE_TEMPLATE/`）を使う。タイトルの先頭に、機能は `[P1]`〜`[P5]`（spec の User Story の優先度）、ドキュメントは `[Docs]`、環境・設定は `[Chore]`、バグは `[Bug]` を付ける。
-- 本文に、関係する spec・User Story・要件（FR-）・タスク（T001 など）を書く。
+- 題名は `[P1] spec 00x 〜` の形にする。T 番号と案の番号は入れない。
+- 本文に、関係する spec・User Story・要件（FR-）・タスク（`001-T024` のように spec の番号付き）・時期・先に必要なものを書く。完了の条件に「tasks.md にチェックを付けた」を入れる。
 - 担当者（Assignee）を 1 人設定する。
+- Milestone は「ミニマム版（Day 1〜4）」か「作り込み（Day 5）」を選ぶ。
 
 ## Pull Request
 
