@@ -1,0 +1,16 @@
+{
+  "error": {
+    "not_logged_in": "ログインしてください",
+    "forbidden": "このページは表示できません",
+    "not_found": "見つかりませんでした",
+    "too_many_attempts": "何度もログインに失敗したので、しばらくログインできません。少し時間をおいてから、もう一度お試しください",
+    "request_limit": "返事を待っているリクエストが 3 件あります",
+    "theme_waiting": "このテーマは返事を待っています",
+    "already_replied": "ほかの職員が返事をしました",
+    "request_cancelled": "このリクエストは取り消されました",
+    "not_today": "今日の記録・返事だけ直せます",
+    "invalid_file": "PDF・JPG・PNG で、10MB までのファイルを選んでください",
+    "validation_error": "入力した内容を確かめてください",
+    "server_error": "うまくいきませんでした。時間をおいて、もう一度お試しください"
+  }
+}
