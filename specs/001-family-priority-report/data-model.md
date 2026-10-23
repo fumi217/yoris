@@ -182,6 +182,7 @@ CurrentUser:
 | 列 | 型 | 説明 |
 |---|---|---|
 | id | bigint | |
+| facility_id | bigint → facilities | |
 | target_type / target_code | text | |
 | old_visible / new_visible | boolean | |
 | changed_by | bigint → staff | |
@@ -193,13 +194,16 @@ CurrentUser:
 
 | 関数 | 返すもの | 使う人 |
 |---|---|---|
-| `get_disclosed_records(resident_id, date_from, date_to, items=None)` | 開示済みの、取り消していない記録。id・日付・項目・区分・値・記録した時刻・記録した職員の表示名。`items` で項目を絞れる | さとこ（連絡帳・20 時のまとめ）、みさき（F） |
-| `get_disclosed_themes()` | 開示済みの「知りたいこと」のテーマ | さとこ（テーマのボタン） |
-| `is_item_disclosed(code)` | その記録項目（例：`memo`）を家族に見せる設定か（真／偽）。開示設定のキャッシュを読む | みさき（spec 007 の `get_disclosed_memos`） |
-| `get_active_replies(resident_id, date_from, date_to)` | 保存された返事（返事は取り消せないため、すべて有効）。テーマ・定型文のコード・短い文・職員の表示名・時刻・既読か | さとこ（連絡帳）、みさき（F、読む場合） |
+| `get_disclosed_records(session, resident_id, date_from, date_to, items=None)` | 開示済みの、取り消していない記録。id・日付・項目・区分・値・記録した時刻・記録した職員の表示名。`items` で項目を絞れる | さとこ（連絡帳・20 時のまとめ）、みさき（F） |
+| `get_disclosed_themes(session)` | 開示済みの「知りたいこと」のテーマ | さとこ（テーマのボタン） |
+| `get_requested_themes(session, theme_ids)` | 家族がすでに送ったリクエストのテーマ（開示の設定に関わらず返す。「送ったリクエスト」の一覧にテーマ名を出すときだけ使う。issue #111） | さとこ（送ったリクエストの一覧） |
+| `is_item_disclosed(session, code)` | その記録項目（例：`memo`）を家族に見せる設定か（真／偽）。開示設定のキャッシュを読む | みさき（spec 007 の `get_disclosed_memos`） |
+| `get_active_replies(session, resident_id, date_from, date_to)` | 保存された返事（返事は取り消せないため、すべて有効）。テーマ・定型文のコード・短い文・職員の表示名・時刻・既読か | さとこ（連絡帳）、みさき（F、読む場合） |
 
 - **家族に出すもの（連絡帳・テーマのボタン・通知のまとめ・F の AI のツール）は、必ずここの共通の関数を通す**。職員向け（記録画面・見返し・E）は、非開示の項目も含めて直接読んでよい。
 - `resident_id` は、呼び出す側がログイン中の家族（`CurrentUser.resident_id`）から決める。家族が送ってきた値は使わない（FR-020）。
+- 最初の引数は DB のセッション。関数の中では commit しない（issue #111）。
+- 開示設定に行がない項目・テーマは「見せない」として扱う（足し忘れで見えてしまわないように）。初期データでは、すべてを「見せる」で入れる。
 
 ## リクエストと返事（さとこ・ゆう）
 
