@@ -45,5 +45,5 @@ docker compose exec backend python -m evals.memos.run --model openai/gpt-oss-120
 ## テストを動かす
 
 ```bash
-docker compose exec backend pytest tests -k memo   # 偽物の LLM。本物は呼ばない（SC-007）
+docker compose exec backend pytest tests -k memo   # テスト用の LLM（モック）。本物は呼ばない（SC-007）
 ```

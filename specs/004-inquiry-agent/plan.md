@@ -30,7 +30,7 @@
 - PostgreSQL：会話・発言・職員へのメッセージ・その履歴・返事の定型文
 - Redis：家族ごと・施設全体の 1 日の発言の回数（R-07）
 
-**Testing**: pytest ＋ httpx（AI は偽物の LLM クライアントに差し替える。FR-030・SC-011）、Vitest、Playwright。
+**Testing**: pytest ＋ httpx（AI はテスト用の LLM（モック）に差し替える。FR-030・SC-011）、Vitest、Playwright。
 AI の答えの質（SC-002〜006）は、本物のモデルに質問の例を流す**評価のスクリプト**で確かめる（手で動かす。CI では動かさない。R-11）
 
 **Target Platform**: spec 001 と同じ（Docker Compose ／ Render、`/api` は同じオリジンで中継）
@@ -102,7 +102,7 @@ specs/004-inquiry-agent/
 backend/
 ├── app/
 │   ├── inquiry/                 # 問い合わせ AI（みさき）
-│   │   ├── llm.py               # OpenRouter のクライアント（差し替えられる形。テストは偽物）
+│   │   ├── llm.py               # OpenRouter のクライアント（差し替えられる形。テストはモック）
 │   │   ├── prompts.py           # AI への指示（サーバーに固定。家族に出さない）
 │   │   ├── tools.py             # ツールの定義と実行（spec 001 の共通の関数を呼ぶ）
 │   │   ├── agent.py             # 自前のループ（上限 5 回・30 秒）

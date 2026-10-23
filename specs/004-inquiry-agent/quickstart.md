@@ -5,7 +5,7 @@
 ## 用意するもの
 
 - `.env` の `OPENROUTER_API_KEY`（学校配布のキー。チャットに貼らない・Git に入れない）と `OPENROUTER_MODEL`
-- 自動テストではキーを使わない（偽物の LLM に差し替わる）
+- 自動テストではキーを使わない（テスト用の LLM（モック）に差し替わる）
 
 ```bash
 docker compose exec backend python -m app.seed   # spec 001 の初期データ＋返事の定型文（質問の種類ごと）
@@ -55,5 +55,5 @@ docker compose exec backend python -m evals.inquiry.run --model openai/gpt-oss-1
 ## テストを動かす
 
 ```bash
-docker compose exec backend pytest tests -k inquiry   # 偽物の LLM。本物は呼ばない（SC-011）
+docker compose exec backend pytest tests -k inquiry   # テスト用の LLM（モック）。本物は呼ばない（SC-011）
 ```

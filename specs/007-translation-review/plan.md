@@ -24,7 +24,7 @@ AI へのつなぎ方は spec 004 の `inquiry/llm.py`（OpenRouter ＋ OpenAI P
 
 **Storage**: PostgreSQL（様子のメモ・整えた履歴）。Redis は使わない
 
-**Testing**: pytest（AI は spec 004 の偽物の LLM に差し替える。FR-019）、Vitest。整える質（SC-003）は、評価のスクリプトで本物のモデルを手で流す（R-10）
+**Testing**: pytest（AI は spec 004 のテスト用の LLM（モック）に差し替える。FR-019）、Vitest。整える質（SC-003）は、評価のスクリプトで本物のモデルを手で流す（R-10）
 
 **Target Platform**: spec 001 と同じ
 
@@ -113,7 +113,7 @@ frontend/src/
 
 | つなぎ目 | 作る人 → 使う人 | 内容 |
 |---|---|---|
-| `LLMClient`・偽物の LLM | みさき（spec 004 T003・T004）→ みさき | 同じクライアントとテストの偽物を使う |
+| `LLMClient`・テスト用の LLM（モック） | みさき（spec 004 T003・T004）→ みさき | 同じクライアントとテスト用の LLM（モック）を使う |
 | 開示設定の記録項目 `memo` | ゆう → みさき | spec 001 の `disclosure_settings` に `target_code = 'memo'`（初期値は見せる）を足し、設定の画面に出す |
 | `get_disclosed_memos(resident_id, date_from, date_to)` | みさき → さとこ | `services/disclosure.py` に足す。開示の判断はゆうの `is_item_disclosed("memo")`（001-T038。開示設定のキャッシュを読む）を呼び、ゆうが確かめる |
 | 家族の連絡帳に「様子のメモ」を出す | さとこ | spec 001 の連絡帳（001-T055・001-T059）で `get_disclosed_memos()` を呼ぶ。そばに「職員が書いた内容を、AI で読みやすい日本語に整えています」 |

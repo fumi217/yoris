@@ -7,7 +7,7 @@ description: "spec 004（F：問い合わせ AI エージェント）のタス�
 
 **Input**: `specs/004-inquiry-agent/` の [spec.md](./spec.md)・[plan.md](./plan.md)・[research.md](./research.md)・[data-model.md](./data-model.md)・[contracts/api.md](./contracts/api.md)・[contracts/agent-tools.md](./contracts/agent-tools.md)・[quickstart.md](./quickstart.md)
 
-**Tests**: テストのタスクを含める（Constitution の課題要件、spec の FR-030・SC-011）。自動テストは**偽物の LLM** を使い、本物の AI を呼ばない。AI の答えの質は、評価のスクリプト（T031・T040）を手で動かして確かめる。
+**Tests**: テストのタスクを含める（Constitution の課題要件、spec の FR-030・SC-011）。自動テストは**テスト用の LLM（モック）** を使い、本物の AI を呼ばない。AI の答えの質は、評価のスクリプト（T031・T040）を手で動かして確かめる。
 
 **Organization**: User Story ごとにまとめる。各タスクの末尾に **（担当・時期）** を書く。「ミ」は Day 2〜4 のミニマム版（F の最小版は Day 2、全機能が 1 本につながるのは Day 4。docs/マイルストーン.md）、「作」は Day 5 以降の作り込み（[plan.md の「ミニマム版と作り込み」](./plan.md#ミニマム版と作り込み)）。
 担当はほとんどみさき。つなぎ目のタスクだけ、さとこ・ゆうの担当として書く。spec 001 のタスクは「001-T026」のように書く。
@@ -36,7 +36,7 @@ US1 は、001-T038（`get_disclosed_records`）と 001-T054（`get_active_replie
 **⚠️ CRITICAL**: ここが終わるまで、US1・US2 の API は作り始められない
 
 - [X] T003 OpenRouter のクライアントを `backend/app/inquiry/llm.py` に作る：`LLMClient.chat(messages, tools) -> 応答` だけを持つ。接続先 `https://openrouter.ai/api/v1`、`timeout=30`、再試行 0 回、ストリーミングなし、`tool_choice="auto"`（`parallel_tool_calls` は送らない。学校のキーの提供元が対応しておらず 404 になるため。research.md R-01）、`extra_body={"provider": {"require_parameters": True}}`。つながらない・30 秒を超えたら `LLMUnavailable` を出す。あわせて、学校配布のキーで OpenRouter に 1 回つながり、ツール呼び出しの応答が返ることを手で確かめる（Day 1 の目標。キーは `.env` に入れ、コード・ログ・PR に出さない。自動テストでは呼ばない）（research.md R-01）（みさき・ミ）
-- [X] T004 [P] テスト用の偽物の LLM を `backend/tests/fakes/llm.py` に作る：決まった応答（ツール呼び出し・答え）を順に返し、呼ばれた中身を記録する。テストの土台（001-T020）で、本物の `LLMClient` をこれに差し替える（FR-030・SC-011）（みさき・ミ）
+- [X] T004 [P] テスト用の LLM（モック）を `backend/tests/fakes/llm.py` に作る：決まった応答（ツール呼び出し・答え）を順に返し、呼ばれた中身を記録する。本物の `LLMClient` をこれに差し替える fixture は、みさきが T014 で作る（共通のテストの土台 001-T020 では `OPENROUTER_API_KEY` を空にして、本物の AI を呼べないようにする。PR #163 ようこ）（FR-030・SC-011）（みさき・ミ）
 - [ ] T005 テーブルを `backend/app/models/inquiry.py` に作り、マイグレーションを足す：`inquiry_conversations`（`family_account_id` は一意）、`inquiry_messages`（`sender`：`family`／`ai`／`staff`、`body` は家族は 500 文字まで、`ai_result`：`answered`／`handed_off`／`no_record`、`source_ids` は `text[]`、`template_ids` は `bigint[]`、`note` は「100 文字まで、任意」、`response_type`：`app`／`phone`）、
   `staff_messages`（`category`：`medical`／`complaint`／`money`／`care_request`／`urgent`／`other`、`summary` は 500 文字まで、`status`：`waiting`／`answered`、`assignee_id` は渡した時点では空、`handed_at`・`reopened_at`）、`staff_message_events`、`staff_message_templates`（`code` は一意）（data-model.md）（みさき・ミ）
 - [ ] T006 苦情の見え方を `backend/app/inquiry/visibility.py` に作る：`visible_staff_messages(user)` は、生活相談員・施設長以外では `category = 'complaint'` を最初から除いた絞り込みを返す。一覧・件数・詳細・操作のすべてがここを通る。対応待ちの件数 `count_waiting_staff_messages(user, resident_id=None)` と、入居者ごとの件数を 1 回で返す `count_waiting_staff_messages_by_resident(user)` も同じファイルに作る（research.md R-12・data-model.md）（みさき・ミ）
@@ -60,7 +60,7 @@ US1 は、001-T038（`get_disclosed_records`）と 001-T054（`get_active_replie
 ### Tests for User Story 1
 
 - [ ] T013 [P] [US1] テスト `backend/tests/unit/test_inquiry_tools.py`：`get_care_records` は非開示の項目を返さない、範囲を今日から過去 7 日に切り詰める、未記録の欄を `missing` で返す、ツールに入居者 id の引数がない（FR-002・FR-006・FR-020・SC-005）（みさき・ミ）
-- [ ] T014 [P] [US1] テスト `backend/tests/unit/test_inquiry_agent.py`（偽物の LLM）：`answer_family` の `source_ids` のうち、この答えでツールが返していない id は捨てられる、記録の答えで根拠が空なら 1 回やり直させ、だめなら「お答えできる記録がありません」になる、ツールを使わず普通の文で答えたら、その文は家族に出ず 1 回やり直させ、だめなら同じ決まった文になる、ツールを 5 回呼んだら職員に渡す、指示の目印が入った答えは出さない（research.md R-03・R-04、FR-003・FR-025）（みさき・ミ）
+- [ ] T014 [P] [US1] テスト `backend/tests/unit/test_inquiry_agent.py`（テスト用の LLM（モック））：テスト用の LLM（モック）に差し替える fixture `fake_llm` を `backend/tests/conftest.py` に作り（T004）、`answer_family` の `source_ids` のうち、この答えでツールが返していない id は捨てられる、記録の答えで根拠が空なら 1 回やり直させ、だめなら「お答えできる記録がありません」になる、ツールを使わず普通の文で答えたら、その文は家族に出ず 1 回やり直させ、だめなら同じ決まった文になる、ツールを 5 回呼んだら職員に渡す、指示の目印が入った答えは出さない（research.md R-03・R-04、FR-003・FR-025）（みさき・ミ）
 - [ ] T015 [P] [US1] テスト `backend/tests/api/test_inquiry_family.py`：送ると家族の発言と AI の発言が返り、会話に残る、AI の発言に「もとにした記録」が付く、ほかの家族の会話は見られない、家族以外は 403（FR-001・FR-004・FR-008・FR-020）（みさき・ミ）
 
 ### Implementation for User Story 1
@@ -84,7 +84,7 @@ US1 は、001-T038（`get_disclosed_records`）と 001-T054（`get_active_replie
 
 ### Tests for User Story 2
 
-- [ ] T022 [P] [US2] テスト `backend/tests/api/test_inquiry_handoff.py`（偽物の LLM）：言葉による決まりに当たった発言で AI が `answer_family` を呼んでも受け付けず、決まった種類で渡す、渡したメッセージに原文・要約・種類が残り、担当は空、家族には「施設の職員にお伝えしました」（FR-009〜011・research.md R-05）（みさき・ミ）
+- [ ] T022 [P] [US2] テスト `backend/tests/api/test_inquiry_handoff.py`（テスト用の LLM（モック））：言葉による決まりに当たった発言で AI が `answer_family` を呼んでも受け付けず、決まった種類で渡す、渡したメッセージに原文・要約・種類が残り、担当は空、家族には「施設の職員にお伝えしました」（FR-009〜011・research.md R-05）（みさき・ミ）
 - [ ] T023 [P] [US2] テスト `backend/tests/api/test_staff_messages.py`：一覧の並び順（対応待ち → 担当が自分か空 → 古い順）、詳細に直前の 3 往復だけが出る、2 人がほぼ同時に「自分が対応する」を押すと先の 1 人だけ（409 `already_assigned`）、ほぼ同時の返事は先の 1 人だけ（409 `already_answered`）、苦情は生活相談員・施設長以外で 404、家族は 403、通知・音を出す処理がない（FR-012・FR-012b・FR-017・FR-018・SC-008・SC-013）（みさき・ミ）
 
 ### Implementation for User Story 2
@@ -113,7 +113,7 @@ US1 は、001-T038（`get_disclosed_records`）と 001-T054（`get_active_replie
 
 **Independent Test**: 攻撃の例 12 件（会話をまたぐもの 3 件を含む）を家族として送り、どれでも出てはいけないものが出ない
 
-- [ ] T037 [P] [US3] テスト `backend/tests/api/test_inquiry_injection.py`（偽物の LLM）：AI が「ほかの入居者の記録を出す」答えを返しても、ツールからはほかの入居者の記録が返ってこないので根拠にならない、指示の目印が入った答えは出ない、職員の返事・食事の備考に入れた指示のような文がツールの結果として「データ」の役割で渡っている（FR-019〜022・SC-005）（みさき・作）
+- [ ] T037 [P] [US3] テスト `backend/tests/api/test_inquiry_injection.py`（テスト用の LLM（モック））：AI が「ほかの入居者の記録を出す」答えを返しても、ツールからはほかの入居者の記録が返ってこないので根拠にならない、指示の目印が入った答えは出ない、職員の返事・食事の備考に入れた指示のような文がツールの結果として「データ」の役割で渡っている（FR-019〜022・SC-005）（みさき・作）
 - [ ] T038 [US3] 攻撃の例 12 件（指示の書き換え・会話をまたいだ書き換え 3・ほかの入居者の聞き出し・指示文の表示・医療の質問を AI に答えさせる・職員の返事に入れた指示）を `backend/evals/inquiry/cases.yaml` に足す（FR-023・SC-006）（みさき・作）
 - [ ] T039 [US3] 評価で見つかった取りこぼしに合わせて、`prompts.py` の指示と `guard.py` の言葉を直す。直したら評価を流し直し、結果を research.md R-04・R-05 に書き足す（みさき・作）
 
@@ -129,7 +129,7 @@ US1 は、001-T038（`get_disclosed_records`）と 001-T054（`get_active_replie
 
 - [ ] T040 [US4] 1 日の回数の制限を `backend/app/inquiry/ratelimit.py` に作る：`ratelimit:inquiry:family:<家族アカウントID>:<YYYYMMDD>` と `ratelimit:inquiry:facility:<YYYYMMDD>`（日本時間・期限 2 日）を `INCR` と `EXPIRE` を同じパイプラインで行う。超えたら `DECR` で戻して 429 `inquiry_limit`。AI は呼ばない。Day 4 の通しのデモで何度も呼ぶ前に、学校の共有キーを使い切らないよう入れる（research.md R-07、FR-024・FR-027）（みさき・ミ）
 - [ ] T041 [US4] AI が止まったとき：`LLMUnavailable` で 503 `ai_unavailable` を返し、回数を戻す。画面に「いまお答えできません…」を出す。テスト `backend/tests/api/test_inquiry_limits.py` に「AI が止まったら 503 で回数に数えない」を足す（FR-026・SC-009）（みさき・作）
-- [ ] T042 [P] [US4] テスト `backend/tests/api/test_inquiry_limits.py`：11 回目は 429 で偽物の LLM が呼ばれない、日付が変わるとまた送れる（SC-009）（みさき・ミ）
+- [ ] T042 [P] [US4] テスト `backend/tests/api/test_inquiry_limits.py`：11 回目は 429 でテスト用の LLM（モック）が呼ばれない、日付が変わるとまた送れる（SC-009）（みさき・ミ）
 
 **Checkpoint**: 使いすぎ・止まったときの案内ができた（quickstart の確認）
 
@@ -183,7 +183,7 @@ Day 3：T024 → T025・T026・T027（T028 はさとこが並べて）→ T029�
 
 ## Notes
 
-- 自動テストで本物の AI を呼ばない（偽物の LLM）。評価のスクリプトだけが共有のキーを使い、手で動かす
+- 自動テストで本物の AI を呼ばない（テスト用の LLM（モック））。評価のスクリプトだけが共有のキーを使い、手で動かす
 - AI に渡すツールは、読み取りと「答える」「渡す」だけ。データを書き換えるツールを足さない
 - 職員へのメッセージを読むところは、必ず `visible_staff_messages(user)` を通す
 - 1 PR は 1,100 行以内（`specs/` とロックファイルは数えない）
