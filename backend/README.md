@@ -8,7 +8,7 @@ FastAPI のバックエンド（Python 3.13）。技術の前提は [CLAUDE.md](
 リポジトリの一番上で `docker compose up -d` を実行すると、http://localhost:8000 で動く（API の一覧は http://localhost:8000/docs）。
 ファイルを保存すると自動で読み直す。
 
-- **worker**（メールの送信・20 時のまとめ。T057 ができるまでは `docker compose --profile worker up -d worker` で起動）は自動では読み直さない。`app/jobs/` などを変えたら `docker compose restart worker` で再起動する。
+- **worker**（メールの送信・20 時のまとめ。1 分ごとに `run_jobs()` を呼ぶ。`docker compose up -d` で一緒に起動する）は自動では読み直さない。`app/jobs/` などを変えたら `docker compose restart worker` で再起動する。
 - アップロードしたファイルは、名前つきのボリューム `uploads`（コンテナの中の `/data/uploads`）に置く。手元の `backend/` には残らない。
 
 ## DB とマイグレーション

@@ -54,14 +54,11 @@ services:
       redis:
         condition: service_started
 
-  # メールの送信・20 時のまとめ（T057・T065）。中身ができるまでは `--profile worker` を付けたときだけ起動する。
-  # T057 で app/jobs/worker.py ができたら、profiles の 2 行を消して、ほかと一緒に起動するようにする
+  # メールの送信・20 時のまとめ（T057・T065）。1 分ごとに run_jobs() を呼ぶ（開発用。本番は外から API を呼ぶ）
   # 自動では読み直さないので、コードを変えたら `docker compose restart worker`（backend/README.md）
   worker:
     build: ./backend
     command: python -m app.jobs.worker
-    profiles:
-      - worker
     env_file:
       - path: .env
         required: false
