@@ -29,7 +29,7 @@
 | 404 | `not_found` | ほかの家族のもの・ないものを id で指定した（存在するかどうかも知らせない。下の「家族の画面」の決まり） | FR-020 |
 | 409 | `request_limit` | 返事待ちが 3 件ある | FR-014 |
 | 409 | `theme_waiting` | 同じテーマの返事待ちがある | FR-014 |
-| 409 | `already_replied` | ほかの職員が先に返事した | FR-030 |
+| 409 | `already_replied` | ほかの職員が先に返事した。家族が、返事のついたリクエストを取り消そうとした | FR-014・FR-030 |
 | 409 | `request_cancelled` | 家族がリクエストを取り消していた | Edge Cases |
 | 409 | `not_today` | 当日ではない記録・返事を直そうとした | FR-030・Edge Cases |
 | 422 | `invalid_file` | 形式が PDF・JPG・PNG でない、10MB を超える | FR-034 |
@@ -91,7 +91,7 @@ API の名前は開発前MTG に合わせて `contact-book`（連絡帳）にす
 | `GET /api/family/themes` | F | ミ | 頼めるテーマ（`get_disclosed_themes` を通す） | FR-013 |
 | `GET /api/family/requests` | F | ミ | 送ったリクエスト（状態・送った日時・日数・3 日たったか） | FR-014 |
 | `POST /api/family/requests` | F | ミ | テーマを選んで送る（`theme_id`）。409：`request_limit`・`theme_waiting` | FR-013・FR-014 |
-| `DELETE /api/family/requests/{id}` | F | ミ | 返事の前に取り消す | FR-014 |
+| `DELETE /api/family/requests/{id}` | F | ミ | 返事の前に取り消す。返事がついたあとは 409 `already_replied`、ほかの家族のものやない id は 404 | FR-014 |
 | `POST /api/family/replies/{reply_id}/read` | F | ミ | 返事を読んだ（家族で共有）。返事のカードが画面に出たら、フロントが自動で呼ぶ（R-15） | FR-015 |
 | `GET /api/family/notifications` | F | ミ | お知らせの一覧（返事・まとめ・施設からのお知らせ） | FR-023・FR-034 |
 | `POST /api/family/notifications/{id}/read` | F | 作 | お知らせを読んだ | FR-023 |
