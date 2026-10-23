@@ -130,7 +130,7 @@ CurrentUser:
 
 - **一意**：`(resident_id, date, item, slot) WHERE deleted_at IS NULL`（部分インデックス。取り消したあとに記録し直せる。[research.md R-04](./research.md#r-04-記録のテーブルを-1-つにまとめる)）
 - 押し直したら `value` を上書きし、前の値を `care_record_histories` に残す（FR-005）。
-- 取り消し・修正できるのは、`date` が今日（日本時間）の記録だけ（エッジケース）。
+- 取り消し・修正できるのは、`date` が今日（日本時間）の記録だけ（エッジケース）。新しく付けるのは、今日から 3 日前までの `date`（付け忘れ。spec の Session 2026-10-23）。
 - 画面に出す文言は、`value` のコードから辞書で引く（[research.md R-11](./research.md#r-11-多言語とふりがな)）。
 
 ### `care_record_histories`

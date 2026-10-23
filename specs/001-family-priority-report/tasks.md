@@ -76,8 +76,8 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ### Implementation for User Story 1
 
-- [ ] T025 [US1] `care_records` と `care_record_histories` を `backend/app/models/records.py` に作り、マイグレーションを足す。`item`：`meal`／`mood`／`sleep`、`slot`：食事は `breakfast`／`lunch`／`dinner`／`snack`、機嫌・眠りは `day`、`value`：meal は `10`／`8`／`5`／`2`／`0`／`none`、mood は `smile`／`normal`／`low`、sleep は `good`／`normal`／`poor`。一意は `(resident_id, date, item, slot) WHERE deleted_at IS NULL`（部分インデックス）。眠りの `date` は記録した朝の日付（data-model.md・research.md R-04・R-05）（ゆう・ミ）
-- [ ] T026 [US1] 記録の保存・押し直しを `backend/app/services/records.py` に作る：上書きのときは前の値（`value`）を履歴に残す。日付は日本時間で決める（research.md R-14）（ゆう・ミ）
+- [x] T025 [US1] `care_records` と `care_record_histories` を `backend/app/models/records.py` に作り、マイグレーションを足す。`item`：`meal`／`mood`／`sleep`、`slot`：食事は `breakfast`／`lunch`／`dinner`／`snack`、機嫌・眠りは `day`、`value`：meal は `10`／`8`／`5`／`2`／`0`／`none`、mood は `smile`／`normal`／`low`、sleep は `good`／`normal`／`poor`。一意は `(resident_id, date, item, slot) WHERE deleted_at IS NULL`（部分インデックス）。眠りの `date` は記録した朝の日付（data-model.md・research.md R-04・R-05）（ゆう・ミ）
+- [x] T026 [US1] 記録の保存・押し直しを `backend/app/services/records.py` に作る：上書きのときは前の値（`value`）を履歴に残す。日付は日本時間で決める（research.md R-14）。新しく付けられるのは今日から 3 日前まで、押し直しは今日の記録だけ（spec の Session 2026-10-23）（ゆう・ミ）
 - [ ] T027 [US1] `PUT /api/staff/residents/{id}/records` を `backend/app/api/staff/records.py` に作る（役割：介護職員・リーダー・相談員・施設長）（contracts/api.md）（ゆう・ミ）
 - [ ] T028 [US1] `GET /api/staff/residents?date=` を `backend/app/api/staff/residents.py` に作る：食事区分ごとの記録済み／未記録（FR-008）。返事待ちの件数は US3 で足す（ゆう・ミ）
 - [ ] T029 [US1] `GET /api/staff/residents/{id}/contact-book?date=` を `backend/app/api/staff/contact_book.py` に作る：その日の記録を時刻順に（非開示も含む。職員向けなので共通の関数は通さない）（FR-024）（ゆう・ミ）
