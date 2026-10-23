@@ -1,18 +1,15 @@
 """記録の保存・押し直し（001-T026）のテスト。
 
-DB を使うテストは、DATABASE_URL があるときだけ動く（CI に PostgreSQL が入るのは 001-T020）。
-手元では `docker compose run --rm backend python -m pytest`（マイグレーションを当てた DB が要る）。
-各テストは 1 つのトランザクションの中で動かし、最後に取り消すので、開発の DB のデータは残らない。
+DB を使うテストは、tests/conftest.py の session を使う
+（テストごとに取り消すので、開発の DB は変わらない）。
 """
 
-from collections.abc import Iterator
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
-from sqlalchemy import create_engine, func, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
 from app.models.core import Facility, Resident, Staff, User
 from app.models.records import CareRecord, CareRecordHistory
 from app.services.records import InvalidRecord, NotToday, save_record, today_jst
@@ -73,24 +70,6 @@ def test_date_out_of_range_is_rejected(record_date):
 
 
 # --- DB を使うテスト ---
-
-
-@pytest.fixture
-def session() -> Iterator[Session]:
-    url = get_settings().database_url
-    if not url:
-        pytest.skip("DATABASE_URL がない（CI に PostgreSQL が入るまで。001-T020）")
-    engine = create_engine(url)
-    with engine.connect() as connection:
-        transaction = connection.begin()
-        # save_record の begin_nested が、外のトランザクションの中の SAVEPOINT になるように
-        db = Session(bind=connection, join_transaction_mode="create_savepoint")
-        try:
-            yield db
-        finally:
-            db.close()
-            transaction.rollback()
-    engine.dispose()
 
 
 @pytest.fixture
