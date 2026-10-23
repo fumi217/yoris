@@ -42,11 +42,11 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 - [X] T008 DB のセッションを `backend/app/db.py` に作る（SQLAlchemy 2）（ようこ・ミ）
 - [X] T009 共通のテーブルを `backend/app/models/core.py` に作り、マイグレーションを足す：`facilities`、`users`（`kind`：`staff`／`family`、職員は `login_id`、家族は `email`、`password_hash`、`language`：`ja`／`id`／`en` 初期値 `ja`）、`residents`、`staff`（`role`：`care_worker`／`leader`／`counselor`／`clerk`／`director`、`display_name`）、`family_accounts`（`resident_id` は一意＝入居者に 1 つ）（data-model.md）（ようこ・ミ）
-- [ ] T010 ログイン中の人（`CurrentUser`：user_id・kind・role・resident_id・language）と、役割のチェック（`require_family`・`require_staff(roles)`）を `backend/app/auth/deps.py` に作る（ようこ・ミ）
-- [ ] T011 [P] Redis の接続を `backend/app/redis.py` に作る。キーには用途の接頭辞を付け、必ず期限を付ける決まりをコメントに書く（research.md R-12）（ようこ・ミ）
-- [ ] T012 [P] エラーの形（`{"error": {"code", "message_key"}}`）とコード（`not_logged_in`・`forbidden`・`not_found`・`request_limit`・`theme_waiting`・`already_replied`・`request_cancelled`・`not_today`・`invalid_file`・`validation_error`）を `backend/app/errors.py` に作る（contracts/api.md）（ようこ・ミ）
-- [ ] T013 開発用のユーザー切り替え `POST /api/dev/switch-user` を `backend/app/api/dev.py` に作る。`APP_ENV=development` のときだけルーターを登録する（research.md R-02）（ようこ・ミ）
-- [ ] T014 書き込みの API で `X-Requested-With: fetch` ヘッダーを確かめるミドルウェアを `backend/app/auth/csrf.py` に作る。ブラウザから呼ばない `POST /api/internal/jobs/run`（合言葉で確かめる。contracts/api.md）は対象から外す（research.md R-03）（ようこ・ミ）
+- [x] T010 ログイン中の人（`CurrentUser`：user_id・kind・role・resident_id・language）と、役割のチェック（`require_family`・`require_staff(roles)`）を `backend/app/auth/deps.py` に作る（ようこ・ミ）
+- [x] T011 [P] Redis の接続を `backend/app/redis.py` に作る。キーには用途の接頭辞を付け、必ず期限を付ける決まりをコメントに書く（research.md R-12）（ようこ・ミ）
+- [x] T012 [P] エラーの形（`{"error": {"code", "message_key"}}`）とコード（`not_logged_in`・`forbidden`・`not_found`・`request_limit`・`theme_waiting`・`already_replied`・`request_cancelled`・`not_today`・`invalid_file`・`validation_error`）を `backend/app/errors.py` に作る（contracts/api.md）（ようこ・ミ）
+- [x] T013 開発用のユーザー切り替え `POST /api/dev/switch-user` を `backend/app/api/dev.py` に作る。`APP_ENV=development` のときだけルーターを登録する（research.md R-02）（ようこ・ミ）
+- [x] T014 書き込みの API で `X-Requested-With: fetch` ヘッダーを確かめるミドルウェアを `backend/app/auth/csrf.py` に作る。ブラウザから呼ばない `POST /api/internal/jobs/run`（合言葉で確かめる。contracts/api.md）は対象から外す（research.md R-03）（ようこ・ミ）
 - [ ] T015 初期データの仕組みを `backend/app/seed/__main__.py` に作り、入居者 30 人・職員（`login_id` つき、各役割）・家族アカウント 30（入居者に 1 つ）を入れる（`python -m app.seed`）。**施設がまだなければ作り（契約中として）、すでにあればその施設に足す**（J の申し込みで施設ができたあとにも流せるように。PR #23 ようこ・spec 002）。ほかの人はここに自分の分を足す（ようこ・ミ）
 - [ ] T016 [P] 多言語の辞書の仕組みを `frontend/src/i18n/index.ts`・`frontend/src/i18n/ja.json` に作る。ミニマム版は日本語だけ。文言は必ず辞書から引く。日本語のふりがなは `{漢字|かんじ}` の書き方で書く（research.md R-11）（みさき・ミ）
 - [ ] T017 [P] ふりがなの部品 `frontend/src/i18n/Ruby.tsx` を作る：`{漢字|かんじ}` を `<ruby>` に変える。日本語以外では書き方を使わない。メール用に漢字だけにする関数も `backend/app/i18n.py` に作る（みさき・ミ）
@@ -55,7 +55,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
   家族の画面のメニューは、下に「連絡帳・知りたいこと・お知らせ」の 3 つ、そのほか（面会・アルバム・設定）は「☰ その他」にまとめる（Clarifications）。「☰ その他」は、ほかの機能が項目を足しやすい形にする（spec 003 の T014 が「面会」を足す）。
   家族には職員・管理画面へのリンクを出さず、URL を直接開いても家族の画面に戻す（API は 403 `forbidden`。spec 003 の plan.md）（ようこ・ミ）
 - [ ] T020 テストの土台を `backend/tests/conftest.py` に作る：テスト用の PostgreSQL・Redis（コンテナ）、ログイン済みのクライアントを作るヘルパー。あわせて CI（`.github/workflows/ci.yml`）に PostgreSQL・Redis のサービスを足す（同じ PR で入れる。入れないと全員の CI が赤になるため）（research.md R-19）（ようこ・ミ）
-- [ ] T021 [P] テスト `backend/tests/api/test_dev_switch.py`：`APP_ENV` を付けない設定で `POST /api/dev/switch-user` が 404 になる（research.md R-02）（ようこ・ミ）
+- [x] T021 [P] テスト `backend/tests/api/test_dev_switch.py`：`APP_ENV` を付けない設定で `POST /api/dev/switch-user` が 404 になる（research.md R-02）（ようこ・ミ）
 - [ ] T022 本物のログインを `backend/app/auth/routes.py` に作る：`POST /api/auth/login`（職員は ID、家族はメールアドレス、bcrypt）、`POST /api/auth/logout`（セッションをすぐ消す）、`GET /api/me`。セッションは Redis（`session:<ランダムなID>`）、Cookie は `HttpOnly`・`Secure`（本番）・`SameSite=Lax`（research.md R-01・R-03）（ようこ・ミ・Day 2）
 - [ ] T023 [P] テスト `backend/tests/api/test_auth.py`：職員は ID、家族はメールアドレスでログインできる。家族が職員の API を呼ぶと 403。ログアウトでセッションが消える（ようこ・ミ）
 - [ ] T096 [P] 画面設計 `docs/画面設計.md` を作る：画面の一覧と遷移、職員の入居者一覧に出すもの（未記録・返事待ち・家族からのメッセージ・承認待ち・目印）の並べ方と置き場所、記録の画面に並ぶ部品（E の目印・D の「様子のメモを書く」・H の「写真を載せる」）の並べ方も決める（spec 006 の Assumptions、PR #40・#45）（ゆう・ミ）

@@ -16,7 +16,7 @@ FastAPI のバックエンド（Python 3.13）。技術の前提は [CLAUDE.md](
 - テーブルの定義は `app/models/<機能>.py` に、`app.db.Base` を継承して書く。足したファイルは `app/models/__init__.py` で import する（Alembic が見つけられるように）。
   共通の土台（施設・ログインの情報・入居者・家族アカウント・職員）は `app/models/core.py`。
 - 型は `Mapped[int]`（bigint）・`Mapped[str]`（text）・`Mapped[datetime]`（timestamptz）と書くと、data-model.md の決まりどおりになる。選択肢のある列は `check_in` で CHECK 制約を付ける。
-- API では `Depends(get_session)` でセッションを受け取り、書き込んだら `session.commit()` を呼ぶ。
+- API では `session: Annotated[Session, Depends(get_session)]` でセッションを受け取り、書き込んだら `session.commit()` を呼ぶ。
   - **commit するのは API の関数の最後の 1 回だけ**。サービスの関数（`services/` の中。`create_reply_notice` など）は、受け取ったセッションに書くだけで commit しない（途中で失敗したら、全部まとめて取り消されるように）。
   - worker・決まった時刻の処理（`run_jobs()`）・`BackgroundTasks` など、API の応答のあとに動く処理は、API のセッションが閉じているので、自分で開く：`with Session(get_engine()) as session:`（`from sqlalchemy.orm import Session`、`from app.db import get_engine`）。
 

@@ -8,6 +8,7 @@
 
 - 先頭は `/api`。JSON でやりとりする（ファイルのアップロードだけ `multipart/form-data`）。
 - ログインはセッションの Cookie（[research.md R-03](../research.md#r-03-ログインとセッション)）。書き込み（POST・PUT・PATCH・DELETE）は `X-Requested-With: fetch` ヘッダーを付ける。
+  ないときは 403 `forbidden`（ブラウザから呼ばない `POST /api/internal/jobs/run`・`POST /api/billing/webhook` は対象外。#64）。
 - **入居者は、家族の API では指定させない**。ログイン中の家族アカウントから決める（FR-020）。
 - 家族に出す記録・テーマ・返事は、すべて共通の関数（`get_disclosed_records`・`get_disclosed_themes`・`get_active_replies`）を通す（[data-model.md](../data-model.md#家族に出すときの共通の関数)）。
 - 文言は返さず、**コード**で返す（`value: "smile"`、`theme_code: "theme.daily_life"` など）。画面で辞書から引く（R-11）。
@@ -33,6 +34,7 @@
 | 409 | `not_today` | 当日ではない記録・返事を直そうとした | FR-030・Edge Cases |
 | 422 | `invalid_file` | 形式が PDF・JPG・PNG でない、10MB を超える | FR-034 |
 | 422 | `validation_error` | 文字数（返事 100、タイトル 40、本文 1,000）など | FR-030・FR-034 |
+| 500 | `server_error` | サーバーで思わぬエラーが起きた（バグ・DB が止まったなど）。表にないそのほかのエラーも、HTTP の番号はそのままで、このコードで返す（#64） | |
 
 ### 役割の略号
 
@@ -50,12 +52,12 @@
 |---|---|---|---|
 | `POST /api/auth/login` | だれでも | ミ | 職員は ID、家族はメールアドレスと、パスワードでログイン |
 | `POST /api/auth/logout` | ログイン中 | ミ | ログアウト（セッションをすぐ消す） |
-| `GET /api/me` | ログイン中 | ミ | 自分の種類（家族／職員）・役割・表示名・表示言語 |
+| `GET /api/me` | ログイン中 | ミ | 自分の種類（家族／職員）・役割・表示名・表示言語（`{kind, role, display_name, language}`。表示名は、職員は返事に出す名前、家族は入居者の呼び名。ユーザーの切り替えを確かめるため、#64 で先に作った） |
 | `PUT /api/me/language` | ログイン中 | 作 | 表示言語を変える（`ja`／`id`／`en`。FR-021） |
 | `POST /api/admin/staff` | CO・D | 作 | 職員のアカウントを作る（ID と初期パスワード。ミニマム版は初期データ） |
 | `POST /api/admin/invitations` | CO・D | 作 | 家族を招待する（招待のメールを送る） |
 | `POST /api/invitations/accept` | だれでも | 作 | 招待を受けてパスワードを決める。トークンは本文で送る（メールのリンクは `#token=` の形） |
-| `POST /api/dev/switch-user` | 開発環境だけ | ミ | 初期データの人としてログインする（本番では存在しない。`APP_ENV` がなければ本番扱い。R-02） |
+| `POST /api/dev/switch-user` | 開発環境だけ | ミ | 初期データの人としてログインする。本文 `{user_id}`、成功は 204（前のセッションは消す）、いない人なら 404（本番では存在しない。`APP_ENV` がなければ本番扱い。R-02・#64） |
 
 - 職員は操作がないまま 30 分で自動ログアウト、家族は 30 日（R-01。作り込み）。
 

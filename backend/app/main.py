@@ -2,7 +2,11 @@
 
 from fastapi import FastAPI
 
+from app.api import dev
+from app.auth import routes as auth_routes
+from app.auth.csrf import RequireFetchHeaderMiddleware
 from app.config import get_settings
+from app.errors import register_error_handlers
 
 
 def create_app() -> FastAPI:
@@ -16,6 +20,14 @@ def create_app() -> FastAPI:
         redoc_url=None,
         openapi_url="/openapi.json" if settings.is_development else None,
     )
+
+    register_error_handlers(app)
+    app.add_middleware(RequireFetchHeaderMiddleware)
+
+    app.include_router(auth_routes.router)
+    # 開発用のユーザー切り替えは、開発環境だけで登録する（本番では 404。research.md R-02）
+    if settings.is_development:
+        app.include_router(dev.router)
 
     @app.get("/api/health")
     def health() -> dict[str, str]:

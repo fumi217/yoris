@@ -102,8 +102,10 @@ CurrentUser:
   user_id
   kind          staff／family
   role          職員の役割（家族は空）
+  staff_id      職員なら staff.id（記録・面会・返事など、職員が書いたものの参照に使う。家族は空。#64）
   resident_id   家族なら、紐づいた入居者
   language
+  display_name  職員は返事に出す名前、家族は入居者の呼び名（/api/me で使う。DB を 1 回で読むため一緒に持つ。#64）
 ```
 
 ## 記録（ゆう）

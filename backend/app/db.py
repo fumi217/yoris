@@ -1,6 +1,6 @@
 """DB のつなぎ方。テーブルの定義は app/models/ に置き、Base を継承する。
 
-API では `Depends(get_session)` で、1 つのリクエストに 1 つのセッションを使う。
+API では `Annotated[Session, Depends(get_session)]` で、1 つのリクエストに 1 つのセッションを使う。
 書き込んだら、API の関数の最後で 1 回だけ `session.commit()` を呼ぶ
 （呼ばずに終わると取り消される）。サービスの関数は commit しない。
 API の応答のあとに動く処理は、`with Session(get_engine())` で自分で開く。
