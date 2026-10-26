@@ -9,6 +9,7 @@ from app.models import (  # noqa: F401
     inquiry,
     notifications,
     records,
+    replies,
     requests,
     visits,
 )

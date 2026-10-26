@@ -32,9 +32,9 @@ class Notification(Base):
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
     family_account_id: Mapped[int] = mapped_column(ForeignKey("family_accounts.id"))
     kind: Mapped[str]
-    # 指す先のテーブルは、まだない（replies はゆう、facility_announcements は作り込み）。
-    # 外部キーは、それぞれのテーブルができたあとのマイグレーションで足す
-    reply_id: Mapped[int | None]
+    # replies の外部キーは、replies を作ったマイグレーション（#114 ゆう）で足した。
+    # facility_announcements は作り込みなので、announcement_id の外部キーはそのときに足す
+    reply_id: Mapped[int | None] = mapped_column(ForeignKey("replies.id"))
     announcement_id: Mapped[int | None]
     # まとめ（daily_digest・weekly_digest）の対象の期間
     period_start: Mapped[datetime | None]

@@ -23,8 +23,10 @@ from sqlalchemy import case, select
 from sqlalchemy.orm import Session
 
 from app.models.core import Facility, Resident, Staff
-from app.models.disclosure import DisclosureSetting, Theme
+from app.models.disclosure import DisclosureSetting, ReplyTemplate, Theme
 from app.models.records import ITEMS, MEAL_SLOTS, CareRecord
+from app.models.replies import Reply
+from app.models.requests import Request
 from app.redis import get_redis
 
 logger = logging.getLogger(__name__)
@@ -53,6 +55,21 @@ class DisclosedTheme:
     code: str  # 辞書のキー（例："theme.daily_life"）
     emoji: str
     sort_order: int
+
+
+@dataclass(frozen=True)
+class DisclosedReply:
+    id: int  # replies.id（既読にするとき・F の source_id に使える）
+    request_id: int
+    contact_book_date: date  # 返事が入る連絡帳の日付（返事をした日、日本時間）
+    theme_code: str  # 辞書のキー（例："theme.daily_life"）
+    theme_emoji: str
+    template_codes: list[str]  # 選んだ定型文の辞書のキー（選んだ順）
+    note: str | None  # 書き足した短い文。辞書を通さず、文字としてだけ出す
+    replied_by_name: str  # 返事をした職員の表示名
+    replied_at: datetime
+    edited: bool  # 当日中に直したか
+    read: bool  # 家族が読んだか（家族で共有）
 
 
 # --- 開示設定（キャッシュつき） ---
@@ -202,3 +219,57 @@ def get_requested_themes(session: Session, theme_ids: Iterable[int]) -> list[Dis
         return []
     themes = session.scalars(select(Theme).where(Theme.id.in_(ids)).order_by(Theme.sort_order))
     return [_to_theme(theme) for theme in themes]
+
+
+# --- 返事（001-T054） ---
+
+
+def get_active_replies(
+    session: Session, resident_id: int, date_from: date, date_to: date
+) -> list[DisclosedReply]:
+    """その入居者への職員の返事を、返事の時刻の順に返す。
+
+    連絡帳の日付（contact_book_date）が date_from〜date_to のものだけ。
+
+    返事は取り消さないので、保存されたものはすべて有効（R-06）。
+    """
+    rows = session.execute(
+        select(Reply, Theme.code, Theme.emoji, Staff.display_name)
+        .join(Request, Request.id == Reply.request_id)
+        .join(Theme, Theme.id == Request.theme_id)
+        .join(Staff, Staff.id == Reply.replied_by)
+        .where(
+            Request.resident_id == resident_id,
+            Reply.contact_book_date >= date_from,
+            Reply.contact_book_date <= date_to,
+        )
+        .order_by(Reply.replied_at, Reply.id)
+    ).all()
+    template_ids = {template_id for reply, *_ in rows for template_id in reply.template_ids}
+    codes = (
+        dict(
+            session.execute(
+                select(ReplyTemplate.id, ReplyTemplate.code).where(
+                    ReplyTemplate.id.in_(template_ids)
+                )
+            ).all()
+        )
+        if template_ids
+        else {}
+    )
+    return [
+        DisclosedReply(
+            id=reply.id,
+            request_id=reply.request_id,
+            contact_book_date=reply.contact_book_date,
+            theme_code=theme_code,
+            theme_emoji=theme_emoji,
+            template_codes=[codes[t] for t in reply.template_ids if t in codes],
+            note=reply.note,
+            replied_by_name=staff_name,
+            replied_at=reply.replied_at,
+            edited=reply.edited_at is not None,
+            read=reply.read_at is not None,
+        )
+        for reply, theme_code, theme_emoji, staff_name in rows
+    ]

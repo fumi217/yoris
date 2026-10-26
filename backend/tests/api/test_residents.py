@@ -130,3 +130,32 @@ def test_no_messages_means_zero(client, make_staff, make_family, login_as):
     login_as(make_staff().user_id)
 
     assert _row(_rows(client), family.resident_id)["waiting_messages"] == 0
+
+
+def test_waiting_requests_are_counted(client, session, make_staff, make_family, login_as):
+    from sqlalchemy import select
+
+    from app.models.disclosure import Theme
+    from app.models.requests import Request
+    from app.seed.themes import add_themes
+
+    add_themes(session)
+    themes = session.scalars(select(Theme.id).order_by(Theme.sort_order)).all()
+    family = make_family()
+    other = make_family()
+    session.add_all(
+        [
+            Request(resident_id=family.resident_id, theme_id=themes[0]),
+            Request(resident_id=family.resident_id, theme_id=themes[1]),
+            # 返事のついた・取り消したリクエストは数えない
+            Request(resident_id=family.resident_id, theme_id=themes[2], status="answered"),
+            Request(resident_id=family.resident_id, theme_id=themes[3], status="cancelled"),
+        ]
+    )
+    session.flush()
+    login_as(make_staff().user_id)
+
+    data = _rows(client)
+
+    assert _row(data, family.resident_id)["waiting_requests"] == 2
+    assert _row(data, other.resident_id)["waiting_requests"] == 0

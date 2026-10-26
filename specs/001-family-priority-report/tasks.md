@@ -124,20 +124,20 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 ### Tests for User Story 3
 
 - [x] T043 [P] [US3] テスト `backend/tests/api/test_requests.py`：返事待ちは 3 件まで（4 件目は 409 `request_limit`）、同じテーマは 1 件まで（409 `theme_waiting`）、返事の前だけ取り消せる、ほかの家族のリクエストの id では取り消せない（404）（FR-014・research.md R-08・R-19）（さとこ・ミ）
-- [ ] T044 [P] [US3] テスト `backend/tests/api/test_replies.py`：2 人がほぼ同時に返事をすると先の 1 人だけ保存され、もう一方は 409 `already_replied`。取り消されたリクエストへの返事は 409 `request_cancelled`。返事の文に `<script>` を入れても文字として返る（FR-030・Edge Cases・research.md R-07・SC-009）（ゆう・ミ）
+- [x] T044 [P] [US3] テスト `backend/tests/api/test_replies.py`：2 人がほぼ同時に返事をすると先の 1 人だけ保存され、もう一方は 409 `already_replied`。取り消されたリクエストへの返事は 409 `request_cancelled`。返事の文に `<script>` を入れても文字として返る（FR-030・Edge Cases・research.md R-07・SC-009）（ゆう・ミ）
 - [ ] T045 [P] [US3] テスト `backend/tests/api/test_notifications.py`：返事を保存すると、同じトランザクションで `notifications`（`reply`）と `email_outbox` ができる。`email_outbox.params` に返事の中身が入らない。ほかの家族の返事の id では既読にできない（404）（SC-010・research.md R-09・R-19）（さとこ・ミ）
 
 ### Implementation for User Story 3
 
 - [x] T046 [P] [US3] `requests` を `backend/app/models/requests.py` に作り、マイグレーションを足す。`status`：`waiting`／`answered`／`cancelled`。一意は `(resident_id, theme_id) WHERE status = 'waiting'`（data-model.md）（さとこ・ミ）
-- [ ] T047 [P] [US3] `replies` を `backend/app/models/replies.py` に作り、マイグレーションを足す。`template_ids` は `bigint[]`（1 つ以上）、`note` は「100 文字まで、任意」、`contact_book_date`、`edited_at`、`read_at`。一意は `(request_id)`（返事は取り消さない）（data-model.md）（ゆう・ミ）
+- [x] T047 [P] [US3] `replies` を `backend/app/models/replies.py` に作り、マイグレーションを足す。`template_ids` は `bigint[]`（1 つ以上）、`note` は「100 文字まで、任意」、`contact_book_date`、`edited_at`、`read_at`。一意は `(request_id)`（返事は取り消さない）（data-model.md）（ゆう・ミ）
 - [x] T048 [P] [US3] `notifications`・`email_outbox` を `backend/app/models/notifications.py` に作り、マイグレーションを足す。`notifications.kind`：`reply`／`daily_digest`／`weekly_digest`／`announcement`。`email_outbox.params` には種類・タイトル・リンクだけを入れる（data-model.md）（さとこ・ミ）
 - [x] T049 [US3] リクエストの作成・取り消しを `backend/app/services/requests.py` に作る：作るときは `family_accounts` の行を `FOR UPDATE` で押さえて返事待ちを数え、テーマが `get_disclosed_themes()` にあるかを確かめる（research.md R-08）（さとこ・ミ）
 - [x] T050 [US3] `GET /api/family/themes`・`GET /api/family/requests`・`POST /api/family/requests`・`DELETE /api/family/requests/{id}` を `backend/app/api/family/requests.py` に作る。入居者は `CurrentUser.resident_id` から決める（FR-013・FR-014・FR-020）（さとこ・ミ）
 - [ ] T051 [US3] お知らせとメールの送る予定を作る関数 `create_reply_notice(session, reply_id)` を `backend/app/services/notifications.py` に作る：関数の中では commit しない。作った `email_outbox` の id を返す（呼んだ側が、コミットのあとにその場で送るため。T057）。メールのテンプレート（`backend/app/templates/email/`）には種類とリンクだけを渡す（research.md R-09）（さとこ・ミ）
 - [ ] T052 [US3] 返事の保存を `backend/app/services/replies.py` に作る：`UPDATE requests SET status='answered' WHERE id=:id AND status='waiting'` が 0 件なら保存しない（`answered` なら `already_replied`、`cancelled` なら `request_cancelled`）。返事の追加と `create_reply_notice(session, reply_id)` を同じトランザクションで行う（research.md R-07・R-09）（ゆう・ミ）
 - [ ] T053 [US3] `GET /api/staff/residents/{id}/requests`・`POST /api/staff/requests/{id}/reply` を `backend/app/api/staff/requests.py` に作り、`GET /api/staff/residents` に返事待ちの件数を足す。返事の保存をコミットしたあとに、BackgroundTasks で T057 の `send_email_now(outbox_id)` を呼ぶ（`outbox_id` は `create_reply_notice` の返り値）。職員への通知・音は出さない（FR-029・FR-030・SC-013、research.md R-09）（ゆう・ミ）
-- [ ] T054 [US3] 共通の関数 `get_active_replies(resident_id, date_from, date_to)` を `backend/app/services/disclosure.py` に足す（保存された返事。テーマ・定型文のコード・短い文・職員の表示名・時刻・既読か）（research.md R-06）（ゆう・ミ）
+- [x] T054 [US3] 共通の関数 `get_active_replies(resident_id, date_from, date_to)` を `backend/app/services/disclosure.py` に足す（保存された返事。テーマ・定型文のコード・短い文・職員の表示名・時刻・既読か）（research.md R-06）（ゆう・ミ）
 - [ ] T055 [US3] `GET /api/family/contact-book?date=` を `backend/app/api/family/contact_book.py` に作る：まだ読んでいない返事を（日付に関わらず）先頭に、`get_disclosed_records` の記録を食事 → 機嫌・様子 → 眠りの順に、未記録の欄を「まだ記録されていません」のコードで返す。記録を直接読まない（FR-015・FR-017・FR-019）（さとこ・ミ）
 - [ ] T056 [US3] `POST /api/family/replies/{reply_id}/read`・`GET /api/family/notifications` を `backend/app/api/family/notifications.py` に作る。ログイン中の家族のものかを確かめる（FR-015・FR-023）（さとこ・ミ）
 - [ ] T057 [US3] メールを送る処理を作る：`backend/app/jobs/run.py` の `run_jobs()` が、`email_outbox` の未送信を `FOR UPDATE SKIP LOCKED` で数十件まで取り出して送り、`sent_at` を入れる（失敗は 5 回まで送り直す）。

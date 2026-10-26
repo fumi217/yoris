@@ -4,7 +4,7 @@
 家族からのメッセージの対応待ちの件数を返す（FR-008・spec 004 の FR-013）。
 並びは入居の順（residents.id の小さい順。docs/画面設計.md の「4」）。
 職員向けなので、非開示の項目も含めて記録を直接読んでよい（spec 001 の research.md R-06）。
-返事待ちのリクエストの件数は、#114（001-T053）で足す。
+返事待ちのリクエストの件数（001-T053）も返す。
 """
 
 from datetime import date
@@ -12,7 +12,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.staff.records import RECORDERS
@@ -22,6 +22,7 @@ from app.db import get_session
 from app.inquiry.visibility import count_waiting_staff_messages_by_resident
 from app.models.core import Resident
 from app.models.records import MEAL_SLOTS, CareRecord
+from app.models.requests import Request
 
 router = APIRouter(prefix="/api/staff", tags=["staff"])
 
@@ -41,6 +42,8 @@ class ResidentRow(BaseModel):
     meals: MealsRecorded
     mood: bool
     sleep: bool
+    # 返事待ちの「知りたいこと」のリクエストの件数（FR-029）
+    waiting_requests: int
     # 家族からのメッセージの対応待ちの件数（苦情は生活相談員・施設長にだけ数える。spec 004）
     waiting_messages: int
 
@@ -68,6 +71,13 @@ def list_residents(
     )
     # 全員の件数を 1 回の問い合わせで数える（1 人ずつ数えない。PR #42）
     waiting = count_waiting_staff_messages_by_resident(session, user)
+    waiting_requests = dict(
+        session.execute(
+            select(Request.resident_id, func.count())
+            .where(Request.status == "waiting")
+            .group_by(Request.resident_id)
+        ).all()
+    )
 
     rows = []
     for resident in residents:
@@ -80,6 +90,7 @@ def list_residents(
                 meals=MealsRecorded(**meals),
                 mood=(resident.id, "mood", "day") in recorded,
                 sleep=(resident.id, "sleep", "day") in recorded,
+                waiting_requests=waiting_requests.get(resident.id, 0),
                 waiting_messages=waiting.get(resident.id, 0),
             )
         )
