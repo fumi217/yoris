@@ -44,6 +44,11 @@ class Settings:
     jobs_token: str | None = field(default_factory=_env("JOBS_TOKEN"), repr=False)
     # 初期データの人（職員・家族）のパスワード。空なら入れない（ログインできないまま）。T022
     seed_password: str | None = field(default_factory=_env("SEED_PASSWORD"), repr=False)
+    # 決済：Stripe のテスト環境の秘密の鍵と、Webhook の署名の秘密（ログに出さない）。spec 002
+    stripe_secret_key: str | None = field(default_factory=_env("STRIPE_SECRET_KEY"), repr=False)
+    stripe_webhook_secret: str | None = field(
+        default_factory=_env("STRIPE_WEBHOOK_SECRET"), repr=False
+    )
 
     @property
     def is_development(self) -> bool:
@@ -53,3 +58,10 @@ class Settings:
 def get_settings() -> Settings:
     """今の環境変数で Settings を作って返す。"""
     return Settings()
+
+
+# 決済のプラン（spec 002 の FR-022・R-01）。画面に出すプラン名と金額はここから出す。
+# Stripe では、この lookup key の価格を探す（価格の ID は環境変数に書かない）
+PLAN_NAME = "月額プラン"
+PLAN_AMOUNT_JPY = 10000
+PLAN_LOOKUP_KEY = "monthly_standard"

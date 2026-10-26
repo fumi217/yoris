@@ -105,6 +105,21 @@ services:
       - "127.0.0.1:8025:8025"
       - "127.0.0.1:1025:1025"
 
+  # 決済の Webhook を手元の backend に転送する（spec 002 の R-11）。決済を試すときだけ
+  # `docker compose --profile stripe up -d stripe` で起動し、`docker compose logs stripe` に出る
+  # whsec_ で始まる値を .env の STRIPE_WEBHOOK_SECRET に入れる（入れたら backend を作り直す）
+  stripe:
+    image: stripe/stripe-cli:v1.53.0
+    profiles: [stripe]
+    # 転送する知らせは、spec 002 の research.md R-03 の「扱う知らせ」だけ（この版は --events が必須）
+    command: >-
+      listen --forward-to backend:8000/api/billing/webhook
+      --events checkout.session.completed,checkout.session.expired,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,invoice.payment_failed,invoice.paid
+    environment:
+      STRIPE_API_KEY: ${STRIPE_SECRET_KEY:-}
+    depends_on:
+      - backend
+
 volumes:
   db-data:
   uploads:

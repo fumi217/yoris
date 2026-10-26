@@ -11,5 +11,7 @@ psycopg[binary]==3.3.6
 redis==8.1.0
 # パスワードのハッシュ（spec 001 の research.md R-03）。5.0.0 は 72 バイトを超える入力を黙って切らずにエラーにする（技術選定 7 章）
 bcrypt==5.0.0
+# 決済：Stripe の公式 Python ライブラリ（spec 002 の research.md R-01。技術選定 7 章）
+stripe==16.0.0
 # AI：OpenAI Python SDK の接続先を OpenRouter に向けて使う（技術選定 5 章。spec 004 の research.md R-01）
 openai==3.26.1

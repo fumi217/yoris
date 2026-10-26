@@ -24,10 +24,10 @@ spec 001 のタスクは「001-T009」のように書く（[spec 001 の tasks.m
 
 **Purpose**: Stripe のライブラリ・鍵の置き場所・Webhook を手元で受ける仕組みを用意する
 
-- [ ] T001 `stripe==16.0.0` を `backend/requirements.txt` に足し、`docs/技術選定.md` の 7 章の表に「Stripe の公式 Python ライブラリ。Python 3.13 で入り、既知の脆弱性がないことを確かめた」と理由を足す（research.md R-01）（ミ）
-- [ ] T002 [P] `env.example` に `STRIPE_SECRET_KEY`・`STRIPE_WEBHOOK_SECRET` を足し（値は書かない）、`backend/app/config.py` の `Settings` に同じ 2 つと、定数 `PLAN_NAME`（「月額プラン」）・`PLAN_AMOUNT_JPY`（`10000`）・`PLAN_LOOKUP_KEY`（`monthly_standard`）を足す（FR-022、R-01）（ミ）
-- [ ] T003 [P] `docker-compose.yml` に Stripe CLI のサービス `stripe`（イメージ `stripe/stripe-cli`、`profiles: [stripe]`、`command: listen --forward-to backend:8000/api/billing/webhook`、`.env` の `STRIPE_SECRET_KEY` を `STRIPE_API_KEY` として渡す）を足す（R-11）（ミ）
-- [ ] T004 Stripe のテスト環境で、商品「月額プラン」と価格「月額 10,000 円（JPY・毎月）」を作り、価格の lookup key を `monthly_standard` にする。`docker compose --profile stripe up -d stripe` で Webhook が手元に届くことを確かめる（quickstart.md の「用意するもの」）（ミ・手作業）
+- [X] T001 `stripe==16.0.0` を `backend/requirements.txt` に足し、`docs/技術選定.md` の 7 章の表に「Stripe の公式 Python ライブラリ。Python 3.13 で入り、既知の脆弱性がないことを確かめた」と理由を足す（research.md R-01）（ミ）
+- [X] T002 [P] `env.example` に `STRIPE_SECRET_KEY`・`STRIPE_WEBHOOK_SECRET` を足し（値は書かない）、`backend/app/config.py` の `Settings` に同じ 2 つと、定数 `PLAN_NAME`（「月額プラン」）・`PLAN_AMOUNT_JPY`（`10000`）・`PLAN_LOOKUP_KEY`（`monthly_standard`）を足す（FR-022、R-01）（ミ）
+- [X] T003 [P] `docker-compose.yml` に Stripe CLI のサービス `stripe`（イメージ `stripe/stripe-cli`、`profiles: [stripe]`、`command: listen --events checkout.session.completed,checkout.session.expired,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,invoice.payment_failed,invoice.paid --forward-to backend:8000/api/billing/webhook`（転送する知らせは R-03 の「扱う知らせ」だけ。Stripe CLI の新しい版は `--events` が必須。#69）、`.env` の `STRIPE_SECRET_KEY` を `STRIPE_API_KEY` として渡す）を足す（R-11）（ミ）
+- [X] T004 Stripe のテスト環境で、商品「月額プラン」と価格「月額 10,000 円（JPY・毎月）」を作り、価格の lookup key を `monthly_standard` にする。`docker compose --profile stripe up -d stripe` で Webhook が手元に届くことを確かめる（quickstart.md の「用意するもの」）（ミ・手作業）
 
 **Checkpoint**: Stripe CLI が backend に知らせを転送できる（受け口は Phase 3 で作るので、この時点では 404 でよい）
 
@@ -43,15 +43,15 @@ spec 001 のタスクは「001-T009」のように書く（[spec 001 の tasks.m
 - [X] T006 [P] ログイン用の ID を作る関数を `backend/app/auth/login_ids.py` に作る：`staff_login_id_seq` の次の値から `s` ＋ 5 桁の数字（`s00001`）を返す。職員のアカウント（001-T088）と初期データ（001-T015）もこれを使う（R-06）（ミ）
 - [X] T007 [P] パスワードの決まり（spec 001 の research.md R-03）を `backend/app/auth/passwords.py` に作る：「8 文字以上、64 文字まで」「文字の種類の組み合わせは求めない」「よく使われるパスワードの一覧（`backend/app/auth/common_passwords.txt.gz`）に当てはまれば使わせない」「半角の英数字と記号（空白も含む）でなければ 422（#65 で、全角は使えないことにした）」、bcrypt でハッシュにする関数。ログイン（001-T022）・職員のアカウント（001-T088）・家族の招待（001-T089）も使う（001 の R-03・R-06）（ミ）
 - [X] T008 [P] テスト `backend/tests/unit/test_passwords.py`：7 文字は弾く、8 文字は通る、記号なしでも通る、一覧にあるものは弾く、かな・全角の文字が入っていると弾く（001 の R-03）（ミ）
-- [ ] T009 決済のテーブルを `backend/app/models/billing.py` に作り、マイグレーションを足す（data-model.md）：
+- [X] T009 決済のテーブルを `backend/app/models/billing.py` に作り、マイグレーションを足す（data-model.md）：
   `facility_subscriptions`（`facility_id` は「一意（施設に 1 つ）」、`status` は「`active`／`payment_failed`／`cancel_scheduled`／`canceled`」、`stripe_subscription_id`・`current_period_end` は「初期データの施設は空」、`cancel_at`・`open_checkout_session_id`・`open_checkout_expires_at`・`updated_at`）、
   `subscription_status_histories`（`facility_id`・`from_status`（初めて作ったときは空）・`to_status`・`stripe_event_id`（初期データは空）・`changed_at`）、
   `billing_applications`（`idempotency_key` は「一意」、`facility_name`・`director_name`・`contact_email`・`password_hash`（「アカウントを作ったら消す」ので null を許す）、`status` は「`pending`／`completed`／`rejected`」、`stripe_checkout_session_id` は「一意」、`checkout_url`・`expires_at`・`created_facility_id`・`created_user_id`・`created_at`）、
   `billing_events`（`stripe_event_id` は「一意」、`type`・`received_at`。本文は保存しない）（ミ）
-- [ ] T010 Stripe を呼ぶところを `backend/app/services/stripe_client.py` の 1 か所にまとめる：lookup key で価格を探す、Checkout Session を作る（冪等キーを渡す、`expires_at` は 30 分後、顧客には施設名とメールアドレスだけを渡す）、Checkout Session を失効させる、Subscription を読む・解約する、顧客の名前を施設名にする、Webhook の署名を確かめる。Stripe を呼ぶときの待ち時間の上限は 10 秒（ライブラリの初期値は長いため）。テストではこのモジュールをモックにする（R-01・R-03・R-04・R-07・R-12、FR-025）（ミ）
-- [ ] T011 [P] Stripe の状態からアプリの状態を決める対応表を `backend/app/services/billing.py` の `to_app_status(subscription)` に作り、テスト `backend/tests/unit/test_billing_status.py` を書く：`active`→`active`、`active`＋`cancel_at_period_end`→`cancel_scheduled`、`past_due`・`unpaid`→`payment_failed`、`canceled`・`incomplete_expired`→`canceled`、`incomplete`・`trialing`・`paused`・表にないものは「変えない」（WARNING で状態のコードだけをログに出す）（R-05）（ミ）
-- [ ] T012 001-T014 の書き込みの確認（`backend/app/auth/csrf.py`）で、`/api/billing/webhook` だけを対象から外す（Stripe はヘッダーを付けないため。代わりに署名で確かめる。R-03）（ミ）
-- [ ] T013 001-T015 の初期データ（`backend/app/seed/__main__.py`）で、施設を作るときに `facility_subscriptions` を `status=active`（Stripe とつながっていない）で作る。職員の `login_id` は T006 の関数で作る（data-model.md の「初期データ」）（ミ）
+- [X] T010 Stripe を呼ぶところを `backend/app/services/stripe_client.py` の 1 か所にまとめる：lookup key で価格を探す、Checkout Session を作る（冪等キーを渡す、`expires_at` は 30 分後、顧客には施設名とメールアドレスだけを渡す）、Checkout Session を失効させる、Subscription を読む・解約する、顧客の名前を施設名にする、Webhook の署名を確かめる。Stripe を呼ぶときの待ち時間の上限は 10 秒（ライブラリの初期値は長いため）。テストではこのモジュールをモックにする（R-01・R-03・R-04・R-07・R-12、FR-025）（ミ）
+- [X] T011 [P] Stripe の状態からアプリの状態を決める対応表を `backend/app/services/billing.py` の `to_app_status(subscription)` に作り、テスト `backend/tests/unit/test_billing_status.py` を書く：`active`→`active`、`active`＋`cancel_at_period_end`→`cancel_scheduled`、`past_due`・`unpaid`→`payment_failed`、`canceled`・`incomplete_expired`→`canceled`、`incomplete`・`trialing`・`paused`・表にないものは「変えない」（WARNING で状態のコードだけをログに出す）（R-05）（ミ）
+- [X] T012 001-T014 の書き込みの確認（`backend/app/auth/csrf.py`）で、`/api/billing/webhook` だけを対象から外す（Stripe はヘッダーを付けないため。代わりに署名で確かめる。R-03）（ミ）
+- [X] T013 001-T015 の初期データ（`backend/app/seed/__main__.py`）で、施設を作るときに `facility_subscriptions` を `status=active`（Stripe とつながっていない）で作る。職員の `login_id` は T006 の関数で作る（data-model.md の「初期データ」）（ミ）
 
 **Checkpoint**: テーブルとパスワードの決まりができ、Stripe を呼ぶところがモックにできる
 
