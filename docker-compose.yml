@@ -48,6 +48,8 @@ services:
     volumes:
       - ./backend:/app
       - uploads:/data/uploads
+      # フロントの辞書を読むだけで見せる（エラーのコードの文言の足し忘れを、手元のテストでも確かめるため。#181）
+      - ./frontend/src/i18n:/frontend/src/i18n:ro
     depends_on:
       db:
         condition: service_healthy
