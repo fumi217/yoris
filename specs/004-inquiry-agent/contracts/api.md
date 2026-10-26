@@ -26,7 +26,7 @@
 
 | メソッド・パス | 役割 | 時期 | 中身 | spec |
 |---|---|---|---|---|
-| `GET /api/family/inquiry/messages?before=<id>&limit=30` | F | ミ | 会話の発言を新しい順に。AI の発言には「もとにした記録」（日付・項目／テーマ）、職員の発言には役割と定型文のコード・書き足した文、職員に渡した発言には状態（対応待ち／対応済み）と「3 日たったか」 | FR-004・FR-005・FR-008・FR-016b |
+| `GET /api/family/inquiry/messages?before=<id>&limit=30` | F | ミ | 会話の発言を新しい順に。AI の発言には「もとにした記録」（日付・項目／テーマ）、職員の発言には返事をした職員の表示名と定型文のコード・書き足した文、職員に渡した発言には状態（対応待ち／対応済み）と「3 日たったか」 | FR-004・FR-005・FR-008・FR-016b |
 | `POST /api/family/inquiry/messages` | F | ミ | 質問を送る（`body`：1〜500 文字）。AI の答え（または「職員にお伝えしました」）が決まってから、家族の発言と AI の発言を返す。429：`inquiry_limit`、503：`ai_unavailable`、422：`validation_error` | FR-001〜003・FR-009・FR-024・FR-026 |
 
 - 入居者は `CurrentUser.resident_id` から決める（FR-020）。返す値に、AI への指示の文・ツールの中身は入れない（FR-021）。
