@@ -7,11 +7,11 @@
 件数の関数は、ゆうの入居者一覧（004-T030）からも呼ぶ。中では commit しない。
 """
 
-from sqlalchemy import ColumnElement, Select, false, func, select, true
+from sqlalchemy import ColumnElement, Select, and_, false, func, or_, select, true
 from sqlalchemy.orm import Session
 
 from app.auth.deps import CurrentUser
-from app.models.inquiry import StaffMessage
+from app.models.inquiry import InquiryMessage, StaffMessage
 
 # 苦情を読める役割（FR-012）
 COMPLAINT_ROLES = ("counselor", "director")
@@ -30,6 +30,30 @@ def _visible(user: CurrentUser) -> ColumnElement[bool]:
 def visible_staff_messages(user: CurrentUser) -> Select[tuple[StaffMessage]]:
     """その人が読める職員へのメッセージを選ぶ問い合わせ。並び順や条件は、呼ぶ側で足す。"""
     return select(StaffMessage).where(_visible(user))
+
+
+def visible_conversation_messages(user: CurrentUser) -> ColumnElement[bool]:
+    """職員に見せる会話の発言（詳細の「直前の 3 往復」など）の条件。
+
+    生活相談員・施設長以外には、苦情のメッセージに結びついた発言を除く：苦情の原文
+    （origin_message_id）と、staff_message_id が苦情を指す発言（AI・職員・家族の続き）。
+    苦情があること自体が分からないよう、印も残さずに除く（data-model.md・PR #209 のレビュー）。
+    """
+    if user.kind != "staff":
+        return false()
+    if user.role in COMPLAINT_ROLES:
+        return true()
+    complaints = select(StaffMessage.id).where(StaffMessage.category == "complaint")
+    complaint_origins = select(StaffMessage.origin_message_id).where(
+        StaffMessage.category == "complaint"
+    )
+    return and_(
+        or_(
+            InquiryMessage.staff_message_id.is_(None),
+            InquiryMessage.staff_message_id.not_in(complaints),
+        ),
+        InquiryMessage.id.not_in(complaint_origins),
+    )
 
 
 def count_waiting_staff_messages(
