@@ -82,7 +82,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [x] T028 [US1] `GET /api/staff/residents?date=` を `backend/app/api/staff/residents.py` に作る：食事区分ごとの記録済み／未記録（FR-008）。返事待ちの件数は US3 で足す（ゆう・ミ）
 - [ ] T029 [US1] `GET /api/staff/residents/{id}/contact-book?date=` を `backend/app/api/staff/contact_book.py` に作る：その日の記録を時刻順に（非開示も含む。職員向けなので共通の関数は通さない）（FR-024）（ゆう・ミ）
 - [ ] T030 [P] [US1] 記録のサンプル（数日分）を `backend/app/seed/records.py` に作る（ゆう・ミ）
-- [ ] T031 [P] [US1] 入居者一覧の画面を `frontend/src/pages/staff/ResidentList.tsx` に作る（未記録が分かる）（ゆう・ミ）
+- [x] T031 [P] [US1] 入居者一覧の画面を `frontend/src/pages/staff/ResidentList.tsx` に作る（未記録が分かる）（ゆう・ミ）
 - [ ] T032 [US1] 記録の画面を `frontend/src/pages/staff/RecordPage.tsx` に作る：食事区分を選んで 5 段階＋「食事なし（外泊・入院など）」のボタン、機嫌・眠りの 3 段階のボタン。入居者を選んでから保存まで 3 タップ以内（FR-006・SC-003）。文言は辞書から引く（ゆう・ミ）
 - [ ] T033 [P] [US1] その日の連絡帳の見返しの画面を `frontend/src/pages/staff/StaffContactBook.tsx` に作る（ゆう・ミ）
 - [ ] T034 [US1] 当日中の記録の取り消し `DELETE /api/staff/records/{record_id}` を `backend/app/api/staff/records.py` に足す（`deleted_at`・`deleted_by` を入れる。今日でなければ 409 `not_today`）と、画面の取り消しボタン（Edge Cases）（ゆう・作）
@@ -104,7 +104,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 ### Implementation for User Story 2
 
 - [x] T036 [US2] `themes`・`reply_templates`・`disclosure_settings`・`disclosure_setting_histories` を `backend/app/models/disclosure.py` に作り、マイグレーションを足す。`disclosure_settings` の一意は `(facility_id, target_type, target_code)`、`target_type`：`item`／`theme`、`visible` の初期値は `true`（data-model.md）（ゆう・ミ）
-- [ ] T037 [US2] テーマ 8 個と定型文（テーマごとに 3〜5 個）の初期データを `backend/app/seed/themes.py` に、日本語の文言を `frontend/src/i18n/ja.json` に足す。キーは変わらないコード（例：`theme.daily_life`、`template.daily_life.smile`）。開示設定はすべて `true` で入れる（FR-013・FR-030）（ゆう・ミ）
+- [x] T037 [US2] テーマ 8 個と定型文（テーマごとに 3〜5 個）の初期データを `backend/app/seed/themes.py` に、日本語の文言を `frontend/src/i18n/ja.json` に足す。キーは変わらないコード（例：`theme.daily_life`、`template.daily_life.smile`）。開示設定はすべて `true` で入れる（FR-013・FR-030）（ゆう・ミ）
 - [x] T038 [US2] 共通の関数を `backend/app/services/disclosure.py` に作る：`get_disclosed_records(resident_id, date_from, date_to, items=None)`（開示済みの、取り消していない記録。id・日付・項目・区分・値・記録した時刻・記録した職員の表示名）、`get_disclosed_themes()`、`is_item_disclosed(code)`（その記録項目を家族に見せる設定か。spec 007 の `get_disclosed_memos` が `is_item_disclosed("memo")` で呼ぶ。spec 005 の `is_feature_disclosed(code)` と同じ形）。開示設定は Redis の `cache:disclosure:<施設ID>`（期限は開発前MTG の決定事項のとおり 5 分）から読む（research.md R-06・R-12）（ゆう・ミ）
 - [ ] T039 [US2] `GET /api/admin/disclosure`・`PUT /api/admin/disclosure` を `backend/app/api/admin/disclosure.py` に作る（役割：相談員・施設長）。保存したら開示設定のキャッシュを必ず消す（FR-009・FR-012）（ゆう・ミ）
 - [ ] T040 [US2] 開示設定の画面を `frontend/src/pages/admin/DisclosureSettings.tsx` に作る：記録項目とテーマのオン／オフ（ゆう・ミ）

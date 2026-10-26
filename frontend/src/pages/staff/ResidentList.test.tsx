@@ -1,0 +1,91 @@
+import { renderToStaticMarkup } from 'react-dom/server'
+import { MemoryRouter } from 'react-router'
+import { describe, expect, it } from 'vitest'
+import '../../i18n'
+import { ResidentTable } from './ResidentList'
+import { mealMarks, monthDay, totalWaitingMessages, type ResidentRow } from './residentRows'
+
+const row = (overrides: Partial<ResidentRow> = {}): ResidentRow => ({
+  id: 1,
+  display_name: '佐藤さんの母',
+  room: '101',
+  meals: { breakfast: true, lunch: false, dinner: false, snack: false },
+  mood: true,
+  sleep: false,
+  waiting_requests: 0,
+  waiting_messages: 0,
+  ...overrides,
+})
+
+const render = (residents: ResidentRow[]) =>
+  renderToStaticMarkup(
+    <MemoryRouter>
+      <ResidentTable data={{ date: '2026-10-26', residents }} />
+    </MemoryRouter>,
+  )
+
+describe('residentList', () => {
+  it('食事は朝・昼・夜・おやつの順に、記録済みかを並べる', () => {
+    expect(mealMarks(row())).toEqual([
+      { labelKey: 'record.slot.breakfast', recorded: true, optional: false },
+      { labelKey: 'record.slot.lunch', recorded: false, optional: false },
+      { labelKey: 'record.slot.dinner', recorded: false, optional: false },
+      { labelKey: 'record.slot.snack', recorded: false, optional: true },
+    ])
+  })
+
+  it('家族からのメッセージは、全員分を合計する', () => {
+    expect(totalWaitingMessages([row({ waiting_messages: 2 }), row({ waiting_messages: 1 })])).toBe(
+      3,
+    )
+  })
+
+  it('日付は文字のまま月と日に分ける（タイムゾーンでずれない）', () => {
+    expect(monthDay('2026-10-01')).toEqual({ month: 10, day: 1 })
+  })
+})
+
+describe('ResidentTable', () => {
+  it('入居者を押すと、その人の記録の画面へ進む', () => {
+    const html = render([row({ id: 7 })])
+
+    expect(html).toContain('href="/staff/residents/7"')
+    expect(html).toContain('101')
+    expect(html).toContain('佐藤さんの母')
+  })
+
+  it('朝・昼・夜のまだは目立たせ、おやつのまだは目立たせない', () => {
+    const html = render([
+      row({ meals: { breakfast: true, lunch: true, dinner: false, snack: false } }),
+    ])
+
+    // 目立たせるのは夜ごはんだけ（おやつは毎日付けるとは限らない）
+    expect(html.match(/text-orange-700/g)).toHaveLength(2) // 夜・眠り
+  })
+
+  it('未記録は読み上げでも分かる', () => {
+    const html = render([row()])
+
+    expect(html).toContain('記録済み')
+    expect(html).toContain('まだ記録していません')
+  })
+
+  it('返事待ち・家族からのメッセージは、あるときだけ件数を出す', () => {
+    expect(render([row()])).not.toContain('💬')
+
+    const html = render([row({ waiting_requests: 2, waiting_messages: 1 })])
+    expect(html).toContain('返事待ちのリクエスト：2件')
+    expect(html).toContain('家族からのメッセージ：1件')
+  })
+
+  it('入居者の呼び名は、HTML として解釈しない', () => {
+    const html = render([row({ display_name: '<b>テスト</b>' })])
+
+    expect(html).not.toContain('<b>テスト</b>')
+    expect(html).toContain('&lt;b&gt;テスト&lt;/b&gt;')
+  })
+
+  it('入居者がいなければ、そう伝える', () => {
+    expect(render([])).toContain('いません')
+  })
+})

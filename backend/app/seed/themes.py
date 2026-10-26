@@ -3,7 +3,9 @@
 初期データの仕組み（001-T015 の `python -m app.seed`）から呼ぶ。施設を入れたあとに呼ぶこと。
 何度流しても同じになるように、すでにあるものは足さない。
 DB にはコードだけを入れ、文言は辞書（frontend/src/i18n/ja.json の theme.*・template.*）で引く。
-右のコメントは、辞書に入れる日本語の案（辞書の仕組み 001-T016 ができたら ja.json に移す）。
+右のコメントは、辞書の日本語（ふりがなを外したもの）。
+文言を変えるときは ja.json を直し、ここも合わせる。
+コードを足したら ja.json にも足す（tests/unit/test_theme_texts.py が足し忘れを知らせる）。
 """
 
 from sqlalchemy import select
