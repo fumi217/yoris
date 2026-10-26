@@ -57,7 +57,7 @@ from urllib.parse import urlsplit
 import pytest
 from fastapi.testclient import TestClient
 from redis import Redis
-from sqlalchemy import Engine, create_engine, select
+from sqlalchemy import Engine, create_engine, select, text
 from sqlalchemy.orm import Session
 
 from app.auth.sessions import SESSION_COOKIE, create_session
@@ -66,6 +66,7 @@ from app.main import create_app
 from app.models.core import Facility, FamilyAccount, Resident, Staff, User
 from app.redis import get_redis
 from tests.fakes.llm import FakeLLM
+from tests.fakes.stripe import TEST_SIGNING_KEY, FakeStripe
 
 # テストで使う Redis の番号（開発のログインは 0 番）
 TEST_REDIS_DB = 15
@@ -92,6 +93,34 @@ def fake_llm(monkeypatch: pytest.MonkeyPatch) -> FakeLLM:
     fake = FakeLLM()
     monkeypatch.setattr("app.inquiry.llm.get_llm_client", lambda: fake)
     return fake
+
+
+@pytest.fixture
+def fake_stripe(monkeypatch: pytest.MonkeyPatch) -> FakeStripe:
+    """Stripe を呼ぶ関数を偽物にする（spec 002 の R-11）。Webhook の署名の秘密もテスト用にする。"""
+    fake = FakeStripe()
+    for name in (
+        "create_checkout_session",
+        "expire_checkout_session",
+        "retrieve_subscription",
+        "cancel_subscription",
+        "set_customer_name",
+    ):
+        monkeypatch.setattr(f"app.services.stripe_client.{name}", getattr(fake, name))
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", TEST_SIGNING_KEY)
+    monkeypatch.setenv("APP_BASE_URL", "https://app.example.test")
+    return fake
+
+
+@pytest.fixture
+def no_facility(session: Session) -> None:
+    """施設がまだない状態にする（申し込みで最初の施設を作るテスト用。spec 002 の R-04）。
+
+    テストのトランザクションの中で、施設とそれを指す行、受け取った Stripe の知らせを全部消す。
+    最後に取り消されるので、開発の初期データは残る
+    （TRUNCATE も PostgreSQL ではトランザクションの中で取り消せる）。
+    """
+    session.execute(text("TRUNCATE facilities, billing_events CASCADE"))
 
 
 @pytest.fixture(scope="session")

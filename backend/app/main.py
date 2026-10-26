@@ -2,7 +2,8 @@
 
 from fastapi import FastAPI
 
-from app.api import dev
+from app.api import billing, dev
+from app.api.admin import billing as admin_billing
 from app.api.admin import disclosure as admin_disclosure
 from app.api.family import inquiry as family_inquiry
 from app.api.family import requests as family_requests
@@ -33,6 +34,8 @@ def create_app() -> FastAPI:
     app.add_middleware(RequireFetchHeaderMiddleware)
 
     app.include_router(auth_routes.router)
+    app.include_router(billing.router)
+    app.include_router(admin_billing.router)
     app.include_router(admin_disclosure.router)
     app.include_router(family_visits.router)
     app.include_router(family_requests.router)

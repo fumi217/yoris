@@ -32,6 +32,11 @@ class InvalidWebhookError(Exception):
     """Webhook の署名を確かめられなかった（R-03。受け口で 400 にする）。"""
 
 
+# Stripe を呼べなかったときに上がるもの（呼んだ側が 502 などにする）。
+# 通信の失敗・Stripe のエラー、価格が見つからない、鍵がない
+CALL_ERRORS = (stripe.StripeError, LookupError, StripeNotConfiguredError)
+
+
 @dataclass(frozen=True)
 class CheckoutSession:
     id: str

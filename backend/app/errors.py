@@ -41,6 +41,9 @@ class ErrorCode(StrEnum):
     VISIT_OUT_OF_RANGE = "visit_out_of_range"
     # 問い合わせ AI（spec 004 の contracts）
     AI_UNAVAILABLE = "ai_unavailable"
+    # 決済（spec 002 の contracts。002-T017）
+    EMAIL_MISMATCH = "email_mismatch"
+    PAYMENT_SERVICE_UNAVAILABLE = "payment_service_unavailable"
 
 
 STATUS_CODES: dict[ErrorCode, int] = {
@@ -65,6 +68,8 @@ STATUS_CODES: dict[ErrorCode, int] = {
     ErrorCode.VISIT_DAY_HAS_RESERVATIONS: 409,
     ErrorCode.VISIT_OUT_OF_RANGE: 422,
     ErrorCode.AI_UNAVAILABLE: 503,
+    ErrorCode.EMAIL_MISMATCH: 422,
+    ErrorCode.PAYMENT_SERVICE_UNAVAILABLE: 502,
 }
 
 
