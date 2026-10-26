@@ -206,6 +206,7 @@ plan.md の Technical Context と、spec の FR を作るときに決める必�
 - **決めたこと**：FastAPI が出す OpenAPI（`/openapi.json`）から、`openapi-typescript` でフロントの型を作る。API を変えたら型を作り直してコミットする。
 - **理由**：言語が 2 つでも、API の形のずれをコンパイルのときに見つけられる（技術選定のリスクと対応）。
 - **増えるライブラリ**：openapi-typescript（型を作るだけのコマンドで、アプリの動きには入らない）。
+- **今の状態（10/23・#62）**：openapi-typescript の最新版（7.13.0）は TypeScript 5 にしか対応しておらず（peerDependencies が `typescript: ^5.x`）、私たちの TypeScript 6 では `npm ci` がぶつかる。対応した版が出るまで入れず、それまでは使う人が必要な型を手で書く（例：`frontend/src/auth/me.ts` の `Me`）。TypeScript 6 に対応した別のもの（`@hey-api/openapi-ts`）もあるが、技術選定を変えることになるので、入れるならチームで決める。
 
 ## R-17 マイグレーション
 

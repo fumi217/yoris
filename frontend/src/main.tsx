@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router'
@@ -6,8 +6,9 @@ import App from './App.tsx'
 // 多言語の辞書を、画面より先に読み込む（spec 001 の research.md R-11）
 import './i18n'
 import './index.css'
+import { createQueryClient } from './queryClient'
 
-const queryClient = new QueryClient()
+const queryClient = createQueryClient()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
