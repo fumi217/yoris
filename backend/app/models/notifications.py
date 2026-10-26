@@ -12,7 +12,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base, check_in
 
-NOTIFICATION_KINDS = ("reply", "daily_digest", "weekly_digest", "announcement")
+NOTIFICATION_KINDS = (
+    "reply",
+    "daily_digest",
+    "weekly_digest",
+    "announcement",
+    "staff_message_reply",
+)
 EMAIL_TEMPLATES = (
     "reply",
     "daily_digest",
@@ -20,6 +26,7 @@ EMAIL_TEMPLATES = (
     "announcement",
     "invitation",
     "owner_account",
+    "staff_message_reply",
 )
 
 
@@ -35,6 +42,8 @@ class Notification(Base):
     # replies の外部キーは、replies を作ったマイグレーション（#114 ゆう）で足した。
     # facility_announcements は作り込みなので、announcement_id の外部キーはそのときに足す
     reply_id: Mapped[int | None] = mapped_column(ForeignKey("replies.id"))
+    # 職員の返事（問い合わせ AI。kind = 'staff_message_reply'）が、どのメッセージのものか
+    staff_message_id: Mapped[int | None] = mapped_column(ForeignKey("staff_messages.id"))
     announcement_id: Mapped[int | None]
     # まとめ（daily_digest・weekly_digest）の対象の期間
     period_start: Mapped[datetime | None]

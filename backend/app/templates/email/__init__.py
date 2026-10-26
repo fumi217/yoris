@@ -67,8 +67,16 @@ def _visit_reminder(link: str, params: Mapping[str, str]) -> tuple[str, str]:
     )
 
 
+def _staff_message_reply(link: str, params: Mapping[str, str]) -> tuple[str, str]:
+    return (
+        "施設からメッセージの返事が届きました",
+        f"施設からメッセージの返事が届きました。アプリを開いて確かめてください。\n{link}\n",
+    )
+
+
 _RENDERERS = {
     "reply": _reply,
+    "staff_message_reply": _staff_message_reply,
     "daily_digest": _daily_digest,
     "weekly_digest": _weekly_digest,
     "announcement": _announcement,

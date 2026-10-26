@@ -64,3 +64,12 @@ def test_template_without_text_is_unknown(template):
     # 招待・施設長の ID のメールは、それぞれのタスクで文面を足す
     with pytest.raises(UnknownTemplate):
         render(template, {}, "http://base.test")
+
+
+def test_staff_message_reply_mail_has_only_the_link():
+    # 問い合わせ AI のメッセージへの職員の返事。返事の中身は、メールに入れない（SC-010）
+    params = {"link": "http://app.test/family", "body": "ひみつの返事の中身"}
+    subject, body = render("staff_message_reply", params, "http://base.test")
+    assert subject == "施設からメッセージの返事が届きました"
+    assert "http://app.test/family" in body
+    assert "ひみつの返事の中身" not in body

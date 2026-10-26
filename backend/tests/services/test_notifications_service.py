@@ -11,10 +11,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.disclosure import ReplyTemplate, Theme
+from app.models.inquiry import InquiryConversation, InquiryMessage, StaffMessage
 from app.models.notifications import EmailOutbox, Notification
 from app.models.requests import Request
 from app.seed.themes import add_themes
-from app.services.notifications import create_reply_notice
+from app.services.notifications import create_reply_notice, create_staff_message_reply_notice
 from app.services.replies import save_reply
 
 NOTE = "ひみつの書き足しの文"
@@ -106,6 +107,84 @@ def test_does_not_commit(session, world):
     create_reply_notice(session, world["reply"].id)
 
     assert session.in_transaction()
+    session.rollback()
+    assert session.scalars(select(Notification)).first() is None
+    assert session.scalars(select(EmailOutbox)).first() is None
+
+
+# --- 職員の返事（問い合わせ AI のメッセージへの返事。004-T028）---
+
+
+@pytest.fixture
+def message_world(session: Session, make_family):
+    """家族 2 組と、1 組目の入居者についての、職員に渡したメッセージ。"""
+    family = make_family(display_name="ひみつの入居者名")
+    other_family = make_family(display_name="べつの入居者")
+    conversation = InquiryConversation(family_account_id=family.id, resident_id=family.resident_id)
+    session.add(conversation)
+    session.flush()
+    origin = InquiryMessage(
+        conversation_id=conversation.id, sender="family", body="ひみつの質問の文"
+    )
+    session.add(origin)
+    session.flush()
+    message = StaffMessage(
+        conversation_id=conversation.id,
+        resident_id=family.resident_id,
+        origin_message_id=origin.id,
+        category="other",
+        summary="ひみつの要約",
+    )
+    session.add(message)
+    session.flush()
+    return {"family": family, "other_family": other_family, "message": message}
+
+
+def test_staff_message_reply_notice_for_the_family(session, message_world, monkeypatch):
+    _app_url(monkeypatch, "http://app.test")
+
+    outbox_id = create_staff_message_reply_notice(session, message_world["message"].id)
+
+    notice = session.scalars(
+        select(Notification).where(Notification.staff_message_id == message_world["message"].id)
+    ).one()
+    assert notice.kind == "staff_message_reply"
+    assert notice.reply_id is None
+    assert notice.family_account_id == message_world["family"].id
+    assert notice.read_at is None
+    outbox = session.get(EmailOutbox, outbox_id)
+    assert outbox is not None
+    assert isinstance(outbox_id, int)
+    assert outbox.template == "staff_message_reply"
+    assert outbox.sent_at is None
+    assert outbox.to_email.endswith("@example.test")
+    # 渡すのはリンクだけ。質問・要約・入居者名は、メールの材料に入らない（SC-010）
+    assert outbox.params == {"link": "http://app.test/family"}
+    text = json.dumps(outbox.params, ensure_ascii=False)
+    for secret in ("ひみつの質問の文", "ひみつの要約", "ひみつの入居者名"):
+        assert secret not in text
+
+
+def test_staff_message_reply_notice_has_no_link_without_the_app_url(
+    session, message_world, monkeypatch
+):
+    _app_url(monkeypatch, None)
+
+    outbox_id = create_staff_message_reply_notice(session, message_world["message"].id)
+
+    assert session.get(EmailOutbox, outbox_id).params == {}
+
+
+def test_staff_message_reply_notice_goes_only_to_that_family(session, message_world):
+    create_staff_message_reply_notice(session, message_world["message"].id)
+
+    families = set(session.scalars(select(Notification.family_account_id)))
+    assert message_world["other_family"].id not in families
+
+
+def test_staff_message_reply_notice_does_not_commit(session, message_world):
+    create_staff_message_reply_notice(session, message_world["message"].id)
+
     session.rollback()
     assert session.scalars(select(Notification)).first() is None
     assert session.scalars(select(EmailOutbox)).first() is None

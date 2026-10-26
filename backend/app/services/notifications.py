@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.models.core import FamilyAccount, User
+from app.models.inquiry import StaffMessage
 from app.models.notifications import EmailOutbox, Notification
 from app.models.replies import Reply
 from app.models.requests import Request
@@ -35,6 +36,36 @@ def create_reply_notice(session: Session, reply_id: int) -> int:
     base_url = get_settings().app_base_url
     params = {"link": f"{base_url}/family"} if base_url else {}
     outbox = EmailOutbox(to_email=email, template="reply", params=params)
+    session.add(outbox)
+    session.flush()
+    return outbox.id
+
+
+def create_staff_message_reply_notice(session: Session, staff_message_id: int) -> int:
+    """職員の返事（問い合わせ AI のメッセージへの返事）のお知らせとメールの送る予定を作り、
+    email_outbox の id を返す（spec 004 の 004-T028。research.md R-09）。
+
+    create_reply_notice と同じ形：commit しない（みさきの返事の API が、同じトランザクションで呼び、
+    commit のあとに send_email_now を呼ぶ）。返事の中身は渡さない。通知設定にかかわらず作る。
+    """
+    family_account_id, email = session.execute(
+        select(FamilyAccount.id, User.email)
+        .join(User, User.id == FamilyAccount.user_id)
+        .join(StaffMessage, StaffMessage.resident_id == FamilyAccount.resident_id)
+        .where(StaffMessage.id == staff_message_id)
+    ).one()
+
+    session.add(
+        Notification(
+            family_account_id=family_account_id,
+            kind="staff_message_reply",
+            staff_message_id=staff_message_id,
+        )
+    )
+
+    base_url = get_settings().app_base_url
+    params = {"link": f"{base_url}/family"} if base_url else {}
+    outbox = EmailOutbox(to_email=email, template="staff_message_reply", params=params)
     session.add(outbox)
     session.flush()
     return outbox.id

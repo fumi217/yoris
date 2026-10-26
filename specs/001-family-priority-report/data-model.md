@@ -278,8 +278,9 @@ CurrentUser:
 |---|---|---|
 | id | bigint | |
 | family_account_id | bigint → family_accounts | |
-| kind | text | `reply`／`daily_digest`／`weekly_digest`／`announcement` |
+| kind | text | `reply`／`daily_digest`／`weekly_digest`／`announcement`／`staff_message_reply`（spec 004：問い合わせ AI のメッセージへの職員の返事） |
 | reply_id | bigint → replies | kind が `reply` のとき |
+| staff_message_id | bigint → staff_messages | kind が `staff_message_reply` のとき、どのメッセージの返事か（spec 004。作る人：さとこ、004-T028） |
 | announcement_id | bigint → facility_announcements | kind が `announcement` のとき |
 | period_start / period_end | timestamptz | まとめのとき（`digest_runs` と同じ型） |
 | created_at | timestamptz | |
@@ -293,7 +294,7 @@ CurrentUser:
 |---|---|---|
 | id | bigint | |
 | to_email | text | |
-| template | text | `reply`／`daily_digest`／`weekly_digest`／`announcement`／`invitation`／`owner_account`（spec 002：施設長のログイン用の ID を知らせる。作り込み） |
+| template | text | `reply`／`daily_digest`／`weekly_digest`／`announcement`／`invitation`／`owner_account`（spec 002：施設長のログイン用の ID を知らせる。作り込み）／`staff_message_reply`（spec 004） |
 | params | jsonb | **種類・お知らせのタイトル・リンクだけ**。記録・返事・本文は入れない（SC-010）。例外：`owner_account` だけは `login_id` を入れる（spec 002 の research.md R-08） |
 | created_at | timestamptz | |
 | sent_at | timestamptz | 送れたら入れる |
