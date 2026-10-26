@@ -21,6 +21,21 @@
 
 テストでは AI を呼ばない：`OPENROUTER_API_KEY` は、どのテストでも必ず空にする
 （学校配布のキーを使わない。CLAUDE.md・技術選定 5 章）。
+AI を使う処理（問い合わせ AI など）のテストは、引数に `fake_llm` を書くと、
+本物の AI の代わりにテスト用の LLM（モック。tests/fakes/llm.py）が使われる。
+返す応答は先に足しておく：
+
+    from tests.fakes.llm import tool_call_response
+
+    def test_answer(fake_llm, ...):
+        fake_llm.add(tool_call_response("get_care_records", {...}), tool_call_response(...))
+        ...
+        assert fake_llm.calls[0].tools  # 呼ばれた中身も確かめられる
+
+AI を呼ぶ側（app の中）は、`from app.inquiry import llm as llm_module` として、
+`llm_module.get_llm_client()` の形で呼ぶ。`from app.inquiry.llm import get_llm_client` で
+取り込むと、`fake_llm` の差し替えが効かず、テストが 503 になる
+（差し替えるのは `app.inquiry.llm.get_llm_client` そのものなので）。
 
 DATABASE_URL・REDIS_URL がないとき、手元ではテストを飛ばし、CI では失敗にする
 （CI で DB が起動しないまま緑になるのを防ぐ）。
@@ -50,6 +65,7 @@ from app.db import get_session
 from app.main import create_app
 from app.models.core import Facility, FamilyAccount, Resident, Staff, User
 from app.redis import get_redis
+from tests.fakes.llm import FakeLLM
 
 # テストで使う Redis の番号（開発のログインは 0 番）
 TEST_REDIS_DB = 15
@@ -68,6 +84,14 @@ def _require(name: str) -> str:
 def _no_ai_key(monkeypatch: pytest.MonkeyPatch) -> None:
     # .env にキーがあっても、テストから本物の AI を呼ばないように
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+
+
+@pytest.fixture
+def fake_llm(monkeypatch: pytest.MonkeyPatch) -> FakeLLM:
+    """本物の LLMClient の代わりに、テスト用の LLM（モック）を使う（spec 004 の T004・T014）。"""
+    fake = FakeLLM()
+    monkeypatch.setattr("app.inquiry.llm.get_llm_client", lambda: fake)
+    return fake
 
 
 @pytest.fixture(scope="session")

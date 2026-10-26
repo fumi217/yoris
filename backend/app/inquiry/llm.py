@@ -139,6 +139,11 @@ class LLMClient:
         return _to_response(completion)
 
 
+def get_llm_client() -> ChatClient:
+    """AI のクライアントを返す。テストでは fixture の fake_llm がこの関数を差し替える。"""
+    return LLMClient()
+
+
 def _to_response(completion: Any) -> LLMResponse:
     if not completion.choices:
         raise LLMUnavailable("empty_response")

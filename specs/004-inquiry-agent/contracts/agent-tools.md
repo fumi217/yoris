@@ -30,9 +30,10 @@ AI（OpenRouter のモデル）に渡すツールの形と、ループの決ま�
 }
 ```
 
-- 中で `get_disclosed_records(resident_id, date_from, date_to, items)` を呼ぶ（spec 001）。範囲は今日から過去 7 日に切り詰める。
-- 結果の例：`{"records": [{"source_id": "record:812", "date": "2026-10-21", "item": "meal", "slot": "lunch", "value": "8", "label": "ほぼ全部（8割）", "note": "…"}], "missing": [{"date": "2026-10-21", "item": "meal", "slot": "dinner"}], "clamped": false}`
-  - `missing` は、その期間で未記録の欄（「まだ記録されていません」と答えるため）。非開示の項目は、`records` にも `missing` にも出さない。
+- 中で `get_disclosed_records(resident_id, date_from, date_to, items)` を呼ぶ（spec 001）。範囲は、今日を含めて 7 日（今日と、その前の 6 日。日本時間）に切り詰める。切り詰めたら `clamped: true`。日付が読めないときは `{"error": "invalid_date"}` を返す。
+- 結果の例：`{"records": [{"source_id": "record:812", "date": "2026-10-21", "item": "meal", "slot": "lunch", "value": "8", "label": "ほぼ全部（8割）"}], "missing": [{"date": "2026-10-21", "item": "meal", "slot": "dinner"}], "clamped": false}`
+  - `label` は、AI が読むための値の意味（日本語）。家族の画面の文言は辞書で引く。食事の備考は #46 でやめたので返さない。
+  - `missing` は、その期間で未記録の欄（「まだ記録されていません」と答えるため）。朝・昼・夕の食事と、機嫌・眠りを対象にする（おやつは毎日あるとは限らないので入れない）。非開示の項目は、`records` にも `missing` にも出さない。
 
 ## `get_staff_replies`
 
