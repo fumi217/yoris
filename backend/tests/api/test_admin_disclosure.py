@@ -135,3 +135,84 @@ def test_family_cannot_open(client, world, login_as):
     login_as(world["family"].user_id)
 
     assert client.get(URL).status_code == 403
+
+
+# --- 変更履歴（001-T041・FR-011） ---
+
+
+def test_changes_are_kept_in_history(client, session, world):
+    client.put(URL, json={"items": {"mood": False}, "themes": {"theme.meals": False}})
+    client.put(URL, json={"items": {"mood": True}})
+
+    rows = client.get(f"{URL}/history").json()
+
+    # 新しい順（同じ時刻なら、あとで変えたものが先）。いつ・誰が・何を（前と後）
+    changes = [
+        (r["target_type"], r["target_code"], r["old_visible"], r["new_visible"]) for r in rows
+    ]
+    assert changes == [
+        ("item", "mood", False, True),
+        ("theme", "theme.meals", True, False),
+        ("item", "mood", True, False),
+    ]
+    assert rows[0]["changed_by_name"] == "テスト職員"
+    assert rows[0]["changed_at"]
+
+
+def test_unchanged_values_are_not_in_history(client, session, world):
+    # 見せるものを「見せる」にしても、変わっていないので残さない
+    client.put(URL, json={"items": {"meal": True}})
+
+    assert client.get(f"{URL}/history").json() == []
+
+
+def test_missing_row_history_starts_from_hidden(client, session, world):
+    session.execute(
+        delete(DisclosureSetting).where(
+            DisclosureSetting.facility_id == world["facility"].id,
+            DisclosureSetting.target_code == "sleep",
+        )
+    )
+
+    client.put(URL, json={"items": {"sleep": True}})
+
+    [row] = client.get(f"{URL}/history").json()
+    # 行がないものは「見せない」として扱うので、前の値は「見せない」
+    assert (row["target_code"], row["old_visible"], row["new_visible"]) == ("sleep", False, True)
+
+
+@pytest.mark.parametrize("role", ["care_worker", "leader", "clerk"])
+def test_history_only_counselor_and_director(client, world, make_staff, login_as, role):
+    login_as(make_staff(role=role).user_id)
+
+    assert client.get(f"{URL}/history").status_code == 403
+
+
+# --- 関係しそうな組み合わせの注意書き（001-T042・FR-009） ---
+
+
+def test_related_pairs_are_returned(client, world):
+    data = client.get(URL).json()
+
+    assert {(p["item"], p["theme"]) for p in data["related"]} == {
+        ("meal", "theme.meals"),
+        ("mood", "theme.enjoying"),
+        ("mood", "theme.daily_life"),
+        ("sleep", "theme.daily_life"),
+    }
+    # すべて見せる初期値では、当てはまる組はない
+    assert data["warnings"] == []
+
+
+def test_warning_when_item_hidden_but_theme_visible(client, world):
+    # 機嫌・様子を見せないのに、「楽しく過ごせているか」「普段の様子」は見せるまま（FR-009 の例）
+    data = client.put(URL, json={"items": {"mood": False}}).json()
+
+    assert {(p["item"], p["theme"]) for p in data["warnings"]} == {
+        ("mood", "theme.enjoying"),
+        ("mood", "theme.daily_life"),
+    }
+
+    # テーマも見せないにすれば、その組の注意書きは消える（止めはしないので、どちらでも保存できる）
+    data = client.put(URL, json={"themes": {"theme.enjoying": False}}).json()
+    assert [(p["item"], p["theme"]) for p in data["warnings"]] == [("mood", "theme.daily_life")]
