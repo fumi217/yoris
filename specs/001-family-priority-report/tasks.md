@@ -144,7 +144,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T057 [US3] メールを送る処理を作る：`backend/app/jobs/run.py` の `run_jobs()` が、`email_outbox` の未送信を `FOR UPDATE SKIP LOCKED` で数十件まで取り出して送り、`sent_at` を入れる（失敗は 5 回まで送り直す）。
   送り方は `MAIL_TRANSPORT` で切り替える（`smtp`：開発の Mailpit、`resend`：本番の Resend の API に https で POST。呼ぶ道具は作るときに決める。research.md R-09）。メールを 1 件だけ送る関数 `send_email_now(outbox_id)` も作り、その行だけを同じく押さえて送る（すでに送ってあれば何もしない）。返事・お知らせを保存した API は、**保存をコミットしたあとに**、応答のあとの BackgroundTasks でこれを呼ぶ（コミットの前に呼ぶと、行がまだ見えず送れない）。
   開発用に、1 分ごとに `run_jobs()` を呼ぶ `backend/app/jobs/worker.py` を作る（本番は T092 の API を外から呼ぶ。research.md R-09）（さとこ・ミ）
-- [ ] T058 [P] [US3] リクエストと返事のサンプル（返事待ち・返事あり・取り消し）を `backend/app/seed/requests.py` に作る（さとこ・ミ）
+- [x] T058 [P] [US3] リクエストと返事のサンプル（返事待ち・返事あり・取り消し）を `backend/app/seed/requests.py` に作る（さとこ・ミ）
 - [x] T059 [US3] 家族の連絡帳の画面を `frontend/src/pages/family/ContactBook.tsx` に作る：返事のカードを一番上に（職員の名前つき）、カードが画面に出たら自動で既読にする、未記録の欄、画面の下に「緊急のときは、施設から電話します」（FR-015・FR-017・FR-028・research.md R-15）。ミニマム版は「今日」だけ（過去の日付は T094）（さとこ・ミ）
 - [x] T060 [US3] 「知りたいこと」を頼む画面と送ったリクエストの一覧を `frontend/src/pages/family/Requests.tsx` に作る：テーマのボタン（3 タップ以内）、「施設に届きました」と送った日時・日数、3 日たったら「お急ぎのときは、施設にお電話ください」、返事の前の取り消し（FR-013・FR-014・SC-002）（さとこ・ミ）
 - [x] T061 [P] [US3] お知らせの一覧の画面を `frontend/src/pages/family/Notifications.tsx` に作る（さとこ・ミ）

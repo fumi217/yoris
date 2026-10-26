@@ -58,7 +58,9 @@ def seed(session: Session, *, today: date) -> bool:
             session, facility_id=facility.id, resident_ids=resident_ids, today=today
         )
         theme_ids = list(session.scalars(select(Theme.id).order_by(Theme.sort_order)))
-        add_sample_requests(session, resident_ids=resident_ids, theme_ids=theme_ids)
+        add_sample_requests(
+            session, resident_ids=resident_ids, theme_ids=theme_ids, staff_id=care_worker_id
+        )
     return fresh
 
 
