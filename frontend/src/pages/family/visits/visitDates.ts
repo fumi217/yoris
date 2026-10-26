@@ -73,3 +73,34 @@ export function dayStatus(day: Day): DayStatus {
   if (day.mine) return 'mine'
   return !day.closed && day.start_times.some((slot) => slot.selectable) ? 'open' : 'full'
 }
+
+// --- 月ごとのカレンダー（docs/画面設計.md の UI-F01） ---
+
+/** "2026-10-27" → "2026-10" */
+export function monthOf(date: string): string {
+  return date.slice(0, 7)
+}
+
+/** from〜to が入る月を、古い順に（明日〜28 日先なら 1 つか 2 つ）。 */
+export function monthsBetween(from: string, to: string): string[] {
+  const months: string[] = []
+  let day = `${monthOf(from)}-01`
+  while (monthOf(day) <= monthOf(to)) {
+    months.push(monthOf(day))
+    const [year, month] = monthOf(day).split('-').map(Number)
+    day = month === 12 ? `${year + 1}-01-01` : `${year}-${String(month + 1).padStart(2, '0')}-01`
+  }
+  return months
+}
+
+/**
+ * その月のカレンダーのマス（日〜土の 7 列）。月の外のマスは null。
+ * 例："2026-10" は 1 日が木曜日なので、先頭に null が 4 つ並ぶ。
+ */
+export function calendarCells(month: string): (string | null)[] {
+  const first = `${month}-01`
+  const cells: (string | null)[] = Array.from({ length: weekdayOf(first) }, () => null)
+  for (let day = first; monthOf(day) === month; day = addDays(day, 1)) cells.push(day)
+  while (cells.length % 7 !== 0) cells.push(null)
+  return cells
+}

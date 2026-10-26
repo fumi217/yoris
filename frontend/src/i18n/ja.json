@@ -161,7 +161,10 @@
     },
     "confirmed": "{予約|よやく}が{確定|かくてい}しました",
     "confirmed_detail": "{{date}} {{time}}　{{people}}",
-    "book_another": "ほかの{日|ひ}を{見|み}る"
+    "book_another": "ほかの{日|ひ}を{見|み}る",
+    "month": "{{year}}{年|ねん}{{month}}{月|がつ}",
+    "previous_month": "◀ {前|まえ}の{月|つき}",
+    "next_month": "{次|つぎ}の{月|つき} ▶"
   },
   "staff_template": {
     "medical": {

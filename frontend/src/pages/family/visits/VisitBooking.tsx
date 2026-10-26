@@ -12,6 +12,9 @@ import {
   endOf,
   hhmm,
   monthDay,
+  calendarCells,
+  monthOf,
+  monthsBetween,
   todayInJapan,
   weekdayOf,
   type Availability,
@@ -87,6 +90,12 @@ export function BookingView({
   const [date, setDate] = useState<string | null>(initialDate)
   const [time, setTime] = useState<string | null>(null)
   const [partySize, setPartySize] = useState(1)
+  // 出している月（0 が明日の月。初めから日付を選んでいるときは、その月）
+  const [monthIndex, setMonthIndex] = useState(() =>
+    initialDate
+      ? Math.max(0, monthsBetween(days[0]?.date ?? initialDate, initialDate).length - 1)
+      : 0,
+  )
 
   const dateLabel = (value: string) =>
     t('visit.date', {
@@ -126,6 +135,9 @@ export function BookingView({
   }
 
   const selectedDay = days.find((day) => day.date === date)
+  const byDate = new Map(days.map((day) => [day.date, day]))
+  const months = days.length ? monthsBetween(days[0].date, days[days.length - 1].date) : []
+  const month = months[Math.min(monthIndex, months.length - 1)] ?? monthOf(todayInJapan())
 
   return (
     <section className="space-y-6 p-4">
@@ -148,8 +160,44 @@ export function BookingView({
         <legend className="mb-2 font-bold">
           <Text k="visit.choose_date" />
         </legend>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-          {days.map((day) => {
+        <div className="mb-2 flex items-center justify-between">
+          <button
+            type="button"
+            disabled={monthIndex === 0}
+            onClick={() => setMonthIndex((index) => index - 1)}
+            className="rounded px-2 py-1 text-sky-700 underline disabled:text-gray-300 disabled:no-underline"
+          >
+            <Text k="visit.previous_month" />
+          </button>
+          <span className="font-bold">
+            <Ruby text={t('visit.month', yearMonth(month))} />
+          </span>
+          <button
+            type="button"
+            disabled={monthIndex >= months.length - 1}
+            onClick={() => setMonthIndex((index) => index + 1)}
+            className="rounded px-2 py-1 text-sky-700 underline disabled:text-gray-300 disabled:no-underline"
+          >
+            <Text k="visit.next_month" />
+          </button>
+        </div>
+        <div className="grid grid-cols-7 gap-1 text-center">
+          {[0, 1, 2, 3, 4, 5, 6].map((weekday) => (
+            <span key={weekday} className="text-xs text-gray-600">
+              <Text k={`visit.weekday.${weekday}`} />
+            </span>
+          ))}
+          {calendarCells(month).map((cell, index) => {
+            if (cell === null) return <span key={`empty-${index}`} />
+            const day = byDate.get(cell)
+            // 予約できる期間（明日〜28 日先）の外の日は、数字だけを出して押せない
+            if (!day) {
+              return (
+                <span key={cell} className="p-2 text-gray-300">
+                  {monthDay(cell).day}
+                </span>
+              )
+            }
             const status = dayStatus(day)
             const selected = day.date === date
             return (
@@ -157,18 +205,19 @@ export function BookingView({
                 key={day.date}
                 type="button"
                 aria-pressed={selected}
+                aria-label={stripRuby(dateLabel(day.date))}
                 disabled={status !== 'open'}
                 onClick={() => {
                   setDate(day.date)
                   setTime(null)
                 }}
-                className={`rounded border-2 p-2 text-left disabled:bg-gray-100 disabled:text-gray-500 ${
+                className={`min-h-12 rounded border-2 p-1 disabled:bg-gray-100 disabled:text-gray-500 ${
                   selected ? 'border-sky-700 bg-sky-700 text-white' : 'border-gray-300'
                 }`}
               >
-                <Ruby text={dateLabel(day.date)} />
+                {monthDay(day.date).day}
                 {status !== 'open' && (
-                  <span className="block text-xs">
+                  <span className="block text-xs leading-tight">
                     <Text k={status === 'mine' ? 'visit.booked_day' : 'visit.no_slot'} />
                   </span>
                 )}
@@ -256,4 +305,10 @@ export function BookingView({
       )}
     </section>
   )
+}
+
+/** "2026-10" → { year: 2026, month: 10 } */
+function yearMonth(month: string): { year: number; month: number } {
+  const [year, value] = month.split('-').map(Number)
+  return { year, month: value }
 }

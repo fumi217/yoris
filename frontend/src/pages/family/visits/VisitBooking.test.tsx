@@ -5,8 +5,10 @@ import { BookingView } from './VisitBooking'
 import {
   addDays,
   bookingRange,
+  calendarCells,
   dayStatus,
   endOf,
+  monthsBetween,
   todayInJapan,
   weekdayOf,
   type Day,
@@ -67,7 +69,37 @@ describe('visitDates', () => {
   })
 })
 
+describe('calendar', () => {
+  it('月のマスは日〜土の 7 列。1 日の曜日まで空ける', () => {
+    const cells = calendarCells('2026-10') // 10/1 は木曜日
+
+    expect(cells.slice(0, 5)).toEqual([null, null, null, null, '2026-10-01'])
+    expect(cells.length % 7).toBe(0)
+    expect(cells.filter(Boolean)).toHaveLength(31)
+  })
+
+  it('予約できる期間が次の月にかかれば、月は 2 つ', () => {
+    expect(monthsBetween('2026-10-27', '2026-11-23')).toEqual(['2026-10', '2026-11'])
+    expect(monthsBetween('2026-11-02', '2026-11-29')).toEqual(['2026-11'])
+    expect(monthsBetween('2026-12-20', '2027-01-16')).toEqual(['2026-12', '2027-01'])
+  })
+})
+
 describe('BookingView', () => {
+  it('期間が次の月にかかるときだけ、「次の月」を押せる', () => {
+    const next = /<button type="button"( disabled="")?[^>]*>(?:(?!<\/button>).)*次/
+    expect(render().match(next)?.[1]).toBe(' disabled=""')
+    expect(render({ days: [day(), day({ date: '2026-11-02' })] }).match(next)?.[1]).toBeUndefined()
+  })
+
+  it('期間の外の日は、押せるボタンにしない', () => {
+    const html = render()
+
+    // 10/27 だけがボタン。10/26 などは数字だけ
+    expect(html).toContain('aria-label="10月27日（火）"')
+    expect(html).not.toContain('aria-label="10月26日')
+  })
+
   it('selectable: false の開始時刻は押せない', () => {
     const html = render({ initialDate: '2026-10-27' })
 
