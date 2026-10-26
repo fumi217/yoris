@@ -145,7 +145,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
   送り方は `MAIL_TRANSPORT` で切り替える（`smtp`：開発の Mailpit、`resend`：本番の Resend の API に https で POST。呼ぶ道具は作るときに決める。research.md R-09）。メールを 1 件だけ送る関数 `send_email_now(outbox_id)` も作り、その行だけを同じく押さえて送る（すでに送ってあれば何もしない）。返事・お知らせを保存した API は、**保存をコミットしたあとに**、応答のあとの BackgroundTasks でこれを呼ぶ（コミットの前に呼ぶと、行がまだ見えず送れない）。
   開発用に、1 分ごとに `run_jobs()` を呼ぶ `backend/app/jobs/worker.py` を作る（本番は T092 の API を外から呼ぶ。research.md R-09）（さとこ・ミ）
 - [ ] T058 [P] [US3] リクエストと返事のサンプル（返事待ち・返事あり・取り消し）を `backend/app/seed/requests.py` に作る（さとこ・ミ）
-- [ ] T059 [US3] 家族の連絡帳の画面を `frontend/src/pages/family/ContactBook.tsx` に作る：返事のカードを一番上に（職員の名前つき）、カードが画面に出たら自動で既読にする、未記録の欄、画面の下に「緊急のときは、施設から電話します」（FR-015・FR-017・FR-028・research.md R-15）。ミニマム版は「今日」だけ（過去の日付は T094）（さとこ・ミ）
+- [x] T059 [US3] 家族の連絡帳の画面を `frontend/src/pages/family/ContactBook.tsx` に作る：返事のカードを一番上に（職員の名前つき）、カードが画面に出たら自動で既読にする、未記録の欄、画面の下に「緊急のときは、施設から電話します」（FR-015・FR-017・FR-028・research.md R-15）。ミニマム版は「今日」だけ（過去の日付は T094）（さとこ・ミ）
 - [x] T060 [US3] 「知りたいこと」を頼む画面と送ったリクエストの一覧を `frontend/src/pages/family/Requests.tsx` に作る：テーマのボタン（3 タップ以内）、「施設に届きました」と送った日時・日数、3 日たったら「お急ぎのときは、施設にお電話ください」、返事の前の取り消し（FR-013・FR-014・SC-002）（さとこ・ミ）
 - [ ] T061 [P] [US3] お知らせの一覧の画面を `frontend/src/pages/family/Notifications.tsx` に作る（さとこ・ミ）
 - [x] T062 [US3] 職員の返事の画面を `frontend/src/pages/staff/ReplyPage.tsx` に作る：テーマ・送られた日・日数、定型文のボタン（1 つ以上）、100 文字までの書き足し。リクエストを開いてから 3 タップ以内で保存（FR-030・SC-007）（ゆう・ミ）
@@ -154,7 +154,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T065 [US3] まとめの通知を `backend/app/jobs/digest.py` に作り、`run_jobs()` から呼ぶ：日本時間で 20:00 を過ぎて最初に呼ばれたときに、毎日「1 日 1 回」、日曜は「1 週間に 1 回」の家族へ（締めは 20:00）、`get_disclosed_records` で新しい記録があるときだけまとめを作る。`digest_runs`（一意：`(family_account_id, kind, period_end)`）で 2 回送らない。止まっていたらその日のうちだけ取り戻す。`--at` で時刻を指定して動かせる（research.md R-13・quickstart.md）（さとこ・作）
 - [ ] T066 [P] [US3] テスト `backend/tests/api/test_digest.py`：同じ時刻で 2 回動かしても 1 回だけ、記録がない日は送らない、非開示の項目だけの日は送らない、20 時台に `run_jobs()` が何度も呼ばれても 1 回だけ、`run_jobs()` と `--at` のコマンドが重なっても 2 回送らない（SC-010・research.md R-13）（さとこ・作）
 - [ ] T094 [US3] 家族の連絡帳で過去の日付を選べるようにする（日数の制限なし。過去の日の記録と返事を出す）を `frontend/src/pages/family/ContactBook.tsx` に足す（FR-019。T059 から分けた。PR #23 さとこ）（さとこ・作）
-- [ ] T095 [P] [US3] 家族の画面の単体テスト `frontend/tests/unit/ContactBook.test.tsx`（Vitest）：未記録の欄に「まだ記録されていません」が出る、未読の返事のカードが一番上に出る（FR-015・FR-017。PR #23 さとこ）（さとこ・ミ）
+- [x] T095 [P] [US3] 家族の画面の単体テスト `frontend/src/pages/family/ContactBook.test.tsx`（Vitest。ほかのテストと同じく画面の隣に置く。型チェックは `src` だけが対象のため）：未記録の欄に「まだ記録されていません」が出る、未読の返事のカードが一番上に出る（FR-015・FR-017。PR #23 さとこ）（さとこ・ミ）
 
 **Checkpoint**: 記録 → 開示 → 頼む → 返事 → メール の通しのデモ（quickstart.md の 1〜9）ができる
 

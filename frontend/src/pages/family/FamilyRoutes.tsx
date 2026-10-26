@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router'
 import { AreaGuard } from '../../components/AreaGuard'
 import { ComingSoon } from '../../components/ComingSoon'
+import { ContactBook } from './ContactBook'
 import { FamilyLayout } from './FamilyLayout'
 import { FamilyMorePage } from './FamilyMorePage'
 import { Requests } from './Requests'
@@ -13,7 +14,7 @@ export default function FamilyRoutes() {
       <Routes>
         <Route element={<FamilyLayout />}>
           {/* 連絡帳（ホーム。001-T059 さとこ） */}
-          <Route index element={<ComingSoon />} />
+          <Route index element={<ContactBook />} />
           {/* 知りたいことを頼む（001-T060 さとこ） */}
           <Route path="requests/*" element={<Requests />} />
           {/* お知らせの一覧（001-T061 さとこ） */}
