@@ -85,7 +85,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [x] T030 [P] [US1] 記録のサンプル（数日分）を `backend/app/seed/records.py` に作る（ゆう・ミ）
 - [x] T031 [P] [US1] 入居者一覧の画面を `frontend/src/pages/staff/ResidentList.tsx` に作る（未記録が分かる）（ゆう・ミ）
 - [x] T032 [US1] 記録の画面を `frontend/src/pages/staff/RecordPage.tsx` に作る：食事区分を選んで 5 段階＋「食事なし（外泊・入院など）」のボタン、機嫌・眠りの 3 段階のボタン。入居者を選んでから保存まで 3 タップ以内（FR-006・SC-003）。文言は辞書から引く（ゆう・ミ）
-- [ ] T033 [P] [US1] その日の連絡帳の見返しの画面を `frontend/src/pages/staff/StaffContactBook.tsx` に作る（ゆう・ミ）
+- [x] T033 [P] [US1] その日の連絡帳の見返しの画面を `frontend/src/pages/staff/StaffContactBook.tsx` に作る（ゆう・ミ）
 - [ ] T034 [US1] 当日中の記録の取り消し `DELETE /api/staff/records/{record_id}` を `backend/app/api/staff/records.py` に足す（`deleted_at`・`deleted_by` を入れる。今日でなければ 409 `not_today`）と、画面の取り消しボタン（Edge Cases）（ゆう・作）
 
 **Checkpoint**: 職員が記録でき、その日の連絡帳を見返せる（初期データの家族は、US2・US3 がなくてもログインだけはできる）
