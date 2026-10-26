@@ -107,8 +107,8 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [x] T036 [US2] `themes`・`reply_templates`・`disclosure_settings`・`disclosure_setting_histories` を `backend/app/models/disclosure.py` に作り、マイグレーションを足す。`disclosure_settings` の一意は `(facility_id, target_type, target_code)`、`target_type`：`item`／`theme`、`visible` の初期値は `true`（data-model.md）（ゆう・ミ）
 - [x] T037 [US2] テーマ 8 個と定型文（テーマごとに 3〜5 個）の初期データを `backend/app/seed/themes.py` に、日本語の文言を `frontend/src/i18n/ja.json` に足す。キーは変わらないコード（例：`theme.daily_life`、`template.daily_life.smile`）。開示設定はすべて `true` で入れる（FR-013・FR-030）（ゆう・ミ）
 - [x] T038 [US2] 共通の関数を `backend/app/services/disclosure.py` に作る：`get_disclosed_records(resident_id, date_from, date_to, items=None)`（開示済みの、取り消していない記録。id・日付・項目・区分・値・記録した時刻・記録した職員の表示名）、`get_disclosed_themes()`、`is_item_disclosed(code)`（その記録項目を家族に見せる設定か。spec 007 の `get_disclosed_memos` が `is_item_disclosed("memo")` で呼ぶ。spec 005 の `is_feature_disclosed(code)` と同じ形）。開示設定は Redis の `cache:disclosure:<施設ID>`（期限は開発前MTG の決定事項のとおり 5 分）から読む（research.md R-06・R-12）（ゆう・ミ）
-- [ ] T039 [US2] `GET /api/admin/disclosure`・`PUT /api/admin/disclosure` を `backend/app/api/admin/disclosure.py` に作る（役割：相談員・施設長）。保存したら開示設定のキャッシュを必ず消す（FR-009・FR-012）（ゆう・ミ）
-- [ ] T040 [US2] 開示設定の画面を `frontend/src/pages/admin/DisclosureSettings.tsx` に作る：記録項目とテーマのオン／オフ（ゆう・ミ）
+- [x] T039 [US2] `GET /api/admin/disclosure`・`PUT /api/admin/disclosure` を `backend/app/api/admin/disclosure.py` に作る（役割：相談員・施設長）。保存したら開示設定のキャッシュを必ず消す（FR-009・FR-012）（ゆう・ミ）
+- [x] T040 [US2] 開示設定の画面を `frontend/src/pages/admin/DisclosureSettings.tsx` に作る：記録項目とテーマのオン／オフ（ゆう・ミ）
 - [ ] T041 [US2] 開示設定の変更履歴：保存のときに `disclosure_setting_histories` に残し、`GET /api/admin/disclosure/history` を足し、画面に履歴を出す（FR-011）（ゆう・作）
 - [ ] T042 [US2] 関係しそうな組み合わせ（例：記録項目「機嫌・様子」を見せないのに、テーマ「楽しく過ごせているか」は見せる）の注意書きを、`GET /api/admin/disclosure` の返り値と画面に足す（FR-009）（ゆう・作）
 

@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 
 from app.api import dev
+from app.api.admin import disclosure as admin_disclosure
 from app.api.family import requests as family_requests
 from app.api.family import visits as family_visits
 from app.api.staff import records as staff_records
@@ -30,6 +31,7 @@ def create_app() -> FastAPI:
     app.add_middleware(RequireFetchHeaderMiddleware)
 
     app.include_router(auth_routes.router)
+    app.include_router(admin_disclosure.router)
     app.include_router(family_visits.router)
     app.include_router(family_requests.router)
     app.include_router(staff_records.router)

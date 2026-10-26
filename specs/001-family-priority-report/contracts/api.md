@@ -79,8 +79,8 @@
 
 | メソッド・パス | 役割 | 時期 | 中身 | spec |
 |---|---|---|---|---|
-| `GET /api/admin/disclosure` | CO・D | ミ | 記録項目とテーマの、見せる／見せない。関係しそうな組み合わせの注意書きのコード（作り込み） | FR-009 |
-| `PUT /api/admin/disclosure` | CO・D | ミ | 変える | FR-009・FR-012 |
+| `GET /api/admin/disclosure` | CO・D | ミ | 記録項目とテーマの、見せる／見せない。`{items: [{code, visible}], themes: [{code, emoji, visible}]}`（記録の項目の順・テーマの順。設定の行がないものは `visible: false`）。関係しそうな組み合わせの注意書きのコード（作り込み） | FR-009 |
+| `PUT /api/admin/disclosure` | CO・D | ミ | 変える。本文 `{items: {<code>: true/false}, themes: {<code>: true/false}}`（変えるものだけ）。知らないコード・真偽でない値は 422（何も変えない）。保存したら commit のあとに開示設定のキャッシュを消す。返り値は GET と同じ | FR-009・FR-012 |
 | `GET /api/admin/disclosure/history` | CO・D | 作 | 変更履歴（いつ・誰が・何を） | FR-011 |
 
 ## 家族の画面（さとこ）
