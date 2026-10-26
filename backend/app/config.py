@@ -42,6 +42,8 @@ class Settings:
     )
     # 決まった時刻の処理の API（POST /api/internal/jobs/run）の合言葉。空なら API を登録しない
     jobs_token: str | None = field(default_factory=_env("JOBS_TOKEN"), repr=False)
+    # 初期データの人（職員・家族）のパスワード。空なら入れない（ログインできないまま）。T022
+    seed_password: str | None = field(default_factory=_env("SEED_PASSWORD"), repr=False)
 
     @property
     def is_development(self) -> bool:

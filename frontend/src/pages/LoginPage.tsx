@@ -1,15 +1,99 @@
+import { useQueryClient } from '@tanstack/react-query'
+import { useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router'
+import { messageKeyOf } from '../api/client'
+import { logIn } from '../auth/login'
 import { homePathFor, useMeState } from '../auth/me'
 import { Message } from '../components/Message'
+import { Text } from '../components/Text'
 
-/** ログインの画面（仮）。本物のログインのフォームは #65（001-T022）で作る。開発中は右下の切り替えを使う。 */
+/**
+ * ログインの画面（spec 001 の T097・docs/画面設計.md の UI-C01）。
+ * 職員はログイン用の ID、家族はメールアドレスと、パスワードを入れる。
+ * ログインすると、ログイン中の人が入れ替わり、下の Navigate で役割ごとの最初の画面へ移る。
+ */
 export function LoginPage() {
   const state = useMeState()
+  const queryClient = useQueryClient()
+  const [login, setLogin] = useState('')
+  const [password, setPassword] = useState('')
+  const [errorKey, setErrorKey] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  async function submit(event: FormEvent) {
+    event.preventDefault()
+    setErrorKey(null)
+    setSubmitting(true)
+    try {
+      await logIn(queryClient, login, password)
+    } catch (error) {
+      setErrorKey(messageKeyOf(error))
+      // 間違えたパスワードを入れたままにしない
+      setPassword('')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   if (state.status === 'loading') return <Message k="layout.loading" />
   if (state.status === 'error') return <Message k={state.messageKey} />
-  if (state.me === null) return <Message k="layout.login_required" />
-  // ログインしているのに、開ける画面がない（知らない役割など）
-  const home = homePathFor(state.me)
-  if (home === '/login') return <Message k="error.forbidden" />
-  return <Navigate to={home} replace />
+  if (state.me !== null) {
+    // ログインしているのに、開ける画面がない（知らない役割など）
+    const home = homePathFor(state.me)
+    if (home === '/login') return <Message k="error.forbidden" />
+    return <Navigate to={home} replace />
+  }
+
+  return (
+    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 p-6">
+      <h1 className="text-center text-2xl font-bold">
+        <Text k="layout.app_name" />
+      </h1>
+      <form onSubmit={submit} className="flex flex-col gap-4">
+        <label className="flex flex-col gap-1">
+          {/* span で包む（flex の中で、ふりがなと文字が別の行に割れないように。#192・#196） */}
+          <span>
+            <Text k="auth.login" />
+          </span>
+          <input
+            id="login"
+            name="login"
+            required
+            autoComplete="username"
+            autoCapitalize="none"
+            value={login}
+            onChange={(event) => setLogin(event.target.value)}
+            className="rounded border p-3 text-lg"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span>
+            <Text k="auth.password" />
+          </span>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            required
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="rounded border p-3 text-lg"
+          />
+        </label>
+        {errorKey && (
+          <p role="alert" className="text-red-700">
+            <Text k={errorKey} />
+          </p>
+        )}
+        <button
+          type="submit"
+          disabled={submitting}
+          className="rounded bg-sky-700 p-3 text-lg font-bold text-white disabled:opacity-60"
+        >
+          <Text k={submitting ? 'auth.submitting' : 'auth.submit'} />
+        </button>
+      </form>
+    </main>
+  )
 }

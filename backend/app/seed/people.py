@@ -3,17 +3,19 @@
 spec 001 の T015・spec 002 の data-model.md「初期データ」。
 
 名前はすべて架空。毎回同じになるように、決まった並びから作る（デモのたびに変わらないように）。
-パスワードは、まだ入れない（ログインできない値）。開発中は、開発用のユーザー切り替えで入る。
-本物のログイン（#65）で、開発用のパスワードを決めて入れる。
+パスワードは、ログインできない値で作り、環境変数 `SEED_PASSWORD` があれば
+set_seed_passwords で入れる（パスワードをリポジトリに残さない。spec 001 の T022）。
+なければ、開発用のユーザー切り替えで入る。
 
 DB への書き込みは、まとめて送る
 （1 人ずつ送らない。人数が増えても問い合わせの回数が増えないように）。
 """
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.auth.login_ids import next_login_ids
+from app.auth.passwords import hash_password, password_problem
 from app.models.core import Facility, FamilyAccount, Resident, Staff, User
 
 FACILITY_NAME = "デモ施設 みどりの家"
@@ -129,3 +131,23 @@ def add_people(session: Session, *, facility_id: int) -> list[Staff]:
     session.add_all([*staff, *families])
     session.flush()
     return staff
+
+
+def set_seed_passwords(session: Session, password: str | None) -> int:
+    """パスワードのない初期データの人（NO_PASSWORD）に、password を入れる。入れた人数を返す。
+
+    password が空なら何もしない。決まり（app/auth/passwords.py）に合わなければ ValueError。
+    すでに DB に入っている人にも入るので、初期データを入れ直さなくてよい。
+    全員に同じハッシュを入れる（1 人ずつ bcrypt を計算すると、46 人で十数秒かかるため）。
+    """
+    if not password:
+        return 0
+    problem = password_problem(password)
+    if problem is not None:
+        raise ValueError(f"SEED_PASSWORD がパスワードの決まりに合いません（{problem}）")
+    result = session.execute(
+        update(User)
+        .where(User.password_hash == NO_PASSWORD)
+        .values(password_hash=hash_password(password))
+    )
+    return result.rowcount

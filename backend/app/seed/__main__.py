@@ -14,11 +14,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.clock import today_jst
+from app.config import get_settings
 from app.db import get_engine
 from app.models.core import Resident
 from app.models.disclosure import Theme
 from app.seed.inquiry import add_staff_message_templates
-from app.seed.people import add_people, get_or_add_facility
+from app.seed.people import add_people, get_or_add_facility, set_seed_passwords
 from app.seed.records import add_sample_records
 from app.seed.requests import add_sample_requests
 from app.seed.themes import add_disclosure_settings, add_themes
@@ -63,9 +64,12 @@ def seed(session: Session, *, today: date) -> bool:
 def main() -> None:
     with Session(get_engine()) as session:
         fresh = seed(session, today=today_jst())
+        with_password = set_seed_passwords(session, get_settings().seed_password)
         session.commit()
     # 名前などは出さない（ログに個人情報を出さない決まり。架空でも同じにしておく）
     print("初期データを入れました" if fresh else "人はもう入っていたので、足りないものを足しました")
+    if with_password:
+        print(f"{with_password} 人に SEED_PASSWORD のパスワードを入れました")
 
 
 if __name__ == "__main__":

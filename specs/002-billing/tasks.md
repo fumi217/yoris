@@ -41,8 +41,8 @@ spec 001 のタスクは「001-T009」のように書く（[spec 001 の tasks.m
 
 - [X] T005 001-T009 のマイグレーションに足す（または続きのマイグレーションを作る）：`facilities.billing_email`（text、「一意にしない」、初期データの施設は空）・`facilities.stripe_customer_id`（text、「一意」、初期データの施設は空）と、シーケンス `staff_login_id_seq`（data-model.md）（ミ）
 - [X] T006 [P] ログイン用の ID を作る関数を `backend/app/auth/login_ids.py` に作る：`staff_login_id_seq` の次の値から `s` ＋ 5 桁の数字（`s00001`）を返す。職員のアカウント（001-T088）と初期データ（001-T015）もこれを使う（R-06）（ミ）
-- [ ] T007 [P] パスワードの決まり（spec 001 の research.md R-03）を `backend/app/auth/passwords.py` に作る：「8 文字以上、64 文字まで」「文字の種類の組み合わせは求めない」「よく使われるパスワードの一覧（`backend/app/auth/common_passwords.txt`）に当てはまれば使わせない」「UTF-8 で 72 バイトを超えたら 422」、bcrypt でハッシュにする関数。ログイン（001-T022）・職員のアカウント（001-T088）・家族の招待（001-T089）も使う（001 の R-03・R-06）（ミ）
-- [ ] T008 [P] テスト `backend/tests/unit/test_passwords.py`：7 文字は弾く、8 文字は通る、記号なしでも通る、一覧にあるものは弾く、全角で 72 バイトを超えると弾く（001 の R-03）（ミ）
+- [X] T007 [P] パスワードの決まり（spec 001 の research.md R-03）を `backend/app/auth/passwords.py` に作る：「8 文字以上、64 文字まで」「文字の種類の組み合わせは求めない」「よく使われるパスワードの一覧（`backend/app/auth/common_passwords.txt.gz`）に当てはまれば使わせない」「半角の英数字と記号（空白も含む）でなければ 422（#65 で、全角は使えないことにした）」、bcrypt でハッシュにする関数。ログイン（001-T022）・職員のアカウント（001-T088）・家族の招待（001-T089）も使う（001 の R-03・R-06）（ミ）
+- [X] T008 [P] テスト `backend/tests/unit/test_passwords.py`：7 文字は弾く、8 文字は通る、記号なしでも通る、一覧にあるものは弾く、かな・全角の文字が入っていると弾く（001 の R-03）（ミ）
 - [ ] T009 決済のテーブルを `backend/app/models/billing.py` に作り、マイグレーションを足す（data-model.md）：
   `facility_subscriptions`（`facility_id` は「一意（施設に 1 つ）」、`status` は「`active`／`payment_failed`／`cancel_scheduled`／`canceled`」、`stripe_subscription_id`・`current_period_end` は「初期データの施設は空」、`cancel_at`・`open_checkout_session_id`・`open_checkout_expires_at`・`updated_at`）、
   `subscription_status_histories`（`facility_id`・`from_status`（初めて作ったときは空）・`to_status`・`stripe_event_id`（初期データは空）・`changed_at`）、

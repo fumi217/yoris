@@ -2,7 +2,7 @@
 
 ブラウザには推測できないランダムな値（セッションの ID）だけを Cookie で渡し、
 誰なのか（user_id）は Redis の `session:<セッションの ID>` に置く。
-開発用のユーザー切り替え（app/api/dev.py）と、本物のログイン（T022）の両方がこれを使う。
+開発用のユーザー切り替え（app/api/dev.py）と、本物のログイン（app/auth/routes.py）の両方がこれを使う。
 """
 
 import secrets
@@ -26,7 +26,7 @@ def create_session(user_id: int) -> str:
     """セッションを作り、その ID を返す。
 
     ログイン・切り替えのたびに必ず新しく作り、前の ID は delete_session で消す
-    （ログイン前の Cookie を使い続けない。セッションの固定を防ぐ。#65 の本物のログインも同じ）。
+    （ログイン前の Cookie を使い続けない。セッションの固定を防ぐ）。
     """
     session_id = secrets.token_urlsafe(32)
     get_redis().set(_key(session_id), str(user_id), ex=SESSION_TTL_SECONDS)
@@ -50,6 +50,17 @@ def set_session_cookie(response: Response, session_id: str) -> None:
         max_age=SESSION_TTL_SECONDS,
         httponly=True,  # 画面の JavaScript から読めないようにする
         secure=not get_settings().is_development,  # 本番は https だけで送る
+        samesite="lax",
+        path="/",
+    )
+
+
+def clear_session_cookie(response: Response) -> None:
+    """ブラウザの Cookie を消す（ログアウト）。付けたときと同じ属性で消す。"""
+    response.delete_cookie(
+        SESSION_COOKIE,
+        httponly=True,
+        secure=not get_settings().is_development,
         samesite="lax",
         path="/",
     )

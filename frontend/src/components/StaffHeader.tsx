@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { canOpen, useMe, type Area } from '../auth/me'
+import { LogoutButton } from './LogoutButton'
 import { Text } from './Text'
 
 type Props = {
@@ -28,6 +29,7 @@ export function StaffHeader({ homeTo, titleKey, otherArea, otherTo, otherKey }: 
           </Link>
         )}
         <span>{me?.display_name}</span>
+        <LogoutButton className="text-sky-700 underline" />
       </div>
     </header>
   )

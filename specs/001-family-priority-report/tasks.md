@@ -56,8 +56,9 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
   家族には職員・管理画面へのリンクを出さず、URL を直接開いても家族の画面に戻す（API は 403 `forbidden`。spec 003 の plan.md）（ようこ・ミ）
 - [x] T020 テストの土台を `backend/tests/conftest.py` に作る：テスト用の PostgreSQL・Redis（コンテナ）、ログイン済みのクライアントを作るヘルパー。あわせて CI（`.github/workflows/ci.yml`）に PostgreSQL・Redis のサービスを足す（同じ PR で入れる。入れないと全員の CI が赤になるため）（research.md R-19）（ようこ・ミ）
 - [x] T021 [P] テスト `backend/tests/api/test_dev_switch.py`：`APP_ENV` を付けない設定で `POST /api/dev/switch-user` が 404 になる（research.md R-02）（ようこ・ミ）
-- [ ] T022 本物のログインを `backend/app/auth/routes.py` に作る：`POST /api/auth/login`（職員は ID、家族はメールアドレス、bcrypt）、`POST /api/auth/logout`（セッションをすぐ消す）、`GET /api/me`。セッションは Redis（`session:<ランダムなID>`）、Cookie は `HttpOnly`・`Secure`（本番）・`SameSite=Lax`（research.md R-01・R-03）（ようこ・ミ・Day 2）
-- [ ] T023 [P] テスト `backend/tests/api/test_auth.py`：職員は ID、家族はメールアドレスでログインできる。家族が職員の API を呼ぶと 403。ログアウトでセッションが消える（ようこ・ミ）
+- [x] T022 本物のログインを `backend/app/auth/routes.py` に作る：`POST /api/auth/login`（職員は ID、家族はメールアドレス、bcrypt。成功したら `GET /api/me` と同じ中身を返す。ログインのたびに新しいセッションを作り、前のセッションは消す。ID とパスワードのどちらが違っても 401 `login_failed`）、`POST /api/auth/logout`（セッションをすぐ消し、Cookie も消す）。`GET /api/me` は #64 で先に作った。セッションは Redis（`session:<ランダムなID>`）、Cookie は `HttpOnly`・`Secure`（本番）・`SameSite=Lax`。初期データの人のパスワードは、環境変数 `SEED_PASSWORD` から入れる（なければ今のままログインできない。本番のデモでも同じしくみを使い、パスワードをリポジトリに残さない）（research.md R-01・R-03。#65 で決定）（ようこ・ミ・Day 2）
+- [x] T023 [P] テスト `backend/tests/api/test_auth.py`：職員は ID、家族はメールアドレスでログインできる。家族が職員の API を呼ぶと 403。ログアウトでセッションが消える（ようこ・ミ）
+- [x] T097 ログインの画面を `frontend/src/pages/LoginPage.tsx` に作る：職員は ID、家族はメールアドレスと、パスワードを入れるフォーム。失敗したら `login_failed` の文言を出す（401 でログインの画面へ戻す共通のしくみ（`queryClient.ts`）は通さない）。成功したら前の人のデータを捨て、返ってきた中身をログイン中の人（`['me']`）に入れて、役割ごとの最初の画面へ。ログアウトのボタンを、職員の画面・管理画面の上の部分と、家族の「☰ その他」に置く（画面設計 UI-C01。T022 には画面が入っていなかったので分けた。#65 で決定）（ようこ・ミ）
 - [ ] T096 [P] 画面設計 `docs/画面設計.md` を作る：画面の一覧と遷移、職員の入居者一覧に出すもの（未記録・返事待ち・家族からのメッセージ・承認待ち・目印）の並べ方と置き場所、記録の画面に並ぶ部品（E の目印・D の「様子のメモを書く」・H の「写真を載せる」）の並べ方も決める（spec 006 の Assumptions、PR #40・#45）（ゆう・ミ）
 
 **Checkpoint**: 土台ができた。User Story ごとの作業を並べて始められる

@@ -19,6 +19,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 class ErrorCode(StrEnum):
     NOT_LOGGED_IN = "not_logged_in"
+    LOGIN_FAILED = "login_failed"
     FORBIDDEN = "forbidden"
     NOT_FOUND = "not_found"
     TOO_MANY_ATTEMPTS = "too_many_attempts"
@@ -42,6 +43,7 @@ class ErrorCode(StrEnum):
 
 STATUS_CODES: dict[ErrorCode, int] = {
     ErrorCode.NOT_LOGGED_IN: 401,
+    ErrorCode.LOGIN_FAILED: 401,
     ErrorCode.FORBIDDEN: 403,
     ErrorCode.NOT_FOUND: 404,
     ErrorCode.TOO_MANY_ATTEMPTS: 429,

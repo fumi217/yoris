@@ -17,3 +17,4 @@
 *.xlsx binary
 *.pptx binary
 *.zip binary
+*.gz binary

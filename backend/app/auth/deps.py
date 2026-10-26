@@ -1,6 +1,6 @@
 """ログイン中の人と、役割のチェック（spec 001 の T010・data-model.md「ログイン中の人」）。
 
-各担当の API は、次のように受け取る（本物のログイン T022 に替わっても、ここの形は変わらない）。
+各担当の API は、次のように受け取る（本物のログインでも、開発用の切り替えでも、ここの形は同じ）。
 
     @router.get("/api/family/...")
     def handler(user: Annotated[CurrentUser, Depends(require_family)]): ...
@@ -45,9 +45,17 @@ def get_current_user(
     """
     session_id = request.cookies.get(SESSION_COOKIE)
     user_id = read_session(session_id) if session_id else None
-    if user_id is None:
+    user = load_current_user(session, user_id) if user_id is not None else None
+    if user is None:
         raise AppError(ErrorCode.NOT_LOGGED_IN)
+    return user
 
+
+def load_current_user(session: Session, user_id: int) -> CurrentUser | None:
+    """user_id から、ログイン中の人を組み立てる。ログインさせない人なら None。
+
+    ログイン（app/auth/routes.py）でも、セッションを作る前にここで確かめる。
+    """
     row = session.execute(
         select(
             User.kind,
@@ -64,7 +72,7 @@ def get_current_user(
         .where(User.id == user_id)
     ).one_or_none()
     if row is None:
-        raise AppError(ErrorCode.NOT_LOGGED_IN)
+        return None
 
     # 職員なのに職員の行がない・家族なのに家族アカウントがない人は、ログインさせない
     if row.kind == "staff" and row.role is not None:
@@ -75,7 +83,7 @@ def get_current_user(
         return CurrentUser(
             user_id, row.kind, None, None, row.resident_id, row.language, row.resident_name
         )
-    raise AppError(ErrorCode.NOT_LOGGED_IN)
+    return None
 
 
 # 役割のチェック（テスト：backend/tests/unit/test_auth_deps.py）

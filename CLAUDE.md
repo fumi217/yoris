@@ -28,7 +28,7 @@
 | フロントエンド | Node 24、React（Vite）・TypeScript、React Router、Tailwind CSS、react-i18next（日本語・インドネシア語・英語）、TanStack Query。テストは Vitest、E2E は Playwright、lint は ESLint、整形は Prettier |
 | バックエンド | Python 3.13 ＋ FastAPI、SQLAlchemy、Pydantic、structlog。テストは pytest、lint と整形は ruff |
 | データ・キャッシュ | PostgreSQL、Redis（セッション・開示設定のキャッシュ・AI 問い合わせの回数制限。作り込みでログインの試行回数の制限） |
-| 認証 | バックエンドが発行するセッション（Cookie、Redis に保存）。役割と権限は自前の DB で管理 |
+| 認証 | バックエンドが発行するセッション（Cookie、Redis に保存）。役割と権限は自前の DB で管理。パスワードは bcrypt（半角の英数字と記号で 8〜64 文字、よく使われるものは不可。spec 001 の research.md R-03） |
 | AI | OpenRouter（学校配布のキー）＋ OpenAI Python SDK のツール呼び出し。モデル名は環境変数 |
 | 決済 | Stripe Billing（テストモード。実課金はしない） |
 | 通知 | アプリ内のお知らせ ＋ メール（開発・デモは Mailpit、本番は Resend の API。決まった時刻の処理は本番では外から API を呼ぶ。spec 001 の research.md R-09） |
