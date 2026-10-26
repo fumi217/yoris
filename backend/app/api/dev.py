@@ -35,6 +35,8 @@ class DevUser(BaseModel):
     role: str | None
     # 職員は返事に出す名前、家族は入居者の呼び名
     display_name: str
+    # 表示言語（外国人の職員を選んで試すときの目印）
+    language: str
 
 
 @router.get("/users")
@@ -44,6 +46,7 @@ def list_users(session: Annotated[Session, Depends(get_session)]) -> list[DevUse
         select(
             User.id,
             User.kind,
+            User.language,
             User.login_id,
             User.email,
             Staff.role,
@@ -61,6 +64,7 @@ def list_users(session: Annotated[Session, Depends(get_session)]) -> list[DevUse
             user_id=row.id,
             kind=row.kind,
             role=row.role,
+            language=row.language,
             # 職員・家族の行がまだない人（手で入れた途中の人など）は、
             # ログイン用の ID かメールアドレスを出す
             display_name=row.staff_name or row.resident_name or row.login_id or row.email or "",

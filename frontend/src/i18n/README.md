@@ -28,5 +28,6 @@ return <Ruby text={t('error.forbidden')} />
 | `error.*`               | API のエラー（`message_key` は `error.<code>`）                                                                                                                                       | spec 001 の contracts/api.md |
 | `theme.*`・`template.*` | 知りたいことのテーマと、職員の返事の定型文                                                                                                                                            | spec 001 の research.md R-11 |
 | `staff_template.*`      | 問い合わせ AI で、職員が家族に返す定型文                                                                                                                                              | spec 004 の research.md R-14 |
+| `role.*`                | 職員の役割の名前（介護職員・施設長など。どの機能でも共通で使う）                                                                                                                      | spec 001 の data-model.md    |
 | `change.*`              | 変化の検知の目印まわり                                                                                                                                                                | spec 006 の tasks.md         |
 | そのほか                | 機能ごとに 1 つの先頭にまとめる（例：記録 `record.*`、連絡帳 `contact_book.*`、面会 `visit.*`、決済 `billing.*`、問い合わせ AI `inquiry.*`、アルバム `album.*`、様子のメモ `memo.*`） | 提案（使う人が決めてよい）   |

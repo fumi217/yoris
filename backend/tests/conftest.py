@@ -148,8 +148,15 @@ _numbers = itertools.count(90001)
 def make_staff(session: Session, facility: Facility) -> Callable[..., Staff]:
     """架空の職員を作る。返す Staff の user_id でログインでき、id が staff_id になる。"""
 
-    def make(role: str = "care_worker", display_name: str = "テスト職員") -> Staff:
-        user = User(kind="staff", login_id=f"s{next(_numbers):05d}", password_hash="x")
+    def make(
+        role: str = "care_worker", display_name: str = "テスト職員", language: str = "ja"
+    ) -> Staff:
+        user = User(
+            kind="staff",
+            login_id=f"s{next(_numbers):05d}",
+            password_hash="x",
+            language=language,
+        )
         session.add(user)
         session.flush()
         staff = Staff(

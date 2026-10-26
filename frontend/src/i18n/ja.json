@@ -61,7 +61,19 @@
   },
   "dev": {
     "switch_user": "{開発用|かいはつよう}：ユーザーの{切|き}り{替|か}え",
-    "user_id": "user_id",
-    "switch": "{切|き}り{替|か}える"
+    "choose": "{選|えら}んでください",
+    "staff": "{職員|しょくいん}",
+    "family": "{家族|かぞく}",
+    "switch": "{切|き}り{替|か}える",
+    "staff_label": "{{name}}／{{role}}",
+    "staff_label_with_language": "{{name}}／{{role}}（{{language}}）",
+    "user_id": "user_id"
+  },
+  "role": {
+    "care_worker": "{介護|かいご}{職員|しょくいん}",
+    "leader": "リーダー",
+    "counselor": "{生活|せいかつ}{相談員|そうだんいん}",
+    "clerk": "{事務員|じむいん}",
+    "director": "{施設長|しせつちょう}"
   }
 }

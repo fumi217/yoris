@@ -50,8 +50,8 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [x] T015 初期データの仕組みを `backend/app/seed/__main__.py` に作り、入居者 30 人・職員（`login_id` つき、各役割）・家族アカウント 30（入居者に 1 つ）を入れる（`python -m app.seed`）。**施設がまだなければ作り（契約中として）、すでにあればその施設に足す**（J の申し込みで施設ができたあとにも流せるように。PR #23 ようこ・spec 002）。ほかの人はここに自分の分を足す（契約は spec 002 の T013・#69 で足す）（ようこ・ミ）
 - [X] T016 [P] 多言語の辞書の仕組みを `frontend/src/i18n/index.ts`・`frontend/src/i18n/ja.json` に作る。ミニマム版は日本語だけ。文言は必ず辞書から引く。日本語のふりがなは `{漢字|かんじ}` の書き方で書く（research.md R-11）（みさき・ミ）
 - [X] T017 [P] ふりがなの部品 `frontend/src/i18n/Ruby.tsx` を作る：`{漢字|かんじ}` を `<ruby>` に変える。日本語以外では書き方を使わない。メール用に漢字だけにする関数も `backend/app/i18n.py` に作る（みさき・ミ）
-- [ ] T018 [P] API を呼ぶ関数を `frontend/src/api/client.ts` に作る（`X-Requested-With: fetch` を付ける、エラーの `message_key` を辞書で引く）。OpenAPI から型を作るスクリプト（`npm run gen:api`、openapi-typescript）を `frontend/package.json` に足す（research.md R-16）（ようこ・ミ）
-- [ ] T019 画面の枠を作る：`frontend/src/pages/family/`・`frontend/src/pages/staff/`・`frontend/src/pages/admin/` のレイアウトと、役割で画面を分けるルーティングを `frontend/src/App.tsx` に、開発用のユーザー切り替えを `frontend/src/components/DevUserSwitcher.tsx` に作る。
+- [x] T018 [P] API を呼ぶ関数を `frontend/src/api/client.ts` に作る（`X-Requested-With: fetch` を付ける、エラーの `message_key` を辞書で引く）。OpenAPI から型を作るスクリプト（`npm run gen:api`、openapi-typescript）を `frontend/package.json` に足す（research.md R-16）（ようこ・ミ）（型を作るコマンドは、openapi-typescript が TypeScript 6 に対応するまで見送り。research.md R-16・#174 で合意）
+- [x] T019 画面の枠を作る：`frontend/src/pages/family/`・`frontend/src/pages/staff/`・`frontend/src/pages/admin/` のレイアウトと、役割で画面を分けるルーティングを `frontend/src/App.tsx` に、開発用のユーザー切り替えを `frontend/src/components/DevUserSwitcher.tsx` に作る。
   家族の画面のメニューは、下に「連絡帳・知りたいこと・お知らせ」の 3 つ、そのほか（面会・アルバム・設定）は「☰ その他」にまとめる（Clarifications）。「☰ その他」は、ほかの機能が項目を足しやすい形にする（spec 003 の T014 が「面会」を足す）。
   家族には職員・管理画面へのリンクを出さず、URL を直接開いても家族の画面に戻す（API は 403 `forbidden`。spec 003 の plan.md）（ようこ・ミ）
 - [x] T020 テストの土台を `backend/tests/conftest.py` に作る：テスト用の PostgreSQL・Redis（コンテナ）、ログイン済みのクライアントを作るヘルパー。あわせて CI（`.github/workflows/ci.yml`）に PostgreSQL・Redis のサービスを足す（同じ PR で入れる。入れないと全員の CI が赤になるため）（research.md R-19）（ようこ・ミ）

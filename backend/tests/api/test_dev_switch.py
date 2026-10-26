@@ -57,6 +57,7 @@ def test_switch_user_to_unknown_user_is_not_found(make_client):
 def test_dev_users_lists_staff_first(make_client, make_staff, make_family):
     client = make_client(app_env="development")
     staff = make_staff(role="counselor", display_name="テスト相談員")
+    foreign = make_staff(display_name="テスト外国人", language="id")
     family = make_family(display_name="テストさんの母")
 
     users = client.get("/api/dev/users").json()
@@ -66,13 +67,17 @@ def test_dev_users_lists_staff_first(make_client, make_staff, make_family):
         "kind": "staff",
         "role": "counselor",
         "display_name": "テスト相談員",
+        "language": "ja",
     } in users
     assert {
         "user_id": family.user_id,
         "kind": "family",
         "role": None,
         "display_name": "テストさんの母",
+        "language": "ja",
     } in users
+    # 外国人の職員を選んで試すときの目印
+    assert next(user for user in users if user["user_id"] == foreign.user_id)["language"] == "id"
     # 職員がすべて家族より先、それぞれ id の順
     staff_ids = [user["user_id"] for user in users if user["kind"] == "staff"]
     family_ids = [user["user_id"] for user in users if user["kind"] == "family"]
