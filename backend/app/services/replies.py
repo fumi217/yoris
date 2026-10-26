@@ -5,7 +5,10 @@
   cancelled なら request_cancelled）。返事の追加と、この更新は 1 つのトランザクションで行う
 - 定型文は 1 つ以上で、そのリクエストのテーマのものだけ。書き足しは 100 文字まで（FR-030）
 - 関数の中では commit しない（呼んだ API が最後に 1 回だけ commit する）
-- 返事のお知らせ（さとこの create_reply_notice、001-T051）は、できたらここで呼ぶ（R-09）
+- 返事の API は save_reply_with_notice を使い、返事と、家族へのお知らせ・メールの送る予定
+  （さとこの create_reply_notice、001-T051）を同じトランザクションで作る（R-09）。
+  返事だけ保存されてお知らせが消える、ということが起きない。
+  初期データの返事のサンプルは save_reply だけを使う（デモのたびにメールを送らない）
 """
 
 from collections.abc import Sequence
@@ -17,6 +20,7 @@ from app.clock import today_jst
 from app.models.disclosure import ReplyTemplate
 from app.models.replies import MAX_NOTE_LENGTH, Reply
 from app.models.requests import Request
+from app.services.notifications import create_reply_notice
 
 
 class ReplyError(Exception):
@@ -102,3 +106,22 @@ def save_reply(
     session.add(reply)
     session.flush()
     return reply
+
+
+def save_reply_with_notice(
+    session: Session,
+    *,
+    request_id: int,
+    staff_id: int,
+    template_ids: Sequence[int],
+    note: str | None = None,
+) -> tuple[Reply, int]:
+    """返事をして、家族へのお知らせとメールの送る予定も作る。返事と email_outbox の id を返す。
+
+    commit は呼んだ側が行い、そのあとに send_email_now(outbox_id) でその場でも送る（R-09）。
+    先に返事をした人がいれば save_reply がエラーにするので、お知らせが 2 回できることはない。
+    """
+    reply = save_reply(
+        session, request_id=request_id, staff_id=staff_id, template_ids=template_ids, note=note
+    )
+    return reply, create_reply_notice(session, reply.id)

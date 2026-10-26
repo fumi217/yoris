@@ -4,13 +4,14 @@
   （あわせて、家族からのメッセージの対応待ちの件数。spec 004 の 004-T030）
 - `POST /api/staff/requests/{id}/reply`：返事をする（409：already_replied・request_cancelled）
 - 職員への通知・音は出さない（FR-029・SC-013）。職員が画面を開いたときに見せる
-- 返事のメール（さとこの create_reply_notice・send_email_now）は、001-T051 ができたらつなぐ
+- 返事を保存したら、家族へのお知らせとメールの送る予定も作り（create_reply_notice）、
+  commit のあとに send_email_now でその場でも送る（001-T051・T057・R-09）
 """
 
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -25,7 +26,8 @@ from app.models.core import Resident
 from app.models.disclosure import ReplyTemplate, Theme
 from app.models.replies import MAX_NOTE_LENGTH
 from app.models.requests import Request
-from app.services.replies import ReplyError, save_reply
+from app.services.mail import send_email_now
+from app.services.replies import ReplyError, save_reply_with_notice
 
 router = APIRouter(prefix="/api/staff", tags=["staff"])
 
@@ -114,10 +116,17 @@ def reply(
     body: ReplyRequest,
     user: Annotated[CurrentUser, Depends(RECORDERS)],
     session: Annotated[Session, Depends(get_session)],
+    background_tasks: BackgroundTasks,
 ) -> ReplyResponse:
-    """返事をする。同時に保存したときは、先の 1 つだけが保存される（R-07）。"""
+    """返事をする。同時に保存したときは、先の 1 つだけが保存される（R-07）。
+
+    家族へのお知らせとメールの送る予定も、同じトランザクションで作る。メールは、
+    commit のあとに応答を返してから送る（コミットの前だと行がまだ見えない。R-09）。
+    送れなくても返事は保存済みで、送る予定が残るので、次の run_jobs() が送り直す。
+    職員への通知・音は出さない（FR-029）。
+    """
     try:
-        saved = save_reply(
+        saved, outbox_id = save_reply_with_notice(
             session,
             request_id=request_id,
             staff_id=user.staff_id,
@@ -127,6 +136,7 @@ def reply(
     except ReplyError as error:
         raise AppError(ErrorCode(error.code)) from error
     session.commit()
+    background_tasks.add_task(send_email_now, outbox_id)
     return ReplyResponse(
         id=saved.id,
         request_id=saved.request_id,

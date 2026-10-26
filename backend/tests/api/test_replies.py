@@ -6,12 +6,25 @@ tests/conftest.py の client・session・make_staff・make_family・login_as を
 """
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import func, select
 
+from app.api.staff import requests as requests_api
 from app.models.disclosure import ReplyTemplate, Theme
+from app.models.notifications import EmailOutbox, Notification
 from app.models.replies import Reply
 from app.models.requests import Request
 from app.seed.themes import add_themes
+
+
+@pytest.fixture(autouse=True)
+def sent(monkeypatch) -> list[int]:
+    """メールを送る関数を差し替える（本物のメールは送らない）。
+
+    呼ばれた email_outbox の id が入る。
+    """
+    calls: list[int] = []
+    monkeypatch.setattr(requests_api, "send_email_now", calls.append)
+    return calls
 
 
 @pytest.fixture
@@ -144,3 +157,36 @@ def test_clerk_and_family_cannot_reply(client, world, make_staff, login_as):
     assert (
         _reply(client, world["request"].id, template_ids=world["templates"][:1]).status_code == 403
     )
+
+
+def test_reply_creates_notice_and_mail(client, session, world, sent):
+    # 返事を保存すると、同じトランザクションで家族へのお知らせとメールの送る予定ができ、
+    # commit のあとにその場で送る（001-T045 の一部・R-09）
+    response = _reply(client, world["request"].id, template_ids=world["templates"][:1], note="秘密")
+
+    assert response.status_code == 201
+    reply_id = response.json()["id"]
+    [notice] = session.scalars(select(Notification).where(Notification.reply_id == reply_id)).all()
+    assert notice.kind == "reply"
+    assert notice.family_account_id == world["family"].id
+    [outbox] = session.scalars(select(EmailOutbox).where(EmailOutbox.id.in_(sent))).all()
+    assert outbox.template == "reply"
+    # メールには返事の中身を渡さない（SC-010）。APP_BASE_URL がないときは link も入らない（#198）
+    assert set(outbox.params) <= {"link"}
+    assert "秘密" not in str(outbox.params)
+
+
+def test_second_reply_adds_no_notice(client, session, world, sent):
+    _reply(client, world["request"].id, template_ids=world["templates"][:1])
+
+    assert (
+        _reply(client, world["request"].id, template_ids=world["templates"][1:2]).status_code == 409
+    )
+
+    notices = session.scalar(
+        select(func.count())
+        .select_from(Notification)
+        .where(Notification.family_account_id == world["family"].id)
+    )
+    assert notices == 1
+    assert len(sent) == 1
