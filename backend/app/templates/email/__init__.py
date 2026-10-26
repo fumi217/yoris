@@ -1,7 +1,9 @@
 """メールの文面（種類ごと）。001-T057。spec 001 の research.md R-09。
 
-文面に渡すのは、種類・お知らせのタイトル・アプリへのリンクだけ（email_outbox.params と同じ）。
-記録・返事・本文は渡さない（SC-010）。そのため、文面に中身が入る失敗は、そもそも起こらない。
+文面に渡すのは、種類・お知らせのタイトル・面会の日時（visit_at）・アプリへのリンクだけ
+（email_outbox.params と同じ）。
+記録・返事・本文・入居者名・取り消しの理由は渡さない（SC-010・FR-014）。
+そのため、文面に中身が入る失敗は、そもそも起こらない。
 """
 
 from collections.abc import Mapping
@@ -40,11 +42,39 @@ def _announcement(link: str, params: Mapping[str, str]) -> tuple[str, str]:
     )
 
 
+def _visit_confirmed(link: str, params: Mapping[str, str]) -> tuple[str, str]:
+    visit_at = params.get("visit_at", "")
+    return (
+        "面会の予約が確定しました",
+        f"面会の予約が確定しました。\n{visit_at}\nアプリを開いて確かめてください。\n{link}\n",
+    )
+
+
+def _visit_cancelled(link: str, params: Mapping[str, str]) -> tuple[str, str]:
+    visit_at = params.get("visit_at", "")
+    # 取り消しの理由は、メールには書かない。アプリの予約の画面で見せる（spec 003 の R-07）
+    return (
+        "面会の予約が取り消されました",
+        f"面会の予約が取り消されました。\n{visit_at}\nくわしくは、アプリを開いて確かめてください。\n{link}\n",
+    )
+
+
+def _visit_reminder(link: str, params: Mapping[str, str]) -> tuple[str, str]:
+    visit_at = params.get("visit_at", "")
+    return (
+        "明日は面会の予定があります",
+        f"明日は面会の予定があります。\n{visit_at}\n変更・取り消しは、施設にお電話ください。\n{link}\n",
+    )
+
+
 _RENDERERS = {
     "reply": _reply,
     "daily_digest": _daily_digest,
     "weekly_digest": _weekly_digest,
     "announcement": _announcement,
+    "visit_confirmed": _visit_confirmed,
+    "visit_cancelled": _visit_cancelled,
+    "visit_reminder": _visit_reminder,
 }
 
 

@@ -131,7 +131,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 - [x] T046 [P] [US3] `requests` を `backend/app/models/requests.py` に作り、マイグレーションを足す。`status`：`waiting`／`answered`／`cancelled`。一意は `(resident_id, theme_id) WHERE status = 'waiting'`（data-model.md）（さとこ・ミ）
 - [ ] T047 [P] [US3] `replies` を `backend/app/models/replies.py` に作り、マイグレーションを足す。`template_ids` は `bigint[]`（1 つ以上）、`note` は「100 文字まで、任意」、`contact_book_date`、`edited_at`、`read_at`。一意は `(request_id)`（返事は取り消さない）（data-model.md）（ゆう・ミ）
-- [ ] T048 [P] [US3] `notifications`・`email_outbox` を `backend/app/models/notifications.py` に作り、マイグレーションを足す。`notifications.kind`：`reply`／`daily_digest`／`weekly_digest`／`announcement`。`email_outbox.params` には種類・タイトル・リンクだけを入れる（data-model.md）（さとこ・ミ）
+- [x] T048 [P] [US3] `notifications`・`email_outbox` を `backend/app/models/notifications.py` に作り、マイグレーションを足す。`notifications.kind`：`reply`／`daily_digest`／`weekly_digest`／`announcement`。`email_outbox.params` には種類・タイトル・リンクだけを入れる（data-model.md）（さとこ・ミ）
 - [x] T049 [US3] リクエストの作成・取り消しを `backend/app/services/requests.py` に作る：作るときは `family_accounts` の行を `FOR UPDATE` で押さえて返事待ちを数え、テーマが `get_disclosed_themes()` にあるかを確かめる（research.md R-08）（さとこ・ミ）
 - [x] T050 [US3] `GET /api/family/themes`・`GET /api/family/requests`・`POST /api/family/requests`・`DELETE /api/family/requests/{id}` を `backend/app/api/family/requests.py` に作る。入居者は `CurrentUser.resident_id` から決める（FR-013・FR-014・FR-020）（さとこ・ミ）
 - [ ] T051 [US3] お知らせとメールの送る予定を作る関数 `create_reply_notice(session, reply_id)` を `backend/app/services/notifications.py` に作る：関数の中では commit しない。作った `email_outbox` の id を返す（呼んだ側が、コミットのあとにその場で送るため。T057）。メールのテンプレート（`backend/app/templates/email/`）には種類とリンクだけを渡す（research.md R-09）（さとこ・ミ）

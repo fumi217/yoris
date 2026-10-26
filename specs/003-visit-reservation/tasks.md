@@ -154,7 +154,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T031 [US4] 職員の取り消し `POST /api/admin/visits/{id}/cancel`（職員のすべて。`reason` は必須）を `backend/app/api/admin/visits.py` に、処理を `backend/app/services/visits.py` に作り、同じトランザクションで `create_visit_notice(..., "visit_cancelled")` を呼ぶ。
   予約の一覧の画面（T026）に、理由を入れて取り消すボタンを足す。締め切りは設けない（FR-012・FR-013）（ゆう・作。T030 のあと）
 - [ ] T032 [US4] `book_visit`（T009）で、予約を追加したあと同じトランザクションで `create_visit_notice(..., "visit_confirmed")` を呼ぶ（ゆう・作。T030 のあと）
-- [ ] T033 [P] [US4] メールのテンプレート `visit_confirmed`（面会の予約が確定しました）・`visit_cancelled`（面会の予約が取り消されました）・`visit_reminder`（明日は面会の予定があります。本文に「変更・取り消しは、施設にお電話ください」）を足す。渡すのは**日時とリンクだけ**（入居者名・理由は渡さない。FR-014）（さとこ・作）
+- [x] T033 [P] [US4] メールのテンプレート `visit_confirmed`（面会の予約が確定しました）・`visit_cancelled`（面会の予約が取り消されました）・`visit_reminder`（明日は面会の予定があります。本文に「変更・取り消しは、施設にお電話ください」）を足す。渡すのは**日時とリンクだけ**（入居者名・理由は渡さない。FR-014）（さとこ・作）
 - [ ] T034 [US4] 前日 20 時の知らせを `backend/app/jobs/visit_reminder.py` に作り、`run_jobs()`（001-T057）から呼ぶ：日本時間で 20:00 を過ぎて最初に呼ばれたときに、翌日の `booked` ごとに `visit_reminder` を作る（同じ予約に 1 回だけ。20 時台に何度呼ばれても増えない）。`--at` で時刻を指定して動かせる（spec 001 R-13 と同じ形）（さとこ・作）
 
 **Checkpoint**: quickstart.md の 16〜19 が通る
