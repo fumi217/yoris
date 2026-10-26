@@ -8,6 +8,7 @@ from app.models import (  # noqa: F401
     core,
     disclosure,
     inquiry,
+    memos,
     notifications,
     records,
     replies,

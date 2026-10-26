@@ -33,6 +33,19 @@ class Settings:
     openrouter_model: str = field(
         default_factory=lambda: os.environ.get("OPENROUTER_MODEL") or "openai/gpt-oss-120b"
     )
+    # 様子のメモを整える・訳し戻すモデル。未設定なら OPENROUTER_MODEL。spec 007 の research.md R-01
+    openrouter_rewrite_model: str = field(
+        default_factory=lambda: (
+            os.environ.get("OPENROUTER_REWRITE_MODEL")
+            or os.environ.get("OPENROUTER_MODEL")
+            or "openai/gpt-oss-120b"
+        )
+    )
+    # 様子のメモの上限（spec 007 の research.md R-06・R-08）。環境変数では変えない
+    # 1 人の職員が 1 人の入居者について 1 日に書ける件数（取り下げたものは数えない）
+    memo_daily_limit: int = 3
+    # 1 つのメモで「日本語にする」をやり直せる回数（care_memo_revisions の数）
+    memo_rewrite_limit: int = 5
     # 問い合わせ AI の 1 日の回数の上限（家族ごと・施設全体）。spec 004 の research.md R-07
     inquiry_family_daily_limit: int = field(
         default_factory=lambda: int(os.environ.get("INQUIRY_FAMILY_DAILY_LIMIT") or "10")

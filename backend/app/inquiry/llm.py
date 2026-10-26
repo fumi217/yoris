@@ -86,10 +86,17 @@ class ChatClient(Protocol):
 class LLMClient:
     """OpenRouter を呼ぶ本物のクライアント。"""
 
-    def __init__(self, settings: Settings | None = None, client: Any | None = None):
+    def __init__(
+        self,
+        settings: Settings | None = None,
+        client: Any | None = None,
+        model: str | None = None,
+    ):
         self._settings = settings or get_settings()
         # テストで SDK のクライアントを差し替えられるようにする（本物の通信はしない）
         self._client = client
+        # 使うモデル。指定がなければ OPENROUTER_MODEL（様子のメモは整える用のモデルを渡す）
+        self._model = model or self._settings.openrouter_model
 
     def _sdk(self) -> Any:
         if self._client is None:
@@ -113,7 +120,7 @@ class LLMClient:
         問い合わせ AI は `tools` を毎回付ける。様子のメモ（spec 007）は付けない。
         """
         params: dict[str, Any] = {
-            "model": self._settings.openrouter_model,
+            "model": self._model,
             "messages": messages,
             # 最初はストリーミングなし（tool_calls が分かれて届くため。技術選定 5 章）
             "stream": False,
