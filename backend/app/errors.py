@@ -39,6 +39,8 @@ class ErrorCode(StrEnum):
     VISIT_CLOSED_DAY = "visit_closed_day"
     VISIT_DAY_HAS_RESERVATIONS = "visit_day_has_reservations"
     VISIT_OUT_OF_RANGE = "visit_out_of_range"
+    # 問い合わせ AI（spec 004 の contracts）
+    AI_UNAVAILABLE = "ai_unavailable"
 
 
 STATUS_CODES: dict[ErrorCode, int] = {
@@ -62,6 +64,7 @@ STATUS_CODES: dict[ErrorCode, int] = {
     ErrorCode.VISIT_CLOSED_DAY: 409,
     ErrorCode.VISIT_DAY_HAS_RESERVATIONS: 409,
     ErrorCode.VISIT_OUT_OF_RANGE: 422,
+    ErrorCode.AI_UNAVAILABLE: 503,
 }
 
 

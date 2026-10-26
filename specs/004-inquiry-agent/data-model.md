@@ -52,7 +52,11 @@ PostgreSQL のテーブルの形と、状態の動き。土台の `users`・`fam
 
 - 家族の画面には、時刻の順にすべて出す（FR-008）。AI の発言には `source_ids` から「もとにした記録」（日付・項目／テーマ）を組み立てて出す。
   組み立てるときも `get_disclosed_records`・`get_active_replies` を通す（いま非開示になった記録は出さない）。
+- 根拠（`source_ids`）のうち 1 つでも、いま家族に見せられなくなった AI の答え（`answered`）は、本文も根拠も出さない（`body` を空にし、画面は辞書の `inquiry.answer_hidden` を出す）。
+  AI に渡す直近のやりとりにも入れない（非開示になった中身を、AI が新しい答えに書かないため。原則 IV）。DB の本文は消さないので、開示に戻せばまた出る（PR #205 ようこ）。
 - AI への指示の文は保存しない（家族の画面に出すものだけを保存する）。
+- AI が答えなかった発言（`ai_result` が `handed_off`・`no_record`）は、`body` を空にする。画面は `ai_result` から辞書の決まった文（`inquiry.handed_off`・`inquiry.no_record`）を、家族の表示言語で出す。
+- AI のサービスにつながらなかったとき（503 `ai_unavailable`）は、家族の発言も保存しない（会話に答えのない発言を残さない。画面は入力した文を消さず、送り直せる。FR-026）。
 
 ## `staff_messages`
 
