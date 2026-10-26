@@ -81,10 +81,10 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [x] T026 [US1] 記録の保存・押し直しを `backend/app/services/records.py` に作る：上書きのときは前の値（`value`）を履歴に残す。日付は日本時間で決める（research.md R-14）。新しく付けられるのは今日から 3 日前まで、押し直しは今日の記録だけ（spec の Session 2026-10-23）（ゆう・ミ）
 - [x] T027 [US1] `PUT /api/staff/residents/{id}/records` を `backend/app/api/staff/records.py` に作る（役割：介護職員・リーダー・相談員・施設長）（contracts/api.md）（ゆう・ミ）
 - [x] T028 [US1] `GET /api/staff/residents?date=` を `backend/app/api/staff/residents.py` に作る：食事区分ごとの記録済み／未記録（FR-008）。返事待ちの件数は US3 で足す（ゆう・ミ）
-- [ ] T029 [US1] `GET /api/staff/residents/{id}/contact-book?date=` を `backend/app/api/staff/contact_book.py` に作る：その日の記録を時刻順に（非開示も含む。職員向けなので共通の関数は通さない）（FR-024）（ゆう・ミ）
+- [x] T029 [US1] `GET /api/staff/residents/{id}/contact-book?date=` を `backend/app/api/staff/contact_book.py` に作る：その日の記録を時刻順に（非開示も含む。職員向けなので共通の関数は通さない）（FR-024）（ゆう・ミ）
 - [x] T030 [P] [US1] 記録のサンプル（数日分）を `backend/app/seed/records.py` に作る（ゆう・ミ）
 - [x] T031 [P] [US1] 入居者一覧の画面を `frontend/src/pages/staff/ResidentList.tsx` に作る（未記録が分かる）（ゆう・ミ）
-- [ ] T032 [US1] 記録の画面を `frontend/src/pages/staff/RecordPage.tsx` に作る：食事区分を選んで 5 段階＋「食事なし（外泊・入院など）」のボタン、機嫌・眠りの 3 段階のボタン。入居者を選んでから保存まで 3 タップ以内（FR-006・SC-003）。文言は辞書から引く（ゆう・ミ）
+- [x] T032 [US1] 記録の画面を `frontend/src/pages/staff/RecordPage.tsx` に作る：食事区分を選んで 5 段階＋「食事なし（外泊・入院など）」のボタン、機嫌・眠りの 3 段階のボタン。入居者を選んでから保存まで 3 タップ以内（FR-006・SC-003）。文言は辞書から引く（ゆう・ミ）
 - [ ] T033 [P] [US1] その日の連絡帳の見返しの画面を `frontend/src/pages/staff/StaffContactBook.tsx` に作る（ゆう・ミ）
 - [ ] T034 [US1] 当日中の記録の取り消し `DELETE /api/staff/records/{record_id}` を `backend/app/api/staff/records.py` に足す（`deleted_at`・`deleted_by` を入れる。今日でなければ 409 `not_today`）と、画面の取り消しボタン（Edge Cases）（ゆう・作）
 

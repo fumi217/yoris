@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router'
 import { AreaGuard } from '../../components/AreaGuard'
+import { RecordPage } from './RecordPage'
 import { ResidentList } from './ResidentList'
 import { StaffLayout } from './StaffLayout'
 
@@ -11,6 +12,8 @@ export default function StaffRoutes() {
         <Route element={<StaffLayout />}>
           {/* 入居者一覧（UI-S01。001-T031 ゆう） */}
           <Route index element={<ResidentList />} />
+          {/* 記録の画面（UI-S02。001-T032 ゆう） */}
+          <Route path="residents/:residentId" element={<RecordPage />} />
           <Route path="*" element={<Navigate to="/staff" replace />} />
         </Route>
       </Routes>

@@ -6,6 +6,7 @@ from app.api import dev
 from app.api.admin import disclosure as admin_disclosure
 from app.api.family import requests as family_requests
 from app.api.family import visits as family_visits
+from app.api.staff import contact_book as staff_contact_book
 from app.api.staff import records as staff_records
 from app.api.staff import requests as staff_requests
 from app.api.staff import residents as staff_residents
@@ -34,6 +35,7 @@ def create_app() -> FastAPI:
     app.include_router(admin_disclosure.router)
     app.include_router(family_visits.router)
     app.include_router(family_requests.router)
+    app.include_router(staff_contact_book.router)
     app.include_router(staff_records.router)
     app.include_router(staff_requests.router)
     app.include_router(staff_residents.router)

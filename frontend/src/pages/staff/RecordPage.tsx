@@ -1,0 +1,240 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Link, useParams } from 'react-router'
+import { api, messageKeyOf } from '../../api/client'
+import { useMe } from '../../auth/me'
+import { Message } from '../../components/Message'
+import { Text } from '../../components/Text'
+import { Ruby } from '../../i18n/Ruby'
+import {
+  currentValue,
+  DAY_SLOT,
+  firstUnrecordedMealSlot,
+  VALUES,
+  withRecord,
+  type Item,
+  type StaffContactBook,
+  type StaffRecord,
+} from './recordValues'
+import { MEAL_SLOTS, monthDay, type MealSlot } from './residentRows'
+
+type Choice = { item: Item; slot: string; value: string }
+
+type SaveResponse = Omit<StaffRecord, 'recorded_by_name'> & { date: string }
+
+const contactBookKey = (residentId: string) => ['staff', 'contact-book', residentId, 'today']
+
+/**
+ * 記録の画面（UI-S02。spec 001 の T032）。
+ * 押したら、その場で保存する（保存ボタンは置かない）。押し直したら上書きする（US1 の受け入れシナリオ 2・3）。
+ * 入居者を選ぶ → 食事の区分 → 値 の 3 タップ以内（FR-006・SC-003）。
+ * 食事は、まだ記録していない最初の区分を開いておくので、多くは 2 タップで済む。
+ */
+export function RecordPage() {
+  const { residentId = '' } = useParams()
+  const queryClient = useQueryClient()
+  const me = useMe().data
+
+  const book = useQuery({
+    queryKey: contactBookKey(residentId),
+    queryFn: () => api.get<StaffContactBook>(`/api/staff/residents/${residentId}/contact-book`),
+  })
+  const requests = useQuery({
+    queryKey: ['staff', 'requests', residentId],
+    queryFn: () => api.get<{ requests: unknown[] }>(`/api/staff/residents/${residentId}/requests`),
+  })
+
+  const save = useMutation({
+    mutationFn: (choice: Choice) =>
+      api.put<SaveResponse>(`/api/staff/residents/${residentId}/records`, {
+        date: book.data?.date,
+        ...choice,
+      }),
+    onSuccess: (saved) => {
+      queryClient.setQueryData<StaffContactBook>(contactBookKey(residentId), (old) =>
+        old ? withRecord(old, { ...saved, recorded_by_name: me?.display_name ?? '' }) : old,
+      )
+      // すぐに押したボタンを光らせたうえで、記録した職員の名前などを読み直す
+      // （ログイン中の人がまだ読めていないと、上の名前が空のままになるため。PR #190 の AI チューター）
+      void queryClient.invalidateQueries({ queryKey: contactBookKey(residentId) })
+      // 入居者一覧の未記録の目印も変わる
+      void queryClient.invalidateQueries({ queryKey: ['staff', 'residents'] })
+    },
+  })
+
+  if (book.isPending) return <Message k="layout.loading" />
+  if (book.isError) return <Message k={messageKeyOf(book.error)} />
+  return (
+    <RecordView
+      book={book.data}
+      waitingRequests={requests.data?.requests.length ?? 0}
+      saving={save.isPending ? save.variables : null}
+      saved={save.isSuccess}
+      errorKey={save.isError ? messageKeyOf(save.error) : null}
+      onChoose={(choice) => save.mutate(choice)}
+    />
+  )
+}
+
+type ViewProps = {
+  book: StaffContactBook
+  waitingRequests: number
+  // 保存中の値（押したボタンだけ「保存中」にし、続けて押せないようにする）
+  saving: Choice | null | undefined
+  saved: boolean
+  errorKey: string | null
+  onChoose: (choice: Choice) => void
+}
+
+/** 画面の中身（テストではこれを直接出す）。 */
+export function RecordView({
+  book,
+  waitingRequests,
+  saving,
+  saved,
+  errorKey,
+  onChoose,
+}: ViewProps) {
+  const { t } = useTranslation()
+  const [mealSlot, setMealSlot] = useState<MealSlot>(() => firstUnrecordedMealSlot(book.records))
+  const { resident } = book
+
+  return (
+    <section className="space-y-6 p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h1 className="text-xl font-bold">
+          <span className="mr-3 text-base font-normal text-gray-600">{resident.room}</span>
+          {/* 入居者の呼び名は、辞書を通さずそのまま出す */}
+          {resident.display_name}
+        </h1>
+        <span>
+          <Ruby text={t('record_page.date', monthDay(book.date))} />
+        </span>
+      </div>
+
+      {waitingRequests > 0 && (
+        // 職員の返事の画面（UI-S03。001-T062）
+        <Link
+          to={`/staff/residents/${resident.id}/requests`}
+          className="block rounded border border-sky-700 p-3 text-sky-800"
+        >
+          <Ruby text={t('record_page.waiting_requests', { count: waitingRequests })} />
+        </Link>
+      )}
+
+      <p role="status" aria-live="polite" className="min-h-6 text-sm">
+        {errorKey ? (
+          <span className="text-red-700">
+            <Text k={errorKey} />
+          </span>
+        ) : (
+          saved && <Text k="record_page.saved" />
+        )}
+      </p>
+
+      <fieldset>
+        <legend className="mb-2 font-bold">
+          <Text k="record_page.meal" />
+        </legend>
+        <div role="tablist" className="mb-3 flex gap-2">
+          {MEAL_SLOTS.map((slot) => (
+            <button
+              key={slot}
+              type="button"
+              role="tab"
+              aria-selected={slot === mealSlot}
+              onClick={() => setMealSlot(slot)}
+              className={`rounded-t border-b-4 px-3 py-2 ${
+                slot === mealSlot ? 'border-sky-700 font-bold' : 'border-transparent'
+              }`}
+            >
+              <Text k={`record_page.slot.${slot}`} />
+              {currentValue(book.records, 'meal', slot) !== null && (
+                <span aria-hidden="true"> ✔</span>
+              )}
+            </button>
+          ))}
+        </div>
+        <Choices
+          item="meal"
+          slot={mealSlot}
+          records={book.records}
+          saving={saving}
+          onChoose={onChoose}
+        />
+      </fieldset>
+
+      <fieldset>
+        <legend className="mb-2 font-bold">
+          <Text k="record_page.mood" />
+        </legend>
+        <Choices
+          item="mood"
+          slot={DAY_SLOT}
+          records={book.records}
+          saving={saving}
+          onChoose={onChoose}
+        />
+      </fieldset>
+
+      <fieldset>
+        <legend className="mb-2 font-bold">
+          <Text k="record_page.sleep" />
+        </legend>
+        <Choices
+          item="sleep"
+          slot={DAY_SLOT}
+          records={book.records}
+          saving={saving}
+          onChoose={onChoose}
+        />
+      </fieldset>
+
+      <div className="flex flex-wrap gap-4 border-t pt-4 text-sky-700 underline">
+        {/* 職員の連絡帳の見返し（UI-S04。001-T033） */}
+        <Link to={`/staff/residents/${resident.id}/contact-book`}>
+          <Text k="record_page.to_contact_book" />
+        </Link>
+        <Link to="/staff">
+          <Text k="record_page.back" />
+        </Link>
+      </div>
+    </section>
+  )
+}
+
+type ChoicesProps = {
+  item: Item
+  slot: string
+  records: StaffRecord[]
+  saving: Choice | null | undefined
+  onChoose: (choice: Choice) => void
+}
+
+/** 値のボタンの並び。今付いている値は、色を変えて aria-pressed にする。 */
+function Choices({ item, slot, records, saving, onChoose }: ChoicesProps) {
+  const current = currentValue(records, item, slot)
+
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      {VALUES[item].map((value) => {
+        const selected = value === current
+        return (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={selected}
+            disabled={Boolean(saving)}
+            onClick={() => onChoose({ item, slot, value })}
+            className={`min-h-14 rounded border-2 px-3 py-2 text-lg disabled:opacity-60 ${
+              selected ? 'border-sky-700 bg-sky-700 text-white' : 'border-gray-300 bg-white'
+            }`}
+          >
+            <Text k={`record.value.${item}.${value}`} />
+          </button>
+        )
+      })}
+    </div>
+  )
+}
