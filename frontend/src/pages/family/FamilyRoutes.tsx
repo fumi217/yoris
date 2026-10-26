@@ -3,6 +3,7 @@ import { AreaGuard } from '../../components/AreaGuard'
 import { ComingSoon } from '../../components/ComingSoon'
 import { FamilyLayout } from './FamilyLayout'
 import { FamilyMorePage } from './FamilyMorePage'
+import { Requests } from './Requests'
 import { VisitBooking } from './visits/VisitBooking'
 
 /** 家族の画面（/family 以下）。担当は、自分の画面の ComingSoon を差し替える。 */
@@ -14,7 +15,7 @@ export default function FamilyRoutes() {
           {/* 連絡帳（ホーム。001-T059 さとこ） */}
           <Route index element={<ComingSoon />} />
           {/* 知りたいことを頼む（001-T060 さとこ） */}
-          <Route path="requests" element={<ComingSoon />} />
+          <Route path="requests/*" element={<Requests />} />
           {/* お知らせの一覧（001-T061 さとこ） */}
           <Route path="notifications" element={<ComingSoon />} />
           <Route path="more" element={<FamilyMorePage />} />
