@@ -126,7 +126,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 - [x] T043 [P] [US3] テスト `backend/tests/api/test_requests.py`：返事待ちは 3 件まで（4 件目は 409 `request_limit`）、同じテーマは 1 件まで（409 `theme_waiting`）、返事の前だけ取り消せる、ほかの家族のリクエストの id では取り消せない（404）（FR-014・research.md R-08・R-19）（さとこ・ミ）
 - [x] T044 [P] [US3] テスト `backend/tests/api/test_replies.py`：2 人がほぼ同時に返事をすると先の 1 人だけ保存され、もう一方は 409 `already_replied`。取り消されたリクエストへの返事は 409 `request_cancelled`。返事の文に `<script>` を入れても文字として返る（FR-030・Edge Cases・research.md R-07・SC-009）（ゆう・ミ）
-- [ ] T045 [P] [US3] テスト `backend/tests/api/test_notifications.py`：返事を保存すると、同じトランザクションで `notifications`（`reply`）と `email_outbox` ができる。`email_outbox.params` に返事の中身が入らない。ほかの家族の返事の id では既読にできない（404）（SC-010・research.md R-09・R-19）（さとこ・ミ）
+- [x] T045 [P] [US3] テスト `backend/tests/api/test_notifications.py`（「ほかの家族の返事の id では既読にできない」）と、ゆうの `backend/tests/api/test_replies.py`（「返事を保存すると…ができる」「`params` に返事の中身が入らない」。#206）：返事を保存すると、同じトランザクションで `notifications`（`reply`）と `email_outbox` ができる。`email_outbox.params` に返事の中身が入らない。ほかの家族の返事の id では既読にできない（404）（SC-010・research.md R-09・R-19）（さとこ・ミ）
 
 ### Implementation for User Story 3
 
