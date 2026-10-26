@@ -4,6 +4,7 @@ import { ComingSoon } from '../../components/ComingSoon'
 import { ContactBook } from './ContactBook'
 import { FamilyLayout } from './FamilyLayout'
 import { FamilyMorePage } from './FamilyMorePage'
+import { Notifications } from './Notifications'
 import { Requests } from './Requests'
 import { VisitBooking } from './visits/VisitBooking'
 
@@ -18,7 +19,7 @@ export default function FamilyRoutes() {
           {/* 知りたいことを頼む（001-T060 さとこ） */}
           <Route path="requests/*" element={<Requests />} />
           {/* お知らせの一覧（001-T061 さとこ） */}
-          <Route path="notifications" element={<ComingSoon />} />
+          <Route path="notifications" element={<Notifications />} />
           <Route path="more" element={<FamilyMorePage />} />
           {/* 面会の予約（003-T014 ゆう） */}
           <Route path="visits" element={<VisitBooking />} />
