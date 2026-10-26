@@ -26,7 +26,10 @@ export function FamilyLayout() {
           // 連絡帳（/family）は、ほかの画面を開いているときに選ばれた表示にしない
           <NavLink key={item.to} to={item.to} end={item.to === '/family'} className={tabClass}>
             <span aria-hidden="true">{item.icon}</span>
-            <Text k={item.labelKey} />
+            {/* 縦に並べる枠の中で、ふりがなと文字が別々の行にならないよう、1 つにまとめる */}
+            <span>
+              <Text k={item.labelKey} />
+            </span>
           </NavLink>
         ))}
         <NavLink
@@ -34,7 +37,9 @@ export function FamilyLayout() {
           className={({ isActive }) => tabClass({ isActive: isActive || inMore })}
         >
           <span aria-hidden="true">☰</span>
-          <Text k="layout.family_menu.more" />
+          <span>
+            <Text k="layout.family_menu.more" />
+          </span>
         </NavLink>
       </nav>
     </div>
