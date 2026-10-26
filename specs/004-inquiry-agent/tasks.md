@@ -69,8 +69,8 @@ US1 は、001-T038（`get_disclosed_records`）と 001-T054（`get_active_replie
 - [X] T017 [US1] 自前のループを `backend/app/inquiry/agent.py` に作る：指示・直近の 6 往復・その家族の対応待ちのメッセージ・今回の発言を付けて呼ぶ。`tools` は毎回付ける。`answer_family`／`hand_off_to_staff` で終わる。ツールは 5 回まで。根拠の確かめ（research.md R-03）と、出す前の確かめ（R-04 の 6）をする（contracts/agent-tools.md のループ）（みさき・ミ）
 - [x] T018 [US1] 会話と発言の保存を `backend/app/inquiry/service.py` に作る：初めて送ったときに会話を作る、家族の発言・AI の発言（`ai_result`・`source_ids`・`model`・`tool_calls`・`latency_ms`）を保存する。AI への指示の文は保存しない（data-model.md）（みさき・ミ）
 - [x] T019 [US1] `GET /api/family/inquiry/messages`・`POST /api/family/inquiry/messages` を `backend/app/api/family/inquiry.py` に作る：本文は 1〜500 文字（それ以外は 422）、AI の発言には `source_ids` から「もとにした記録」（日付・項目／テーマ）を組み立てて返す（組み立てるときも共通の関数を通す）。返す値に指示の文・ツールの中身を入れない（contracts/api.md、FR-001〜005・FR-008・FR-021）（みさき・ミ）
-- [ ] T020 [US1] 家族の「質問する」画面を `frontend/src/pages/family/Inquiry.tsx` に作る：1 本の会話を時刻順に出す、送ったら「AI が記録を調べています…」、AI の答えのそばに「AI がお答えしています…」ともとにした記録、画面の上に「AI がお答えできないときは…」、画面に戻ったら読み直す（FR-005・FR-008・FR-012a・research.md R-16）（みさき・ミ）
-- [ ] T021 [P] [US1] 家族の画面の単体テスト `frontend/tests/unit/Inquiry.test.tsx`（Vitest）：AI の答えに表示がある、職員の返事は「◯◯からの返事」と区別される、答えの文はそのまま文字として出る（FR-005・FR-028）（みさき・ミ）
+- [x] T020 [US1] 家族の「質問する」画面を `frontend/src/pages/family/Inquiry.tsx` に作る（URL は `/family/inquiry`、家族の下のメニューの「お問い合わせ」から開く。spec 001 の Clarifications の Session 2026-10-26・docs/画面設計.md の UI-F05）：1 本の会話を時刻順に出す、送ったら「AI が記録を調べています…」、AI の答えのそばに「AI がお答えしています…」ともとにした記録、画面の上に「AI がお答えできないときは…」、画面に戻ったら読み直す（FR-005・FR-008・FR-012a・research.md R-16）（みさき・ミ）
+- [x] T021 [P] [US1] 家族の画面の単体テスト `frontend/src/pages/family/Inquiry.test.tsx`（Vitest。テストは画面の隣に置く決まり）：AI の答えに表示がある、職員の返事は「◯◯からの返事」と区別される、答えの文はそのまま文字として出る（FR-005・FR-028）（みさき・ミ）
 
 **Checkpoint**: 家族が記録について質問し、根拠つきの答えを受け取れる（quickstart の 2・3）
 

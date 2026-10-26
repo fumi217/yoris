@@ -4,6 +4,7 @@ import { ComingSoon } from '../../components/ComingSoon'
 import { ContactBook } from './ContactBook'
 import { FamilyLayout } from './FamilyLayout'
 import { FamilyMorePage } from './FamilyMorePage'
+import { Inquiry } from './Inquiry'
 import { Notifications } from './Notifications'
 import { Requests } from './Requests'
 import { VisitBooking } from './visits/VisitBooking'
@@ -23,6 +24,8 @@ export default function FamilyRoutes() {
           <Route path="more" element={<FamilyMorePage />} />
           {/* 面会の予約（003-T014 ゆう） */}
           <Route path="visits" element={<VisitBooking />} />
+          {/* お問い合わせ（AI に質問する。004-T020 みさき） */}
+          <Route path="inquiry" element={<Inquiry />} />
           {/* アルバム（spec 005） */}
           <Route path="album" element={<ComingSoon />} />
           {/* 設定（通知・言語） */}
