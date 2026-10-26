@@ -17,6 +17,7 @@ from app.clock import today_jst
 from app.db import get_engine
 from app.models.core import Resident
 from app.models.disclosure import Theme
+from app.seed.inquiry import add_staff_message_templates
 from app.seed.people import add_people, get_or_add_facility
 from app.seed.records import add_sample_records
 from app.seed.requests import add_sample_requests
@@ -39,6 +40,7 @@ def seed(session: Session, *, today: date) -> bool:
     add_themes(session)
     add_disclosure_settings(session, facility_id=facility.id)
     add_visit_settings(session, facility_id=facility.id)
+    add_staff_message_templates(session)
 
     # 人を新しく入れたときだけ（同じ日の記録・予約が 2 回入らないように）
     if fresh:

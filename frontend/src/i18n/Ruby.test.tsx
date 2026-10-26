@@ -1,7 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import i18n from './index'
-import ja from './ja.json'
 import { Ruby } from './Ruby'
 import { parseRuby, stripRuby } from './rubyText'
 
@@ -45,36 +44,7 @@ describe('Ruby', () => {
 })
 
 describe('辞書', () => {
-  // backend/app/errors.py の ErrorCode のすべて。API は message_key に error.<code> を返す
-  const errorCodes = [
-    'not_logged_in',
-    'forbidden',
-    'not_found',
-    'too_many_attempts',
-    'request_limit',
-    'theme_waiting',
-    'already_replied',
-    'request_cancelled',
-    'not_today',
-    'invalid_file',
-    'validation_error',
-    'server_error',
-    // 面会予約（spec 003 の 003-T003）
-    'visit_overlap',
-    'visit_day_full',
-    'visit_already_booked_day',
-    'visit_deadline_passed',
-    'visit_closed_day',
-    'visit_day_has_reservations',
-    'visit_out_of_range',
-  ]
-
-  it('API のエラーのコードすべてに、日本語の文言がある', () => {
-    for (const code of errorCodes) {
-      expect(ja.error[code as keyof typeof ja.error], code).toBeTruthy()
-    }
-  })
-
+  // エラーのコードの足し忘れは backend/tests/unit/test_errors.py（#181）で確かめる
   it('初めは日本語で、辞書から文言を引ける', () => {
     expect(i18n.language).toBe('ja')
     expect(i18n.t('error.already_replied')).toBe('ほかの職員が返事をしました')
