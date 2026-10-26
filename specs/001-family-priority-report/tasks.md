@@ -148,7 +148,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T059 [US3] 家族の連絡帳の画面を `frontend/src/pages/family/ContactBook.tsx` に作る：返事のカードを一番上に（職員の名前つき）、カードが画面に出たら自動で既読にする、未記録の欄、画面の下に「緊急のときは、施設から電話します」（FR-015・FR-017・FR-028・research.md R-15）。ミニマム版は「今日」だけ（過去の日付は T094）（さとこ・ミ）
 - [x] T060 [US3] 「知りたいこと」を頼む画面と送ったリクエストの一覧を `frontend/src/pages/family/Requests.tsx` に作る：テーマのボタン（3 タップ以内）、「施設に届きました」と送った日時・日数、3 日たったら「お急ぎのときは、施設にお電話ください」、返事の前の取り消し（FR-013・FR-014・SC-002）（さとこ・ミ）
 - [ ] T061 [P] [US3] お知らせの一覧の画面を `frontend/src/pages/family/Notifications.tsx` に作る（さとこ・ミ）
-- [ ] T062 [US3] 職員の返事の画面を `frontend/src/pages/staff/ReplyPage.tsx` に作る：テーマ・送られた日・日数、定型文のボタン（1 つ以上）、100 文字までの書き足し。リクエストを開いてから 3 タップ以内で保存（FR-030・SC-007）（ゆう・ミ）
+- [x] T062 [US3] 職員の返事の画面を `frontend/src/pages/staff/ReplyPage.tsx` に作る：テーマ・送られた日・日数、定型文のボタン（1 つ以上）、100 文字までの書き足し。リクエストを開いてから 3 タップ以内で保存（FR-030・SC-007）（ゆう・ミ）
 - [ ] T063 [US3] 当日中の返事の修正 `PATCH /api/staff/replies/{reply_id}` を `backend/app/api/staff/requests.py` に足す：`template_ids`・`note` を上書きして `edited_at` を入れる、再通知はしない、今日でなければ 409 `not_today`。画面に「直す」を足す（返事の取り消しはしない）（FR-030）（ゆう・作）
 - [ ] T064 [US3] `notification_settings` を `backend/app/models/notifications.py` に足し（`notify_reply` 初期値 `true`、`notify_items` 初期値 `{meal,mood,sleep}`、`frequency`：`daily`（初期値）／`weekly`／`none`）、`GET/PUT /api/family/notification-settings` と画面 `frontend/src/pages/family/NotificationSettings.tsx` を作る。送り先のメールアドレスを表示する（FR-023・Edge Cases）（さとこ・作）
 - [ ] T065 [US3] まとめの通知を `backend/app/jobs/digest.py` に作り、`run_jobs()` から呼ぶ：日本時間で 20:00 を過ぎて最初に呼ばれたときに、毎日「1 日 1 回」、日曜は「1 週間に 1 回」の家族へ（締めは 20:00）、`get_disclosed_records` で新しい記録があるときだけまとめを作る。`digest_runs`（一意：`(family_account_id, kind, period_end)`）で 2 回送らない。止まっていたらその日のうちだけ取り戻す。`--at` で時刻を指定して動かせる（research.md R-13・quickstart.md）（さとこ・作）
