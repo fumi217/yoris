@@ -28,10 +28,10 @@ def test_read_does_not_need_fetch_header():
 
 
 def test_exempt_path_skips_fetch_header_check():
-    # Stripe からの知らせは、ヘッダーなしでも確認で止めない（まだないので 404）
+    # Stripe からの知らせは、ヘッダーなしでも確認で止めない（403 でなく、署名がないので 400）
     response = client.post("/api/billing/webhook")
 
-    assert response.status_code == 404
+    assert response.status_code == 400
 
 
 def test_me_without_login_is_not_logged_in(monkeypatch):

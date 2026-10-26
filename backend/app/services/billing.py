@@ -1,8 +1,8 @@
 """決済の処理（spec 002）。
 
 - Stripe の契約の状態からアプリの状態を決める対応表（T011・research.md R-05）
-- 申し込み（T017）・利用料の画面（T022）。
-  Webhook の知らせの処理・完了の確認（T019〜T021）は、続きの PR で足す
+- 申し込み（T017）・Webhook の知らせの処理（T019・T020）・完了の確認（T021）・
+  利用料の画面（T022）
 
 サービスの関数は commit しない（API の最後で 1 回 commit する。app/db.py）。
 Stripe を呼ぶときは `stripe_client.関数名()` の形で呼ぶ
@@ -11,24 +11,35 @@ Stripe を呼ぶときは `stripe_client.関数名()` の形で呼ぶ
 """
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
+from app.auth.login_ids import next_login_ids
 from app.auth.passwords import hash_password, validate_password
 from app.config import PLAN_AMOUNT_JPY, PLAN_NAME
 from app.errors import AppError, ErrorCode
 from app.models.billing import (
     BillingApplication,
+    BillingEvent,
     FacilitySubscription,
+    SubscriptionStatusHistory,
 )
-from app.models.core import Facility, Staff
+from app.models.core import Facility, Staff, User
 from app.services import stripe_client
 
 logger = logging.getLogger(__name__)
+
+# 施設を作る処理を 1 つずつにするアドバイザリーロックの番号（R-04。ほかの用途と重ならない値）
+FACILITY_CREATE_LOCK = 20020001
+# 完了の画面で、ログイン用の ID を出す期間（アカウントを作ってから。contracts/api.md）
+LOGIN_ID_VISIBLE_FOR = timedelta(hours=1)
+# 支払い画面の期限のあと、「知らせ待ち」から「支払われていない」に変えるまでの余裕。
+# 期限の直前に払った人の知らせが少し遅れても、「支払われていない」と出さないため
+CONFIRMING_GRACE = timedelta(minutes=10)
 
 
 class SubscriptionLike(Protocol):
@@ -194,6 +205,178 @@ def cancel_signup(session: Session, idempotency_key: str) -> None:
             return
     session.delete(application)
     session.flush()
+
+
+# Webhook の知らせの処理（T018〜T020。research.md R-03・R-04・R-07）
+
+
+def handle_event(session: Session, event: Any) -> None:
+    """知らせを 1 回だけ処理する。同じ id の知らせなら何もしない。
+
+    知らせの id を足す処理と中身の処理は、同じトランザクション（呼んだ API が commit する）。
+    途中で失敗したら、どちらも取り消されて、Stripe の再送で処理し直せる。
+    """
+    inserted = session.scalar(
+        insert(BillingEvent)
+        .values(stripe_event_id=event.id, type=event.type)
+        .on_conflict_do_nothing(index_elements=["stripe_event_id"])
+        .returning(BillingEvent.id)
+    )
+    if inserted is None:
+        logger.info("すでに処理した知らせ: event=%s", event.id)
+        return
+    if event.type == "checkout.session.completed":
+        _on_checkout_completed(session, event)
+    elif event.type == "checkout.session.expired":
+        _on_checkout_expired(session, event)
+    else:
+        logger.info("扱わない知らせ: event=%s type=%s", event.id, event.type)
+
+
+def _clear_personal_data(application: BillingApplication) -> None:
+    application.password_hash = None
+    application.facility_name = None
+    application.director_name = None
+    application.contact_email = None
+
+
+def _on_checkout_completed(session: Session, event: Any) -> None:
+    obj = event.data.object
+    # 施設を作る処理を 1 つずつにする（トランザクションの終わりで外れる）
+    session.execute(select(func.pg_advisory_xact_lock(FACILITY_CREATE_LOCK)))
+
+    reference = getattr(obj, "client_reference_id", None)
+    application = None
+    if reference and str(reference).isdigit():
+        application = session.scalars(
+            select(BillingApplication)
+            .where(BillingApplication.id == int(reference))
+            .with_for_update()
+        ).one_or_none()
+    if application is None:
+        # 支払いは済んだのにアカウントを作れない。翌月から請求されないよう解約する（R-04）
+        subscription_id = getattr(obj, "subscription", None)
+        paid = getattr(obj, "payment_status", None) in ("paid", "no_payment_required")
+        if subscription_id and paid:
+            stripe_client.cancel_subscription(subscription_id)
+        logger.warning("申し込みが見つからない支払い完了: event=%s", event.id)
+        return
+    if application.status != "pending":
+        return  # 同じ申し込みの知らせが別の id で来た（SC-003）
+
+    # 支払いがまだ済んでいない完了（遅れて払う方法）では作らない。申し込みは残す
+    if getattr(obj, "payment_status", None) not in ("paid", "no_payment_required"):
+        logger.warning("支払いが済んでいない完了の知らせ: application=%s", application.id)
+        return
+
+    customer_id = getattr(obj, "customer", None)
+    subscription_id = getattr(obj, "subscription", None)
+
+    if facility_exists(session):
+        # 2 つ目の申し込み。翌月から請求されないよう、その契約を解約する（FR-016）
+        if subscription_id:
+            stripe_client.cancel_subscription(subscription_id)
+        application.status = "rejected"
+        _clear_personal_data(application)
+        logger.warning("施設がすでにあるので申し込みを断った: application=%s", application.id)
+        return
+
+    subscription = stripe_client.retrieve_subscription(subscription_id)
+    stripe_client.set_customer_name(customer_id, application.facility_name)
+
+    facility = Facility(
+        name=application.facility_name,
+        billing_email=application.contact_email,
+        stripe_customer_id=customer_id,
+    )
+    session.add(facility)
+    session.flush()
+    user = User(
+        kind="staff",
+        login_id=next_login_ids(session)[0],
+        password_hash=application.password_hash,
+    )
+    session.add(user)
+    session.flush()
+    status = to_app_status(subscription) or "active"
+    session.add_all(
+        [
+            Staff(
+                user_id=user.id,
+                facility_id=facility.id,
+                display_name=application.director_name,
+                role="director",
+            ),
+            FacilitySubscription(
+                facility_id=facility.id,
+                status=status,
+                stripe_subscription_id=subscription_id,
+                current_period_end=_period_end(subscription),
+                cancel_at=_from_timestamp(subscription.cancel_at),
+            ),
+            SubscriptionStatusHistory(
+                facility_id=facility.id,
+                from_status=None,
+                to_status=status,
+                stripe_event_id=event.id,
+            ),
+        ]
+    )
+    application.status = "completed"
+    application.created_facility_id = facility.id
+    application.created_user_id = user.id
+    _clear_personal_data(application)
+    session.flush()
+    logger.info("施設を作った: application=%s facility=%s", application.id, facility.id)
+
+
+def _on_checkout_expired(session: Session, event: Any) -> None:
+    """支払われなかった申し込みの行を消す（パスワードのハッシュも消える。FR-006）。"""
+    session.execute(
+        delete(BillingApplication).where(
+            BillingApplication.stripe_checkout_session_id == getattr(event.data.object, "id", None),
+            BillingApplication.status == "pending",
+        )
+    )
+
+
+def _from_timestamp(value: int | None) -> datetime | None:
+    return datetime.fromtimestamp(value, UTC) if value else None
+
+
+def _period_end(subscription: Any) -> datetime | None:
+    """次の請求日。Stripe の新しい API では、契約の明細（items）のほうにある。"""
+    items = subscription.items.data
+    return _from_timestamp(items[0].current_period_end) if items else None
+
+
+# 申し込み完了の確認（T021）
+
+
+def signup_status(
+    session: Session, checkout_session_id: str, at: datetime
+) -> tuple[str, str | None]:
+    """`(confirming／completed／not_completed, login_id)` を返す。
+
+    login_id は completed で、アカウントを作ってから 1 時間までのときだけ。
+    """
+    application = session.scalars(
+        select(BillingApplication).where(
+            BillingApplication.stripe_checkout_session_id == checkout_session_id
+        )
+    ).one_or_none()
+    if application is None or application.status == "rejected":
+        return "not_completed", None
+    if application.status == "pending":
+        if application.expires_at and at > application.expires_at + CONFIRMING_GRACE:
+            return "not_completed", None
+        return "confirming", None
+    row = session.execute(
+        select(User.login_id, User.created_at).where(User.id == application.created_user_id)
+    ).one_or_none()
+    if row is None or at - row.created_at > LOGIN_ID_VISIBLE_FOR:
+        return "completed", None
+    return "completed", row.login_id
 
 
 # 利用料の画面（T022）
