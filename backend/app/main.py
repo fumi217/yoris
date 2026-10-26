@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.api import dev
 from app.api.family import requests as family_requests
+from app.api.family import visits as family_visits
 from app.api.staff import records as staff_records
 from app.api.staff import residents as staff_residents
 from app.auth import routes as auth_routes
@@ -28,6 +29,7 @@ def create_app() -> FastAPI:
     app.add_middleware(RequireFetchHeaderMiddleware)
 
     app.include_router(auth_routes.router)
+    app.include_router(family_visits.router)
     app.include_router(family_requests.router)
     app.include_router(staff_records.router)
     app.include_router(staff_residents.router)

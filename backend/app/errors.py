@@ -30,6 +30,14 @@ class ErrorCode(StrEnum):
     INVALID_FILE = "invalid_file"
     VALIDATION_ERROR = "validation_error"
     SERVER_ERROR = "server_error"
+    # 面会予約（spec 003 の contracts。003-T003）
+    VISIT_OVERLAP = "visit_overlap"
+    VISIT_DAY_FULL = "visit_day_full"
+    VISIT_ALREADY_BOOKED_DAY = "visit_already_booked_day"
+    VISIT_DEADLINE_PASSED = "visit_deadline_passed"
+    VISIT_CLOSED_DAY = "visit_closed_day"
+    VISIT_DAY_HAS_RESERVATIONS = "visit_day_has_reservations"
+    VISIT_OUT_OF_RANGE = "visit_out_of_range"
 
 
 STATUS_CODES: dict[ErrorCode, int] = {
@@ -45,6 +53,13 @@ STATUS_CODES: dict[ErrorCode, int] = {
     ErrorCode.INVALID_FILE: 422,
     ErrorCode.VALIDATION_ERROR: 422,
     ErrorCode.SERVER_ERROR: 500,
+    ErrorCode.VISIT_OVERLAP: 409,
+    ErrorCode.VISIT_DAY_FULL: 409,
+    ErrorCode.VISIT_ALREADY_BOOKED_DAY: 409,
+    ErrorCode.VISIT_DEADLINE_PASSED: 409,
+    ErrorCode.VISIT_CLOSED_DAY: 409,
+    ErrorCode.VISIT_DAY_HAS_RESERVATIONS: 409,
+    ErrorCode.VISIT_OUT_OF_RANGE: 422,
 }
 
 

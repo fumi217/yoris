@@ -59,6 +59,14 @@ describe('辞書', () => {
     'invalid_file',
     'validation_error',
     'server_error',
+    // 面会予約（spec 003 の 003-T003）
+    'visit_overlap',
+    'visit_day_full',
+    'visit_already_booked_day',
+    'visit_deadline_passed',
+    'visit_closed_day',
+    'visit_day_has_reservations',
+    'visit_out_of_range',
   ]
 
   it('API のエラーのコードすべてに、日本語の文言がある', () => {

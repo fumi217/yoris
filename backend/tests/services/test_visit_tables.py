@@ -2,42 +2,22 @@
 
 予約を作る処理（book_visit、003-T009）にバグがあっても、DB が受け付けないことを確かめる
 （research.md R-01）。
-DB を使うので、DATABASE_URL があるときだけ動く（CI に PostgreSQL が入るのは 001-T020）。
-各テストは 1 つのトランザクションの中で動かし、最後に取り消す。
+DB は tests/conftest.py の session を使う（テストごとに取り消す）。
 """
 
-from collections.abc import Iterator
 from datetime import date, time
 
 import pytest
-from sqlalchemy import create_engine, func, select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
 from app.models.core import Facility, Resident
 from app.models.visits import VisitReservation, VisitSetting, VisitStartTime
 from app.seed.visits import START_TIMES, add_sample_reservations, add_visit_settings
 from app.services.visit_rules import visit_range
 
 VISIT_DATE = date(2026, 10, 28)
-
-
-@pytest.fixture
-def session() -> Iterator[Session]:
-    url = get_settings().database_url
-    if not url:
-        pytest.skip("DATABASE_URL がない（CI に PostgreSQL が入るまで。001-T020）")
-    engine = create_engine(url)
-    with engine.connect() as connection:
-        transaction = connection.begin()
-        db = Session(bind=connection, join_transaction_mode="create_savepoint")
-        try:
-            yield db
-        finally:
-            db.close()
-            transaction.rollback()
-    engine.dispose()
 
 
 @pytest.fixture

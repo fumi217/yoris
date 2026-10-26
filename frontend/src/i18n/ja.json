@@ -11,7 +11,14 @@
     "not_today": "今日の記録・返事だけ直せます",
     "invalid_file": "PDF・JPG・PNG で、10MB までのファイルを選んでください",
     "validation_error": "入力した内容を確かめてください",
-    "server_error": "うまくいきませんでした。時間をおいて、もう一度お試しください"
+    "server_error": "うまくいきませんでした。時間をおいて、もう一度お試しください",
+    "visit_overlap": "その時間は、ほかの予約と重なっています。ほかの時間を選んでください",
+    "visit_day_full": "この日は予約がいっぱいです。ほかの日を選んでください",
+    "visit_already_booked_day": "この日は、もう予約があります。予約は 1 日 1 回までです",
+    "visit_deadline_passed": "前の日の 17 時を過ぎたので、アプリでは予約・取り消しができません。施設にお電話ください",
+    "visit_closed_day": "この日は、面会がお休みです",
+    "visit_day_has_reservations": "この日には予約が入っています。休みにすると、その予約は取り消しになります",
+    "visit_out_of_range": "予約できるのは、明日から 4 週間先までです"
   },
   "inquiry": {
     "title": "AI に質問",
