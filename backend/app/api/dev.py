@@ -2,12 +2,14 @@
 
 `APP_ENV=development` のときだけ、main.py がこのルーターを登録する。本番には存在しない（404）。
 初期データの職員・家族の user_id を送ると、その人としてログインした状態になる。
+選べる人の一覧は GET /api/dev/users（画面の切り替えの部品が使う）。
 """
 
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel
+from sqlalchemy import case, select
 from sqlalchemy.orm import Session
 
 from app.auth.sessions import (
@@ -18,13 +20,53 @@ from app.auth.sessions import (
 )
 from app.db import get_session
 from app.errors import AppError, ErrorCode
-from app.models.core import User
+from app.models.core import FamilyAccount, Resident, Staff, User
 
 router = APIRouter(prefix="/api/dev", tags=["dev"])
 
 
 class SwitchUserRequest(BaseModel):
     user_id: int
+
+
+class DevUser(BaseModel):
+    user_id: int
+    kind: str
+    role: str | None
+    # 職員は返事に出す名前、家族は入居者の呼び名
+    display_name: str
+
+
+@router.get("/users")
+def list_users(session: Annotated[Session, Depends(get_session)]) -> list[DevUser]:
+    """切り替えで選べる人の一覧（職員が先、それぞれ id の順）。"""
+    rows = session.execute(
+        select(
+            User.id,
+            User.kind,
+            User.login_id,
+            User.email,
+            Staff.role,
+            Staff.display_name.label("staff_name"),
+            Resident.display_name.label("resident_name"),
+        )
+        .outerjoin(Staff, Staff.user_id == User.id)
+        .outerjoin(FamilyAccount, FamilyAccount.user_id == User.id)
+        .outerjoin(Resident, Resident.id == FamilyAccount.resident_id)
+        # 職員が先、それぞれ id の順
+        .order_by(case((User.kind == "staff", 0), else_=1), User.id)
+    )
+    return [
+        DevUser(
+            user_id=row.id,
+            kind=row.kind,
+            role=row.role,
+            # 職員・家族の行がまだない人（手で入れた途中の人など）は、
+            # ログイン用の ID かメールアドレスを出す
+            display_name=row.staff_name or row.resident_name or row.login_id or row.email or "",
+        )
+        for row in rows
+    ]
 
 
 @router.post("/switch-user", status_code=204)

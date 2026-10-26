@@ -52,3 +52,34 @@ def test_switch_user_to_unknown_user_is_not_found(make_client):
     client = make_client(app_env="development")
 
     assert client.post("/api/dev/switch-user", json={"user_id": 0}).status_code == 404
+
+
+def test_dev_users_lists_staff_first(make_client, make_staff, make_family):
+    client = make_client(app_env="development")
+    staff = make_staff(role="counselor", display_name="テスト相談員")
+    family = make_family(display_name="テストさんの母")
+
+    users = client.get("/api/dev/users").json()
+
+    assert {
+        "user_id": staff.user_id,
+        "kind": "staff",
+        "role": "counselor",
+        "display_name": "テスト相談員",
+    } in users
+    assert {
+        "user_id": family.user_id,
+        "kind": "family",
+        "role": None,
+        "display_name": "テストさんの母",
+    } in users
+    # 職員がすべて家族より先、それぞれ id の順
+    staff_ids = [user["user_id"] for user in users if user["kind"] == "staff"]
+    family_ids = [user["user_id"] for user in users if user["kind"] == "family"]
+    assert users == sorted(users, key=lambda user: user["kind"] != "staff")
+    assert staff_ids == sorted(staff_ids)
+    assert family_ids == sorted(family_ids)
+
+
+def test_dev_users_is_not_found_in_production(client):
+    assert client.get("/api/dev/users").status_code == 404

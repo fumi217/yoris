@@ -47,7 +47,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [x] T012 [P] エラーの形（`{"error": {"code", "message_key"}}`）とコード（`not_logged_in`・`forbidden`・`not_found`・`request_limit`・`theme_waiting`・`already_replied`・`request_cancelled`・`not_today`・`invalid_file`・`validation_error`）を `backend/app/errors.py` に作る（contracts/api.md）（ようこ・ミ）
 - [x] T013 開発用のユーザー切り替え `POST /api/dev/switch-user` を `backend/app/api/dev.py` に作る。`APP_ENV=development` のときだけルーターを登録する（research.md R-02）（ようこ・ミ）
 - [x] T014 書き込みの API で `X-Requested-With: fetch` ヘッダーを確かめるミドルウェアを `backend/app/auth/csrf.py` に作る。ブラウザから呼ばない `POST /api/internal/jobs/run`（合言葉で確かめる。contracts/api.md）は対象から外す（research.md R-03）（ようこ・ミ）
-- [ ] T015 初期データの仕組みを `backend/app/seed/__main__.py` に作り、入居者 30 人・職員（`login_id` つき、各役割）・家族アカウント 30（入居者に 1 つ）を入れる（`python -m app.seed`）。**施設がまだなければ作り（契約中として）、すでにあればその施設に足す**（J の申し込みで施設ができたあとにも流せるように。PR #23 ようこ・spec 002）。ほかの人はここに自分の分を足す（ようこ・ミ）
+- [x] T015 初期データの仕組みを `backend/app/seed/__main__.py` に作り、入居者 30 人・職員（`login_id` つき、各役割）・家族アカウント 30（入居者に 1 つ）を入れる（`python -m app.seed`）。**施設がまだなければ作り（契約中として）、すでにあればその施設に足す**（J の申し込みで施設ができたあとにも流せるように。PR #23 ようこ・spec 002）。ほかの人はここに自分の分を足す（契約は spec 002 の T013・#69 で足す）（ようこ・ミ）
 - [X] T016 [P] 多言語の辞書の仕組みを `frontend/src/i18n/index.ts`・`frontend/src/i18n/ja.json` に作る。ミニマム版は日本語だけ。文言は必ず辞書から引く。日本語のふりがなは `{漢字|かんじ}` の書き方で書く（research.md R-11）（みさき・ミ）
 - [X] T017 [P] ふりがなの部品 `frontend/src/i18n/Ruby.tsx` を作る：`{漢字|かんじ}` を `<ruby>` に変える。日本語以外では書き方を使わない。メール用に漢字だけにする関数も `backend/app/i18n.py` に作る（みさき・ミ）
 - [ ] T018 [P] API を呼ぶ関数を `frontend/src/api/client.ts` に作る（`X-Requested-With: fetch` を付ける、エラーの `message_key` を辞書で引く）。OpenAPI から型を作るスクリプト（`npm run gen:api`、openapi-typescript）を `frontend/package.json` に足す（research.md R-16）（ようこ・ミ）

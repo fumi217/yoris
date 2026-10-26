@@ -30,6 +30,18 @@ docker compose exec backend alembic downgrade -1        # 1 つ戻す
 - 自動で作ったファイルは、そのまま使わずに読む。シーケンスなど、自動では出ないものがある（最初のマイグレーションでは、シーケンスを手で足した）。
 - 作ったファイルが手元で root の持ち物になるときは、`docker compose run --rm --user "$(id -u):$(id -g)" backend alembic revision ...` で作る。
 
+## 初期データ
+
+```bash
+docker compose exec backend python -m app.seed   # 何度流しても同じ（すでにあるものは足さない）
+```
+
+- 入るもの（すべて架空）：施設 1・職員 16 人（空の DB なら `s00001`〜。テストを流したあとは番号が進むが、重ならない。うち外国人 3 人。役割の内訳は spec 001 の data-model.md「初期データの人」）・入居者 30 人・家族アカウント 30（`family01@example.test`〜。入居者に 1 つ）、テーマと定型文、開示設定、面会の設定、デモ用の記録（今日を含む 3 日分）・面会の予約・知りたいことのリクエスト
+- パスワードはまだ入れていない。開発用のユーザー切り替え（画面の右下、または `POST /api/dev/switch-user`）で入る。選べる人の一覧は `GET /api/dev/users`
+- 入居者がすでにいる施設には、人を足さない。デモ用の記録は流した日の分なので、入れ直したいときは DB を空にしてから流す：
+  `docker compose exec backend alembic downgrade base` → `alembic upgrade head` → `python -m app.seed`
+- 自分の機能の初期データを足すときは、関数を `app/seed/` に置き、`app/seed/__main__.py` の `seed()` から呼ぶ（commit しない・何度呼んでも同じにする）
+
 ## 確認のコマンド（CI と同じ）
 
 ```bash
