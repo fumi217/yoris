@@ -39,6 +39,14 @@ class SourceOut(BaseModel):
     theme_code: str | None
 
 
+class HandoffOut(BaseModel):
+    """職員に渡した AI の発言の状態（contracts/api.md。質問の種類そのものは返さない）。"""
+
+    status: str  # "waiting" / "answered"
+    urgent: bool  # 画面は「お急ぎのときは、施設にお電話ください」も出す
+    already: bool  # 画面は「すでに施設の職員にお伝えしています」を出す
+
+
 class MessageOut(BaseModel):
     id: int
     sender: str  # "family" / "ai" / "staff"
@@ -49,6 +57,8 @@ class MessageOut(BaseModel):
     sources: list[SourceOut]
     # 根拠のうち 1 つでも非開示になった答え（body・sources は空。画面は inquiry.answer_hidden）
     hidden: bool
+    # 職員に渡した AI の発言だけ（ほかは null）
+    handoff: HandoffOut | None
 
 
 class SendBody(BaseModel):
@@ -75,6 +85,11 @@ def _out(view: MessageView) -> MessageOut:
             for s in view.sources
         ],
         hidden=view.hidden,
+        handoff=HandoffOut(
+            status=view.handoff.status, urgent=view.handoff.urgent, already=view.handoff.already
+        )
+        if view.handoff
+        else None,
     )
 
 

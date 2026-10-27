@@ -10,7 +10,10 @@
 - 根拠のうち 1 つでも非開示になった AI の答えは、本文も根拠も出さず（hidden）、AI にも渡さない
   （非開示になった中身を AI が新しい答えに書かないため。原則 IV・PR #205 ようこ）
 
-職員に渡したときの職員へのメッセージ（staff_messages）は 004-T024 で作り、ここから呼ぶ。
+- AI が職員に渡したら、職員へのメッセージ（staff_messages）を作る（担当は空。004-T024）。
+  その家族の対応待ちにつなぐときは新しく作らず、家族の発言をそのメッセージの続きの書き込みにする（FR-016）
+  （言葉による決まりに当たった発言の種類は、AI のループ（agent.py）で決まった種類に直してある）
+
 サービスの関数は commit しない（API の最後で 1 回だけ commit する。app/db.py）。
 """
 
@@ -18,13 +21,13 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from app.auth.deps import CurrentUser
 from app.clock import today_jst
-from app.inquiry.agent import HISTORY_MESSAGES, run_agent
+from app.inquiry.agent import HISTORY_MESSAGES, HandOff, run_agent
 from app.inquiry.guard import detect_category
 from app.inquiry.llm import ChatClient
 from app.inquiry.tools import ToolContext
@@ -57,6 +60,17 @@ class SourceView:
 
 
 @dataclass(frozen=True)
+class HandoffView:
+    """職員に渡した AI の発言の、家族の画面に出す状態（質問の種類そのものは出さない）。"""
+
+    status: str  # "waiting" / "answered"
+    # 緊急なら、画面は「お急ぎのときは、施設にお電話ください」も出す（Edge Cases）
+    urgent: bool
+    # 同じ内容の対応待ちにつないだなら、画面は「すでに施設の職員にお伝えしています」（FR-016）
+    already: bool
+
+
+@dataclass(frozen=True)
 class MessageView:
     id: int
     sender: str  # "family" / "ai" / "staff"
@@ -66,6 +80,8 @@ class MessageView:
     sources: list[SourceView] = field(default_factory=list)
     # 根拠のうち 1 つでも非開示になった答え（本文・根拠は空。画面は inquiry.answer_hidden）
     hidden: bool = False
+    # 職員に渡した AI の発言だけ
+    handoff: HandoffView | None = None
 
 
 def _is_hidden(message: InquiryMessage, disclosed: dict[str, SourceView]) -> bool:
@@ -184,6 +200,11 @@ def send_message(
     family_message = InquiryMessage(conversation_id=conversation.id, sender="family", body=body)
     session.add(family_message)
     session.flush()
+    staff_message_id = None
+    if result.kind == "handed_off":
+        # 渡したのに中身がないと、黙って職員に届かなくなるので、ここで止める（PR #215 ようこ）
+        assert result.hand_off is not None
+        staff_message_id = _hand_off(session, conversation, family_message, result.hand_off)
     ai_message = InquiryMessage(
         conversation_id=conversation.id,
         sender="ai",
@@ -193,12 +214,53 @@ def send_message(
         model=result.model,
         tool_calls=result.tool_calls,
         latency_ms=result.latency_ms,
+        staff_message_id=staff_message_id,
     )
     session.add(ai_message)
     session.flush()
     session.refresh(family_message)
     session.refresh(ai_message)
     return family_message, ai_message
+
+
+def _hand_off(
+    session: Session,
+    conversation: InquiryConversation,
+    family_message: InquiryMessage,
+    hand_off: HandOff,
+) -> int:
+    """職員へのメッセージを作り（またはつなぎ）、その id を返す（004-T024）。
+
+    AI が existing_message_id を付け、それがこの家族の対応待ちで、種類も同じなら、新しく作らずに
+    つなぐ（FR-016）。種類が違えば新しく作る（緊急がほかの種類に埋もれない・苦情がほかの種類の
+    続きとして見えないように。PR #215 のレビュー）。対応済みになっていたときも新しく作る。
+    担当は空で作る（FR-012b）。
+    """
+    if hand_off.existing_message_id is not None:
+        existing = session.scalars(
+            select(StaffMessage)
+            .where(
+                StaffMessage.id == hand_off.existing_message_id,
+                StaffMessage.conversation_id == conversation.id,
+                StaffMessage.status == "waiting",
+                StaffMessage.category == hand_off.category,
+            )
+            .with_for_update()
+        ).one_or_none()
+        if existing is not None:
+            # 職員の詳細の「追加された家族の書き込み」に出る
+            family_message.staff_message_id = existing.id
+            return existing.id
+    staff_message = StaffMessage(
+        conversation_id=conversation.id,
+        resident_id=conversation.resident_id,
+        origin_message_id=family_message.id,
+        category=hand_off.category,
+        summary=hand_off.summary,
+    )
+    session.add(staff_message)
+    session.flush()
+    return staff_message.id
 
 
 def list_messages(
@@ -221,6 +283,7 @@ def to_views(
     assert user.resident_id is not None
     all_ids = [s for m in messages for s in (m.source_ids or [])]
     sources = _disclosed_sources(session, user.resident_id, all_ids)
+    handoffs = _handoffs(session, messages)
     views = []
     for m in messages:
         if _is_hidden(m, sources):
@@ -235,7 +298,53 @@ def to_views(
                 created_at=m.created_at,
                 ai_result=m.ai_result,
                 sources=[sources[s] for s in (m.source_ids or [])],
+                handoff=handoffs.get(m.id),
             )
+        )
+    return views
+
+
+def _handoffs(session: Session, messages: list[InquiryMessage]) -> dict[int, HandoffView]:
+    """職員に渡した AI の発言ごとの状態（AI の発言の id → 状態）。
+
+    「すでにお伝えしています」は、その AI の発言より前に、同じメッセージへの家族の続きの書き込みが
+    あるかで決める（最初に渡したときの家族の発言は、メッセージの原文で、続きの書き込みではない）。
+    """
+    handed = {
+        m.id: m.staff_message_id
+        for m in messages
+        if m.sender == "ai" and m.ai_result == "handed_off" and m.staff_message_id is not None
+    }
+    if not handed:
+        return {}
+    staff_ids = set(handed.values())
+    states = {
+        row.id: row
+        for row in session.execute(
+            select(StaffMessage.id, StaffMessage.status, StaffMessage.category).where(
+                StaffMessage.id.in_(staff_ids)
+            )
+        )
+    }
+    first_follow_up = dict(
+        session.execute(
+            select(InquiryMessage.staff_message_id, func.min(InquiryMessage.id))
+            .where(
+                InquiryMessage.sender == "family", InquiryMessage.staff_message_id.in_(staff_ids)
+            )
+            .group_by(InquiryMessage.staff_message_id)
+        ).all()
+    )
+    views = {}
+    for ai_id, staff_id in handed.items():
+        state = states.get(staff_id)
+        if state is None:
+            continue
+        follow_up = first_follow_up.get(staff_id)
+        views[ai_id] = HandoffView(
+            status=state.status,
+            urgent=state.category == "urgent",
+            already=follow_up is not None and follow_up < ai_id,
         )
     return views
 

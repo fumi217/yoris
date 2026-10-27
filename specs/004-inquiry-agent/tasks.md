@@ -84,12 +84,12 @@ US1 は、001-T038（`get_disclosed_records`）と 001-T054（`get_active_replie
 
 ### Tests for User Story 2
 
-- [ ] T022 [P] [US2] テスト `backend/tests/api/test_inquiry_handoff.py`（テスト用の LLM（モック））：言葉による決まりに当たった発言で AI が `answer_family` を呼んでも受け付けず、決まった種類で渡す、渡したメッセージに原文・要約・種類が残り、担当は空、家族には「施設の職員にお伝えしました」（FR-009〜011・research.md R-05）（みさき・ミ）
+- [X] T022 [P] [US2] テスト `backend/tests/api/test_inquiry_handoff.py`（テスト用の LLM（モック））：言葉による決まりに当たった発言で AI が `answer_family` を呼んでも受け付けず、決まった種類で渡す、渡したメッセージに原文・要約・種類が残り、担当は空、家族には「施設の職員にお伝えしました」（FR-009〜011・research.md R-05）（みさき・ミ）
 - [ ] T023 [P] [US2] テスト `backend/tests/api/test_staff_messages.py`：一覧の並び順（対応待ち → 担当が自分か空 → 古い順）、詳細に直前の 3 往復だけが出る、2 人がほぼ同時に「自分が対応する」を押すと先の 1 人だけ（409 `already_assigned`）、ほぼ同時の返事は先の 1 人だけ（409 `already_answered`）、苦情は生活相談員・施設長以外で 404、家族は 403、通知・音を出す処理がない（FR-012・FR-012b・FR-017・FR-018・SC-008・SC-013）（みさき・ミ）
 
 ### Implementation for User Story 2
 
-- [ ] T024 [US2] 職員に渡す処理を `backend/app/inquiry/service.py` に足す：`hand_off_to_staff` で `staff_messages` を作る（担当は空、`handed_at`）。`existing_message_id` がその家族の対応待ちのものなら、同じメッセージにつなぐ（FR-016）。言葉による決まりに当たった発言は、決まった種類で渡す。`urgent` のときは「お急ぎのときは、施設にお電話ください」も返す（FR-009〜011・FR-016・Edge Cases）（みさき・ミ）
+- [X] T024 [US2] 職員に渡す処理を `backend/app/inquiry/service.py` に足す：`hand_off_to_staff` で `staff_messages` を作る（担当は空、`handed_at`）。`existing_message_id` がその家族の対応待ちのものなら、同じメッセージにつなぐ（FR-016）。言葉による決まりに当たった発言は、決まった種類で渡す。`urgent` のときは「お急ぎのときは、施設にお電話ください」も返す（FR-009〜011・FR-016・Edge Cases）（みさき・ミ）
 - [X] T025 [US2] `GET /api/staff/messages`・`GET /api/staff/messages/count`・`GET /api/staff/messages/{id}` を `backend/app/api/staff/messages.py` に作る：すべて `visible_staff_messages(user)` を通す。詳細には直前の 3 往復とその種類の定型文を付ける（contracts/api.md、FR-012・FR-013）（みさき・ミ）
 - [ ] T026 [US2] 「自分が対応する」`POST /api/staff/messages/{id}/assign` を作る：`UPDATE ... WHERE assignee_id IS NULL` が 0 件なら 409 `already_assigned`。`staff_message_events` に残す（research.md R-08、FR-012b）（みさき・ミ）
 - [ ] T027 [US2] アプリで返事 `POST /api/staff/messages/{id}/reply` を作る：`template_ids` は 1 つ以上、`note` は「100 文字まで、任意」。`UPDATE ... WHERE status='waiting'` が 0 件なら 409 `already_answered`。家族の会話に職員の発言を足し、担当でなければ返事をした職員を担当にし、同じトランザクションで `create_staff_message_reply_notice(session, staff_message_id)`（T028）を呼ぶ（research.md R-08・R-09、FR-014・FR-017）（みさき・ミ）

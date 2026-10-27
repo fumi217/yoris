@@ -30,6 +30,9 @@
 | `POST /api/family/inquiry/messages` | F | ミ | 質問を送る（`body`：1〜500 文字）。AI の答え（または「職員にお伝えしました」）が決まってから、家族の発言と AI の発言を返す。429：`inquiry_limit`、503：`ai_unavailable`、422：`validation_error` | FR-001〜003・FR-009・FR-024・FR-026 |
 
 - 入居者は `CurrentUser.resident_id` から決める（FR-020）。返す値に、AI への指示の文・ツールの中身は入れない（FR-021）。
+- 職員に渡した AI の発言（`ai_result = handed_off`）には `handoff` を付ける：`status`（`waiting`／`answered`）、`urgent`（種類が緊急なら true。画面は「お急ぎのときは、施設にお電話ください」も出す）、
+  `already`（同じ内容の対応待ちにつないだなら true。画面は「施設の職員にお伝えしました」の代わりに「すでに施設の職員にお伝えしています」を出す）。
+  質問の種類そのものは家族に返さない。ほかの発言では `handoff` は空（FR-009〜011・FR-016・Edge Cases）。
 - AI の発言の `body` は、答えたとき（`ai_result = answered`）だけ文が入る。`handed_off`・`no_record` のときは空で、画面が辞書の決まった文を出す（data-model.md）。
 - 根拠のうち 1 つでも、いま非開示になった答えは `hidden: true` で、`body` は空・`sources` は空にする。画面は `inquiry.answer_hidden` を出す（data-model.md）。
 - 503 `ai_unavailable` のときは、家族の発言も保存しない（送り直せる。data-model.md）。
