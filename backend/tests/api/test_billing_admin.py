@@ -90,3 +90,84 @@ def test_connected_facility_can_manage_and_canceled_can_subscribe(
     assert data["status"] == "canceled"
     assert data["can_subscribe"] is True
     assert data["can_manage"] is True
+
+
+# カードの変更・解約・請求の履歴の画面（Stripe の Customer Portal）の入口（T038。FR-020）
+
+
+@pytest.fixture
+def connected(subscription, facility, session):
+    """Stripe とつながっている施設にする。"""
+    facility.stripe_customer_id = "cus_test_admin"
+    session.flush()
+
+
+@pytest.mark.parametrize("role", ["director", "clerk"])
+def test_director_and_clerk_get_portal_url(
+    client, make_staff, login_as, connected, fake_stripe, role
+):
+    login_as(make_staff(role=role).user_id)
+
+    response = client.post("/api/admin/billing/portal")
+
+    assert response.status_code == 200
+    assert response.json() == {"portal_url": "https://billing.stripe.test/p/session/cus_test_admin"}
+    # 自分の施設の顧客だけで開き、戻り先はアプリの利用料の画面
+    assert fake_stripe.portals == [
+        {"customer": "cus_test_admin", "return_url": "https://app.example.test/admin/billing"}
+    ]
+
+
+def test_portal_is_409_when_not_connected_to_stripe(
+    client, make_staff, login_as, subscription, fake_stripe
+):
+    # 初期データの施設は Stripe とつながっていない
+    login_as(make_staff(role="director").user_id)
+
+    response = client.post("/api/admin/billing/portal")
+
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "billing_not_connected"
+    assert fake_stripe.portals == []
+
+
+def test_portal_is_502_when_stripe_is_down(client, make_staff, login_as, connected, fake_stripe):
+    fake_stripe.fail_portal = True
+    login_as(make_staff(role="director").user_id)
+
+    response = client.post("/api/admin/billing/portal")
+
+    assert response.status_code == 502
+    assert response.json()["error"]["code"] == "payment_service_unavailable"
+
+
+@pytest.mark.parametrize("role", ["care_worker", "leader", "counselor"])
+def test_other_staff_cannot_open_portal(client, make_staff, login_as, connected, fake_stripe, role):
+    login_as(make_staff(role=role).user_id)
+
+    assert client.post("/api/admin/billing/portal").status_code == 403
+    assert fake_stripe.portals == []
+
+
+def test_family_cannot_open_portal(client, make_family, login_as, connected, fake_stripe):
+    login_as(make_family().user_id)
+
+    assert client.post("/api/admin/billing/portal").status_code == 403
+    assert fake_stripe.portals == []
+
+
+def test_portal_needs_login(client, connected, fake_stripe):
+    assert client.post("/api/admin/billing/portal").status_code == 401
+
+
+def test_portal_logs_when_app_base_url_is_missing(
+    client, make_staff, login_as, connected, fake_stripe, monkeypatch, caplog
+):
+    # 本番で設定を忘れたとき、Stripe に断られる前に、原因が分かる
+    monkeypatch.delenv("APP_BASE_URL", raising=False)
+    login_as(make_staff(role="director").user_id)
+
+    with caplog.at_level("WARNING"):
+        client.post("/api/admin/billing/portal")
+
+    assert "APP_BASE_URL がありません" in caplog.text

@@ -119,6 +119,18 @@ def cancel_subscription(subscription_id: str) -> None:
             raise
 
 
+def create_portal_session(customer_id: str, return_url: str) -> str:
+    """カードの変更・解約・請求の履歴の画面（Customer Portal）の入口の URL を作る（R-10）。
+
+    できることは、Stripe の管理画面のポータルの設定で絞ってある。
+    入口の URL は短い時間だけ使える。
+    """
+    session = _client().v1.billing_portal.sessions.create(
+        params={"customer": customer_id, "return_url": return_url}
+    )
+    return session.url
+
+
 def set_customer_name(customer_id: str, name: str) -> None:
     """Stripe の顧客の名前を施設名にする（Checkout では名前が入らないため。R-04）。"""
     _client().v1.customers.update(customer_id, params={"name": name})

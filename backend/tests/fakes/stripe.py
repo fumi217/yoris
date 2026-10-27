@@ -96,6 +96,10 @@ class FakeStripe:
     fail_create: bool = False
     # 失敗させるときの Stripe のエラーの文（送った値が入ることがある）
     fail_message: str = "接続できません"
+    # 開いたポータルの入口（顧客の ID と戻り先）
+    portals: list[dict] = field(default_factory=list)
+    # True にすると、ポータルの入口を作るときに Stripe を呼べなかったことにする
+    fail_portal: bool = False
 
     def create_checkout_session(
         self, *, application_id: int, idempotency_key: str, contact_email: str, now: datetime
@@ -135,6 +139,12 @@ class FakeStripe:
 
     def cancel_subscription(self, subscription_id: str) -> None:
         self.cancelled.append(subscription_id)
+
+    def create_portal_session(self, customer_id: str, return_url: str) -> str:
+        if self.fail_portal:
+            raise stripe.APIConnectionError("接続できません")
+        self.portals.append({"customer": customer_id, "return_url": return_url})
+        return f"https://billing.stripe.test/p/session/{customer_id}"
 
     def set_customer_name(self, customer_id: str, name: str) -> None:
         self.customer_names[customer_id] = name

@@ -1,4 +1,4 @@
-"""利用料の画面の API（施設長・事務員。spec 002 の T022。FR-007）。"""
+"""利用料の画面の API（施設長・事務員。spec 002 の T022・T038。FR-007・FR-020）。"""
 
 from datetime import datetime
 from typing import Annotated
@@ -33,3 +33,16 @@ def get_billing(
 ) -> BillingResponse:
     """契約の状態。`can_manage` は Stripe とつながっているとき true（初期データの施設は false）。"""
     return BillingResponse(**billing.billing_overview(session, user.staff_id))
+
+
+class PortalResponse(BaseModel):
+    portal_url: str
+
+
+@router.post("/billing/portal")
+def post_billing_portal(
+    user: Annotated[CurrentUser, Depends(DIRECTOR_OR_CLERK)],
+    session: Annotated[Session, Depends(get_session)],
+) -> PortalResponse:
+    """カードの変更・解約・請求の履歴の画面（Stripe）の入口の URL を返す。"""
+    return PortalResponse(portal_url=billing.portal_url(session, user.staff_id))

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { api, messageKeyOf } from '../../api/client'
 import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
+import { PortalButton } from './PortalButton'
 
 export type BillingInfo = {
   status: 'active' | 'payment_failed' | 'cancel_scheduled' | 'canceled'
@@ -15,7 +16,8 @@ export type BillingInfo = {
 
 /**
  * 利用料のお支払い（`/admin/billing`。施設長・事務員。spec 002 の T026・FR-018）。
- * ミニマム版は、契約の状態とプラン名・月額を見せるだけ（申し込み直し・カードの変更・解約は作り込み）。
+ * 契約の状態とプラン名・月額を見せる。カードの変更・解約・請求の履歴は、Stripe の画面へのボタン（T039）。
+ * 申し込み直しは作り込み。
  * 開けない役割（生活相談員が URL を打ったなど）は、API が 403 を返すので、その文言を出す（FR-007）。
  */
 export function Billing() {
@@ -27,7 +29,13 @@ export function Billing() {
 
   if (billing.isPending) return <Message k="layout.loading" />
   if (billing.isError) return <Message k={messageKeyOf(billing.error)} />
-  return <BillingView billing={billing.data} />
+  return (
+    <>
+      <BillingView billing={billing.data} />
+      {/* 初期データの施設は Stripe とつながっていないので、ボタンを出さない（R-05） */}
+      {billing.data.can_manage && <PortalButton />}
+    </>
+  )
 }
 
 const formatDate = (iso: string) =>

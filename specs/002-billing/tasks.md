@@ -113,9 +113,9 @@ spec 001 のタスクは「001-T009」のように書く（[spec 001 の tasks.m
 
 **Independent Test**: 契約中の施設で Portal に移り、テスト用の別のカードに変える・解約する・請求の履歴を見るができ、解約がアプリの状態に反映される（US3）
 
-- [ ] T037 [US3] Stripe のテスト環境の Customer Portal の設定で、「カードの変更・解約（期間の終わりに）・請求の履歴」だけを有効にする（R-10）（作・手作業）
-- [ ] T038 [US3] `POST /api/admin/billing/portal` を `backend/app/api/admin/billing.py` に足す（役割：施設長・事務員。`can_manage` が false なら 409）。テストを `backend/tests/api/test_billing_admin.py` に足す（FR-020、contracts/api.md）（作）
-- [ ] T039 [US3] `frontend/src/pages/admin/Billing.tsx` に「カードの変更・解約・請求の履歴」ボタンを足し、返ってきた URL へ移る（US3 のシナリオ 1）（作）
+- [X] T037 [US3] Stripe のテスト環境の Customer Portal の設定で、「カードの変更・解約（期間の終わりに）・請求の履歴」だけを有効にする（R-10）（作・手作業）
+- [X] T038 [US3] `POST /api/admin/billing/portal` を `backend/app/api/admin/billing.py` に足す（役割：施設長・事務員。`can_manage` が false なら 409）。テストを `backend/tests/api/test_billing_admin.py` に足す（FR-020、contracts/api.md）（作）
+- [X] T039 [US3] `frontend/src/pages/admin/Billing.tsx` に「お支払い方法の変更・解約・請求書の確認」ボタンを足し、返ってきた URL へ移る（US3 のシナリオ 1）（作）
 
 **Checkpoint**: カードの変更・解約・領収書が Stripe の画面でできる
 

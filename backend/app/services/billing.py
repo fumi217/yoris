@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.login_ids import next_login_ids
 from app.auth.passwords import hash_password, validate_password
-from app.config import PLAN_AMOUNT_JPY, PLAN_NAME
+from app.config import PLAN_AMOUNT_JPY, PLAN_NAME, get_settings
 from app.errors import AppError, ErrorCode
 from app.models.billing import (
     BillingApplication,
@@ -483,3 +483,30 @@ def billing_overview(session: Session, staff_id: int) -> dict[str, Any]:
         "can_subscribe": subscription.status == "canceled",
         "can_manage": facility.stripe_customer_id is not None,
     }
+
+
+def portal_url(session: Session, staff_id: int) -> str:
+    """カードの変更・解約・請求の履歴の画面（Stripe の Customer Portal）の入口の URL（T038）。
+
+    決済サービスとつながっていない施設（初期データ）は 409。Stripe を呼べなければ 502。
+    戻り先は、アプリの利用料の画面。
+    """
+    facility = session.scalars(
+        select(Facility).join(Staff, Staff.facility_id == Facility.id).where(Staff.id == staff_id)
+    ).one_or_none()
+    if facility is None:
+        raise AppError(ErrorCode.NOT_FOUND)
+    if facility.stripe_customer_id is None:
+        raise AppError(ErrorCode.BILLING_NOT_CONNECTED)
+    base_url = get_settings().app_base_url
+    if not base_url:
+        # 戻り先が相対パスになり、Stripe に断られる。設定漏れだと分かるように残す
+        logger.warning("APP_BASE_URL がありません（ポータルの戻り先を作れない）")
+    return_url = f"{base_url or ''}/admin/billing"
+    try:
+        return stripe_client.create_portal_session(facility.stripe_customer_id, return_url)
+    except stripe_client.CALL_ERRORS as error:
+        logger.warning(
+            "ポータルの入口を作れなかった: facility=%s %s", facility.id, _error_summary(error)
+        )
+        raise AppError(ErrorCode.PAYMENT_SERVICE_UNAVAILABLE) from None

@@ -109,6 +109,7 @@ def fake_stripe(monkeypatch: pytest.MonkeyPatch) -> FakeStripe:
         "expire_checkout_session",
         "retrieve_subscription",
         "cancel_subscription",
+        "create_portal_session",
         "set_customer_name",
     ):
         monkeypatch.setattr(f"app.services.stripe_client.{name}", getattr(fake, name))
