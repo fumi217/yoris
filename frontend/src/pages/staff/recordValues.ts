@@ -47,9 +47,18 @@ export type StaffContactBook = {
   replies: StaffReply[]
 }
 
+/** その項目・区分に今付いている記録。なければ null。 */
+export function currentRecord(
+  records: StaffRecord[],
+  item: Item,
+  slot: string,
+): StaffRecord | null {
+  return records.find((record) => record.item === item && record.slot === slot) ?? null
+}
+
 /** その項目・区分に今付いている値。なければ null。 */
 export function currentValue(records: StaffRecord[], item: Item, slot: string): string | null {
-  return records.find((record) => record.item === item && record.slot === slot)?.value ?? null
+  return currentRecord(records, item, slot)?.value ?? null
 }
 
 /** 最初に開いておく食事の区分：まだ記録していない最初の区分（全部付いていれば朝ごはん）。 */
@@ -63,4 +72,9 @@ export function withRecord(book: StaffContactBook, record: StaffRecord): StaffCo
     (other) => !(other.item === record.item && other.slot === record.slot),
   )
   return { ...book, records: [...others, record] }
+}
+
+/** 取り消した記録を外す（001-T034）。 */
+export function withoutRecord(book: StaffContactBook, recordId: number): StaffContactBook {
+  return { ...book, records: book.records.filter((record) => record.id !== recordId) }
 }

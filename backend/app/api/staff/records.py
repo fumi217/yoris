@@ -1,7 +1,10 @@
-"""記録の API（spec 001 の 001-T027。contracts の `PUT /api/staff/residents/{id}/records`）。
+"""記録の API（spec 001 の 001-T027・T034）。
+
+contracts の `PUT /api/staff/residents/{id}/records`・`DELETE /api/staff/records/{id}`。
 
 記録できるのは、介護職員・リーダー・生活相談員・施設長（事務員と家族は 403）。
-保存の決まり（押し直し・3 日前まで・今日だけ直せる）は services/records.py の save_record にある。
+保存の決まり（押し直し・3 日前まで・今日だけ直せる）は services/records.py の save_record、
+取り消し（今日の記録だけ）は delete_record にある。
 """
 
 from datetime import date, datetime
@@ -15,7 +18,7 @@ from app.auth.deps import CurrentUser, require_staff
 from app.db import get_session
 from app.errors import AppError, ErrorCode
 from app.models.core import Resident
-from app.services.records import RecordError, save_record
+from app.services.records import RecordError, delete_record, save_record
 
 router = APIRouter(prefix="/api/staff", tags=["staff"])
 
@@ -72,3 +75,17 @@ def put_record(
         value=record.value,
         recorded_at=record.recorded_at,
     )
+
+
+@router.delete("/records/{record_id}", status_code=204)
+def cancel_record(
+    record_id: int,
+    user: Annotated[CurrentUser, Depends(RECORDERS)],
+    session: Annotated[Session, Depends(get_session)],
+) -> None:
+    """今日の記録を取り消す（001-T034）。ない・もう取り消した記録は 404、今日でなければ 409。"""
+    try:
+        delete_record(session, record_id=record_id, staff_id=user.staff_id)
+    except RecordError as error:
+        raise AppError(ErrorCode(error.code)) from error
+    session.commit()

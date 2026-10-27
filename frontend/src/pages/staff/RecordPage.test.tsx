@@ -6,6 +6,7 @@ import { RecordView } from './RecordPage'
 import {
   currentValue,
   firstUnrecordedMealSlot,
+  withoutRecord,
   withRecord,
   type StaffContactBook,
   type StaffRecord,
@@ -35,9 +36,11 @@ const render = (props: Partial<Parameters<typeof RecordView>[0]> = {}) =>
         book={book()}
         waitingRequests={0}
         saving={null}
-        saved={false}
+        cancelling={false}
+        notice={null}
         errorKey={null}
         onChoose={() => {}}
+        onCancel={() => {}}
         {...props}
       />
     </MemoryRouter>,
@@ -62,6 +65,10 @@ describe('recordValues', () => {
 
     expect(updated.records).toHaveLength(1)
     expect(updated.records[0].value).toBe('5')
+  })
+
+  it('取り消したら、その記録を外す', () => {
+    expect(withoutRecord(book([record({})]), 1).records).toEqual([])
   })
 })
 
@@ -92,7 +99,11 @@ describe('RecordView', () => {
   it('保存中は、続けて押せない', () => {
     const html = render({ saving: { item: 'meal', slot: 'breakfast', value: '8' } })
 
-    expect(html.match(/disabled=""/g)).toHaveLength(12)
+    // ボタンが増えても数え直さなくて済むよう、「値のボタンがすべて押せない」で確かめる（PR #216 みさき）。
+    // 食事の区分のタブは、保存中も切り替えられる
+    const choices = (html.match(/<button[^>]*>/g) ?? []).filter((b) => b.includes('aria-pressed'))
+    expect(choices.length).toBeGreaterThan(0)
+    expect(choices.every((button) => button.includes('disabled=""'))).toBe(true)
   })
 
   it('入居者の呼び名は、HTML として解釈しない', () => {
@@ -101,5 +112,28 @@ describe('RecordView', () => {
     })
 
     expect(html).not.toContain('<i>x</i>')
+  })
+
+  it('記録がある欄だけに「この記録を取り消す」を出す', () => {
+    expect(render()).not.toContain('この<ruby>記録')
+    const html = render({ book: book([record({ item: 'mood', slot: 'day', value: 'low' })]) })
+
+    // 機嫌の欄だけ（食事の朝ごはん・眠りは記録がない）
+    expect(html.match(/この<ruby>記録/g)).toHaveLength(1)
+  })
+
+  it('取り消したら、そう知らせる', () => {
+    expect(render({ notice: 'cancelled' })).toContain('しました')
+    expect(render({ notice: 'cancelled' })).toContain('取<rp>')
+  })
+
+  it('取り消し中は、ほかのボタンも押せない', () => {
+    const html = render({ cancelling: true })
+
+    // ボタンが増えても数え直さなくて済むよう、「値のボタンがすべて押せない」で確かめる（PR #216 みさき）。
+    // 食事の区分のタブは、保存中も切り替えられる
+    const choices = (html.match(/<button[^>]*>/g) ?? []).filter((b) => b.includes('aria-pressed'))
+    expect(choices.length).toBeGreaterThan(0)
+    expect(choices.every((button) => button.includes('disabled=""'))).toBe(true)
   })
 })

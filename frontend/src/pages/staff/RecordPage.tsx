@@ -8,10 +8,11 @@ import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
 import { Ruby } from '../../i18n/Ruby'
 import {
-  currentValue,
+  currentRecord,
   DAY_SLOT,
   firstUnrecordedMealSlot,
   VALUES,
+  withoutRecord,
   withRecord,
   type Item,
   type StaffContactBook,
@@ -30,11 +31,14 @@ const contactBookKey = (residentId: string) => ['staff', 'contact-book', residen
  * 押したら、その場で保存する（保存ボタンは置かない）。押し直したら上書きする（US1 の受け入れシナリオ 2・3）。
  * 入居者を選ぶ → 食事の区分 → 値 の 3 タップ以内（FR-006・SC-003）。
  * 食事は、まだ記録していない最初の区分を開いておくので、多くは 2 タップで済む。
+ * 今日の記録は、取り消せる（001-T034。誤って別の入居者に記録したとき）。押し間違えないよう、2 回押して取り消す。
  */
 export function RecordPage() {
   const { residentId = '' } = useParams()
   const queryClient = useQueryClient()
   const me = useMe().data
+  // 最後にできた操作（保存・取り消し）の知らせ
+  const [notice, setNotice] = useState<'saved' | 'cancelled' | null>(null)
 
   const book = useQuery({
     queryKey: contactBookKey(residentId),
@@ -60,8 +64,26 @@ export function RecordPage() {
       void queryClient.invalidateQueries({ queryKey: contactBookKey(residentId) })
       // 入居者一覧の未記録の目印も変わる
       void queryClient.invalidateQueries({ queryKey: ['staff', 'residents'] })
+      setNotice('saved')
     },
   })
+  const cancel = useMutation({
+    mutationFn: (recordId: number) => api.delete(`/api/staff/records/${recordId}`),
+    onSuccess: (_, recordId) => {
+      queryClient.setQueryData<StaffContactBook>(contactBookKey(residentId), (old) =>
+        old ? withoutRecord(old, recordId) : old,
+      )
+      setNotice('cancelled')
+    },
+    // 取り消せなかったとき（ほかの職員が先に取り消した 404・日付が変わった 409）も、今の記録を読み直す
+    // （欄の表示を実際の状態に合わせる。PR #216 みさき）
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: contactBookKey(residentId) }),
+        queryClient.invalidateQueries({ queryKey: ['staff', 'residents'] }),
+      ]),
+  })
+  const failed = save.isError ? save.error : cancel.isError ? cancel.error : null
 
   if (book.isPending) return <Message k="layout.loading" />
   if (book.isError) return <Message k={messageKeyOf(book.error)} />
@@ -70,9 +92,17 @@ export function RecordPage() {
       book={book.data}
       waitingRequests={requests.data?.requests.length ?? 0}
       saving={save.isPending ? save.variables : null}
-      saved={save.isSuccess}
-      errorKey={save.isError ? messageKeyOf(save.error) : null}
-      onChoose={(choice) => save.mutate(choice)}
+      cancelling={cancel.isPending}
+      notice={notice}
+      errorKey={failed ? messageKeyOf(failed) : null}
+      onChoose={(choice) => {
+        cancel.reset()
+        save.mutate(choice)
+      }}
+      onCancel={(recordId) => {
+        save.reset()
+        cancel.mutate(recordId)
+      }}
     />
   )
 }
@@ -82,9 +112,11 @@ type ViewProps = {
   waitingRequests: number
   // 保存中の値（押したボタンだけ「保存中」にし、続けて押せないようにする）
   saving: Choice | null | undefined
-  saved: boolean
+  cancelling: boolean
+  notice: 'saved' | 'cancelled' | null
   errorKey: string | null
   onChoose: (choice: Choice) => void
+  onCancel: (recordId: number) => void
 }
 
 /** 画面の中身（テストではこれを直接出す）。 */
@@ -92,9 +124,11 @@ export function RecordView({
   book,
   waitingRequests,
   saving,
-  saved,
+  cancelling,
+  notice,
   errorKey,
   onChoose,
+  onCancel,
 }: ViewProps) {
   const { t } = useTranslation()
   const [mealSlot, setMealSlot] = useState<MealSlot>(() => firstUnrecordedMealSlot(book.records))
@@ -129,7 +163,7 @@ export function RecordView({
             <Text k={errorKey} />
           </span>
         ) : (
-          saved && <Text k="record_page.saved" />
+          notice && <Text k={`record_page.${notice}`} />
         )}
       </p>
 
@@ -150,18 +184,22 @@ export function RecordView({
               }`}
             >
               <Text k={`record_page.slot.${slot}`} />
-              {currentValue(book.records, 'meal', slot) !== null && (
+              {currentRecord(book.records, 'meal', slot) !== null && (
                 <span aria-hidden="true"> ✔</span>
               )}
             </button>
           ))}
         </div>
         <Choices
+          // 区分を変えたら、取り消しの「もう一度押す」を戻す
+          key={mealSlot}
           item="meal"
           slot={mealSlot}
           records={book.records}
           saving={saving}
+          cancelling={cancelling}
           onChoose={onChoose}
+          onCancel={onCancel}
         />
       </fieldset>
 
@@ -174,7 +212,9 @@ export function RecordView({
           slot={DAY_SLOT}
           records={book.records}
           saving={saving}
+          cancelling={cancelling}
           onChoose={onChoose}
+          onCancel={onCancel}
         />
       </fieldset>
 
@@ -187,7 +227,9 @@ export function RecordView({
           slot={DAY_SLOT}
           records={book.records}
           saving={saving}
+          cancelling={cancelling}
           onChoose={onChoose}
+          onCancel={onCancel}
         />
       </fieldset>
 
@@ -209,32 +251,64 @@ type ChoicesProps = {
   slot: string
   records: StaffRecord[]
   saving: Choice | null | undefined
+  cancelling: boolean
   onChoose: (choice: Choice) => void
+  onCancel: (recordId: number) => void
 }
 
-/** 値のボタンの並び。今付いている値は、色を変えて aria-pressed にする。 */
-function Choices({ item, slot, records, saving, onChoose }: ChoicesProps) {
-  const current = currentValue(records, item, slot)
+/**
+ * 値のボタンの並び。今付いている値は、色を変えて aria-pressed にする。
+ * 記録があれば、下に「この記録を取り消す」（1 回目で確かめの文に変わり、2 回目で取り消す）。
+ */
+function Choices({ item, slot, records, saving, cancelling, onChoose, onCancel }: ChoicesProps) {
+  const record = currentRecord(records, item, slot)
+  const current = record?.value ?? null
+  const [confirming, setConfirming] = useState(false)
+  const busy = Boolean(saving) || cancelling
 
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-      {VALUES[item].map((value) => {
-        const selected = value === current
-        return (
-          <button
-            key={value}
-            type="button"
-            aria-pressed={selected}
-            disabled={Boolean(saving)}
-            onClick={() => onChoose({ item, slot, value })}
-            className={`min-h-14 rounded border-2 px-3 py-2 text-lg disabled:opacity-60 ${
-              selected ? 'border-sky-700 bg-sky-700 text-white' : 'border-gray-300 bg-white'
-            }`}
-          >
-            <Text k={`record.value.${item}.${value}`} />
-          </button>
-        )
-      })}
+    <div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {VALUES[item].map((value) => {
+          const selected = value === current
+          return (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={selected}
+              disabled={busy}
+              onClick={() => {
+                setConfirming(false)
+                onChoose({ item, slot, value })
+              }}
+              className={`min-h-14 rounded border-2 px-3 py-2 text-lg disabled:opacity-60 ${
+                selected ? 'border-sky-700 bg-sky-700 text-white' : 'border-gray-300 bg-white'
+              }`}
+            >
+              <Text k={`record.value.${item}.${value}`} />
+            </button>
+          )
+        })}
+      </div>
+      {record && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => {
+            if (!confirming) {
+              setConfirming(true)
+              return
+            }
+            setConfirming(false)
+            onCancel(record.id)
+          }}
+          className={`mt-2 text-sm underline disabled:opacity-60 ${
+            confirming ? 'font-bold text-red-700' : 'text-gray-600'
+          }`}
+        >
+          <Text k={confirming ? 'record_page.cancel_confirm' : 'record_page.cancel'} />
+        </button>
+      )}
     </div>
   )
 }
