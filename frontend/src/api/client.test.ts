@@ -42,6 +42,22 @@ describe('api', () => {
     expect(error).toMatchObject({ status: 403, code: 'forbidden', messageKey: 'error.forbidden' })
   })
 
+  it('文言に使う値（details）があれば渡し、なければ空にする', async () => {
+    mockFetch(409, {
+      error: {
+        code: 'visit_day_has_reservations',
+        message_key: 'error.visit_day_has_reservations',
+        details: { count: 2 },
+      },
+    })
+    const withDetails = await api.post('/api/admin/visit-closed-days').catch((e: unknown) => e)
+    expect(withDetails).toMatchObject({ details: { count: 2 } })
+
+    mockFetch(403, { error: { code: 'forbidden', message_key: 'error.forbidden' } })
+    const without = await api.get('/api/admin/disclosure').catch((e: unknown) => e)
+    expect(without).toMatchObject({ details: {} })
+  })
+
   it('決まった形でないエラーは server_error にする', async () => {
     mockFetch(502)
 

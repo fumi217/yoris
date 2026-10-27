@@ -35,6 +35,13 @@ export const adminMenu: AdminMenuItem[] = [
     icon: '💳',
     roles: ['director', 'clerk'],
   },
+  // 面会の設定（UI-A02。spec 003 の T025。事務員・生活相談員・施設長。開始時刻の候補・組数・休みの日）
+  {
+    to: '/admin/visit-settings',
+    labelKey: 'admin.menu.visit_settings',
+    icon: '🗓️',
+    roles: ['clerk', 'counselor', 'director'],
+  },
 ]
 
 export function adminMenuFor(role: StaffRole | null): AdminMenuItem[] {

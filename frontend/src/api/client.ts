@@ -10,19 +10,29 @@ export class ApiError extends Error {
   readonly status: number
   readonly code: string
   readonly messageKey: string
+  // 文言に使う値（件数など）。付いているエラーだけ（例：面会の visit_day_has_reservations の count）
+  readonly details: Record<string, number | string>
 
-  constructor(status: number, code: string, messageKey: string) {
+  constructor(
+    status: number,
+    code: string,
+    messageKey: string,
+    details: Record<string, number | string> = {},
+  ) {
     super(`${status} ${code}`)
     this.name = 'ApiError'
     this.status = status
     this.code = code
     this.messageKey = messageKey
+    this.details = details
   }
 }
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
-type ErrorBody = { error?: { code?: string; message_key?: string } }
+type ErrorBody = {
+  error?: { code?: string; message_key?: string; details?: Record<string, number | string> }
+}
 
 async function request<T>(method: Method, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = {}
@@ -50,6 +60,7 @@ async function request<T>(method: Method, path: string, body?: unknown): Promise
       response.status,
       error?.code ?? 'server_error',
       error?.message_key ?? 'error.server_error',
+      error?.details ?? {},
     )
   }
   return data as T
