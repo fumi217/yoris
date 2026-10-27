@@ -8,6 +8,8 @@ import { ReplyPage } from './ReplyPage'
 import { ResidentList } from './ResidentList'
 import { StaffContactBook } from './StaffContactBook'
 import { StaffLayout } from './StaffLayout'
+import { TodayVisits } from './TodayVisits'
+import { VisitReservations } from './VisitReservations'
 
 /** 職員の画面（/staff 以下。事務員は開けない）。担当は、自分の画面の ComingSoon を差し替える。 */
 export default function StaffRoutes() {
@@ -28,6 +30,9 @@ export default function StaffRoutes() {
           {/* 家族からのメッセージ（UI-S08・UI-S09。004-T029 みさき。管理画面からも同じ画面を開く） */}
           <Route path="messages" element={<FamilyMessages />} />
           <Route path="messages/:messageId" element={<FamilyMessage />} />
+          {/* 面会の予約の一覧（UI-S11）と今日の面会予定（UI-S12）。003-T026・T027 ゆう */}
+          <Route path="visits" element={<VisitReservations />} />
+          <Route path="visits/today" element={<TodayVisits />} />
           <Route path="*" element={<Navigate to="/staff" replace />} />
         </Route>
       </Routes>

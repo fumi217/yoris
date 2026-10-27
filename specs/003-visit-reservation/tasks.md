@@ -125,9 +125,9 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [x] T023 [US3] `GET /api/admin/visit-closed-days`・`POST /api/admin/visit-closed-days`・`DELETE /api/admin/visit-closed-days/{id}` を `backend/app/api/admin/visits.py` に足す。
   予約がある日の `confirm_cancel: true` は、その日の予約を T031 と同じ取り消しの処理で取り消してから休みにする（1 つのトランザクション。research.md R-08）（ゆう・作）
 - [x] T024 [US3] `GET /api/admin/visits?from=&to=`（職員のすべて）を `backend/app/api/admin/visits.py` に、`GET /api/staff/visits/today`（職員のすべて）を `backend/app/api/staff/visits.py` に作る（FR-011）（ゆう・作）
-- [ ] T025 [P] [US3] 開始時刻の候補・1 日の組数・休みの日の画面を `frontend/src/pages/admin/VisitSettings.tsx` に作る（予約がある日を休みにするときは、警告と理由の入力を出す）（ゆう・作）
-- [ ] T026 [P] [US3] 予約の一覧の画面を `frontend/src/pages/admin/VisitReservations.tsx` に作る（日付・時刻・入居者名・人数・予約した日時・状態）（ゆう・作）
-- [ ] T027 [P] [US3] 今日の面会予定の画面を `frontend/src/pages/staff/TodayVisits.tsx` に作り、職員の画面（入居者一覧など）からリンクする（ゆう・作）
+- [x] T025 [P] [US3] 開始時刻の候補・1 日の組数・休みの日の画面を `frontend/src/pages/admin/VisitSettings.tsx` に作る（予約がある日を休みにするときは、警告と理由の入力を出す）（ゆう・作）
+- [x] T026 [P] [US3] 予約の一覧の画面を `frontend/src/pages/staff/VisitReservations.tsx` に作る（日付・時刻・入居者名・人数・予約した日時・状態）。職員のすべてが見られるよう、家族からのメッセージと同じく、職員の画面（`/staff/visits`）と管理画面（`/admin/visits`）の両方から開く（介護職員・リーダーは管理画面を開けないため。docs/画面設計.md の UI-S11）（ゆう・作）
+- [x] T027 [P] [US3] 今日の面会予定の画面を `frontend/src/pages/staff/TodayVisits.tsx` に作り、職員の画面（入居者一覧など）からリンクする（ゆう・作）
 
 **Checkpoint**: quickstart.md の 13〜15 が通る
 
@@ -151,7 +151,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 - [x] T030 [US4] `notifications` に `visit_reservation_id`（→ `visit_reservations`）と、種類 `visit_confirmed`・`visit_cancelled`・`visit_reminder` を足し、`UNIQUE (visit_reservation_id, kind) WHERE kind = 'visit_reminder'` を付ける。
   `create_visit_notice(session, reservation_id, kind)` を `backend/app/services/notifications.py` に作る（関数の中では commit しない。通知の頻度の設定には関係なく作る）。T001 のあと（さとこ・作）
-- [ ] T031 [US4] 職員の取り消し `POST /api/admin/visits/{id}/cancel`（職員のすべて。`reason` は必須）を `backend/app/api/admin/visits.py` に、処理を `backend/app/services/visits.py` に作り、同じトランザクションで `create_visit_notice(..., "visit_cancelled")` を呼ぶ。
+- [x] T031 [US4] 職員の取り消し `POST /api/admin/visits/{id}/cancel`（職員のすべて。`reason` は必須）を `backend/app/api/admin/visits.py` に、処理を `backend/app/services/visits.py` に作り、同じトランザクションで `create_visit_notice(..., "visit_cancelled")` を呼ぶ。
   予約の一覧の画面（T026）に、理由を入れて取り消すボタンを足す。締め切りは設けない（FR-012・FR-013）（ゆう・作。T030 のあと）
 - [x] T032 [US4] `book_visit`（T009）で、予約を追加したあと同じトランザクションで `create_visit_notice(..., "visit_confirmed")` を呼ぶ（ゆう・作。T030 のあと）
 - [x] T033 [P] [US4] メールのテンプレート `visit_confirmed`（面会の予約が確定しました）・`visit_cancelled`（面会の予約が取り消されました）・`visit_reminder`（明日は面会の予定があります。本文に「変更・取り消しは、施設にお電話ください」）を足す。渡すのは**日時とリンクだけ**（入居者名・理由は渡さない。FR-014）（さとこ・作）

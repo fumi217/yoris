@@ -31,11 +31,12 @@ describe('adminMenu', () => {
   it('開示設定は、生活相談員・施設長にだけ出す', () => {
     expect(adminMenuFor('counselor').map((item) => item.to)).toContain('/admin/disclosure')
     expect(adminMenuFor('director').map((item) => item.to)).toContain('/admin/disclosure')
-    // 事務員が開けるのは、家族からのメッセージ（#88）・利用料のお支払い・面会の設定（開示設定は出ない）
+    // 事務員が開けるのは、家族からのメッセージ（#88）・利用料のお支払い・面会の設定・予約の一覧（開示設定は出ない）
     expect(adminMenuFor('clerk').map((item) => item.to)).toEqual([
       '/admin/messages',
       '/admin/billing',
       '/admin/visit-settings',
+      '/admin/visits',
     ])
     expect(adminMenuFor(null)).toEqual([])
   })

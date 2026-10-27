@@ -15,6 +15,8 @@ import {
   type ResidentListResponse,
   type ResidentRow,
 } from './residentRows'
+import { useTodayVisits } from './useTodayVisits'
+import { bookedCount } from './visitReservationRows'
 
 /**
  * 入居者一覧（UI-S01。spec 001 の T031・spec 004 の T030）。
@@ -27,13 +29,28 @@ export function ResidentList() {
     queryFn: () => api.get<ResidentListResponse>('/api/staff/residents'),
   })
 
+  // 今日の面会の組数（読めないときは出さない。一覧は使えるように）
+  const visits = useTodayVisits()
+
   if (residents.isPending) return <Message k="layout.loading" />
   if (residents.isError) return <Message k={messageKeyOf(residents.error)} />
-  return <ResidentTable data={residents.data} />
+  return (
+    <ResidentTable
+      data={residents.data}
+      todayVisits={visits.data ? bookedCount(visits.data) : null}
+    />
+  )
 }
 
 /** 一覧の中身（API の結果をそのまま並べる。テストではこれを直接出す）。 */
-export function ResidentTable({ data }: { data: ResidentListResponse }) {
+export function ResidentTable({
+  data,
+  todayVisits = null,
+}: {
+  data: ResidentListResponse
+  // 今日の面会の組数。まだ読めていない・読めないときは null（出さない）
+  todayVisits?: number | null
+}) {
   const { t } = useTranslation()
   const messages = totalWaitingMessages(data.residents)
 
@@ -46,11 +63,17 @@ export function ResidentTable({ data }: { data: ResidentListResponse }) {
             <Ruby text={t('resident_list.date', monthDay(data.date))} />
           </span>
         </h1>
-        {/* 押すと、家族からのメッセージの一覧（UI-S08。spec 004 の T029）へ進む */}
-        <p className="text-sm">
+        <p className="flex flex-wrap gap-x-4 text-sm">
+          {/* 押すと、家族からのメッセージの一覧（UI-S08。spec 004 の T029）へ進む */}
           <Link to="/staff/messages" className="text-sky-700 underline">
             <Ruby text={t('resident_list.messages_total', { count: messages })} />
           </Link>
+          {todayVisits !== null && (
+            // 押すと、今日の面会予定（UI-S12。spec 003 の T027）へ進む。0 組でも出す
+            <Link to="/staff/visits/today" className="text-sky-700 underline">
+              <Ruby text={t('resident_list.today_visits', { count: todayVisits })} />
+            </Link>
+          )}
         </p>
       </div>
       <p className="px-4 pb-2 text-xs text-gray-600">

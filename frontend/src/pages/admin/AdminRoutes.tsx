@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router'
 import { AreaGuard } from '../../components/AreaGuard'
 import { FamilyMessage } from '../staff/FamilyMessage'
 import { FamilyMessages } from '../staff/FamilyMessages'
+import { VisitReservations } from '../staff/VisitReservations'
 import { AdminHome } from './AdminHome'
 import { AdminLayout } from './AdminLayout'
 import { Billing } from './Billing'
@@ -28,6 +29,8 @@ export default function AdminRoutes() {
           <Route path="billing" element={<Billing />} />
           {/* 面会の設定（UI-A02。003-T025 ゆう。事務員・生活相談員・施設長） */}
           <Route path="visit-settings" element={<VisitSettings />} />
+          {/* 面会の予約の一覧（UI-S11。003-T026 ゆう。職員の画面と同じ画面） */}
+          <Route path="visits" element={<VisitReservations />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Route>
       </Routes>

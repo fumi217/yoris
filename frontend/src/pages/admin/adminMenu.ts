@@ -42,6 +42,13 @@ export const adminMenu: AdminMenuItem[] = [
     icon: '🗓️',
     roles: ['clerk', 'counselor', 'director'],
   },
+  // 面会の予約の一覧（UI-S11。spec 003 の T026。職員の画面と同じ画面。介護職員・リーダーは職員の画面から開く）
+  {
+    to: '/admin/visits',
+    labelKey: 'admin.menu.visits',
+    icon: '📋',
+    roles: ['clerk', 'counselor', 'director'],
+  },
 ]
 
 export function adminMenuFor(role: StaffRole | null): AdminMenuItem[] {
