@@ -31,7 +31,8 @@ describe('adminMenu', () => {
   it('開示設定は、生活相談員・施設長にだけ出す', () => {
     expect(adminMenuFor('counselor').map((item) => item.to)).toContain('/admin/disclosure')
     expect(adminMenuFor('director').map((item) => item.to)).toContain('/admin/disclosure')
-    expect(adminMenuFor('clerk')).toEqual([])
+    // 事務員が開けるのは、利用料のお支払いだけ（開示設定は出ない）
+    expect(adminMenuFor('clerk').map((item) => item.to)).toEqual(['/admin/billing'])
     expect(adminMenuFor(null)).toEqual([])
   })
 })

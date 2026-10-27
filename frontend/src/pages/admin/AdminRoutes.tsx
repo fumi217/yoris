@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router'
 import { AreaGuard } from '../../components/AreaGuard'
 import { AdminHome } from './AdminHome'
 import { AdminLayout } from './AdminLayout'
+import { Billing } from './Billing'
 import { DisclosureSettings } from './DisclosureSettings'
 
 /**
@@ -17,6 +18,8 @@ export default function AdminRoutes() {
           <Route index element={<AdminHome />} />
           {/* 開示設定（UI-A01。001-T040 ゆう） */}
           <Route path="disclosure" element={<DisclosureSettings />} />
+          {/* 利用料のお支払い（spec 002 の T026。施設長・事務員） */}
+          <Route path="billing" element={<Billing />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Route>
       </Routes>

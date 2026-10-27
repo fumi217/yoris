@@ -18,6 +18,13 @@ export const adminMenu: AdminMenuItem[] = [
     icon: '👁️',
     roles: ['counselor', 'director'],
   },
+  // 利用料のお支払い（spec 002 の T026。施設長・事務員。守りは API の 403）
+  {
+    to: '/admin/billing',
+    labelKey: 'admin.menu.billing',
+    icon: '💳',
+    roles: ['director', 'clerk'],
+  },
 ]
 
 export function adminMenuFor(role: StaffRole | null): AdminMenuItem[] {

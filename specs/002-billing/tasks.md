@@ -78,10 +78,10 @@ spec 001 のタスクは「001-T009」のように書く（[spec 001 の tasks.m
 - [X] T021 [US1] `GET /api/billing/signup/complete?session_id=` を `backend/app/api/billing.py` に足す：`confirming`／`completed`（`login_id` を付ける。アカウントを作ってから 1 時間まで）／`not_completed`（contracts/api.md）（ミ）
 - [X] T022 [US1] `GET /api/admin/billing` を `backend/app/api/admin/billing.py` に作る（役割：施設長・事務員）：ミニマム版は `status`・`plan_name`・`amount_jpy`・`can_subscribe`・`can_manage`（contracts/api.md）（ミ）
 - [X] T023 [US1] ルーターを `backend/app/main.py` に登録する（T017〜T022）（ミ）
-- [ ] T024 [P] [US1] 申し込みページを `frontend/src/pages/signup/Signup.tsx` に作る：`idempotency_key` を `crypto.randomUUID()` で作って `localStorage` に残す（使えないときは画面の中だけ。読み書きは try/catch で囲む）、施設名・施設長の名前・メールアドレス（2 回）・パスワード（8 文字以上）の入力、「申し込む」は押したらすぐ押せなくし、返ってきた `checkout_url` へ移る。支払い画面から戻ったとき（`?canceled=1&key=`）は `POST /api/billing/signup/cancel` を呼び、`idempotency_key` を作り直して「お申し込みは完了していません」。文言は辞書から引く（US1 のシナリオ 1・3・5、R-12）（ミ）
-- [ ] T025 [P] [US1] 申し込み完了の画面を `frontend/src/pages/signup/SignupComplete.tsx` に作る：`session_id` で T021 を 3 秒ごとに読み、`confirming` の間は「お支払いを確認しています」、`completed` で ID と「控えてください」（メールの一文はまだ出さない）とログイン画面へのボタンを出し、`localStorage` の `idempotency_key` を消す（US1 のシナリオ 2・4、R-12）（ミ）
-- [ ] T026 [P] [US1] 利用料のお支払いの画面を `frontend/src/pages/admin/Billing.tsx` に作る：ミニマム版は契約の状態（契約中など）とプラン名・月額だけ（US1 の Independent Test）（ミ）
-- [ ] T027 [US1] 001-T019 の画面の枠に、`/signup`・`/signup/complete` をログインなしの枠に、`/admin/billing` を管理画面の枠（施設長・事務員だけ。介護職員などには「この画面を使う権限がありません」）に足す（FR-007）（ミ）
+- [X] T024 [P] [US1] 申し込みページを `frontend/src/pages/signup/Signup.tsx` に作る：`idempotency_key` を `crypto.randomUUID()` で作って `localStorage` に残す（使えないときは画面の中だけ。読み書きは try/catch で囲む）、施設名・施設長の名前・メールアドレス（2 回）・パスワード（8 文字以上）の入力、「申し込む」は押したらすぐ押せなくし、返ってきた `checkout_url` へ移る。支払い画面から戻ったとき（`?canceled=1&key=`）は `POST /api/billing/signup/cancel` を呼び、`idempotency_key` を作り直して「お申し込みは完了していません」。文言は辞書から引く（US1 のシナリオ 1・3・5、R-12）（ミ）
+- [X] T025 [P] [US1] 申し込み完了の画面を `frontend/src/pages/signup/SignupComplete.tsx` に作る：`session_id` で T021 を 3 秒ごとに読み、`confirming` の間は「お支払いを確認しています」、`completed` で ID と「控えてください」（メールの一文はまだ出さない）とログイン画面へのボタンを出し、`localStorage` の `idempotency_key` を消す（US1 のシナリオ 2・4、R-12）（ミ）
+- [X] T026 [P] [US1] 利用料のお支払いの画面を `frontend/src/pages/admin/Billing.tsx` に作る：ミニマム版は契約の状態（契約中など）とプラン名・月額だけ（US1 の Independent Test）（ミ）
+- [X] T027 [US1] 001-T019 の画面の枠に、`/signup`・`/signup/complete` をログインなしの枠に、`/admin/billing` を管理画面の枠（施設長・事務員だけ。介護職員などには「この画面を使う権限がありません」）に足す（FR-007）（ミ）
 - [ ] T028 [US1] quickstart.md の「通しの確認」1〜7 と「ぶつかる場面・守りの確認」を手で通す（Stripe のテスト環境と Stripe CLI を使う）（ミ・Day 3）
 - [ ] T029 [US1] ID を書いたメール：`email_outbox` にテンプレート `owner_account`（params は `login_id` とログイン画面のリンクだけ。パスワードは入れない、末尾に「心当たりがない場合は、このメールを破棄してください」）を足し、T019 のトランザクションの中で送る予定を作る。完了の画面に「同じ内容をメールでもお送りしました」を足す（FR-005、R-08。さとこの 001-T048・001-T057 のあと）（作）
 - [ ] T030 [US1] 申し込みを同時に 1 つだけにする：T017 で、期限内の `pending` があれば 409 `signup_in_progress`。テストを T014 に足す（FR-014、R-07）（作）

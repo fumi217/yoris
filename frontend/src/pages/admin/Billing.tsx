@@ -1,0 +1,79 @@
+import { useQuery } from '@tanstack/react-query'
+import { api, messageKeyOf } from '../../api/client'
+import { Message } from '../../components/Message'
+import { Text } from '../../components/Text'
+
+export type BillingInfo = {
+  status: 'active' | 'payment_failed' | 'cancel_scheduled' | 'canceled'
+  plan_name: string
+  amount_jpy: number
+  current_period_end: string | null
+  cancel_at: string | null
+  can_subscribe: boolean
+  can_manage: boolean
+}
+
+/**
+ * 利用料のお支払い（`/admin/billing`。施設長・事務員。spec 002 の T026・FR-018）。
+ * ミニマム版は、契約の状態とプラン名・月額を見せるだけ（申し込み直し・カードの変更・解約は作り込み）。
+ * 開けない役割（生活相談員が URL を打ったなど）は、API が 403 を返すので、その文言を出す（FR-007）。
+ */
+export function Billing() {
+  const billing = useQuery({
+    queryKey: ['admin', 'billing'],
+    queryFn: () => api.get<BillingInfo>('/api/admin/billing'),
+    retry: false,
+  })
+
+  if (billing.isPending) return <Message k="layout.loading" />
+  if (billing.isError) return <Message k={messageKeyOf(billing.error)} />
+  return <BillingView billing={billing.data} />
+}
+
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('ja-JP', {
+    // ブラウザの時差で日がずれないように、日本時間で出す
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+
+/** 画面の中身（テストではこれを直接出す）。 */
+export function BillingView({ billing }: { billing: BillingInfo }) {
+  return (
+    <div className="space-y-6 p-4">
+      <h1 className="text-xl font-bold">
+        <Text k="billing.title" />
+      </h1>
+      <dl className="divide-y border-y">
+        <Row labelKey="billing.status">
+          <span className="font-bold">
+            <Text k={`billing.state.${billing.status}`} />
+          </span>
+        </Row>
+        <Row labelKey="billing.plan">
+          {billing.plan_name} {billing.amount_jpy.toLocaleString('ja-JP')}{' '}
+          <Text k="billing.per_month" />
+        </Row>
+        {billing.current_period_end && billing.status !== 'canceled' && (
+          <Row labelKey="billing.period_end">{formatDate(billing.current_period_end)}</Row>
+        )}
+        {billing.cancel_at && (
+          <Row labelKey="billing.cancel_at">{formatDate(billing.cancel_at)}</Row>
+        )}
+      </dl>
+    </div>
+  )
+}
+
+function Row({ labelKey, children }: { labelKey: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-3">
+      <dt className="text-gray-600">
+        <Text k={labelKey} />
+      </dt>
+      <dd>{children}</dd>
+    </div>
+  )
+}
