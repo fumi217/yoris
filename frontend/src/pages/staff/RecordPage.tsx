@@ -8,8 +8,8 @@ import { ConfirmButton } from '../../components/ConfirmButton'
 import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
 import { Ruby } from '../../i18n/Ruby'
+import { isMemoWriter } from './memoEditorLogic'
 import {
-  canWriteMemo,
   currentRecord,
   DAY_SLOT,
   firstUnrecordedMealSlot,
@@ -93,7 +93,7 @@ export function RecordPage() {
     <RecordView
       book={book.data}
       waitingRequests={requests.data?.requests.length ?? 0}
-      canWriteMemo={canWriteMemo(me?.role)}
+      canWriteMemo={isMemoWriter(me?.role)}
       saving={save.isPending ? save.variables : null}
       cancelling={cancel.isPending}
       notice={notice}

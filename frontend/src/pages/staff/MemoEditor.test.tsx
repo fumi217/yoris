@@ -6,6 +6,7 @@ import { ApiError } from '../../api/client'
 import { MemoEditorView } from './MemoEditor'
 import {
   canWriteMemo,
+  isMemoWriter,
   errorKeyFor,
   initialLang,
   ORIGINAL_MAX,
@@ -187,6 +188,14 @@ describe('様子のメモを書ける役割（PR #249 ゆう）', () => {
 
   it('役割がまだ分からない（読み込み中）ときは、案内を出さない', () => {
     expect(canWriteMemo(undefined)).toBe(true)
+  })
+
+  it('役割の判定は 1 つ：記録の画面のボタンは、読み込み中は出さない（#94）', () => {
+    expect(isMemoWriter('care_worker')).toBe(true)
+    expect(isMemoWriter('leader')).toBe(true)
+    for (const role of ['counselor', 'clerk', 'director', null, undefined] as const) {
+      expect(isMemoWriter(role)).toBe(false)
+    }
   })
 
   it('案内の文言が、ふりがなを外して読める', () => {

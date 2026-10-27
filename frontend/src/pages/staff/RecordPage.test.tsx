@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest'
 import '../../i18n'
 import { RecordView } from './RecordPage'
 import {
-  canWriteMemo,
   currentValue,
   firstUnrecordedMealSlot,
   withoutRecord,
@@ -149,17 +148,5 @@ describe('RecordView', () => {
 
   it('メモを書けない役割には、「様子のメモを書く」を出さない', () => {
     expect(render({ canWriteMemo: false })).not.toContain('/memos/new')
-  })
-})
-
-describe('canWriteMemo', () => {
-  it('介護職員・リーダーだけが書ける（API と同じ）', () => {
-    expect(canWriteMemo('care_worker')).toBe(true)
-    expect(canWriteMemo('leader')).toBe(true)
-    expect(canWriteMemo('counselor')).toBe(false)
-    expect(canWriteMemo('clerk')).toBe(false)
-    expect(canWriteMemo('director')).toBe(false)
-    expect(canWriteMemo(null)).toBe(false)
-    expect(canWriteMemo(undefined)).toBe(false)
   })
 })

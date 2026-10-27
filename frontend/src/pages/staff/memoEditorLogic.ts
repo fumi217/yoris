@@ -62,9 +62,18 @@ export function langKey(lang: SourceLang): string {
 
 /**
  * 様子のメモを書ける役割（介護職員・リーダー。backend の WRITERS と同じ。contracts/api.md）。
+ * 役割の判定はここだけに置く（記録の画面の「様子のメモを書く」ボタンも使う。#254・#94）。
+ * 役割がまだ分からない（読み込み中）ときは false。
+ */
+export function isMemoWriter(role: StaffRole | null | undefined): boolean {
+  return role === 'care_worker' || role === 'leader'
+}
+
+/**
+ * 書く画面を、そのまま出してよいか（false なら「書けません」の案内を出す）。
  * 守りは API の 403。ここは、書いてから 403 になって手間がむだにならないよう、最初に案内するため。
- * 役割がまだ分からない（読み込み中）ときは、案内を出さない。
+ * 役割がまだ分からない（読み込み中）ときは、案内を出さない（true）。
  */
 export function canWriteMemo(role: StaffRole | null | undefined): boolean {
-  return role === undefined || role === 'care_worker' || role === 'leader'
+  return role === undefined || isMemoWriter(role)
 }
