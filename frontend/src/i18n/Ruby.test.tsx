@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import i18n from './index'
+import { FuriganaContext } from './furigana'
 import { Ruby } from './Ruby'
 import { parseRuby, stripRuby } from './rubyText'
 
@@ -48,5 +49,31 @@ describe('辞書', () => {
   it('初めは日本語で、辞書から文言を引ける', () => {
     expect(i18n.language).toBe('ja')
     expect(i18n.t('error.already_replied')).toBe('ほかの職員が返事をしました')
+  })
+})
+
+describe('家族の画面のふりがな（#260）', () => {
+  it('FuriganaContext が false のときは、ふりがなを外して漢字だけにする', () => {
+    const html = renderToStaticMarkup(
+      <FuriganaContext.Provider value={false}>
+        <Ruby text="{全部|ぜんぶ}（8{割|わり}）" />
+      </FuriganaContext.Provider>,
+    )
+
+    expect(html).toBe('全部（8割）')
+  })
+
+  it('ふりがなを外しても、文は HTML として解釈しない', () => {
+    const html = renderToStaticMarkup(
+      <FuriganaContext.Provider value={false}>
+        <Ruby text="<b>{太字|ふとじ}</b>" />
+      </FuriganaContext.Provider>,
+    )
+
+    expect(html).toBe('&lt;b&gt;太字&lt;/b&gt;')
+  })
+
+  it('初期値（職員の画面・管理画面）は、ふりがなを出す', () => {
+    expect(renderToStaticMarkup(<Ruby text="{全部|ぜんぶ}" />)).toContain('<ruby>')
   })
 })

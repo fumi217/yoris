@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import '../../../i18n'
+import { FuriganaContext } from '../../../i18n/furigana'
 import { MyVisitsView } from './MyVisits'
 import type { MyReservation } from './visitDates'
 
@@ -70,5 +71,25 @@ describe('MyVisitsView', () => {
 
   it('取り消せなかったら、理由を出す', () => {
     expect(render({ errorKey: 'error.visit_deadline_passed' })).toContain('施設にお電話ください')
+  })
+})
+
+describe('家族の画面のふりがな（#260）', () => {
+  it('家族の画面（FamilyRoutes の中）では、ふりがなを出さない', () => {
+    const html = renderToStaticMarkup(
+      <FuriganaContext.Provider value={false}>
+        <MyVisitsView
+          rows={[row()]}
+          cancellingId={null}
+          notice={false}
+          errorKey={null}
+          onCancel={() => {}}
+        />
+      </FuriganaContext.Provider>,
+    )
+
+    expect(html).not.toContain('<ruby>')
+    expect(html).toContain('10月28日')
+    expect(html).toContain('2人')
   })
 })

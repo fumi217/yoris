@@ -14,6 +14,7 @@ return <Ruby text={t('error.forbidden')} />
 
 - 画面の固定の文言は、必ず辞書（`ja.json`）から引く。コードに日本語を直接書かない
 - ふりがなは `{漢字|かんじ}` の書き方で、`ja.json` の中に書く。表示は `Ruby` の部品が `<ruby>` にする
+  - 家族の画面（`/family` の下）は、ふりがなを出さない（constitution 3.2.0。#260）。辞書は同じ書き方のまま、`FamilyRoutes` が `FuriganaContext` を false にし、`Ruby` が漢字だけにする
   - ミニマム版はふりがななしでよい。Day 5 に 001-T083 などでまとめて付ける（spec 001 の tasks.md）
   - `id.json`・`en.json` には、この書き方を使わない
 - 職員が自由に書いた文・お知らせの本文・ファイルの中身は、辞書を通さずそのまま出す
