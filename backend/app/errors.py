@@ -5,6 +5,9 @@ API は `raise AppError(ErrorCode.FORBIDDEN)` のように投げる。
 
     {"error": {"code": "forbidden", "message_key": "error.forbidden"}}
 
+画面が文言に使う値（件数など）が要るときだけ、`AppError(code, details={"count": 3})` で
+`"details"` を足せる（例：面会の visit_day_has_reservations。入力の値はここに入れない）。
+
 コードを足すときは、ErrorCode と STATUS_CODES の両方に足す（contracts の表と合わせる）。
 足し忘れは tests/unit/test_errors.py が見つける。
 """
@@ -86,15 +89,22 @@ STATUS_CODES: dict[ErrorCode, int] = {
 class AppError(Exception):
     """API から投げるエラー。HTTP の番号は、コードから決まる。"""
 
-    def __init__(self, code: ErrorCode) -> None:
+    def __init__(self, code: ErrorCode, details: dict[str, int | str] | None = None) -> None:
         super().__init__(code.value)
         self.code = code
+        self.details = details
 
 
 def error_response(
-    code: ErrorCode, status_code: int | None = None, headers: dict[str, str] | None = None
+    code: ErrorCode,
+    status_code: int | None = None,
+    headers: dict[str, str] | None = None,
+    details: dict[str, int | str] | None = None,
 ) -> JSONResponse:
-    body = {"error": {"code": code.value, "message_key": f"error.{code.value}"}}
+    error: dict[str, object] = {"code": code.value, "message_key": f"error.{code.value}"}
+    if details:
+        error["details"] = details
+    body = {"error": error}
     return JSONResponse(
         status_code=status_code or STATUS_CODES[code], content=body, headers=headers
     )
@@ -112,7 +122,7 @@ _HTTP_STATUS_TO_CODE = {
 def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def handle_app_error(_: Request, exc: AppError) -> JSONResponse:
-        return error_response(exc.code)
+        return error_response(exc.code, details=exc.details)
 
     @app.exception_handler(RequestValidationError)
     async def handle_validation_error(_: Request, __: RequestValidationError) -> JSONResponse:

@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from app.api import billing, dev
 from app.api.admin import billing as admin_billing
 from app.api.admin import disclosure as admin_disclosure
+from app.api.admin import visits as admin_visits
 from app.api.family import contact_book as family_contact_book
 from app.api.family import inquiry as family_inquiry
 from app.api.family import notifications as family_notifications
@@ -16,6 +17,7 @@ from app.api.staff import messages as staff_messages
 from app.api.staff import records as staff_records
 from app.api.staff import requests as staff_requests
 from app.api.staff import residents as staff_residents
+from app.api.staff import visits as staff_visits
 from app.auth import routes as auth_routes
 from app.auth.csrf import RequireFetchHeaderMiddleware
 from app.config import get_settings
@@ -42,6 +44,7 @@ def create_app() -> FastAPI:
     app.include_router(billing.router)
     app.include_router(admin_billing.router)
     app.include_router(admin_disclosure.router)
+    app.include_router(admin_visits.router)
     app.include_router(family_visits.router)
     app.include_router(family_requests.router)
     app.include_router(family_contact_book.router)
@@ -53,6 +56,7 @@ def create_app() -> FastAPI:
     app.include_router(staff_records.router)
     app.include_router(staff_requests.router)
     app.include_router(staff_residents.router)
+    app.include_router(staff_visits.router)
     # 開発用のユーザー切り替えは、開発環境だけで登録する（本番では 404。research.md R-02）
     if settings.is_development:
         app.include_router(dev.router)

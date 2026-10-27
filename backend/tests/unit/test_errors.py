@@ -31,3 +31,18 @@ def test_every_error_code_has_a_message_in_ja_json():
     )
 
     assert missing == [], f"ja.json の error に文言がないコード：{missing}"
+
+
+def test_details_are_added_only_when_given():
+    # 画面が文言に使う値（件数など）だけを details で返す（面会の visit_day_has_reservations など）
+    import json
+
+    from app.errors import error_response
+
+    plain = json.loads(error_response(ErrorCode.NOT_FOUND).body)
+    with_count = json.loads(
+        error_response(ErrorCode.VISIT_DAY_HAS_RESERVATIONS, details={"count": 2}).body
+    )
+
+    assert plain == {"error": {"code": "not_found", "message_key": "error.not_found"}}
+    assert with_count["error"]["details"] == {"count": 2}

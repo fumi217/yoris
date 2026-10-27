@@ -58,14 +58,14 @@
 
 | メソッド・パス | 役割 | 中身 | 時期 | spec |
 |---|---|---|---|---|
-| `GET /api/staff/visits/today` | 職員 | 今日の面会予定（時刻・入居者名・人数） | 作り込み | FR-011 |
-| `GET /api/admin/visits?from=&to=` | 職員 | 予約の一覧（日付・時刻・入居者名・人数・予約した日時・状態） | 作り込み | FR-011 |
+| `GET /api/staff/visits/today` | 職員 | 今日の面会予定（時刻・入居者名・人数）。今日（日本時間）の予約済みだけを時刻の順に。形は下の予約の一覧と同じ | 作り込み | FR-011 |
+| `GET /api/admin/visits?from=&to=` | 職員 | 予約の一覧（日付・時刻・入居者名・人数・予約した日時・状態）。`[{id, visit_date, start_time, resident_id, resident_name, room, party_size, status, created_at, cancel_reason}]`。取り消したものも状態つきで返す。期間は 31 日まで | 作り込み | FR-011 |
 | `POST /api/admin/visits/{id}/cancel` | 職員 | 予約を取り消す（`reason` は必須）。締め切りなし。作り込みで、さとこの `create_visit_notice(session, id, "visit_cancelled")` を同じトランザクションで呼ぶ | 作り込み | FR-012・FR-013 |
-| `GET /api/admin/visit-settings` | CL・CO・D | 開始時刻の候補と、1 日に受け付ける組数 | 作り込み | FR-009 |
-| `PUT /api/admin/visit-settings` | CL・CO・D | 変える。開始時刻＋1 時間 30 分が 17:00 を超える候補は 422。すでに入っている予約はそのまま | 作り込み | FR-009 |
+| `GET /api/admin/visit-settings` | CL・CO・D | 開始時刻の候補と、1 日に受け付ける組数。`{daily_limit, start_times}`（今の候補を早い順に） | 作り込み | FR-009 |
+| `PUT /api/admin/visit-settings` | CL・CO・D | 変える（本文は GET と同じ形）。候補は 30 分刻み・10:00 から・開始時刻＋1 時間 30 分が 17:00 まで、組数は 1 以上、候補は 1 つ以上（ほかは 422。何も変えない）。外した候補は `active = false` にするだけで、すでに入っている予約はそのまま | 作り込み | FR-009 |
 | `GET /api/admin/visit-closed-days?from=&to=` | CL・CO・D | 休みの日の一覧 | 作り込み | FR-010 |
-| `POST /api/admin/visit-closed-days` | CL・CO・D | 休みにする（`date`）。予約があれば 409 `visit_day_has_reservations`。`confirm_cancel: true` と `reason` を付けると、その日の予約を職員の取り消しにしてから休みにする（[research.md R-08](../research.md#r-08-休みの日を予約が入っている日に設定するとき)） | 作り込み | FR-010 |
-| `DELETE /api/admin/visit-closed-days/{id}` | CL・CO・D | 休みを取り消す | 作り込み | FR-010 |
+| `POST /api/admin/visit-closed-days` | CL・CO・D | 休みにする（`date`）。今日より前は 422、もう休みならそのまま返す（201。`{id, closed_date, cancelled}`）。予約があれば 409 `visit_day_has_reservations`（`details.count` に件数）。理由は 200 文字まで。予約と同じ、その日だけの順番待ちの中で行う。`confirm_cancel: true` と `reason` を付けると、その日の予約を職員の取り消しにしてから休みにする（[research.md R-08](../research.md#r-08-休みの日を予約が入っている日に設定するとき)） | 作り込み | FR-010 |
+| `DELETE /api/admin/visit-closed-days/{id}` | CL・CO・D | 休みを取り消す（204。休みにするときに取り消した予約は戻さない） | 作り込み | FR-010 |
 
 ## お知らせ（さとこ・作り込み）
 

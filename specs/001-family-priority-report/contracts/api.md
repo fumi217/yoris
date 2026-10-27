@@ -21,6 +21,8 @@
 { "error": { "code": "request_limit", "message_key": "error.request_limit" } }
 ```
 
+画面が文言に使う値（件数など）が要るエラーだけ、`details` を足す（入力の値は入れない）。例：spec 003 の面会の `visit_day_has_reservations` は `{"error": {"code": "visit_day_has_reservations", "message_key": "error.visit_day_has_reservations", "details": {"count": 2}}}`（spec 003 の #122）。
+
 | HTTP | code | いつ | spec |
 |---|---|---|---|
 | 401 | `not_logged_in` | ログインしていない（ファイルの URL を直接開いたときも） | FR-034 |

@@ -112,19 +112,19 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T019 [P] [US3] API テスト `backend/tests/api/test_visit_admin.py`：
+- [x] T019 [P] [US3] API テスト `backend/tests/api/test_visit_admin.py`：
   設定（開始時刻の候補・組数・休みの日）は事務員・相談員・施設長だけ（介護職員・リーダーは 403、家族は 403）／予約の一覧と今日の面会予定は職員のすべてが見られる（家族は 403）／
   開始時刻＋1 時間 30 分が 17:00 を超える候補は 422／候補から外しても、すでに入っている予約は残る／
   予約が入っている日を休みにすると 409 `visit_day_has_reservations`（件数つき）、`confirm_cancel: true` と理由を付けると、その日の予約が職員の取り消しになって休みになる／休みの日の予約は 409 `visit_closed_day`（FR-009〜FR-011、research.md R-06・R-08）（ゆう・作）
 
 ### Implementation for User Story 3
 
-- [ ] T020 [US3] `visit_closed_days`（一意は `(facility_id, closed_date)`）を `backend/app/models/visits.py` に足し、マイグレーションを足す（data-model.md）（ゆう・作）
-- [ ] T021 [US3] 休みの日を、`book_visit`（T009）と `get_availability`（T010）に足す：休みの日は 409 `visit_closed_day`・すべて `selectable: false`（FR-010）（ゆう・作）
-- [ ] T022 [US3] `GET /api/admin/visit-settings`・`PUT /api/admin/visit-settings` を `backend/app/api/admin/visits.py` に作る（`require_staff(["clerk","counselor","director"])`）（FR-009）（ゆう・作）
-- [ ] T023 [US3] `GET /api/admin/visit-closed-days`・`POST /api/admin/visit-closed-days`・`DELETE /api/admin/visit-closed-days/{id}` を `backend/app/api/admin/visits.py` に足す。
+- [x] T020 [US3] `visit_closed_days`（一意は `(facility_id, closed_date)`）を `backend/app/models/visits.py` に足し、マイグレーションを足す（data-model.md）（ゆう・作）
+- [x] T021 [US3] 休みの日を、`book_visit`（T009）と `get_availability`（T010）に足す：休みの日は 409 `visit_closed_day`・すべて `selectable: false`（FR-010）（ゆう・作）
+- [x] T022 [US3] `GET /api/admin/visit-settings`・`PUT /api/admin/visit-settings` を `backend/app/api/admin/visits.py` に作る（`require_staff(["clerk","counselor","director"])`）（FR-009）（ゆう・作）
+- [x] T023 [US3] `GET /api/admin/visit-closed-days`・`POST /api/admin/visit-closed-days`・`DELETE /api/admin/visit-closed-days/{id}` を `backend/app/api/admin/visits.py` に足す。
   予約がある日の `confirm_cancel: true` は、その日の予約を T031 と同じ取り消しの処理で取り消してから休みにする（1 つのトランザクション。research.md R-08）（ゆう・作）
-- [ ] T024 [US3] `GET /api/admin/visits?from=&to=`（職員のすべて）を `backend/app/api/admin/visits.py` に、`GET /api/staff/visits/today`（職員のすべて）を `backend/app/api/staff/visits.py` に作る（FR-011）（ゆう・作）
+- [x] T024 [US3] `GET /api/admin/visits?from=&to=`（職員のすべて）を `backend/app/api/admin/visits.py` に、`GET /api/staff/visits/today`（職員のすべて）を `backend/app/api/staff/visits.py` に作る（FR-011）（ゆう・作）
 - [ ] T025 [P] [US3] 開始時刻の候補・1 日の組数・休みの日の画面を `frontend/src/pages/admin/VisitSettings.tsx` に作る（予約がある日を休みにするときは、警告と理由の入力を出す）（ゆう・作）
 - [ ] T026 [P] [US3] 予約の一覧の画面を `frontend/src/pages/admin/VisitReservations.tsx` に作る（日付・時刻・入居者名・人数・予約した日時・状態）（ゆう・作）
 - [ ] T027 [P] [US3] 今日の面会予定の画面を `frontend/src/pages/staff/TodayVisits.tsx` に作り、職員の画面（入居者一覧など）からリンクする（ゆう・作）

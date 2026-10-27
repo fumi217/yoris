@@ -4,7 +4,10 @@
 - 入居者は、ログイン中の家族の CurrentUser.resident_id から決める（送られた値は使わない。R-05）
 - 関数の中では commit しない（呼んだ API が最後に 1 回だけ commit する）。
   順番待ち（pg_advisory_xact_lock）は、その commit で外れる
-- 休みの日（visit_closed_days）は作り込み（003-T019 など）で足す。今は休みの日はない扱い
+- 休みの日（visit_closed_days）は予約できず、空きも選べない（003-T021・FR-010）。
+  休みにする処理（close_day）も同じその日だけの順番待ちを取るので、
+  休みにした瞬間に予約が入ることはない
+- 施設の設定（開始時刻の候補・1 日の組数・休みの日）と、職員の取り消し・予約の一覧は 003-T022〜T024
 - 家族の自分の予約の一覧（list_my_reservations）と取り消し（cancel_by_family）は 003-T016。
   ほかの家族の予約は、ないものと同じ 404 にする（存在するかも知らせない。FR-015・SC-004）。
   家族が自分で取り消したときは、お知らせを作らない（research.md R-07）
@@ -20,7 +23,7 @@ from sqlalchemy.orm import Session
 from app.auth.deps import CurrentUser
 from app.clock import now_jst
 from app.models.core import Resident
-from app.models.visits import VisitReservation, VisitSetting, VisitStartTime
+from app.models.visits import VisitClosedDay, VisitReservation, VisitSetting, VisitStartTime
 from app.services.visit_rules import (
     VisitRuleError,
     check_bookable_date,
@@ -62,6 +65,22 @@ class VisitInvalidInput(VisitError):
     code = "validation_error"
 
 
+class VisitClosedDayError(VisitError):
+    """休みの日（409）。"""
+
+    code = "visit_closed_day"
+
+
+class VisitDayHasReservations(VisitError):
+    """予約が入っている日を、取り消すと決めずに休みにしようとした（409。件数を返す。R-08）。"""
+
+    code = "visit_day_has_reservations"
+
+    def __init__(self, count: int) -> None:
+        super().__init__(f"reservations: {count}")
+        self.count = count
+
+
 class VisitNotFound(VisitError):
     """自分の入居者の予約でない・もう取り消してある（404。存在するかも知らせない）。"""
 
@@ -101,6 +120,25 @@ def _daily_limit(session: Session, facility_id: int) -> int:
     return setting.daily_limit if setting is not None else DEFAULT_DAILY_LIMIT
 
 
+def _wait_for_day(session: Session, visit_date: date) -> None:
+    """その日の予約・休みにする処理だけを順番待ちにする（ほかの日は待たない）。commit で外れる。"""
+    session.execute(
+        select(func.pg_advisory_xact_lock(VISIT_LOCK_NAMESPACE, visit_date.toordinal()))
+    )
+
+
+def _closed_dates(session: Session, facility_id: int, date_from: date, date_to: date) -> set[date]:
+    return set(
+        session.scalars(
+            select(VisitClosedDay.closed_date).where(
+                VisitClosedDay.facility_id == facility_id,
+                VisitClosedDay.closed_date >= date_from,
+                VisitClosedDay.closed_date <= date_to,
+            )
+        )
+    )
+
+
 def _booked(session: Session, facility_id: int, date_from: date, date_to: date):
     return list(
         session.scalars(
@@ -134,9 +172,10 @@ def book_visit(
     check_start_time(start_time, _active_start_times(session, facility_id))
 
     # 1. 同じ日の予約だけを順番待ちにする（ほかの日の予約は待たない）。commit で外れる
-    session.execute(
-        select(func.pg_advisory_xact_lock(VISIT_LOCK_NAMESPACE, visit_date.toordinal()))
-    )
+    _wait_for_day(session, visit_date)
+    # 休みの日（順番待ちの中で確かめるので、休みにした瞬間の予約も通さない）
+    if _closed_dates(session, facility_id, visit_date, visit_date):
+        raise VisitClosedDayError(f"visit_date: {visit_date}")
 
     booked = _booked(session, facility_id, visit_date, visit_date)
     # 2. 1 日に受け付ける組数
@@ -206,6 +245,7 @@ def get_availability(
     facility_id = _facility_id(session, resident_id)
     candidates = _active_start_times(session, facility_id)
     limit = _daily_limit(session, facility_id)
+    closed = _closed_dates(session, facility_id, date_from, date_to)
     booked_by_day: dict[date, list[VisitReservation]] = {}
     for reservation in _booked(session, facility_id, date_from, date_to):
         booked_by_day.setdefault(reservation.visit_date, []).append(reservation)
@@ -217,7 +257,7 @@ def get_availability(
         mine = any(reservation.resident_id == resident_id for reservation in booked)
         try:
             check_bookable_date(day, at)
-            day_open = not mine and len(booked) < limit
+            day_open = not mine and len(booked) < limit and day not in closed
         except VisitRuleError:
             day_open = False
         start_times = [
@@ -228,7 +268,9 @@ def get_availability(
             )
             for candidate in candidates
         ]
-        days.append(DayAvailability(date=day, closed=False, mine=mine, start_times=start_times))
+        days.append(
+            DayAvailability(date=day, closed=day in closed, mine=mine, start_times=start_times)
+        )
         day += timedelta(days=1)
     return days
 
@@ -301,3 +343,240 @@ def cancel_by_family(
     reservation.cancelled_at = func.now()
     session.flush()
     return reservation
+
+
+# --- 施設の設定・休みの日・職員の取り消し・予約の一覧（003-T021〜T024。User Story 3） ---
+
+# 面会の時間帯（10〜17 時。spec 003 の前提）と、開始時刻の刻み（30 分。Clarifications）
+VISIT_OPEN = time(10, 0)
+VISIT_CLOSE = time(17, 0)
+START_STEP_MINUTES = 30
+VISIT_MINUTES = 90
+# 職員の取り消しの理由の上限（家族の画面に文字として出す。FR-012・FR-016）
+CANCEL_REASON_MAX = 200
+
+
+def get_visit_settings(session: Session, facility_id: int) -> tuple[int, list[time]]:
+    """1 日に受け付ける組数と、今の開始時刻の候補（早い順）。"""
+    return _daily_limit(session, facility_id), _active_start_times(session, facility_id)
+
+
+def _check_candidate(start: time) -> None:
+    """開始時刻の候補の決まり（FR-009）。
+
+    30 分刻み、10:00 から、終わり（＋1 時間 30 分）が 17:00 まで。
+    """
+    minutes = start.hour * 60 + start.minute
+    open_minutes = VISIT_OPEN.hour * 60
+    close_minutes = VISIT_CLOSE.hour * 60
+    if start.second or minutes % START_STEP_MINUTES:
+        raise VisitInvalidInput(f"start_time: {start}")
+    if minutes < open_minutes or minutes + VISIT_MINUTES > close_minutes:
+        raise VisitInvalidInput(f"start_time: {start}")
+
+
+def update_visit_settings(
+    session: Session, facility_id: int, staff_id: int, daily_limit: int, start_times: list[time]
+) -> None:
+    """組数と開始時刻の候補を変える（003-T022）。決まりの外があれば何も変えない（422）。
+
+    候補から外した時刻は active を false にするだけで、
+    すでに入っている予約はそのまま残す（FR-009）。
+    commit しない。
+    """
+    if daily_limit < 1 or not start_times:
+        raise VisitInvalidInput(f"daily_limit: {daily_limit}, start_times: {len(start_times)}")
+    for start in start_times:
+        _check_candidate(start)
+    wanted = set(start_times)
+
+    setting = session.get(VisitSetting, facility_id)
+    if setting is None:
+        setting = VisitSetting(facility_id=facility_id)
+        session.add(setting)
+    setting.daily_limit = daily_limit
+    setting.updated_by = staff_id
+    setting.updated_at = func.now()
+
+    existing = {
+        row.start_time: row
+        for row in session.scalars(
+            select(VisitStartTime).where(VisitStartTime.facility_id == facility_id)
+        )
+    }
+    for start, row in existing.items():
+        row.active = start in wanted
+    for start in wanted - set(existing):
+        session.add(VisitStartTime(facility_id=facility_id, start_time=start, active=True))
+    session.flush()
+
+
+def list_closed_days(
+    session: Session, facility_id: int, date_from: date, date_to: date
+) -> list[VisitClosedDay]:
+    """休みの日の一覧（日付の順）。"""
+    if date_to < date_from:
+        raise VisitInvalidInput(f"range: {date_from}..{date_to}")
+    return list(
+        session.scalars(
+            select(VisitClosedDay)
+            .where(
+                VisitClosedDay.facility_id == facility_id,
+                VisitClosedDay.closed_date >= date_from,
+                VisitClosedDay.closed_date <= date_to,
+            )
+            .order_by(VisitClosedDay.closed_date)
+        )
+    )
+
+
+def _clean_reason(reason: str | None) -> str:
+    cleaned = (reason or "").strip()
+    if not cleaned or len(cleaned) > CANCEL_REASON_MAX:
+        raise VisitInvalidInput("reason")
+    return cleaned
+
+
+def cancel_by_staff(
+    session: Session,
+    facility_id: int,
+    staff_id: int,
+    reservation_id: int,
+    reason: str | None,
+    at: datetime | None = None,
+) -> VisitReservation:
+    """職員が予約を取り消す（理由は必須。締め切りはない。FR-012）。予約済みでなければ 404。
+
+    家族へのお知らせ（create_visit_notice の visit_cancelled）は、
+    003-T031（#124）で、この関数のあとに足す。
+    commit しない。
+    """
+    cleaned = _clean_reason(reason)
+    reservation = session.scalars(
+        select(VisitReservation)
+        .where(
+            VisitReservation.id == reservation_id,
+            VisitReservation.facility_id == facility_id,
+            VisitReservation.status == "booked",
+        )
+        .with_for_update()
+    ).one_or_none()
+    if reservation is None:
+        raise VisitNotFound(f"reservation_id: {reservation_id}")
+    reservation.status = "cancelled_by_staff"
+    reservation.cancel_reason = cleaned
+    reservation.cancelled_by_staff_id = staff_id
+    reservation.cancelled_at = at or func.now()
+    session.flush()
+    return reservation
+
+
+def close_day(
+    session: Session,
+    facility_id: int,
+    staff_id: int,
+    closed_date: date,
+    *,
+    confirm_cancel: bool = False,
+    reason: str | None = None,
+    at: datetime | None = None,
+) -> tuple[VisitClosedDay, list[VisitReservation]]:
+    """その日を休みにする（003-T023・FR-010・R-08）。休みの日と、取り消した予約を返す。
+
+    その日に予約済みがあれば、confirm_cancel を付けないと 409（件数つき）。
+    付けたら、理由を必須にして、その日の予約をすべて職員の取り消しにしてから休みにする
+    （1 つのトランザクション）。
+    今日より前の日は 422。もう休みの日なら、そのまま返す。commit しない。
+    """
+    if closed_date < now_jst(at).date():
+        raise VisitInvalidInput(f"closed_date: {closed_date}")
+    # 予約（book_visit）と同じ、その日だけの順番待ち
+    _wait_for_day(session, closed_date)
+    existing = session.scalars(
+        select(VisitClosedDay).where(
+            VisitClosedDay.facility_id == facility_id, VisitClosedDay.closed_date == closed_date
+        )
+    ).one_or_none()
+    if existing is not None:
+        return existing, []
+
+    booked = _booked(session, facility_id, closed_date, closed_date)
+    if booked and not confirm_cancel:
+        raise VisitDayHasReservations(len(booked))
+    cancelled = [
+        cancel_by_staff(session, facility_id, staff_id, reservation.id, reason, at)
+        for reservation in booked
+    ]
+    closed_day = VisitClosedDay(
+        facility_id=facility_id, closed_date=closed_date, created_by=staff_id
+    )
+    session.add(closed_day)
+    session.flush()
+    return closed_day, cancelled
+
+
+def open_day(session: Session, facility_id: int, closed_day_id: int) -> None:
+    """休みを取り消す（003-T023）。取り消した予約は戻さない。ない休みの日は 404。commit しない。"""
+    closed_day = session.scalars(
+        select(VisitClosedDay).where(
+            VisitClosedDay.id == closed_day_id, VisitClosedDay.facility_id == facility_id
+        )
+    ).one_or_none()
+    if closed_day is None:
+        raise VisitNotFound(f"closed_day_id: {closed_day_id}")
+    session.delete(closed_day)
+    session.flush()
+
+
+@dataclass(frozen=True)
+class StaffReservation:
+    id: int
+    visit_date: date
+    start_time: time
+    resident_id: int
+    resident_name: str  # 入居者の呼び名（職員向け）
+    room: str
+    party_size: int
+    status: str
+    created_at: datetime  # 予約した日時
+    cancel_reason: str | None
+
+
+def list_reservations(
+    session: Session,
+    facility_id: int,
+    date_from: date,
+    date_to: date,
+    *,
+    booked_only: bool = False,
+) -> list[StaffReservation]:
+    """職員向けの予約の一覧（日時の順。003-T024・FR-011）。期間は 31 日まで。"""
+    if date_to < date_from or (date_to - date_from).days >= MAX_AVAILABILITY_DAYS:
+        raise VisitInvalidInput(f"range: {date_from}..{date_to}")
+    query = (
+        select(VisitReservation, Resident.display_name, Resident.room)
+        .join(Resident, Resident.id == VisitReservation.resident_id)
+        .where(
+            VisitReservation.facility_id == facility_id,
+            VisitReservation.visit_date >= date_from,
+            VisitReservation.visit_date <= date_to,
+        )
+        .order_by(VisitReservation.visit_date, VisitReservation.start_time, VisitReservation.id)
+    )
+    if booked_only:
+        query = query.where(VisitReservation.status == "booked")
+    return [
+        StaffReservation(
+            id=row.id,
+            visit_date=row.visit_date,
+            start_time=row.start_time,
+            resident_id=row.resident_id,
+            resident_name=name,
+            room=room,
+            party_size=row.party_size,
+            status=row.status,
+            created_at=row.created_at,
+            cancel_reason=row.cancel_reason,
+        )
+        for row, name, room in session.execute(query)
+    ]

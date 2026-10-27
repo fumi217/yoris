@@ -44,6 +44,25 @@ class VisitStartTime(Base):
     active: Mapped[bool] = mapped_column(server_default=text("true"))
 
 
+class VisitClosedDay(Base):
+    """面会がお休みの日（日本時間の日付。spec 003 の 003-T020・FR-010）。
+
+    休みの日は予約できず、空きも選べない（visit_closed_day）。予約が入っている日を休みにするときは、
+    その日の予約を先に職員の取り消しにする（research.md R-08。services/visits.py の close_day）。
+    """
+
+    __tablename__ = "visit_closed_days"
+    __table_args__ = (
+        Index("uq_visit_closed_days_facility_date", "facility_id", "closed_date", unique=True),
+    )
+
+    id: Mapped[int] = mapped_column(Identity(), primary_key=True)
+    facility_id: Mapped[int] = mapped_column(ForeignKey("facilities.id"))
+    closed_date: Mapped[date]
+    created_by: Mapped[int] = mapped_column(ForeignKey("staff.id"))
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
 class VisitReservation(Base):
     """面会予約。"""
 
