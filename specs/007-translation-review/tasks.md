@@ -59,7 +59,7 @@ spec 004 の 004-T003（`LLMClient`）・004-T004（テスト用の LLM（モッ
 - [ ] T008 [US1] 機械の目を `backend/app/memos/checks.py` に作る：`medical_added`・`medical_in_original`・`length_changed`・`other_name`・`urgent_words` の印を返す。医療・緊急の言葉は spec 004 の `guard.py`（004-T009）の一覧を使い回し、ほかの入居者の呼び名は `residents.display_name` から取る（research.md R-03、FR-016）（みさき・作）
 - [x] T009 [US1] メモの保存と「日本語にする」を `backend/app/memos/service.py` に作る：下書きを先に保存してから AI を呼ぶ。整えた日本語・訳し戻し・印を保存し、`care_memo_revisions` に履歴を足す（research.md R-09、FR-004）（みさき・ミ）
 - [x] T010 [US1] `POST /api/staff/residents/{id}/memos`・`GET /api/staff/memos`・`GET /api/staff/memos/{id}`・`POST /api/staff/memos/{id}/rewrite` を `backend/app/api/staff/memos.py` に作る：役割は介護職員・リーダー、本人以外は 404（contracts/api.md）（みさき・ミ）
-- [ ] T011 [US1] 書く画面を `frontend/src/pages/staff/MemoEditor.tsx` に作る：原文の言語を選べる（初期値は職員の表示言語）、「日本語にする」、原文と整えた日本語を並べる、AI が止まったときの案内、画面の上に「急変・事故は、すぐに電話で」（FR-001・FR-003・FR-016・FR-020・research.md R-12）（みさき・ミ）
+- [x] T011 [US1] 書く画面を `frontend/src/pages/staff/MemoEditor.tsx` に作る：原文の言語を選べる（初期値は職員の表示言語）、「日本語にする」、原文と整えた日本語を並べる、AI が止まったときの案内、画面の上に「急変・事故は、すぐに電話で」（FR-001・FR-003・FR-016・FR-020・research.md R-12）（みさき・ミ）
 - [ ] T012 [US1] 「様子のメモを書く」ボタンを、入居者を選んだあとの職員の画面（001-T032 の画面）に置き、T011 の画面に進めるようにする（**ゆう**・ミ）
 - [ ] T013 [US1] 1 日 3 件：新しく書くとき、職員の行を `FOR UPDATE` で押さえて、その入居者のその日の `withdrawn` 以外を数え、3 件以上なら 409 `memo_limit`（research.md R-06、FR-001）（みさき・作）
 - [ ] T014 [US1] やり直しの上限：1 つのメモで `care_memo_revisions` が 5 件に達したら 409 `rewrite_limit`（research.md R-08）（みさき・作）

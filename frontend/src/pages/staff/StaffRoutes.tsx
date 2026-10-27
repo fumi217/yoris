@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router'
 import { AreaGuard } from '../../components/AreaGuard'
 import { FamilyMessage } from './FamilyMessage'
 import { FamilyMessages } from './FamilyMessages'
+import { MemoEditor } from './MemoEditor'
 import { RecordPage } from './RecordPage'
 import { ReplyPage } from './ReplyPage'
 import { ResidentList } from './ResidentList'
@@ -18,6 +19,8 @@ export default function StaffRoutes() {
           <Route index element={<ResidentList />} />
           {/* 記録の画面（UI-S02。001-T032 ゆう） */}
           <Route path="residents/:residentId" element={<RecordPage />} />
+          {/* 様子のメモを書く（UI-S05。007-T011 みさき。介護職員・リーダー。守りは API の 403） */}
+          <Route path="residents/:residentId/memos/new" element={<MemoEditor />} />
           {/* 連絡帳の見返し（UI-S04。001-T033 ゆう） */}
           <Route path="residents/:residentId/contact-book" element={<StaffContactBook />} />
           {/* 職員の返事（UI-S03。001-T062 ゆう） */}
