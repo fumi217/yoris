@@ -15,3 +15,5 @@ bcrypt==5.0.0
 stripe==16.0.0
 # AI：OpenAI Python SDK の接続先を OpenRouter に向けて使う（技術選定 5 章。spec 004 の research.md R-01）
 openai==3.26.1
+# ログ：開発は読みやすい形式、本番は JSON（spec 001 の research.md R-18。技術選定 7 章で選定済み）
+structlog==26.1.0

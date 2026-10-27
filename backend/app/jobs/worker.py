@@ -10,6 +10,7 @@ import threading
 import time
 
 from app.jobs.run import run_jobs
+from app.logging import configure_logging
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ INTERVAL_SECONDS = 60
 
 
 def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    configure_logging()
     stop = threading.Event()
     # docker compose stop / restart で、きれいに止まれるように
     signal.signal(signal.SIGTERM, lambda *_: stop.set())

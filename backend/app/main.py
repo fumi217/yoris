@@ -19,6 +19,7 @@ from app.auth import routes as auth_routes
 from app.auth.csrf import RequireFetchHeaderMiddleware
 from app.config import get_settings
 from app.errors import register_error_handlers
+from app.logging import configure_logging
 
 
 def create_app() -> FastAPI:
@@ -62,4 +63,5 @@ def create_app() -> FastAPI:
     return app
 
 
+configure_logging()
 app = create_app()
