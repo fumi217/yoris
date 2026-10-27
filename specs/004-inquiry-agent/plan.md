@@ -122,8 +122,8 @@ backend/
 
 frontend/src/
 ├── pages/family/Inquiry.tsx         # 質問する（会話）
-├── pages/staff/FamilyMessages.tsx   # 家族からのメッセージの一覧
-├── pages/staff/FamilyMessage.tsx    # 詳細・担当・返事
+├── pages/staff/FamilyMessages.tsx   # 家族からのメッセージの一覧（職員の画面 /staff/messages と、管理画面 /admin/messages の両方から開く）
+├── pages/staff/FamilyMessage.tsx    # 詳細・担当・返事（同じく両方から。一覧と詳細は、開いた側の URL の下でつなぐ）
 └── i18n/ja.json ほか                # 文言・質問の種類・返事の定型文
 ```
 
