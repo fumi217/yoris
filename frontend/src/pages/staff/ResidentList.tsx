@@ -73,10 +73,12 @@ function ResidentItem({ row }: { row: ResidentRow }) {
   const { t } = useTranslation()
 
   return (
-    <li>
+    // 行の大部分は記録の画面へのリンク。📩 だけは、その入居者の家族からのメッセージの一覧への
+    // 別のリンクにする（リンクの中にリンクは置けないため、横に並べる。#241）
+    <li className="flex items-stretch hover:bg-gray-50">
       <Link
         to={`/staff/residents/${row.id}`}
-        className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 p-4 hover:bg-gray-50"
+        className="flex flex-1 flex-wrap items-center justify-between gap-x-4 gap-y-2 p-4"
       >
         <span className="flex items-baseline gap-3">
           <span className="w-10 text-sm text-gray-600">{row.room}</span>
@@ -96,15 +98,20 @@ function ResidentItem({ row }: { row: ResidentRow }) {
               label={t('resident_list.waiting_requests', { count: row.waiting_requests })}
             />
           )}
-          {row.waiting_messages > 0 && (
-            <Count
-              icon="📩"
-              count={row.waiting_messages}
-              label={t('resident_list.waiting_messages', { count: row.waiting_messages })}
-            />
-          )}
         </span>
       </Link>
+      {row.waiting_messages > 0 && (
+        <Link
+          to={`/staff/messages?resident_id=${row.id}`}
+          className="flex items-center px-4 text-sm text-sky-700"
+        >
+          <Count
+            icon="📩"
+            count={row.waiting_messages}
+            label={t('resident_list.waiting_messages', { count: row.waiting_messages })}
+          />
+        </Link>
+      )}
     </li>
   )
 }

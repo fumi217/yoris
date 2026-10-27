@@ -88,4 +88,16 @@ describe('ResidentTable', () => {
   it('入居者がいなければ、そう伝える', () => {
     expect(render([])).toContain('いません')
   })
+
+  it('📩 の件数から、その入居者の家族からのメッセージの一覧へ進む', () => {
+    const html = render([row({ id: 7, waiting_messages: 2 })])
+
+    expect(html).toContain('href="/staff/messages?resident_id=7"')
+    // リンクの中にリンクを入れない（記録の画面へのリンクとは別に並べる）
+    expect(html).not.toMatch(/<a[^>]*>(?:(?!<\/a>).)*<a /)
+  })
+
+  it('📩 がなければ、メッセージへのリンクは出さない', () => {
+    expect(render([row({ waiting_messages: 0 })])).not.toContain('resident_id=')
+  })
 })
