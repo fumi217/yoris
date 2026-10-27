@@ -158,6 +158,19 @@ export function RecordView({
         </Link>
       )}
 
+      {/* 写真・様子のメモの入り口（docs/画面設計.md の「5」の 4）。横 1 列に並べる。
+          様子のメモ（007-T012・#127）は、みさきの画面ができたら同じ列に足す */}
+      <div className="flex flex-wrap gap-2 text-sm">
+        {/* 写真を載せる（spec 005 の T015。職員の 4 つの役割すべて。画面はさとこ） */}
+        <Link
+          to={`/staff/residents/${resident.id}/album`}
+          className="rounded border border-gray-300 px-3 py-2"
+        >
+          <span aria-hidden="true">📷 </span>
+          <Text k="record_page.album" />
+        </Link>
+      </div>
+
       <p role="status" aria-live="polite" className="min-h-6 text-sm">
         {errorKey ? (
           <span className="text-red-700">

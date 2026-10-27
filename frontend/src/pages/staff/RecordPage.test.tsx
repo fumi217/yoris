@@ -136,4 +136,8 @@ describe('RecordView', () => {
     expect(choices.length).toBeGreaterThan(0)
     expect(choices.every((button) => button.includes('disabled=""'))).toBe(true)
   })
+
+  it('「写真を載せる」から、その入居者の写真の画面へ進む', () => {
+    expect(render()).toContain('href="/staff/residents/3/album"')
+  })
 })
