@@ -139,7 +139,7 @@ def test_expired_key_is_recreated_with_new_stripe_key(client, session, fake_stri
     assert response.status_code == 200
     application = session.scalars(select(BillingApplication)).one()
     assert application.id != old_id
-    # Stripe の冪等キーは申し込みの行ごとに別（signup-<id>）なので、申し込みの id が違う
+    # Stripe の冪等キーは申し込みの行ごとに別（signup-<id>-<時刻>）なので、申し込みの id が違う
     assert [call["application_id"] for call in fake_stripe.created] == [old_id, application.id]
 
 

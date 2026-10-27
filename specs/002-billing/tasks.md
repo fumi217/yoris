@@ -71,7 +71,7 @@ spec 001 のタスクは「001-T009」のように書く（[spec 001 の tasks.m
 
 ### Implementation for User Story 1
 
-- [X] T017 [US1] `GET /api/billing/signup`・`POST /api/billing/signup` を `backend/app/api/billing.py` に作る（ログインなし）：施設がすでにあれば 404 `not_found`（理由は出さない）、入力を確かめ（2 回のメールアドレスが同じ、T007 のパスワードの決まり）、同じ `idempotency_key` があればその `checkout_url` を返す（期限が過ぎていれば行を消して作り直す）、なければ申し込みを作って T010 で Checkout Session を作り（Stripe の冪等キーは `signup-<申し込みの id>`）、`client_reference_id` に申し込みの id を入れる。行の追加から `checkout_url` を書くまでを 1 つのトランザクションにし、同じ `idempotency_key` がほぼ同時に届いたら、2 つ目は `INSERT ... ON CONFLICT DO NOTHING` で 1 つ目の確定を待ってから行を読み直して同じ URL を返す（Stripe に頼み直さない）。Checkout の `cancel_url` は `/signup?canceled=1&key=<idempotency_key>`。Stripe を呼べなければ申し込みを消して 502 `payment_service_unavailable`。あわせて `POST /api/billing/signup/cancel`（`pending` の申し込みだけ、支払い画面を失効させて行を消す。それ以外は何もせず 204）を作る（contracts/api.md、R-02・R-07・R-12）（ミ）
+- [X] T017 [US1] `GET /api/billing/signup`・`POST /api/billing/signup` を `backend/app/api/billing.py` に作る（ログインなし）：施設がすでにあれば 404 `not_found`（理由は出さない）、入力を確かめ（2 回のメールアドレスが同じ、T007 のパスワードの決まり）、同じ `idempotency_key` があればその `checkout_url` を返す（期限が過ぎていれば行を消して作り直す）、なければ申し込みを作って T010 で Checkout Session を作り（Stripe の冪等キーは `signup-<申し込みの id>-<頼む時刻（秒）>`）、`client_reference_id` に申し込みの id を入れる。行の追加から `checkout_url` を書くまでを 1 つのトランザクションにし、同じ `idempotency_key` がほぼ同時に届いたら、2 つ目は `INSERT ... ON CONFLICT DO NOTHING` で 1 つ目の確定を待ってから行を読み直して同じ URL を返す（Stripe に頼み直さない）。Checkout の `cancel_url` は `/signup?canceled=1&key=<idempotency_key>`。Stripe を呼べなければ申し込みを消して 502 `payment_service_unavailable`。あわせて `POST /api/billing/signup/cancel`（`pending` の申し込みだけ、支払い画面を失効させて行を消す。それ以外は何もせず 204）を作る（contracts/api.md、R-02・R-07・R-12）（ミ）
 - [X] T018 [US1] `POST /api/billing/webhook` を `backend/app/api/billing.py` に作る：本文をそのまま T010 の署名の確認にかけ、だめなら 400 とログ（WARNING、「確かめられなかった」だけ）。`billing_events` に `stripe_event_id` を足す処理と知らせの処理を 1 つのトランザクションで行い、すでにある id なら何もせず 200。失敗は 500（R-03・R-13）（ミ）
 - [X] T019 [US1] `checkout.session.completed` の処理を `backend/app/services/billing.py` に作る：`pg_advisory_xact_lock` で 1 つずつにし、申し込みを `FOR UPDATE` で押さえ、`completed`・`rejected` なら何もしない。施設がすでにあれば、T010 でその Stripe の契約を解約し、`rejected` にしてログ。なければ T010 で顧客の名前を施設名にし、 `facilities`（`billing_email`・`stripe_customer_id`）・`users`（`kind=staff`、T006 の `login_id`、申し込みの `password_hash`）・`staff`（`role=director`、`display_name`＝施設長の名前）・`facility_subscriptions`（`active`、`stripe_subscription_id`・`current_period_end`）・`subscription_status_histories` を作り、申し込みを `completed` にする。`completed`・`rejected` のどちらでも、申し込みの `password_hash`・`facility_name`・`director_name`・`contact_email` を消す。Stripe を呼ぶ操作は DB を確定する前に行い、失敗したら 500。再送に備え、解約は Subscription を読み直してすでに `canceled` なら呼ばない（「すでに解約済み」のエラーも成功として扱う）（R-04）（ミ）
 - [X] T020 [US1] `checkout.session.expired` の処理を `backend/app/services/billing.py` に足す：`pending` の申し込みの行を消す（FR-006、R-07）（ミ）
@@ -82,7 +82,7 @@ spec 001 のタスクは「001-T009」のように書く（[spec 001 の tasks.m
 - [X] T025 [P] [US1] 申し込み完了の画面を `frontend/src/pages/signup/SignupComplete.tsx` に作る：`session_id` で T021 を 3 秒ごとに読み、`confirming` の間は「お支払いを確認しています」、`completed` で ID と「控えてください」（メールの一文はまだ出さない）とログイン画面へのボタンを出し、`localStorage` の `idempotency_key` を消す（US1 のシナリオ 2・4、R-12）（ミ）
 - [X] T026 [P] [US1] 利用料のお支払いの画面を `frontend/src/pages/admin/Billing.tsx` に作る：ミニマム版は契約の状態（契約中など）とプラン名・月額だけ（US1 の Independent Test）（ミ）
 - [X] T027 [US1] 001-T019 の画面の枠に、`/signup`・`/signup/complete` をログインなしの枠に、`/admin/billing` を管理画面の枠（施設長・事務員だけ。介護職員などには「この画面を使う権限がありません」）に足す（FR-007）（ミ）
-- [ ] T028 [US1] quickstart.md の「通しの確認」1〜7 と「ぶつかる場面・守りの確認」を手で通す（Stripe のテスト環境と Stripe CLI を使う）（ミ・Day 3）
+- [X] T028 [US1] quickstart.md の「通しの確認」1〜7 と「ぶつかる場面・守りの確認」を手で通す（Stripe のテスト環境と Stripe CLI を使う）（ミ・Day 3）
 - [ ] T029 [US1] ID を書いたメール：`email_outbox` にテンプレート `owner_account`（params は `login_id` とログイン画面のリンクだけ。パスワードは入れない、末尾に「心当たりがない場合は、このメールを破棄してください」）を足し、T019 のトランザクションの中で送る予定を作る。完了の画面に「同じ内容をメールでもお送りしました」を足す（FR-005、R-08。さとこの 001-T048・001-T057 のあと）（作）
 - [ ] T030 [US1] 申し込みを同時に 1 つだけにする：T017 で、期限内の `pending` があれば 409 `signup_in_progress`。テストを T014 に足す（FR-014、R-07）（作）
 - [ ] T031 [US1] 申し込みの回数の制限：Redis の `ratelimit:signup:<接続元>`（期限つき）で、短い時間に何度も申し込まれたら 429 `too_many_attempts`。テストを T014 に足す（FR-027）（作）
@@ -124,7 +124,7 @@ spec 001 のタスクは「001-T009」のように書く（[spec 001 の tasks.m
 ## Phase 6: Polish & Cross-Cutting Concerns（作り込み・仕上げ）
 
 - [ ] T040 [P] Stripe の鍵を、必要な操作（Checkout・Subscription の読み取り・Customer Portal）だけができる制限付きの鍵に替え、漏れたときの差し替えの手順を quickstart.md に書く（FR-026）（作）
-- [ ] T041 [P] 申し込みページ・完了・利用料のお支払いの文言にふりがなを付け、インドネシア語・英語の辞書に足す（みさきの 001-T082・001-T083 の仕組みを使う。Constitution の UI 方針）（作）
+- [ ] T041 [P] 利用料のお支払いの文言にふりがなを付け、インドネシア語・英語の辞書に足す（申し込みページ・完了の画面は、ふりがななしと決めた。spec.md の Assumptions）（みさきの 001-T082・001-T083 の仕組みを使う。Constitution の UI 方針）（作）
 - [ ] T042 本番の Webhook の受け口を Stripe の管理画面に登録し、本番用の `STRIPE_WEBHOOK_SECRET` と `STRIPE_SECRET_KEY`（テスト環境の鍵）を Render に置く（001-T092 と一緒に）（作）
 - [ ] T043 quickstart.md の確認をすべて通し、`docs/テスト設計書.md` に決済のテストシナリオと結果を書く（Constitution の課題要件のテスト。001-T093 と一緒に）（作）
 

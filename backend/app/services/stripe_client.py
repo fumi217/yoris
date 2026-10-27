@@ -67,7 +67,10 @@ def create_checkout_session(
 ) -> CheckoutSession:
     """申し込みの支払い画面（Checkout Session。subscription モード）を作る。
 
-    - Stripe の冪等キーは `signup-<申し込みの id>`（ブラウザの idempotency_key は渡さない。R-12）
+    - Stripe の冪等キーは `signup-<申し込みの id>-<頼む時刻（秒）>`
+      （ブラウザの idempotency_key は渡さない。R-12）。時刻を足すのは、DB を作り直したときに
+      id が数え直しになり、24 時間以内に同じキーを別の中身で使うと Stripe に断られるため。
+      1 回の依頼の中では同じキーなので、通信の失敗の自動の送り直しには効く
     - 支払い画面の期限は 30 分後（R-07）
     - 「戻る」で戻る先は `/signup?canceled=1&key=<idempotency_key>`（R-07）
     """
@@ -86,7 +89,7 @@ def create_checkout_session(
             ),
             "expires_at": int(expires_at.timestamp()),
         },
-        options={"idempotency_key": f"signup-{application_id}"},
+        options={"idempotency_key": f"signup-{application_id}-{int(now.timestamp())}"},
     )
     return CheckoutSession(id=session.id, url=session.url or "", expires_at=expires_at)
 

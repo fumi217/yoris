@@ -16,7 +16,7 @@ type CompleteResult = {
 // アカウントができたかを聞き直す間隔（ミリ秒）。Webhook が届くまでの数秒だけ待つ
 const POLL_INTERVAL_MS = 3000
 // 読み直しを続ける長さ（ミリ秒）。Webhook が届かないとき、開いている間ずっと読み直さないように、
-// 2 分たったら止めて、少し待ってから読み直すよう案内する
+// 2 分たったら止めて、「もう一度確認する」ボタンを出す
 const POLL_LIMIT_MS = 2 * 60 * 1000
 
 /**
@@ -27,13 +27,14 @@ const POLL_LIMIT_MS = 2 * 60 * 1000
 export function SignupComplete() {
   const [params] = useSearchParams()
   const sessionId = params.get('session_id')
-  const [startedAt] = useState(() => Date.now())
+  // 読み直しを始めた時刻。「もう一度確認する」を押すと、ここから数え直す
+  const [startedAt, setStartedAt] = useState(() => Date.now())
   const [timedOut, setTimedOut] = useState(false)
 
   useEffect(() => {
     const timer = setTimeout(() => setTimedOut(true), POLL_LIMIT_MS)
     return () => clearTimeout(timer)
-  }, [])
+  }, [startedAt])
 
   const result = useQuery({
     queryKey: ['billing', 'complete', sessionId],
@@ -66,21 +67,84 @@ export function SignupComplete() {
         status={result.data.status}
         loginId={result.data.login_id}
         timedOut={timedOut}
+        onRetry={() => {
+          setStartedAt(Date.now())
+          setTimedOut(false)
+          void result.refetch()
+        }}
       />
     )
   if (result.isError) return <Message k={messageKeyOf(result.error)} />
   return <Message k="layout.loading" />
 }
 
+/** ブラウザがコピーに対応しているか（対応していなければ、コピーのボタンを出さない）。 */
+function canUseClipboard(): boolean {
+  return typeof navigator !== 'undefined' && typeof navigator.clipboard?.writeText === 'function'
+}
+
+/**
+ * ID をコピーするボタン。押したことが分かるように、押している間は少し沈み、
+ * 押したあとは、ボタン自体が「✓ コピーしました」の緑に変わり、そのままにする
+ * （ID をコピーするのは 1 回だけのことが多いので、元には戻さない。もう一度押してもよい）。
+ * 読み上げには、別の見えない文で伝える。
+ */
+function CopyButton({ text }: { text: string }) {
+  const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle')
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text)
+      setState('copied')
+    } catch {
+      setState('failed')
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <button
+        type="button"
+        onClick={copy}
+        className={`rounded border-2 px-3 py-2 font-bold transition active:scale-95 ${
+          state === 'copied'
+            ? 'border-green-700 bg-green-50 text-green-800'
+            : 'border-sky-700 text-sky-700 hover:bg-sky-50 active:bg-sky-100'
+        }`}
+      >
+        <Text k={state === 'copied' ? 'signup_complete.copied' : 'signup_complete.copy'} />
+      </button>
+      <span role="status" aria-live="polite" className="text-sm">
+        {state === 'copied' && (
+          <span className="sr-only">
+            <Text k="signup_complete.copied" />
+          </span>
+        )}
+        {state === 'failed' && (
+          <span className="text-red-700">
+            <Text k="signup_complete.copy_failed" />
+          </span>
+        )}
+      </span>
+    </div>
+  )
+}
+
 /** 画面の中身（テストではこれを直接出す）。 */
 export function CompleteView({
   status,
   loginId,
+  canCopy = canUseClipboard(),
   timedOut = false,
+  onRetry,
 }: {
   status: CompleteResult['status']
   loginId?: string
+  // コピーのボタンを出すか。テストでは、ブラウザの代わりにここで決める
+  canCopy?: boolean
   timedOut?: boolean
+  // 「もう一度確認する」ボタンを押したとき
+  onRetry?: () => void
 }) {
   return (
     <main className="mx-auto max-w-md space-y-6 p-6">
@@ -92,9 +156,20 @@ export function CompleteView({
         errorStep={status === 'not_completed' ? 2 : undefined}
       />
       {status === 'confirming' && (
-        <p role="status" aria-live="polite">
-          <Text k={timedOut ? 'signup_complete.slow' : 'signup_complete.confirming'} />
-        </p>
+        <>
+          <p role="status" aria-live="polite">
+            <Text k={timedOut ? 'signup_complete.slow' : 'signup_complete.confirming'} />
+          </p>
+          {timedOut && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="block w-full rounded border p-3 text-center text-lg"
+            >
+              <Text k="signup_complete.recheck" />
+            </button>
+          )}
+        </>
       )}
 
       {status === 'completed' && (
@@ -110,6 +185,7 @@ export function CompleteView({
               <p className="text-3xl font-bold tracking-wider" data-testid="login-id">
                 {loginId}
               </p>
+              {canCopy && <CopyButton text={loginId} />}
               <p className="font-bold text-red-700">
                 <Text k="signup_complete.keep" />
               </p>

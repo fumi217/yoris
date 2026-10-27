@@ -5,6 +5,13 @@ import { api, messageKeyOf } from '../../api/client'
 import { Message } from '../../components/Message'
 import { StepNavigation } from '../../components/StepNavigation'
 import { Text } from '../../components/Text'
+import {
+  FIELD_ORDER,
+  placeServerError,
+  validateSignup,
+  type FieldErrors,
+  type FieldName,
+} from './fieldErrors'
 import { SIGNUP_STEPS } from './steps'
 import { clearIdempotencyKey, getIdempotencyKey } from './idempotencyKey'
 
@@ -59,6 +66,8 @@ export function Signup() {
       api.post<{ checkout_url: string }>('/api/billing/signup', {
         idempotency_key: getIdempotencyKey(),
         ...values,
+        facility_name: values.facility_name.trim(),
+        director_name: values.director_name.trim(),
         email: values.email.trim(),
         email_confirm: values.email_confirm.trim(),
       }),
@@ -102,13 +111,55 @@ export function SignupForm({ plan, canceled, submitting, errorKey, onSubmit }: F
     email_confirm: '',
     password: '',
   })
-  const set = (name: keyof SignupValues) => (value: string) =>
+  // 送る前の確認で見つけた間違い（全部の欄をまとめて確かめて、欄ごとに辞書の文で伝える）
+  const [localErrors, setLocalErrors] = useState<FieldErrors>({})
+  // カーソルを移す先。ボタンを押したときに決める（同じ欄でも、押すたびに移すため id を変える）
+  const [focusRequest, setFocusRequest] = useState<{ field: FieldName; id: number } | null>(null)
+
+  // 文字を直した欄は、その欄のエラーを消す
+  const set = (name: FieldName) => (value: string) => {
     setValues((current) => ({ ...current, [name]: value }))
+    setLocalErrors((current) => {
+      if (!(name in current)) return current
+      const rest = { ...current }
+      delete rest[name]
+      return rest
+    })
+  }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
+    const errors = validateSignup(values)
+    setLocalErrors(errors)
+    // 間違いのある欄のうち、いちばん上にカーソルを移す
+    const first = FIELD_ORDER.find((name) => errors[name])
+    if (first) {
+      setFocusRequest((current) => ({ field: first, id: (current?.id ?? 0) + 1 }))
+      return
+    }
     onSubmit(values)
   }
+
+  // エラーは、その欄のすぐ下に出す。欄が決まらないものだけ、ボタンの上に出す
+  const server = errorKey ? placeServerError(errorKey) : null
+  const hasLocalErrors = Object.keys(localErrors).length > 0
+  const fieldErrors: FieldErrors = hasLocalErrors
+    ? localErrors
+    : server?.field
+      ? { [server.field]: server.key }
+      : {}
+  const formErrorKey = !hasLocalErrors && server && !server.field ? server.key : null
+
+  // カーソルは「ボタンを押したあと」だけ移す。「間違いのある欄が変わったとき」にすると、
+  // 文字を直してエラーが消えたとたんに、次の間違いの欄へカーソルが勝手に移ってしまう
+  useEffect(() => {
+    if (focusRequest) document.getElementById(focusRequest.field)?.focus()
+  }, [focusRequest])
+  // サーバーに断られたときは、その欄に移す
+  useEffect(() => {
+    const field = errorKey ? placeServerError(errorKey).field : null
+    if (field) document.getElementById(field)?.focus()
+  }, [errorKey])
 
   return (
     <main className="mx-auto max-w-md space-y-6 p-6">
@@ -133,20 +184,23 @@ export function SignupForm({ plan, canceled, submitting, errorKey, onSubmit }: F
         </p>
       )}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
         <Field
           name="facility_name"
           labelKey="signup.facility_name"
           value={values.facility_name}
           onChange={set('facility_name')}
           autoComplete="organization"
+          errorKey={fieldErrors.facility_name}
         />
         <Field
           name="director_name"
           labelKey="signup.director_name"
+          hintKey="signup.director_name_hint"
           value={values.director_name}
           onChange={set('director_name')}
           autoComplete="name"
+          errorKey={fieldErrors.director_name}
         />
         <Field
           name="email"
@@ -155,6 +209,7 @@ export function SignupForm({ plan, canceled, submitting, errorKey, onSubmit }: F
           value={values.email}
           onChange={set('email')}
           autoComplete="email"
+          errorKey={fieldErrors.email}
         />
         <Field
           name="email_confirm"
@@ -163,6 +218,7 @@ export function SignupForm({ plan, canceled, submitting, errorKey, onSubmit }: F
           value={values.email_confirm}
           onChange={set('email_confirm')}
           autoComplete="off"
+          errorKey={fieldErrors.email_confirm}
         />
         <Field
           name="password"
@@ -172,16 +228,12 @@ export function SignupForm({ plan, canceled, submitting, errorKey, onSubmit }: F
           value={values.password}
           onChange={set('password')}
           autoComplete="new-password"
-          // 半角の英数字と記号（空白を含む）で 8〜64 文字（サーバーの決まり。最後の確認はサーバー）
-          pattern="[ -~]{8,64}"
+          errorKey={fieldErrors.password}
         />
 
-        <p className="text-sm text-gray-600">
-          <Text k="signup.payment_note" />
-        </p>
-        {errorKey && (
+        {formErrorKey && (
           <p role="alert" className="text-red-700">
-            <Text k={errorKey} />
+            <Text k={formErrorKey} />
           </p>
         )}
         <button
@@ -204,29 +256,57 @@ type FieldProps = {
   value: string
   onChange: (value: string) => void
   autoComplete: string
-  pattern?: string
+  // この欄のエラー（辞書のキー）。あれば、欄を赤い枠にして、すぐ下に出す
+  errorKey?: string
 }
 
-function Field({ name, labelKey, hintKey, type = 'text', value, onChange, ...rest }: FieldProps) {
+function Field({
+  name,
+  labelKey,
+  hintKey,
+  type = 'text',
+  value,
+  onChange,
+  errorKey,
+  ...rest
+}: FieldProps) {
+  const errorId = `${name}-error`
+  const hintId = `${name}-hint`
   return (
     <label className="flex flex-col gap-1">
+      {/* デジタル庁の入力欄の並び：項目名（横に「※必須」）→ ヒント → 入力欄 → エラー */}
       {/* span で包む（flex の中で、ふりがなと文字が別の行に割れないように） */}
-      <span>
-        <Text k={labelKey} />
+      <span className="flex items-baseline gap-2">
+        <span>
+          <Text k={labelKey} />
+        </span>
+        <span className="text-sm text-red-700">
+          <Text k="signup.required" />
+        </span>
       </span>
+      {hintKey && (
+        <span id={hintId} className="text-sm text-gray-600">
+          <Text k={hintKey} />
+        </span>
+      )}
       <input
         id={name}
         name={name}
         type={type}
         required
+        aria-invalid={errorKey ? true : undefined}
+        aria-describedby={
+          [errorKey && errorId, hintKey && hintId].filter(Boolean).join(' ') || undefined
+        }
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="rounded border p-3 text-lg"
+        className={`rounded p-3 text-lg ${errorKey ? 'border-2 border-red-700 bg-red-50' : 'border'}`}
         {...rest}
       />
-      {hintKey && (
-        <span className="text-sm text-gray-600">
-          <Text k={hintKey} />
+      {errorKey && (
+        // 文頭は全角の「＊」（デジタル庁のエラーテキストの決まり）
+        <span id={errorId} role="alert" className="text-sm font-bold text-red-700">
+          ＊<Text k={errorKey} />
         </span>
       )}
     </label>

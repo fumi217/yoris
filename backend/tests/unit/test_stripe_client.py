@@ -49,10 +49,29 @@ def test_checkout_session_params(client):
     assert params["success_url"].endswith("/signup/complete?session_id={CHECKOUT_SESSION_ID}")
     # 30 分後（R-07）
     assert params["expires_at"] == int(now.timestamp()) + 30 * 60
-    # ブラウザの値ではなく、申し込みの行ごとのキー（R-12）
-    assert kwargs["options"] == {"idempotency_key": "signup-7"}
+    # ブラウザの値ではなく、申し込みの id と頼む時刻のキー（R-12）
+    assert kwargs["options"] == {"idempotency_key": f"signup-7-{int(now.timestamp())}"}
     assert session.id == "cs_test_1"
     assert client.v1.prices.list.call_args.kwargs["params"]["lookup_keys"] == ["monthly_standard"]
+
+
+def test_idempotency_key_differs_when_the_same_id_is_used_again(client):
+    """DB を作り直して同じ id が使われても、別の時刻なら別のキーになる（R-12）。"""
+    client.v1.checkout.sessions.create.return_value = MagicMock(id="cs_test_1", url="https://x")
+    first = datetime(2026, 10, 26, 3, 0, tzinfo=UTC)
+    second = datetime(2026, 10, 26, 4, 0, tzinfo=UTC)
+
+    for now in (first, second):
+        create_checkout_session(
+            application_id=1, idempotency_key="key", contact_email="d@example.test", now=now
+        )
+
+    keys = [
+        call.kwargs["options"]["idempotency_key"]
+        for call in client.v1.checkout.sessions.create.call_args_list
+    ]
+    assert len(set(keys)) == 2
+    assert all(key.startswith("signup-1-") for key in keys)
 
 
 def test_missing_price_is_an_error(client):
