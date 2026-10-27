@@ -167,6 +167,14 @@ describe('InquiryView', () => {
 
     expect(text).toContain('いまお答えできません')
   })
+
+  it('1 日の回数に達したときは、明日また使えることと電話の案内を出し、書いた文は残す（FR-024）', () => {
+    const html = render({ draft: 'お昼は？', errorKey: 'error.inquiry_limit' })
+
+    expect(visibleText(html)).toContain('今日の質問は上限に達しました。明日またご利用ください')
+    expect(visibleText(html)).toContain('お急ぎのときは、施設にお電話ください')
+    expect(html).toContain('お昼は？')
+  })
 })
 
 describe('inquiryView', () => {

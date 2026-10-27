@@ -16,7 +16,14 @@ from app.auth.deps import CurrentUser, require_family
 from app.db import get_session
 from app.errors import AppError, ErrorCode
 from app.inquiry.llm import LLMUnavailable
-from app.inquiry.service import MessageView, list_messages, send_message, to_views
+from app.inquiry.ratelimit import InquiryLimit, consume, release
+from app.inquiry.service import (
+    MessageView,
+    get_family_account_id,
+    list_messages,
+    send_message,
+    to_views,
+)
 from app.models.inquiry import FAMILY_BODY_MAX
 
 router = APIRouter(prefix="/api/family/inquiry", tags=["family"])
@@ -95,11 +102,21 @@ def send(
     text = body.body.strip()
     if not text:
         raise AppError(ErrorCode.VALIDATION_ERROR)
+    # AI を呼ぶ前に回数を数える。上限なら AI は呼ばない（家族 1 日 10 回・施設全体 1 日 300 回。
+    # FR-024・FR-027・SC-009）
+    try:
+        ticket = consume(get_family_account_id(session, user))
+    except InquiryLimit as error:
+        raise AppError(ErrorCode.INQUIRY_LIMIT) from error
     try:
         family_message, ai_message = send_message(session, user, text)
-    except LLMUnavailable as error:
-        # AI を呼ぶ前には何も書いていないので、取り消すものはない（FR-026）
-        raise AppError(ErrorCode.AI_UNAVAILABLE) from error
-    family_view, ai_view = to_views(session, user, [family_message, ai_message])
-    session.commit()
+        family_view, ai_view = to_views(session, user, [family_message, ai_message])
+        session.commit()
+    except Exception as error:
+        # 答えが出なかった発言は、回数に数えない（AI が止まったときなど。FR-026）。
+        # AI を呼ぶ前には何も書いていないので、取り消すデータはない
+        release(ticket)
+        if isinstance(error, LLMUnavailable):
+            raise AppError(ErrorCode.AI_UNAVAILABLE) from error
+        raise
     return SendOut(family=_out(family_view), ai=_out(ai_view))

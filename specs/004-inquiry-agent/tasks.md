@@ -127,9 +127,9 @@ US1 は、001-T038（`get_disclosed_records`）と 001-T054（`get_active_replie
 
 **Independent Test**: 家族で 1 日に 11 回送ると、11 回目は受け付けられず、AI も呼ばれない
 
-- [ ] T040 [US4] 1 日の回数の制限を `backend/app/inquiry/ratelimit.py` に作る：`ratelimit:inquiry:family:<家族アカウントID>:<YYYYMMDD>` と `ratelimit:inquiry:facility:<YYYYMMDD>`（日本時間・期限 2 日）を `INCR` と `EXPIRE` を同じパイプラインで行う。超えたら `DECR` で戻して 429 `inquiry_limit`。AI は呼ばない。Day 4 の通しのデモで何度も呼ぶ前に、学校の共有キーを使い切らないよう入れる（research.md R-07、FR-024・FR-027）（みさき・ミ）
-- [ ] T041 [US4] AI が止まったとき：`LLMUnavailable` で 503 `ai_unavailable` を返し、回数を戻す。画面に「いまお答えできません…」を出す。テスト `backend/tests/api/test_inquiry_limits.py` に「AI が止まったら 503 で回数に数えない」を足す（FR-026・SC-009）（みさき・作）
-- [ ] T042 [P] [US4] テスト `backend/tests/api/test_inquiry_limits.py`：11 回目は 429 でテスト用の LLM（モック）が呼ばれない、日付が変わるとまた送れる（SC-009）（みさき・ミ）
+- [x] T040 [US4] 1 日の回数の制限を `backend/app/inquiry/ratelimit.py` に作る：`ratelimit:inquiry:family:<家族アカウントID>:<YYYYMMDD>` と `ratelimit:inquiry:facility:<YYYYMMDD>`（日本時間・期限 2 日）を `INCR` と `EXPIRE` を同じパイプラインで行う。超えたら `DECR` で戻して 429 `inquiry_limit`。AI は呼ばない。Day 4 の通しのデモで何度も呼ぶ前に、学校の共有キーを使い切らないよう入れる（research.md R-07、FR-024・FR-027）（みさき・ミ）
+- [x] T041 [US4] AI が止まったとき：`LLMUnavailable` で 503 `ai_unavailable` を返し、回数を戻す。画面に「いまお答えできません…」を出す。テスト `backend/tests/api/test_inquiry_limits.py` に「AI が止まったら 503 で回数に数えない」を足す（FR-026・SC-009）（みさき・作）
+- [x] T042 [P] [US4] テスト `backend/tests/api/test_inquiry_limits.py`：11 回目は 429 でテスト用の LLM（モック）が呼ばれない、日付が変わるとまた送れる（SC-009）（みさき・ミ）
 
 **Checkpoint**: 使いすぎ・止まったときの案内ができた（quickstart の確認）
 

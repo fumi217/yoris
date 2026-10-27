@@ -80,12 +80,12 @@ def _is_hidden(message: InquiryMessage, disclosed: dict[str, SourceView]) -> boo
 def get_conversation(session: Session, user: CurrentUser) -> InquiryConversation | None:
     return session.scalars(
         select(InquiryConversation).where(
-            InquiryConversation.family_account_id == _family_account_id(session, user)
+            InquiryConversation.family_account_id == get_family_account_id(session, user)
         )
     ).one_or_none()
 
 
-def _family_account_id(session: Session, user: CurrentUser) -> int:
+def get_family_account_id(session: Session, user: CurrentUser) -> int:
     return session.scalars(
         select(FamilyAccount.id).where(FamilyAccount.user_id == user.user_id)
     ).one()
@@ -97,7 +97,7 @@ def _get_or_create_conversation(session: Session, user: CurrentUser) -> InquiryC
     family_account_id は一意なので、ぶつかったら何もしない（ON CONFLICT DO NOTHING）で読み直す
     （一意の違反で 500 にしない。PR #205 ようこ）。
     """
-    family_account_id = _family_account_id(session, user)
+    family_account_id = get_family_account_id(session, user)
     session.execute(
         insert(InquiryConversation)
         .values(family_account_id=family_account_id, resident_id=user.resident_id)
