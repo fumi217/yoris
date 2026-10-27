@@ -98,10 +98,10 @@ spec 001 のタスクは「001-T009」のように書く（[spec 001 の tasks.m
 
 **Independent Test**: 契約中の施設と、支払いに失敗した施設で「利用料のお支払い」を開き、状態と次の請求日が正しく出る（quickstart.md の「作り込みの確認」）
 
-- [ ] T033 [P] [US2] テスト `backend/tests/api/test_billing_webhook.py` に足す：`customer.subscription.updated` などを受けたら Stripe から読み直した状態に合わせる、「解約」のあとに古い「支払い完了」を送っても状態が戻らない（SC-008）、状態が変わったときだけ履歴が 1 件増える（FR-019）（作）
-- [ ] T034 [US2] `customer.subscription.created`・`updated`・`deleted`、`invoice.payment_failed`・`invoice.paid` の処理を `backend/app/services/billing.py` に足す：知らせの中身を信じず、T010 で Subscription を読み直して T011 の対応表で状態を決め、`current_period_end`・`cancel_at` を上書きし、変わったら履歴を足す（FR-009・FR-012・FR-019、R-03・R-05）（作）
-- [ ] T035 [US2] `GET /api/admin/billing` に `current_period_end`・`cancel_at` を足し、`frontend/src/pages/admin/Billing.tsx` に次の請求日、支払いに失敗のときの「お支払いに失敗しました」とカードを確かめる案内、解約予定のときのいつまで使えるかを出す（FR-018、US2 のシナリオ 1・2）（作）
-- [ ] T036 [US2] 家族・職員の画面に利用料の案内が出ないこと、契約の状態に関係なく使えることを確かめる（FR-017、US2 のシナリオ 3）。Stripe の管理画面で、支払い失敗のメール（決済サービスの標準の機能）をオンにする（FR-021）（作）
+- [X] T033 [P] [US2] テスト `backend/tests/api/test_billing_webhook.py` に足す：`customer.subscription.updated` などを受けたら Stripe から読み直した状態に合わせる、「解約」のあとに古い「支払い完了」を送っても状態が戻らない（SC-008）、状態が変わったときだけ履歴が 1 件増える（FR-019）（作）
+- [X] T034 [US2] `customer.subscription.created`・`updated`・`deleted`、`invoice.payment_failed`・`invoice.paid` の処理を `backend/app/services/billing.py` に足す：知らせの中身を信じず、T010 で Subscription を読み直して T011 の対応表で状態を決め、`current_period_end`・`cancel_at` を上書きし、変わったら履歴を足す（FR-009・FR-012・FR-019、R-03・R-05）（作）
+- [X] T035 [US2] `GET /api/admin/billing` に `current_period_end`・`cancel_at` を足し、`frontend/src/pages/admin/Billing.tsx` に次の請求日、支払いに失敗のときの「お支払いに失敗しました」とカードを確かめる案内、解約予定のときのいつまで使えるかを出す（FR-018、US2 のシナリオ 1・2）（作）
+- [X] T036 [US2] 家族・職員の画面に利用料の案内が出ないこと、契約の状態に関係なく使えることを確かめる（FR-017、US2 のシナリオ 3）。Stripe の管理画面で、支払い失敗のメール（決済サービスの標準の機能）をオンにする（FR-021）（作）
 
 **Checkpoint**: 支払いに失敗・解約が管理画面に反映される
 

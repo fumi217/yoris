@@ -41,11 +41,22 @@ const formatDate = (iso: string) =>
 
 /** 画面の中身（テストではこれを直接出す）。 */
 export function BillingView({ billing }: { billing: BillingInfo }) {
+  // 次に引き落とされるのは、契約中と支払いに失敗（Stripe が払い直しを試す）のときだけ
+  const charges = billing.status === 'active' || billing.status === 'payment_failed'
+  // 解約予定日は、解約予定のときだけ。Stripe が cancel_at を返さないときは、期間の終わり
+  const lastDay =
+    billing.status === 'cancel_scheduled' ? (billing.cancel_at ?? billing.current_period_end) : null
   return (
     <div className="space-y-6 p-4">
       <h1 className="text-xl font-bold">
         <Text k="billing.title" />
       </h1>
+      {billing.status === 'payment_failed' && (
+        <p role="alert" className="rounded border border-orange-700 bg-orange-50 p-3 text-sm">
+          <span aria-hidden="true">⚠️ </span>
+          <Text k="billing.payment_failed_note" />
+        </p>
+      )}
       <dl className="divide-y border-y">
         <Row labelKey="billing.status">
           <span className="font-bold">
@@ -56,12 +67,10 @@ export function BillingView({ billing }: { billing: BillingInfo }) {
           {billing.plan_name} {billing.amount_jpy.toLocaleString('ja-JP')}{' '}
           <Text k="billing.per_month" />
         </Row>
-        {billing.current_period_end && billing.status !== 'canceled' && (
+        {billing.current_period_end && charges && (
           <Row labelKey="billing.period_end">{formatDate(billing.current_period_end)}</Row>
         )}
-        {billing.cancel_at && (
-          <Row labelKey="billing.cancel_at">{formatDate(billing.cancel_at)}</Row>
-        )}
+        {lastDay && <Row labelKey="billing.cancel_at">{formatDate(lastDay)}</Row>}
       </dl>
     </div>
   )

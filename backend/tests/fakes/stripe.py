@@ -54,6 +54,28 @@ def completed_object(session_id: str, application_id: int, customer: str, subscr
     }
 
 
+def subscription_object(subscription: str, status: str = "active") -> dict:
+    """`customer.subscription.*` の知らせの中身。アプリはこの status を信じず、読み直す。"""
+    return {"id": subscription, "object": "subscription", "status": status}
+
+
+def invoice_object(subscription: str, *, legacy: bool = False) -> dict:
+    """`invoice.*` の知らせの中身。契約の ID は parent の下にある（2025 年以降の API）。
+
+    `legacy=True` は、古い API の版の形（請求書の直下の `subscription`）。
+    """
+    if legacy:
+        return {"id": "in_test_1", "object": "invoice", "subscription": subscription}
+    return {
+        "id": "in_test_1",
+        "object": "invoice",
+        "parent": {
+            "type": "subscription_details",
+            "subscription_details": {"subscription": subscription},
+        },
+    }
+
+
 @dataclass
 class FakeStripe:
     # 作った支払い画面（呼ばれた引数）
@@ -63,6 +85,13 @@ class FakeStripe:
     customer_names: dict[str, str] = field(default_factory=dict)
     # 契約の ID → 状態。テストで足す。なければ契約中（active）で返す
     subscription_states: dict[str, str] = field(default_factory=dict)
+    # 期間の終わりに解約する予定の契約の ID（cancel_at_period_end が true で、cancel_at も入る）
+    cancel_at_period_end: set[str] = field(default_factory=set)
+    # Customer Portal の「請求期間の終了時にキャンセル」と同じ形（実機で確かめた。R-05）：
+    # cancel_at_period_end は false のまま、cancel_at だけに期間の終わりが入る
+    cancel_at_only: set[str] = field(default_factory=set)
+    # 読み直した契約の ID（知らせの中身でなく、Stripe から読み直したかを確かめる）
+    retrieved: list[str] = field(default_factory=list)
     # True にすると、支払い画面を作るときに Stripe を呼べなかったことにする
     fail_create: bool = False
     # 失敗させるときの Stripe のエラーの文（送った値が入ることがある）
@@ -91,14 +120,17 @@ class FakeStripe:
         self.expired.append(session_id)
 
     def retrieve_subscription(self, subscription_id: str):
+        self.retrieved.append(subscription_id)
         status = self.subscription_states.get(subscription_id, "active")
-        item = SimpleNamespace(current_period_end=int(time.time()) + 30 * 24 * 3600)
+        period_end = int(time.time()) + 30 * 24 * 3600
+        flagged = subscription_id in self.cancel_at_period_end
+        dated = flagged or subscription_id in self.cancel_at_only
         return SimpleNamespace(
             id=subscription_id,
             status=status,
-            cancel_at_period_end=False,
-            cancel_at=None,
-            items=SimpleNamespace(data=[item]),
+            cancel_at_period_end=flagged,
+            cancel_at=period_end if dated else None,
+            items=SimpleNamespace(data=[SimpleNamespace(current_period_end=period_end)]),
         )
 
     def cancel_subscription(self, subscription_id: str) -> None:

@@ -12,6 +12,7 @@ from app.services.billing import to_app_status
 class FakeSubscription:
     status: str
     cancel_at_period_end: bool = False
+    cancel_at: int | None = None
 
 
 @pytest.mark.parametrize(
@@ -32,6 +33,17 @@ def test_active_with_cancel_at_period_end_is_cancel_scheduled():
     assert to_app_status(FakeSubscription("active", cancel_at_period_end=True)) == (
         "cancel_scheduled"
     )
+
+
+def test_active_with_only_cancel_at_is_cancel_scheduled():
+    # Customer Portal の「請求期間の終了時にキャンセル」は、cancel_at_period_end を立てず、
+    # cancel_at に日付を入れる（実機で確かめた。R-05）
+    assert to_app_status(FakeSubscription("active", cancel_at=1795747944)) == "cancel_scheduled"
+
+
+def test_cancel_at_does_not_change_other_statuses():
+    assert to_app_status(FakeSubscription("past_due", cancel_at=1795747944)) == "payment_failed"
+    assert to_app_status(FakeSubscription("canceled", cancel_at=1795747944)) == "canceled"
 
 
 @pytest.mark.parametrize("stripe_status", ["incomplete", "trialing", "paused", "something_new"])

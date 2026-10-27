@@ -17,7 +17,13 @@ from app.models.billing import (
     SubscriptionStatusHistory,
 )
 from app.models.core import Facility, Staff, User
-from tests.fakes.stripe import completed_object, event_body, signed_headers
+from tests.fakes.stripe import (
+    completed_object,
+    event_body,
+    invoice_object,
+    signed_headers,
+    subscription_object,
+)
 
 PASSWORD = "garden-lantern-42"
 
@@ -273,6 +279,199 @@ def test_failure_in_stripe_returns_500_and_can_be_retried(
     )
     assert send(client, body).status_code == 200
     assert count(session, Facility) == 1
+
+
+# 契約の状態の変化（T033・T034。US2・FR-009・FR-012・FR-019）
+
+
+def contracted(client, session) -> FacilitySubscription:
+    """申し込みを済ませ、契約中（sub_test_1）の施設を 1 つ作る。"""
+    signup(client)
+    completed(client, application_id(session))
+    return session.scalars(select(FacilitySubscription)).one()
+
+
+def histories(session) -> list[tuple[str | None, str, str | None]]:
+    rows = session.scalars(
+        select(SubscriptionStatusHistory).order_by(SubscriptionStatusHistory.id)
+    ).all()
+    return [(row.from_status, row.to_status, row.stripe_event_id) for row in rows]
+
+
+def test_subscription_updated_reads_stripe_again_and_records_history(client, session, fake_stripe):
+    subscription = contracted(client, session)
+    fake_stripe.subscription_states["sub_test_1"] = "past_due"
+    # 知らせの中身は「active」のまま。アプリは信じずに Stripe から読み直す（R-03）
+    body = event_body(
+        "evt_u1", "customer.subscription.updated", subscription_object("sub_test_1", "active")
+    )
+
+    assert send(client, body).status_code == 200
+
+    session.refresh(subscription)
+    assert subscription.status == "payment_failed"
+    assert fake_stripe.retrieved[-1] == "sub_test_1"
+    assert histories(session)[-1] == ("active", "payment_failed", "evt_u1")
+
+
+def test_cancel_scheduled_sets_last_day(client, session, fake_stripe):
+    subscription = contracted(client, session)
+    fake_stripe.cancel_at_period_end.add("sub_test_1")
+    body = event_body("evt_u1", "customer.subscription.updated", subscription_object("sub_test_1"))
+
+    send(client, body)
+
+    session.refresh(subscription)
+    assert subscription.status == "cancel_scheduled"
+    assert subscription.cancel_at is not None
+
+
+def test_portal_style_cancel_is_scheduled_and_undo_returns_to_active(client, session, fake_stripe):
+    # Customer Portal の解約は cancel_at だけが入る形で届く。取り消すと契約中に戻る（R-05）
+    subscription = contracted(client, session)
+    fake_stripe.cancel_at_only.add("sub_test_1")
+    update = event_body(
+        "evt_u1", "customer.subscription.updated", subscription_object("sub_test_1")
+    )
+    send(client, update)
+
+    session.refresh(subscription)
+    assert subscription.status == "cancel_scheduled"
+    assert subscription.cancel_at is not None
+
+    fake_stripe.cancel_at_only.clear()
+    undo = event_body("evt_u2", "customer.subscription.updated", subscription_object("sub_test_1"))
+    send(client, undo)
+
+    session.refresh(subscription)
+    assert subscription.status == "active"
+    assert subscription.cancel_at is None
+    assert [(a, b) for a, b, _ in histories(session)] == [
+        (None, "active"),
+        ("active", "cancel_scheduled"),
+        ("cancel_scheduled", "active"),
+    ]
+
+
+def test_failure_in_reading_subscription_returns_500_and_can_be_retried(
+    client, session, fake_stripe, monkeypatch
+):
+    # Stripe から契約を読み直せなかったら 500 を返し、知らせの記録も取り消す。
+    # Stripe が送り直したら、そのとき処理できる（R-03）
+    subscription = contracted(client, session)
+    body = event_body(
+        "evt_u1", "customer.subscription.updated", subscription_object("sub_test_1", "active")
+    )
+
+    def broken(subscription_id):
+        raise RuntimeError("stripe down")
+
+    monkeypatch.setattr("app.services.stripe_client.retrieve_subscription", broken)
+    from fastapi.testclient import TestClient
+
+    failing = TestClient(client.app, base_url="https://testserver", raise_server_exceptions=False)
+    response = failing.post("/api/billing/webhook", content=body, headers=signed_headers(body))
+    assert response.status_code == 500
+    assert (
+        session.scalar(select(BillingEvent).where(BillingEvent.stripe_event_id == "evt_u1")) is None
+    )
+
+    monkeypatch.setattr(
+        "app.services.stripe_client.retrieve_subscription", fake_stripe.retrieve_subscription
+    )
+    fake_stripe.subscription_states["sub_test_1"] = "past_due"
+    assert send(client, body).status_code == 200
+    session.refresh(subscription)
+    assert subscription.status == "payment_failed"
+
+
+def test_invoice_event_finds_subscription_under_parent(client, session, fake_stripe):
+    subscription = contracted(client, session)
+    fake_stripe.subscription_states["sub_test_1"] = "past_due"
+
+    send(client, event_body("evt_i1", "invoice.payment_failed", invoice_object("sub_test_1")))
+
+    session.refresh(subscription)
+    assert subscription.status == "payment_failed"
+
+
+def test_invoice_event_in_old_api_shape_finds_subscription(client, session, fake_stripe):
+    # Webhook の受け口が古い API の版だと、契約の ID は請求書の直下にある
+    subscription = contracted(client, session)
+    fake_stripe.subscription_states["sub_test_1"] = "past_due"
+
+    body = event_body("evt_i1", "invoice.payment_failed", invoice_object("sub_test_1", legacy=True))
+    send(client, body)
+
+    session.refresh(subscription)
+    assert subscription.status == "payment_failed"
+
+
+def test_invoice_without_subscription_is_ignored(client, session, fake_stripe):
+    # 契約につながらない請求書（1 回きりの請求など）は、何もせず 200
+    contracted(client, session)
+    body = event_body(
+        "evt_i2", "invoice.paid", {"id": "in_test_2", "object": "invoice", "parent": None}
+    )
+
+    assert send(client, body).status_code == 200
+    assert fake_stripe.retrieved == ["sub_test_1"]  # 申し込みのときの 1 回だけ
+
+
+def test_old_paid_after_deleted_does_not_bring_back_active(client, session, fake_stripe):
+    # SC-008：「解約」の知らせのあとに、古い「支払い完了」が届いても戻らない
+    subscription = contracted(client, session)
+    fake_stripe.subscription_states["sub_test_1"] = "canceled"
+
+    send(
+        client,
+        event_body(
+            "evt_d1", "customer.subscription.deleted", subscription_object("sub_test_1", "canceled")
+        ),
+    )
+    send(client, event_body("evt_old", "invoice.paid", invoice_object("sub_test_1")))
+
+    session.refresh(subscription)
+    assert subscription.status == "canceled"
+    assert histories(session) == [(None, "active", "evt_1"), ("active", "canceled", "evt_d1")]
+
+
+def test_history_grows_only_when_status_changes(client, session, fake_stripe):
+    subscription = contracted(client, session)
+    before = subscription.current_period_end
+
+    # 毎月の支払いが済んだ（状態は契約中のまま）。次の請求日だけ上書きする
+    response = send(client, event_body("evt_p1", "invoice.paid", invoice_object("sub_test_1")))
+
+    assert response.status_code == 200
+    session.refresh(subscription)
+    assert subscription.status == "active"
+    assert subscription.current_period_end >= before
+    assert len(histories(session)) == 1
+
+
+def test_unmapped_stripe_status_keeps_current_status(client, session, fake_stripe):
+    subscription = contracted(client, session)
+    fake_stripe.subscription_states["sub_test_1"] = "paused"
+
+    send(
+        client,
+        event_body("evt_u1", "customer.subscription.updated", subscription_object("sub_test_1")),
+    )
+
+    session.refresh(subscription)
+    assert subscription.status == "active"
+    assert len(histories(session)) == 1
+
+
+def test_subscription_event_for_unknown_subscription_is_ignored(client, session, fake_stripe):
+    # 施設を作る前に届く created や、断った申し込みの契約。何もせず 200
+    contracted(client, session)
+    body = event_body("evt_c9", "customer.subscription.created", subscription_object("sub_test_9"))
+
+    assert send(client, body).status_code == 200
+    assert session.scalars(select(FacilitySubscription)).one().status == "active"
+    assert "sub_test_9" not in fake_stripe.retrieved
 
 
 # 申し込み完了の確認（T021）

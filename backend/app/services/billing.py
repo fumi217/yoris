@@ -1,7 +1,7 @@
 """決済の処理（spec 002）。
 
 - Stripe の契約の状態からアプリの状態を決める対応表（T011・research.md R-05）
-- 申し込み（T017）・Webhook の知らせの処理（T019・T020）・完了の確認（T021）・
+- 申し込み（T017）・Webhook の知らせの処理（T019・T020・T034）・完了の確認（T021）・
   利用料の画面（T022）
 
 サービスの関数は commit しない（API の最後で 1 回 commit する。app/db.py）。
@@ -47,6 +47,7 @@ class SubscriptionLike(Protocol):
 
     status: str
     cancel_at_period_end: bool
+    cancel_at: int | None
 
 
 # Stripe の状態 → アプリの状態（R-05）。ここにない状態は「変えない」
@@ -62,7 +63,9 @@ _STATUS_MAP = {
 def to_app_status(subscription: SubscriptionLike) -> str | None:
     """アプリの契約の状態を返す。変えないときは None。
 
-    - `active` で、期間の終わりに解約する予定なら `cancel_scheduled`
+    - `active` で、解約する予定（`cancel_at_period_end`、または `cancel_at` に日付）なら
+      `cancel_scheduled`。Customer Portal の「請求期間の終了時にキャンセル」は、
+      `cancel_at_period_end` を立てず `cancel_at` だけを入れる（R-05）
     - `incomplete`・`trialing`・`paused`・表にない状態は、変えない
       （WARNING で状態のコードだけを出す）
     """
@@ -70,7 +73,7 @@ def to_app_status(subscription: SubscriptionLike) -> str | None:
     if status is None:
         logger.warning("アプリの状態に当てはめない Stripe の契約の状態: %s", subscription.status)
         return None
-    if status == "active" and subscription.cancel_at_period_end:
+    if status == "active" and (subscription.cancel_at_period_end or subscription.cancel_at):
         return "cancel_scheduled"
     return status
 
@@ -229,6 +232,8 @@ def handle_event(session: Session, event: Any) -> None:
         _on_checkout_completed(session, event)
     elif event.type == "checkout.session.expired":
         _on_checkout_expired(session, event)
+    elif event.type in _SUBSCRIPTION_EVENTS:
+        _on_subscription_changed(session, event)
     else:
         logger.info("扱わない知らせ: event=%s type=%s", event.id, event.type)
 
@@ -338,6 +343,82 @@ def _on_checkout_expired(session: Session, event: Any) -> None:
             BillingApplication.status == "pending",
         )
     )
+
+
+# 契約の状態を読み直して合わせる知らせ（T034。R-03・R-05）
+_SUBSCRIPTION_EVENTS = {
+    "customer.subscription.created",
+    "customer.subscription.updated",
+    "customer.subscription.deleted",
+    "invoice.payment_failed",
+    "invoice.paid",
+}
+
+
+def _subscription_id_of(event: Any) -> str | None:
+    """知らせから契約の ID を取り出す。
+
+    請求書（invoice）では、契約の ID は `parent.subscription_details` の下にある
+    （Stripe の 2025 年以降の API）。Webhook の受け口を古い API の版で作ってあると、
+    請求書の直下の `subscription` で届くので、そちらも読む。
+    """
+    obj = event.data.object
+    if event.type.startswith("customer.subscription."):
+        return getattr(obj, "id", None)
+    parent = getattr(obj, "parent", None)
+    details = getattr(parent, "subscription_details", None) if parent else None
+    return (getattr(details, "subscription", None) if details else None) or getattr(
+        obj, "subscription", None
+    )
+
+
+def _on_subscription_changed(session: Session, event: Any) -> None:
+    """Stripe から契約を読み直し、状態・次の請求日・使える最後の日を上書きする。
+
+    知らせの中身の状態は信じない。順番が入れ替わって古い知らせがあとから届いても、
+    読み直した結果は今の状態なので、戻らない（FR-012・SC-008）。
+    状態が変わったときだけ履歴を足す（FR-019）。
+
+    - 対応表にない状態（`incomplete` など）のときは、状態は変えないが、次の請求日と
+      解約予定日は、Stripe の今の値に合わせる（日付は状態とは別に、正しく保つため）
+    - Stripe を呼ぶあいだ、契約の行を `FOR UPDATE` で押さえている。施設が 1 つで知らせも少ないので
+      今は問題ない。複数の施設に広げるときは、Stripe を呼んでから行を押さえる形に見直す
+    """
+    subscription_id = _subscription_id_of(event)
+    row = None
+    if subscription_id:
+        row = session.scalars(
+            select(FacilitySubscription)
+            .where(FacilitySubscription.stripe_subscription_id == subscription_id)
+            .with_for_update()
+        ).one_or_none()
+    if row is None:
+        # 施設を作る前に届いた created や、断った申し込みの契約。施設を作るときに読み直す
+        logger.info("施設につながっていない契約の知らせ: event=%s type=%s", event.id, event.type)
+        return
+
+    subscription = stripe_client.retrieve_subscription(subscription_id)
+    row.current_period_end = _period_end(subscription)
+    row.cancel_at = _from_timestamp(subscription.cancel_at)
+    status = to_app_status(subscription)
+    if status is not None and status != row.status:
+        session.add(
+            SubscriptionStatusHistory(
+                facility_id=row.facility_id,
+                from_status=row.status,
+                to_status=status,
+                stripe_event_id=event.id,
+            )
+        )
+        logger.info(
+            "契約の状態が変わった: facility=%s %s→%s event=%s",
+            row.facility_id,
+            row.status,
+            status,
+            event.id,
+        )
+        row.status = status
+    session.flush()
 
 
 def _from_timestamp(value: int | None) -> datetime | None:

@@ -63,6 +63,20 @@ def test_not_logged_in_is_401(client, subscription):
     assert client.get("/api/admin/billing").status_code == 401
 
 
+@pytest.mark.parametrize("status", ["payment_failed", "canceled"])
+def test_family_and_staff_can_use_app_whatever_the_status(
+    client, make_staff, make_family, login_as, subscription, session, status
+):
+    # FR-017・US2 のシナリオ 3：支払いに失敗・解約済みでも、家族と職員は今までどおり使える
+    subscription.status = status
+    session.flush()
+
+    login_as(make_family().user_id)
+    assert client.get("/api/family/contact-book").status_code == 200
+    login_as(make_staff(role="care_worker").user_id)
+    assert client.get("/api/staff/residents").status_code == 200
+
+
 def test_connected_facility_can_manage_and_canceled_can_subscribe(
     client, make_staff, login_as, subscription, facility, session
 ):

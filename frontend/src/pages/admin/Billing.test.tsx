@@ -43,13 +43,45 @@ describe('BillingView', () => {
   it('状態ごとの文言を出す', () => {
     expect(render({ status: 'payment_failed' })).toContain('失敗しました')
     expect(render({ status: 'cancel_scheduled', cancel_at: '2026-12-01T00:00:00Z' })).toContain(
-      '使える最後の日',
+      '解約予定日',
     )
     expect(render({ status: 'canceled' })).toContain('解約済み')
   })
 
   it('解約済みでは、次の請求日を出さない', () => {
     expect(render({ status: 'canceled' })).not.toContain('次の請求日')
+  })
+
+  it('支払いに失敗したら、カードを確かめる案内を警告として出す（US2 のシナリオ 2）', () => {
+    const html = renderToStaticMarkup(
+      <BillingView billing={{ ...billing, status: 'payment_failed' }} />,
+    )
+
+    expect(html).toContain('role="alert"')
+    expect(textOf(html)).toContain('カードの有効期限などを確かめてください')
+    expect(textOf(html)).toContain('次の請求日')
+    expect(render()).not.toContain('カードの有効期限')
+  })
+
+  it('解約予定では、次の請求日の代わりに解約予定日を出す', () => {
+    const html = render({ status: 'cancel_scheduled', cancel_at: '2026-11-25T16:00:00Z' })
+
+    expect(html).not.toContain('次の請求日')
+    expect(html).toContain('解約予定日')
+    expect(html).toContain('2026年11月26日')
+  })
+
+  it('解約予定でなければ、cancel_at が残っていても解約予定日を出さない', () => {
+    for (const status of ['active', 'payment_failed', 'canceled'] as const) {
+      expect(render({ status, cancel_at: '2026-12-01T00:00:00Z' })).not.toContain('解約予定日')
+    }
+  })
+
+  it('解約予定で cancel_at がなければ、期間の終わりを解約予定日にする', () => {
+    const html = render({ status: 'cancel_scheduled', cancel_at: null })
+
+    expect(html).toContain('解約予定日')
+    expect(html).toContain('2026年11月26日')
   })
 
   it('日付は日本時間で出す（UTC の夜は、日本では翌日）', () => {

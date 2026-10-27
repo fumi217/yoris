@@ -85,11 +85,14 @@ Stripe の仕組みは、Stripe の公式ドキュメント（Checkout・Billing
   |---|---|---|
   | `active` | 契約中 | `active`（解約の予約なし） |
   | `payment_failed` | 支払いに失敗 | `past_due`・`unpaid` |
-  | `cancel_scheduled` | 解約予定 | `active` で `cancel_at_period_end = true` |
+  | `cancel_scheduled` | 解約予定 | `active` で、`cancel_at_period_end = true`、または `cancel_at` に日付がある |
   | `canceled` | 解約済み | `canceled`・`incomplete_expired` |
   | （変えない） | — | `incomplete`（最初の支払いの確認中）・`trialing`・`paused`（このアプリでは使わない）・表にないもの。今の状態のままにし、WARNING で状態のコードだけをログに出す |
 
   - 状態が変わったら `subscription_status_histories` に、いつ・どこから・どこへ・どの知らせで、を残す（FR-019）。
+  - 「解約予定」を `cancel_at_period_end` だけで決めてはいけない。Stripe の API の版 `2026-09-30` では、Customer Portal の「請求期間の終了時にキャンセル」は、
+    `cancel_at_period_end` が `false` のまま、`cancel_at` に期間の終わりの日付を入れる形で届く（2026-10-27 に、手元でポータルから解約して確かめた。`status: active`・`cancel_at_period_end: false`・`cancel_at: <日付>`）。
+    解約を取り消すと `cancel_at` は空に戻るので、「契約中」に戻る。
   - 初期データの施設は、Stripe とつながっていない「契約中」として作る（`stripe_customer_id` が空）。この施設では、次の請求日やカードの変更は出さない（spec の Assumptions）。
 - **理由**：画面で使う区分だけに絞り、Stripe の細かい状態は対応表 1 か所で変える。
 
