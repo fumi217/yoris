@@ -4,6 +4,7 @@ import '../../i18n'
 import { InquiryView } from './Inquiry'
 import {
   aiNoticeKey,
+  showsCallIfUrgent,
   chronological,
   nextBefore,
   PAGE_SIZE,
@@ -80,13 +81,49 @@ describe('InquiryView', () => {
     expect(text).toContain('10月23日・食事・昼')
   })
 
-  it('職員に渡したときは決まった文と、急ぎのときの案内を出す（FR-009）', () => {
+  it('職員に渡したときは決まった文を出し、緊急のときだけ電話の案内も出す（FR-009）', () => {
+    const handedOff = (handoff: InquiryMessage['handoff']) =>
+      visibleText(
+        render({
+          messages: [answer({ body: '', ai_result: 'handed_off', sources: [], handoff })],
+        }),
+      )
+
+    const normal = handedOff({ status: 'waiting', urgent: false, already: false })
+    expect(normal).toContain('この内容は施設の職員からお答えします。施設の職員にお伝えしました')
+    // 緊急でないときは、電話の案内を出さない（spec 004 の Edge Cases）
+    expect(normal).not.toContain('お急ぎのときは、施設にお電話ください')
+
+    const urgent = handedOff({ status: 'waiting', urgent: true, already: false })
+    expect(urgent).toContain('施設の職員にお伝えしました')
+    expect(urgent).toContain('お急ぎのときは、施設にお電話ください')
+  })
+
+  it('同じ内容の対応待ちにつないだときは「すでに施設の職員にお伝えしています」（FR-016）', () => {
+    const text = visibleText(
+      render({
+        messages: [
+          answer({
+            body: '',
+            ai_result: 'handed_off',
+            sources: [],
+            handoff: { status: 'waiting', urgent: false, already: true },
+          }),
+        ],
+      }),
+    )
+
+    expect(text).toContain('すでに施設の職員にお伝えしています')
+    expect(text).not.toContain('この内容は施設の職員からお答えします')
+  })
+
+  it('handoff が来ない古い API のときも動く（「お伝えしました」だけ。電話の案内は出さない）', () => {
     const text = visibleText(
       render({ messages: [answer({ body: '', ai_result: 'handed_off', sources: [] })] }),
     )
 
-    expect(text).toContain('この内容は施設の職員からお答えします。施設の職員にお伝えしました')
-    expect(text).toContain('お急ぎのときは、施設にお電話ください')
+    expect(text).toContain('施設の職員にお伝えしました')
+    expect(text).not.toContain('お急ぎのときは、施設にお電話ください')
   })
 
   it('根拠が非開示になった答えは「いまはお見せできません」（FR-008）', () => {
@@ -200,6 +237,33 @@ describe('inquiryView', () => {
     expect(aiNoticeKey(answer({ ai_result: 'no_record' }))).toBe('inquiry.no_record')
     expect(aiNoticeKey(answer({ ai_result: 'handed_off' }))).toBe('inquiry.handed_off')
     expect(aiNoticeKey(answer({ hidden: true }))).toBe('inquiry.answer_hidden')
+  })
+
+  it('職員に渡した発言の文と電話の案内は、handoff で決まる（FR-016・Edge Cases）', () => {
+    const handedOff = (handoff: InquiryMessage['handoff']) =>
+      answer({ ai_result: 'handed_off', handoff })
+
+    expect(aiNoticeKey(handedOff({ status: 'waiting', urgent: false, already: true }))).toBe(
+      'inquiry.already_handed_off',
+    )
+    expect(aiNoticeKey(handedOff({ status: 'waiting', urgent: false, already: false }))).toBe(
+      'inquiry.handed_off',
+    )
+    // 電話の案内は、緊急のときだけ。根拠が非開示になった答え・handoff がないときは出さない
+    expect(showsCallIfUrgent(handedOff({ status: 'waiting', urgent: true, already: false }))).toBe(
+      true,
+    )
+    expect(showsCallIfUrgent(handedOff({ status: 'waiting', urgent: false, already: false }))).toBe(
+      false,
+    )
+    expect(showsCallIfUrgent(handedOff(undefined))).toBe(false)
+    expect(
+      showsCallIfUrgent({
+        ...handedOff({ status: 'waiting', urgent: true, already: false }),
+        hidden: true,
+      }),
+    ).toBe(false)
+    expect(showsCallIfUrgent(answer())).toBe(false)
   })
 
   it('もとにした記録・返事を、日付と辞書のキーにする（機嫌・眠りの区分は出さない）', () => {

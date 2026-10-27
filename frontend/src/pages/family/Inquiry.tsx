@@ -7,6 +7,7 @@ import { Text } from '../../components/Text'
 import { Ruby } from '../../i18n/Ruby'
 import {
   aiNoticeKey,
+  showsCallIfUrgent,
   chronological,
   nextBefore,
   PAGE_SIZE,
@@ -208,7 +209,7 @@ function AiBubble({ message }: { message: InquiryMessage }) {
         // AI の答えは、辞書を通さず文字としてだけ出す（タグは実行されない。FR-028）
         <p className="whitespace-pre-wrap">{message.body}</p>
       )}
-      {message.ai_result === 'handed_off' && !message.hidden && (
+      {showsCallIfUrgent(message) && (
         <p className="mt-1 text-sm">
           <Text k="inquiry.call_if_urgent" />
         </p>

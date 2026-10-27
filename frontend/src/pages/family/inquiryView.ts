@@ -9,6 +9,18 @@ export type InquirySource = {
   theme_code: string | null // 返事のテーマ（theme.* の辞書のキー）
 }
 
+/**
+ * 職員に渡した AI の発言の状態（backend/app/api/family/inquiry.py の HandoffOut。
+ * 質問の種類そのものは、家族には返ってこない）。
+ */
+export type InquiryHandoff = {
+  status: 'waiting' | 'answered'
+  // 緊急（言葉の決まりで直した種類を含む）のときだけ true。画面は電話の案内も出す
+  urgent: boolean
+  // 同じ内容の対応待ちにつないだとき true。画面は「すでにお伝えしています」を出す（FR-016）
+  already: boolean
+}
+
 export type InquiryMessage = {
   id: number
   sender: 'family' | 'ai' | 'staff'
@@ -18,6 +30,8 @@ export type InquiryMessage = {
   ai_result: 'answered' | 'handed_off' | 'no_record' | null
   sources: InquirySource[]
   hidden: boolean
+  // 職員に渡した AI の発言だけ（それ以外の発言では null。古い API では、項目がないこともある）
+  handoff?: InquiryHandoff | null
   // ここから職員の返事だけ（それ以外の発言では null）。名前は役割ではなく表示名。
   // 定型文はコード（辞書で引く）、書き足しは文字としてだけ出す
   staff_name: string | null
@@ -48,9 +62,21 @@ export function nextBefore(lastPage: InquiryMessage[]): number | undefined {
  */
 export function aiNoticeKey(message: InquiryMessage): string | null {
   if (message.hidden) return 'inquiry.answer_hidden'
-  if (message.ai_result === 'handed_off') return 'inquiry.handed_off'
+  // 同じ内容の対応待ちにつないだときは、「すでに」の文（FR-016）
+  if (message.ai_result === 'handed_off') {
+    return message.handoff?.already ? 'inquiry.already_handed_off' : 'inquiry.handed_off'
+  }
   if (message.ai_result === 'no_record') return 'inquiry.no_record'
   return null
+}
+
+/**
+ * 職員に渡した AI の発言に、電話の案内（「お急ぎのときは、施設にお電話ください」）を添えるか。
+ * 緊急のときだけ添える（spec 004 の Edge Cases。今までは、渡したときは、いつも添えていた）。
+ * 根拠が非開示になった答えには添えない。`handoff` がない古い API のときも、添えない。
+ */
+export function showsCallIfUrgent(message: InquiryMessage): boolean {
+  return message.ai_result === 'handed_off' && !message.hidden && message.handoff?.urgent === true
 }
 
 /** 「もとにした記録」の 1 つを、日付と辞書のキーの並びにする（例：10 月 23 日・食事・昼）。 */
