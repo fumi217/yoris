@@ -4,3 +4,5 @@ pytest==9.1.1
 # TestClient が使う HTTP クライアント（starlette が httpx から httpx2 への移行を勧めている）
 httpx2==2.15.1
 ruff==0.17.1
+# 評価の質問の例（backend/evals/inquiry/cases.yaml）を読む。uvicorn[standard] と一緒に入っている版を、直接使うので固定する
+pyyaml==6.0.3
