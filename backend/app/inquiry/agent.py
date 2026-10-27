@@ -44,6 +44,7 @@ ANSWER_MAX = 500
 # 1 回だけやり直させるときに AI に返す文
 _USE_ANSWER_TOOL = "answer_family を使って答えてください。普通の文だけで答えてはいけません。"
 _LOOK_UP_FIRST = "記録を調べてから答えてください（get_care_records・get_staff_replies）。"
+_LOOK_UP_REPLIES = "職員の返事も調べてから答えてください（get_staff_replies）。"
 _SKIPPED = '{"error": "skipped"}'
 
 
@@ -145,6 +146,8 @@ def run_agent(
     model: str | None = None
     asked_to_use_answer = False
     asked_to_look_up = False
+    asked_for_replies = False
+    read_tools_used: set[str] = set()
 
     def result(kind: str, **values: Any) -> AgentResult:
         latency_ms = int((time.monotonic() - started) * 1000)
@@ -154,6 +157,15 @@ def run_agent(
 
     def give_to_staff(category: str) -> AgentResult:
         return result("handed_off", hand_off=HandOff(category, question[:SUMMARY_MAX]))
+
+    def send_back(calls: list[Any], index: int, content: str) -> None:
+        """この呼び出しをやり直させる。同じ応答の残りのツールにも結果を返す。
+
+        返さないと、次の呼び出しがエラーになる。
+        """
+        messages.append({"role": "tool", "tool_call_id": calls[index].id, "content": content})
+        for rest in calls[index + 1 :]:
+            messages.append({"role": "tool", "tool_call_id": rest.id, "content": _SKIPPED})
 
     for _ in range(MAX_ROUNDS):
         response = client.chat(messages, TOOL_DEFINITIONS)
@@ -173,6 +185,7 @@ def run_agent(
             args = call.arguments_json()
             if call.name in READ_TOOLS:
                 tool_calls += 1
+                read_tools_used.add(call.name)
                 outcome = run_read_tool(ctx, call.name, args)
                 seen_sources.update(outcome.source_ids)
                 messages.append(
@@ -211,14 +224,12 @@ def run_agent(
                     if asked_to_look_up:
                         return result("no_record")
                     asked_to_look_up = True
-                    messages.append(
-                        {"role": "tool", "tool_call_id": call.id, "content": _LOOK_UP_FIRST}
-                    )
-                    # 同じ応答の残りのツールにも結果を返す（返さないと、次の呼び出しがエラーになる）
-                    for rest in response.tool_calls[index + 1 :]:
-                        messages.append(
-                            {"role": "tool", "tool_call_id": rest.id, "content": _SKIPPED}
-                        )
+                    send_back(response.tool_calls, index, _LOOK_UP_FIRST)
+                    break
+                if "get_staff_replies" not in read_tools_used and not asked_for_replies:
+                    # 記録だけで答えようとした：職員の返事も 1 回だけ調べさせる
+                    asked_for_replies = True
+                    send_back(response.tool_calls, index, _LOOK_UP_REPLIES)
                     break
                 return result("answered", text=text, source_ids=sources)
             else:

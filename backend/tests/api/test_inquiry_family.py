@@ -17,7 +17,7 @@ from app.models.inquiry import InquiryConversation
 from app.models.records import CareRecord
 from app.seed.themes import add_disclosure_settings, add_themes
 from app.services.disclosure import clear_disclosure_cache
-from tests.fakes.llm import tool_call_response
+from tests.fakes.llm import look_up_response, tool_call_response
 
 URL = "/api/family/inquiry/messages"
 
@@ -47,7 +47,7 @@ def world(session, redis, facility, make_staff, make_family, login_as):
 def _answer_with_lunch(fake_llm, lunch_id, text="今日のお昼は、ほぼ全部召し上がりました。"):
     today = today_jst().isoformat()
     fake_llm.add(
-        tool_call_response("get_care_records", {"date_from": today, "date_to": today}),
+        look_up_response(today, today),
         tool_call_response("answer_family", {"text": text, "source_ids": [f"record:{lunch_id}"]}),
     )
 
@@ -167,7 +167,7 @@ def test_answer_with_one_hidden_source_is_hidden(client, session, fake_llm, worl
     session.flush()
     today = today_jst().isoformat()
     fake_llm.add(
-        tool_call_response("get_care_records", {"date_from": today, "date_to": today}),
+        look_up_response(today, today),
         tool_call_response(
             "answer_family",
             {

@@ -14,6 +14,7 @@ import {
   hasTemplates,
   MESSAGES_KEY,
   messagesBase,
+  residentFilterOf,
   senderKey,
   type ConversationMessage,
   type MessageDetail,
@@ -28,7 +29,11 @@ import { MAX_NOTE_LENGTH, noteLength, replyBody, toggleTemplate } from './replyF
  */
 export function FamilyMessage() {
   const { messageId = '' } = useParams()
-  const base = messagesBase(useLocation().pathname)
+  const { pathname, search } = useLocation()
+  const base = messagesBase(pathname)
+  // 絞り込んだ一覧から来たときは、「一覧へ」で戻っても絞り込みを残す（#88）
+  const residentId = residentFilterOf(search)
+  const backTo = residentId === null ? base : `${base}?resident_id=${residentId}`
   const queryClient = useQueryClient()
   const detailKey = [...MESSAGES_KEY, 'detail', messageId]
 
@@ -69,7 +74,7 @@ export function FamilyMessage() {
       : null
   return (
     <MessageDetailView
-      base={base}
+      backTo={backTo}
       message={detail.data}
       assigning={assign.isPending}
       sending={reply.isPending}
@@ -81,7 +86,8 @@ export function FamilyMessage() {
 }
 
 type ViewProps = {
-  base: string
+  /** 「一覧へ」の行き先。絞り込んだ一覧から来たときは、絞り込みを付けたもの */
+  backTo: string
   message: MessageDetail
   assigning: boolean
   sending: boolean
@@ -92,7 +98,7 @@ type ViewProps = {
 
 /** 詳細の中身（テストではこれを直接出す）。 */
 export function MessageDetailView({
-  base,
+  backTo,
   message,
   assigning,
   sending,
@@ -172,7 +178,7 @@ export function MessageDetailView({
         </p>
       )}
 
-      <Link to={base} className="inline-block text-sky-700 underline">
+      <Link to={backTo} className="inline-block text-sky-700 underline">
         <Text k="family_messages.back" />
       </Link>
     </section>

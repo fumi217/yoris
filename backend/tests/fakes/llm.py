@@ -33,6 +33,20 @@ def tool_call_response(
     return LLMResponse(content=None, tool_calls=[call], finish_reason="tool_calls", model="fake")
 
 
+def look_up_response(date_from: str, date_to: str) -> LLMResponse:
+    """記録と職員の返事を、1 つの応答で両方調べる（ループは、返事も調べることを求める）。"""
+    period = {"date_from": date_from, "date_to": date_to}
+    calls = [
+        ToolCall(
+            id=f"call_{next(_ids)}",
+            name=name,
+            arguments=json.dumps(period, ensure_ascii=False),
+        )
+        for name in ("get_care_records", "get_staff_replies")
+    ]
+    return LLMResponse(content=None, tool_calls=calls, finish_reason="tool_calls", model="fake")
+
+
 @dataclass(frozen=True)
 class Call:
     messages: list[dict[str, Any]]

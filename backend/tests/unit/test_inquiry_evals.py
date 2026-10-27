@@ -15,7 +15,7 @@ from app.models.records import DAY_SLOT, MEAL_SLOTS, VALUES, CareRecord
 from app.seed.themes import add_disclosure_settings, add_themes
 from app.services.disclosure import clear_disclosure_cache
 from evals.inquiry import run as evals
-from tests.fakes.llm import tool_call_response
+from tests.fakes.llm import look_up_response, tool_call_response
 
 
 def _case(**overrides) -> evals.EvalCase:
@@ -26,30 +26,32 @@ def _case(**overrides) -> evals.EvalCase:
 # --- 質問の例の書き方 ---
 
 
-def test_cases_file_is_valid_and_covers_the_first_groups():
-    records, cases = evals.load_cases()
+def test_cases_file_is_valid_and_covers_every_group():
+    setup, cases = evals.load_cases()
 
     groups = [case.group for case in cases]
-    # まずは記録で答えられるもの 5・医療 3・苦情 2・お金 2（T031）。あとから足していく
-    assert groups.count("records") >= 5
-    assert groups.count("medical") >= 3
-    assert groups.count("complaint") >= 2
-    assert groups.count("money") >= 2
+    # 質問の例は 7 つのグループすべてに 1 件以上あり、記録で答えるものがいちばん多い
+    for group in evals.GROUPS:
+        assert groups.count(group) >= 1, group
+    assert groups.count("records") >= 10
+    assert groups.count("medical") >= 5
     assert len({case.id for case in cases}) == len(cases)
-    for record in records:
+    for record in setup.records:
         slots = MEAL_SLOTS if record.item == "meal" else (DAY_SLOT,)
         assert record.slot in slots
         assert record.value in VALUES[record.item]
         # 記録を付けられるのは、今日から 3 日前まで
         assert -3 <= record.day <= 0
+    assert setup.replies
 
 
 def test_hand_off_groups_expect_only_hand_off_with_a_category():
     _, cases = evals.load_cases()
 
-    # 医療・苦情・お金は、AI が答えず職員に渡す。種類も決めてある（SC-003・SC-004）
+    # 医療・苦情・お金・お世話の頼みごと・緊急は、AI が答えず職員に渡す。種類も決めてある
+    # （SC-003・SC-004）
     for case in cases:
-        if case.group in ("medical", "complaint", "money"):
+        if case.group not in ("records", "replies"):
             assert case.expect == ("handed_off",), case.id
             assert case.category == case.group, case.id
 
@@ -126,22 +128,32 @@ def prepared(session, redis, facility, make_staff):
     add_disclosure_settings(session, facility_id=facility.id)
     clear_disclosure_cache(facility.id)
     make_staff()
-    records, _ = evals.load_cases()
-    resident_id, others = evals.prepare(session, records)
-    yield resident_id, others, len(records)
+    setup, _ = evals.load_cases()
+    resident_id, others = evals.prepare(session, setup)
+    yield resident_id, others, setup
     clear_disclosure_cache(facility.id)
 
 
 def test_prepare_makes_the_eval_resident_and_records(session, prepared):
-    resident_id, _, count = prepared
+    resident_id, _, setup = prepared
 
     made = session.scalars(select(CareRecord).where(CareRecord.resident_id == resident_id)).all()
 
-    assert len(made) == count
+    assert len(made) == len(setup.records)
     today = today_jst()
     assert any(r.date == today and r.slot == "lunch" and r.value == "8" for r in made)
     # 今日の夜ごはんは、未記録の質問のために付けない
     assert not any(r.date == today and r.slot == "dinner" for r in made)
+
+
+def test_prepare_adds_the_staff_replies(session, prepared):
+    from app.models.requests import Request
+
+    resident_id, _, setup = prepared
+
+    made = session.scalars(select(Request).where(Request.resident_id == resident_id)).all()
+
+    assert len(made) == len(setup.replies)
 
 
 def test_a_record_question_is_answered_from_the_records(session, fake_llm, prepared):
@@ -155,7 +167,7 @@ def test_a_record_question_is_answered_from_the_records(session, fake_llm, prepa
     )
     today = today_jst().isoformat()
     fake_llm.add(
-        tool_call_response("get_care_records", {"date_from": today, "date_to": today}),
+        look_up_response(today, today),
         tool_call_response(
             "answer_family",
             {"text": "今日のお昼は、ほぼ全部召し上がりました。", "source_ids": [f"record:{lunch}"]},
@@ -167,7 +179,7 @@ def test_a_record_question_is_answered_from_the_records(session, fake_llm, prepa
     outcome = evals.run_case(session, resident_id, case, fake_llm, other_resident_names=others)
 
     assert outcome.passed, outcome.problems
-    assert (outcome.kind, outcome.source_count, outcome.tool_calls) == ("answered", 1, 1)
+    assert (outcome.kind, outcome.source_count, outcome.tool_calls) == ("answered", 1, 2)
 
 
 def test_a_medical_question_is_handed_off_even_if_the_model_answers(session, fake_llm, prepared):

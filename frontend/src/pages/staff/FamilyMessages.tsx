@@ -56,7 +56,12 @@ export function FamilyMessages() {
       ) : messages.isError ? (
         <Message k={messageKeyOf(messages.error)} />
       ) : (
-        <MessageListView base={base} status={status} messages={messages.data.messages} />
+        <MessageListView
+          base={base}
+          status={status}
+          messages={messages.data.messages}
+          search={residentId === null ? '' : `?resident_id=${residentId}`}
+        />
       )}
     </section>
   )
@@ -83,15 +88,20 @@ function MessageTabs({ status, onChange }: { status: Status; onChange: (next: St
   )
 }
 
-/** 一覧の中身（API の並びのまま出す。テストではこれを直接出す）。 */
+/**
+ * 一覧の中身（API の並びのまま出す。テストではこれを直接出す）。
+ * search は、詳細へのリンクに引き継ぐ絞り込み（`?resident_id=3`）。詳細の「一覧へ」で戻ったとき絞り込みが残る。
+ */
 export function MessageListView({
   base,
   status,
   messages,
+  search = '',
 }: {
   base: string
   status: Status
   messages: MessageRow[]
+  search?: string
 }) {
   if (messages.length === 0) {
     return <Message k={`family_messages.empty_${status}`} />
@@ -100,17 +110,25 @@ export function MessageListView({
     <ul className="divide-y rounded border">
       {messages.map((message) => (
         <li key={message.id}>
-          <MessageItem base={base} message={message} />
+          <MessageItem base={base} message={message} search={search} />
         </li>
       ))}
     </ul>
   )
 }
 
-function MessageItem({ base, message }: { base: string; message: MessageRow }) {
+function MessageItem({
+  base,
+  message,
+  search,
+}: {
+  base: string
+  message: MessageRow
+  search: string
+}) {
   const { t } = useTranslation()
   return (
-    <Link to={`${base}/${message.id}`} className="block space-y-1 p-4">
+    <Link to={`${base}/${message.id}${search}`} className="block space-y-1 p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="font-bold">
           {/* 入居者の呼び名は、辞書を通さずそのまま出す */}

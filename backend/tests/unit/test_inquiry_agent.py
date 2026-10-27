@@ -13,7 +13,7 @@ from app.inquiry.agent import MAX_TOOL_CALLS, run_agent
 from app.inquiry.llm import LLMUnavailable
 from app.inquiry.prompts import INSTRUCTION_MARKER
 from app.inquiry.tools import TOOL_DEFINITIONS, ToolContext, ToolOutcome
-from tests.fakes.llm import text_response, tool_call_response
+from tests.fakes.llm import look_up_response, text_response, tool_call_response
 
 CTX = ToolContext(session=None, resident_id=1, today=date(2026, 10, 23))  # type: ignore[arg-type]
 QUESTION = "今日のお昼は食べましたか？"
@@ -29,9 +29,20 @@ def read_tools(monkeypatch):
     monkeypatch.setattr("app.inquiry.agent.run_read_tool", fake_run)
 
 
-def look_up():
+def look_up_records():
     return tool_call_response(
         "get_care_records", {"date_from": "2026-10-23", "date_to": "2026-10-23"}
+    )
+
+
+def look_up():
+    """記録と職員の返事を両方調べる。答える前にここまでやる（ループが求める）。"""
+    return look_up_response("2026-10-23", "2026-10-23")
+
+
+def look_up_replies():
+    return tool_call_response(
+        "get_staff_replies", {"date_from": "2026-10-23", "date_to": "2026-10-23"}
     )
 
 
@@ -59,7 +70,28 @@ def test_answer_keeps_only_sources_returned_by_tools(fake_llm):
     assert result.text == "お昼はほぼ全部召し上がりました"
     # ツールが返していない id（作り話）は捨てる。重なりも消す
     assert result.source_ids == ["record:1"]
-    assert result.tool_calls == 1
+    assert result.tool_calls == 2
+
+
+def test_answer_from_records_only_is_sent_back_to_read_the_staff_replies(fake_llm):
+    fake_llm.add(look_up_records(), answer(), look_up_replies(), answer())
+
+    result = run_agent(CTX, question=QUESTION)
+
+    assert result.kind == "answered"
+    # 記録だけで答えようとしたら、職員の返事も調べさせる（評価で、返事を見ないことが分かった）
+    assert "get_staff_replies" in fake_llm.calls[2].messages[-1]["content"]
+    assert len(fake_llm.calls) == 4
+
+
+def test_records_only_answer_is_accepted_when_the_model_insists(fake_llm):
+    fake_llm.add(look_up_records(), answer(), answer())
+
+    result = run_agent(CTX, question=QUESTION)
+
+    # 返事を調べるよう求めるのは 1 回だけ。2 回目の答えは受け付ける
+    assert result.kind == "answered"
+    assert len(fake_llm.calls) == 3
 
 
 def test_answer_without_looking_up_is_retried_once(fake_llm):
@@ -97,7 +129,7 @@ def test_plain_text_twice_is_no_record(fake_llm):
 
 
 def test_five_tool_calls_hand_off_to_staff(fake_llm):
-    fake_llm.add(*[look_up() for _ in range(MAX_TOOL_CALLS)])
+    fake_llm.add(*[look_up_records() for _ in range(MAX_TOOL_CALLS)])
 
     result = run_agent(CTX, question=QUESTION)
 
@@ -127,7 +159,7 @@ def test_hand_off_keeps_category_summary_and_known_existing_id(fake_llm):
                 "summary": "カーディガンを持ってきてほしい",
                 "existing_message_id": 7,
             },
-        )
+        ),
     )
 
     result = run_agent(
@@ -144,7 +176,7 @@ def test_hand_off_ignores_unknown_existing_id_and_category(fake_llm):
     fake_llm.add(
         tool_call_response(
             "hand_off_to_staff", {"category": "secret", "summary": "", "existing_message_id": 99}
-        )
+        ),
     )
 
     result = run_agent(CTX, question="これは何ですか", waiting=[{"id": 7}])

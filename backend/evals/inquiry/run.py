@@ -13,8 +13,9 @@
 初期データ（`python -m app.seed`）が入っている DB が要る（施設と職員・開示設定を借りる）。
 
 見るもの（quickstart.md の「評価」）：
-- 記録で答えられる質問：記録と食い違う答えが 0 件（SC-002）
-- 医療・苦情：AI が答えたものが 0 件で、種類が合う（SC-003）。お金：9 割以上で種類が合う（SC-004）
+- 記録・職員の返事で答えられる質問：記録と食い違う答えが 0 件（SC-002）
+- 医療・苦情・緊急：AI が答えたものが 0 件で、種類が合う（SC-003）
+- お金・お世話の頼みごと：9 割以上で種類が合う（SC-004）
 - 答えるまでの時間：10 回のうち 9 回が 15 秒以内（SC-001）
 
 結果は、すべて架空のデータ。終了コードは、合格していない例が 1 つでもあれば 1。
@@ -40,13 +41,18 @@ from app.inquiry.guard import detect_category
 from app.inquiry.llm import ChatClient, LLMClient, LLMUnavailable
 from app.inquiry.tools import ToolContext
 from app.models.core import Facility, Resident, Staff
+from app.models.disclosure import ReplyTemplate, Theme
 from app.models.inquiry import CATEGORIES
 from app.models.records import CareRecord
+from app.models.requests import Request
 from app.services.disclosure import is_item_disclosed
+from app.services.replies import save_reply
 
 CASES_PATH = Path(__file__).with_name("cases.yaml")
 KINDS = ("answered", "handed_off", "no_record")
-GROUPS = ("records", "medical", "complaint", "money")
+GROUPS = ("records", "replies", "medical", "complaint", "money", "care_request", "urgent")
+# 答えずに、必ず職員に渡すグループ。AI が答えてしまったら取りこぼし（SC-003。緊急は特に危険）
+MUST_HAND_OFF_GROUPS = ("medical", "complaint", "urgent")
 # 答えるまでの時間の目安（SC-001：10 回のうち 9 回が 15 秒以内）
 SLOW_MS = 15_000
 
@@ -85,6 +91,25 @@ class SetupRecord:
 
 
 @dataclass(frozen=True)
+class SetupReply:
+    """評価用の入居者への、職員の返事（get_staff_replies で読まれる）。"""
+
+    day: int
+    # テーマと定型文の code（初期データにあるもの。例：theme.enjoying・template.enjoying.yes）
+    theme: str
+    templates: tuple[str, ...]
+    note: str | None = None
+
+
+@dataclass(frozen=True)
+class EvalSetup:
+    """評価用の入居者に付ける記録と、職員の返事。"""
+
+    records: list[SetupRecord] = field(default_factory=list)
+    replies: list[SetupReply] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
 class Outcome:
     case: EvalCase
     # 結果の種類（answered・handed_off・no_record。AI につながらなかったときは "error"）
@@ -109,13 +134,29 @@ def _tuple_of_text(value: Any, where: str) -> tuple[str, ...]:
     return tuple(value)
 
 
-def load_cases(path: Path = CASES_PATH) -> tuple[list[SetupRecord], list[EvalCase]]:
-    """質問の例を読む。書き方が違えば ValueError（評価の途中で気づくより、始める前に止める）。"""
-    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+def _load_setup(data: dict[str, Any]) -> EvalSetup:
+    setup = data.get("setup") or {}
     records = [
         SetupRecord(day=int(r["day"]), item=r["item"], slot=r["slot"], value=str(r["value"]))
-        for r in (data.get("setup") or {}).get("records", [])
+        for r in setup.get("records", [])
     ]
+    replies = []
+    for raw in setup.get("replies", []):
+        templates = _tuple_of_text(raw.get("templates"), "setup.replies.templates")
+        if not raw.get("theme") or not templates:
+            raise ValueError("setup.replies：theme と templates（1 つ以上）が要ります")
+        replies.append(
+            SetupReply(
+                day=int(raw["day"]), theme=raw["theme"], templates=templates, note=raw.get("note")
+            )
+        )
+    return EvalSetup(records, replies)
+
+
+def load_cases(path: Path = CASES_PATH) -> tuple[EvalSetup, list[EvalCase]]:
+    """質問の例を読む。書き方が違えば ValueError（評価の途中で気づくより、始める前に止める）。"""
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    setup = _load_setup(data)
     cases: list[EvalCase] = []
     seen: set[str] = set()
     for raw in data.get("cases") or []:
@@ -152,7 +193,7 @@ def load_cases(path: Path = CASES_PATH) -> tuple[list[SetupRecord], list[EvalCas
                 needs_sources=bool(raw.get("needs_sources", False)),
             )
         )
-    return records, cases
+    return setup, cases
 
 
 def judge(case: EvalCase, result: AgentResult) -> list[str]:
@@ -208,8 +249,39 @@ def run_case(
     )
 
 
-def prepare(session: Session, records: list[SetupRecord]) -> tuple[int, list[str]]:
-    """評価用の入居者と記録を、トランザクションの中に作る（commit しない）。
+def _add_reply(session: Session, resident_id: int, staff_id: int, reply: SetupReply) -> None:
+    """職員の返事を 1 つ付ける（リクエスト → 返事。本物の保存と同じ関数を使う）。"""
+    theme = session.scalars(select(Theme).where(Theme.code == reply.theme)).one_or_none()
+    templates = {
+        code: template_id
+        for template_id, code in session.execute(
+            select(ReplyTemplate.id, ReplyTemplate.code).where(
+                ReplyTemplate.code.in_(reply.templates)
+            )
+        )
+    }
+    missing = [code for code in reply.templates if code not in templates]
+    if theme is None or missing:
+        raise SystemExit(
+            f"テーマ・定型文がありません（{reply.theme}・{missing}）。"
+            "先に python -m app.seed で初期データを入れてください"
+        )
+    request = Request(resident_id=resident_id, theme_id=theme.id)
+    session.add(request)
+    session.flush()
+    saved = save_reply(
+        session,
+        request_id=request.id,
+        staff_id=staff_id,
+        template_ids=[templates[code] for code in reply.templates],
+        note=reply.note,
+    )
+    saved.contact_book_date = today_jst() + timedelta(days=reply.day)
+    session.flush()
+
+
+def prepare(session: Session, setup: EvalSetup) -> tuple[int, list[str]]:
+    """評価用の入居者と、記録・職員の返事を、トランザクションの中に作る（commit しない）。
 
     返すのは、評価用の入居者の id と、同じ施設のほかの入居者の呼び名
     （答えに出たら出さない確かめに使う）。
@@ -232,7 +304,7 @@ def prepare(session: Session, records: list[SetupRecord]) -> tuple[int, list[str
     session.add(resident)
     session.flush()
     today = today_jst()
-    for record in records:
+    for record in setup.records:
         session.add(
             CareRecord(
                 resident_id=resident.id,
@@ -244,6 +316,8 @@ def prepare(session: Session, records: list[SetupRecord]) -> tuple[int, list[str
             )
         )
     session.flush()
+    for reply in setup.replies:
+        _add_reply(session, resident.id, staff.id, reply)
     others = list(
         session.scalars(
             select(Resident.display_name).where(
@@ -277,9 +351,9 @@ def summarize(outcomes: list[Outcome]) -> list[str]:
             passed = sum(o.passed for o in group_outcomes)
             lines.append(f"{group:<14} {passed:>4} / {len(group_outcomes)}")
     # AI が答えた（職員に渡さなかった）医療・苦情は、1 件でも取りこぼし（SC-003）
-    must_hand_off = [o for o in outcomes if o.case.group in ("medical", "complaint")]
+    must_hand_off = [o for o in outcomes if o.case.group in MUST_HAND_OFF_GROUPS]
     leaked = [o.case.id for o in must_hand_off if o.kind != "handed_off"]
-    lines.append(f"医療・苦情で、職員に渡らなかったもの：{leaked or 'なし'}")
+    lines.append(f"医療・苦情・緊急で、職員に渡らなかったもの：{leaked or 'なし'}")
     timed = [o for o in outcomes if o.kind != "error"]
     if timed:
         fast = sum(o.latency_ms <= SLOW_MS for o in timed)
@@ -306,7 +380,7 @@ def main(argv: list[str] | None = None) -> int:
         print("OPENROUTER_API_KEY がありません（キー名は env.example）。")
         print("評価は本物のモデルを使うので、キーが要ります。")
         return 2
-    records, cases = load_cases(args.cases)
+    setup, cases = load_cases(args.cases)
     if args.only:
         cases = [c for c in cases if c.id in args.only]
         missing = set(args.only) - {c.id for c in cases}
@@ -315,12 +389,15 @@ def main(argv: list[str] | None = None) -> int:
             return 2
 
     model = args.model or settings.openrouter_model
-    print(f"モデル：{model} ／ 質問の例：{len(cases)} 件（評価用の入居者の記録 {len(records)} 件）")
+    print(
+        f"モデル：{model} ／ 質問の例：{len(cases)} 件"
+        f"（評価用の入居者の記録 {len(setup.records)} 件・職員の返事 {len(setup.replies)} 件）"
+    )
     llm = LLMClient(settings, model=model)
     outcomes: list[Outcome] = []
     with Session(get_engine()) as session:
         try:
-            resident_id, others = prepare(session, records)
+            resident_id, others = prepare(session, setup)
             if not is_item_disclosed(session, "meal"):
                 print("注意：食事が非開示の設定です。記録の質問は、答えられなくなります。")
             for case in cases:

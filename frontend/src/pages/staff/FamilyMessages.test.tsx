@@ -72,11 +72,15 @@ const renderList = (messages: MessageRow[], status: 'waiting' | 'answered' = 'wa
     </MemoryRouter>,
   )
 
-const renderDetail = (message: MessageDetail, errorKey: string | null = null) =>
+const renderDetail = (
+  message: MessageDetail,
+  errorKey: string | null = null,
+  backTo = '/staff/messages',
+) =>
   renderToStaticMarkup(
     <MemoryRouter>
       <MessageDetailView
-        base="/staff/messages"
+        backTo={backTo}
         message={message}
         assigning={false}
         sending={false}
@@ -104,6 +108,23 @@ describe('MessageListView（一覧）', () => {
     const html = renderList([row({ id: 7 }), row({ id: 3 })])
 
     expect(html.indexOf('/staff/messages/7')).toBeLessThan(html.indexOf('/staff/messages/3'))
+  })
+
+  it('絞り込んだ一覧では、詳細へのリンクに絞り込みを引き継ぐ。詳細の「一覧へ」も絞り込みへ戻る（#88）', () => {
+    const list = renderToStaticMarkup(
+      <MemoryRouter>
+        <MessageListView
+          base="/staff/messages"
+          status="waiting"
+          messages={[row({ id: 7 })]}
+          search="?resident_id=3"
+        />
+      </MemoryRouter>,
+    )
+    const detailHtml = renderDetail(detail(), null, '/staff/messages?resident_id=3')
+
+    expect(list).toContain('href="/staff/messages/7?resident_id=3"')
+    expect(detailHtml).toContain('href="/staff/messages?resident_id=3"')
   })
 
   it('メッセージがないときは、状態ごとの案内を出す', () => {
