@@ -27,6 +27,12 @@ const reply = (overrides: Partial<StaffReply> = {}): StaffReply => ({
   replied_at: '2026-10-26T10:00:00+09:00',
   edited: false,
   read: false,
+  template_ids: [21],
+  template_options: [
+    { id: 21, code: 'template.meals.well' },
+    { id: 22, code: 'template.meals.less' },
+  ],
+  editable: true,
   ...overrides,
 })
 
@@ -37,10 +43,10 @@ const book = (records: StaffRecord[] = [], replies: StaffReply[] = []): StaffCon
   replies,
 })
 
-const render = (value: StaffContactBook) =>
+const render = (value: StaffContactBook, editable = false) =>
   renderToStaticMarkup(
     <MemoryRouter>
-      <ContactBookView book={value} />
+      <ContactBookView book={value} onEditReply={editable ? () => {} : undefined} />
     </MemoryRouter>,
   )
 
@@ -92,5 +98,12 @@ describe('ContactBookView', () => {
 
   it('その日に何もなければ、そう伝える', () => {
     expect(render(book())).toContain('ありません')
+  })
+
+  it('今日の返事だけに「この返事を直す」を出す', () => {
+    expect(render(book([], [reply()]), true)).toContain('<ruby>直')
+    expect(render(book([], [reply({ editable: false })]), true)).not.toContain('<ruby>直</ruby>')
+    // 直す関数を渡さないとき（読むだけのとき）は出さない
+    expect(render(book([], [reply()]))).not.toContain('この<ruby>返事')
   })
 })

@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { api, messageKeyOf } from '../../api/client'
@@ -6,18 +7,22 @@ import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
 import { Ruby } from '../../i18n/Ruby'
 import { recordLabelKey, shiftDate, timeInJapan, timeline } from './contactBookTimeline'
-import type { StaffContactBook as Book } from './recordValues'
+import type { StaffContactBook as Book, StaffReply } from './recordValues'
+import { ReplyEditor } from './ReplyEditor'
+import { replyBody } from './replyForm'
 import { monthDay } from './residentRows'
 
 /**
  * 職員の連絡帳の見返し（UI-S04。spec 001 の T033・FR-024）。`/staff/residents/:residentId/contact-book?date=`
  * 入居者 × 日付ごとに、その日の記録と返事を時刻の順に出す（事務所で介護記録を書くための一次メモ）。
  * 職員向けなので、家族に見せない項目も出す（R-06）。日付を省くと今日（日本時間）。
+ * 今日の返事は「直す」から、その場で直せる（001-T063。お知らせは作り直さない）。
  */
 export function StaffContactBook() {
   const { residentId = '' } = useParams()
   const [params] = useSearchParams()
   const date = params.get('date')
+  const queryClient = useQueryClient()
 
   const book = useQuery({
     queryKey: ['staff', 'contact-book', residentId, date ?? 'today'],
@@ -27,13 +32,46 @@ export function StaffContactBook() {
       ),
   })
 
+  const edit = useMutation({
+    mutationFn: ({ id, templateIds, note }: { id: number; templateIds: number[]; note: string }) =>
+      api.patch(`/api/staff/replies/${id}`, replyBody(templateIds, note)),
+    // 見返し（どの日付でも）と、記録の画面の今日の分を読み直す
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['staff', 'contact-book', residentId] }),
+  })
+
   if (book.isPending) return <Message k="layout.loading" />
   if (book.isError) return <Message k={messageKeyOf(book.error)} />
-  return <ContactBookView book={book.data} />
+  return (
+    <ContactBookView
+      book={book.data}
+      savingReplyId={edit.isPending ? edit.variables.id : null}
+      editErrorKey={edit.isError ? messageKeyOf(edit.error) : null}
+      onEditReply={(id, templateIds, note, done) =>
+        edit.mutate({ id, templateIds, note }, { onSuccess: done })
+      }
+      onStartEdit={() => edit.reset()}
+    />
+  )
+}
+
+type ViewProps = {
+  book: Book
+  // 返事を直しているときの値（001-T063）
+  savingReplyId?: number | null
+  editErrorKey?: string | null
+  onEditReply?: (id: number, templateIds: number[], note: string, done: () => void) => void
+  onStartEdit?: () => void
 }
 
 /** 画面の中身（テストではこれを直接出す）。 */
-export function ContactBookView({ book }: { book: Book }) {
+export function ContactBookView({
+  book,
+  savingReplyId = null,
+  editErrorKey = null,
+  onEditReply,
+  onStartEdit,
+}: ViewProps) {
   const { t } = useTranslation()
   const base = `/staff/residents/${book.resident.id}`
   const entries = timeline(book)
@@ -119,6 +157,15 @@ export function ContactBookView({ book }: { book: Book }) {
                       k={entry.reply.read ? 'staff_contact_book.read' : 'staff_contact_book.unread'}
                     />
                   </p>
+                  {entry.reply.editable && onEditReply && (
+                    <EditReply
+                      reply={entry.reply}
+                      saving={savingReplyId === entry.reply.id}
+                      errorKey={editErrorKey}
+                      onEditReply={onEditReply}
+                      onStartEdit={onStartEdit}
+                    />
+                  )}
                 </div>
               )}
             </li>
@@ -130,5 +177,42 @@ export function ContactBookView({ book }: { book: Book }) {
         <Text k="staff_contact_book.back" />
       </Link>
     </section>
+  )
+}
+
+type EditReplyProps = {
+  reply: StaffReply
+  saving: boolean
+  errorKey: string | null
+  onEditReply: (id: number, templateIds: number[], note: string, done: () => void) => void
+  onStartEdit?: () => void
+}
+
+/** 「この返事を直す」と、押したときに出る直す欄。 */
+function EditReply({ reply, saving, errorKey, onEditReply, onStartEdit }: EditReplyProps) {
+  const [open, setOpen] = useState(false)
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          onStartEdit?.()
+          setOpen(true)
+        }}
+        className="text-sm text-sky-700 underline"
+      >
+        <Text k="staff_contact_book.edit" />
+      </button>
+    )
+  }
+  return (
+    <ReplyEditor
+      reply={reply}
+      saving={saving}
+      errorKey={errorKey}
+      onSave={(templateIds, note) => onEditReply(reply.id, templateIds, note, () => setOpen(false))}
+      onClose={() => setOpen(false)}
+    />
   )
 }

@@ -38,6 +38,10 @@ export type StaffReply = {
   replied_at: string
   edited: boolean
   read: boolean
+  // 直すための値（001-T063）：選んだ定型文の id、そのテーマの定型文、今日直せるか
+  template_ids: number[]
+  template_options: { id: number; code: string }[]
+  editable: boolean
 }
 
 export type StaffContactBook = {

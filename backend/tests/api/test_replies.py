@@ -190,3 +190,120 @@ def test_second_reply_adds_no_notice(client, session, world, sent):
     )
     assert notices == 1
     assert len(sent) == 1
+
+
+# --- 当日中の返事の修正（001-T063） ---
+
+
+def _edit(client, reply_id, **body):
+    return client.patch(f"/api/staff/replies/{reply_id}", json=body)
+
+
+def test_edit_today_reply(client, session, world, sent):
+    reply_id = _reply(client, world["request"].id, template_ids=world["templates"][:1]).json()["id"]
+    sent.clear()
+
+    response = _edit(client, reply_id, template_ids=world["templates"][1:3], note=" 直しました ")
+
+    assert response.status_code == 200
+    reply = session.get(Reply, reply_id)
+    session.refresh(reply)
+    assert reply.template_ids == world["templates"][1:3]
+    assert reply.note == "直しました"
+    assert reply.edited_at is not None
+    # 返事をした職員は変えない
+    assert reply.replied_by == world["staff"].id
+    # お知らせ・メールは作り直さない（再通知しない）
+    assert sent == []
+    notices = session.scalar(
+        select(func.count()).select_from(Notification).where(Notification.reply_id == reply_id)
+    )
+    assert notices == 1
+
+
+def test_edit_keeps_read_state(client, session, world):
+    from app.clock import now
+
+    reply_id = _reply(client, world["request"].id, template_ids=world["templates"][:1]).json()["id"]
+    reply = session.get(Reply, reply_id)
+    reply.read_at = now()
+    session.flush()
+
+    _edit(client, reply_id, template_ids=world["templates"][:2])
+
+    session.refresh(reply)
+    # 家族が読んだかどうかは戻さない（未読に戻して知らせることはしない）
+    assert reply.read_at is not None
+
+
+def test_edit_past_reply_is_409(client, session, world):
+    from datetime import timedelta
+
+    from app.clock import today_jst
+
+    reply_id = _reply(client, world["request"].id, template_ids=world["templates"][:1]).json()["id"]
+    reply = session.get(Reply, reply_id)
+    reply.contact_book_date = today_jst() - timedelta(days=1)
+    session.flush()
+
+    response = _edit(client, reply_id, template_ids=world["templates"][:2])
+
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "not_today"
+
+
+def test_edit_validation(client, world):
+    reply_id = _reply(client, world["request"].id, template_ids=world["templates"][:1]).json()["id"]
+
+    assert _edit(client, reply_id, template_ids=[]).status_code == 422
+    assert _edit(client, reply_id, template_ids=world["other_templates"][:1]).status_code == 422
+    assert (
+        _edit(client, reply_id, template_ids=world["templates"][:1], note="あ" * 101).status_code
+        == 422
+    )
+    assert _edit(client, 999_999_999, template_ids=world["templates"][:1]).status_code == 404
+
+
+def test_contact_book_has_values_for_editing(client, world):
+    reply_id = _reply(client, world["request"].id, template_ids=world["templates"][1:2]).json()[
+        "id"
+    ]
+
+    book = client.get(f"/api/staff/residents/{world['family'].resident_id}/contact-book").json()
+
+    [reply] = book["replies"]
+    assert reply["id"] == reply_id
+    assert reply["template_ids"] == world["templates"][1:2]
+    assert [t["id"] for t in reply["template_options"]] == world["templates"]
+    assert reply["editable"] is True
+
+
+def test_contact_book_past_reply_has_no_template_options(client, session, world):
+    """前の日の返事は直せないので、定型文の候補を返さない（PR #223 さとこ）。"""
+    from datetime import timedelta
+
+    from app.clock import today_jst
+
+    reply_id = _reply(client, world["request"].id, template_ids=world["templates"][:1]).json()["id"]
+    yesterday = today_jst() - timedelta(days=1)
+    session.get(Reply, reply_id).contact_book_date = yesterday
+    session.flush()
+
+    book = client.get(
+        f"/api/staff/residents/{world['family'].resident_id}/contact-book",
+        params={"date": yesterday.isoformat()},
+    ).json()
+
+    [reply] = book["replies"]
+    assert reply["editable"] is False
+    assert reply["template_options"] == []
+    assert reply["template_ids"] == world["templates"][:1]
+
+
+def test_clerk_and_family_cannot_edit(client, world, make_staff, login_as):
+    reply_id = _reply(client, world["request"].id, template_ids=world["templates"][:1]).json()["id"]
+
+    login_as(make_staff(role="clerk").user_id)
+    assert _edit(client, reply_id, template_ids=world["templates"][:1]).status_code == 403
+    login_as(world["family"].user_id)
+    assert _edit(client, reply_id, template_ids=world["templates"][:1]).status_code == 403

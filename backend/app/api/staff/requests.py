@@ -3,6 +3,8 @@
 - `GET /api/staff/residents/{id}/requests`：その入居者の返事待ちのリクエストと、選べる定型文
   （あわせて、家族からのメッセージの対応待ちの件数。spec 004 の 004-T030）
 - `POST /api/staff/requests/{id}/reply`：返事をする（409：already_replied・request_cancelled）
+- `PATCH /api/staff/replies/{id}`：返事をした当日だけ直す
+  （409：not_today。お知らせは作り直さない。001-T063）
 - 職員への通知・音は出さない（FR-029・SC-013）。職員が画面を開いたときに見せる
 - 返事を保存したら、家族へのお知らせとメールの送る予定も作り（create_reply_notice）、
   commit のあとに send_email_now でその場でも送る（001-T051・T057・R-09）
@@ -27,7 +29,7 @@ from app.models.disclosure import ReplyTemplate, Theme
 from app.models.replies import MAX_NOTE_LENGTH
 from app.models.requests import Request
 from app.services.mail import send_email_now
-from app.services.replies import ReplyError, save_reply_with_notice
+from app.services.replies import ReplyError, edit_reply, save_reply_with_notice
 
 router = APIRouter(prefix="/api/staff", tags=["staff"])
 
@@ -143,4 +145,41 @@ def reply(
         template_ids=saved.template_ids,
         note=saved.note,
         replied_at=saved.replied_at,
+    )
+
+
+class ReplyEdit(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    template_ids: list[int] = Field(min_length=1)
+    note: str | None = Field(default=None, max_length=MAX_NOTE_LENGTH)
+
+
+class EditedReplyResponse(BaseModel):
+    id: int
+    template_ids: list[int]
+    note: str | None
+    edited_at: datetime
+
+
+@router.patch("/replies/{reply_id}")
+def edit(
+    reply_id: int,
+    body: ReplyEdit,
+    user: Annotated[CurrentUser, Depends(RECORDERS)],
+    session: Annotated[Session, Depends(get_session)],
+) -> EditedReplyResponse:
+    """返事をした当日だけ、定型文と書き足しを直す（001-T063）。お知らせ・メールは作り直さない。"""
+    try:
+        edited = edit_reply(
+            session, reply_id=reply_id, template_ids=body.template_ids, note=body.note
+        )
+    except ReplyError as error:
+        raise AppError(ErrorCode(error.code)) from error
+    session.commit()
+    return EditedReplyResponse(
+        id=edited.id,
+        template_ids=edited.template_ids,
+        note=edited.note,
+        edited_at=edited.edited_at,
     )

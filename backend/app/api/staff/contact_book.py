@@ -7,6 +7,7 @@ contracts の `GET /api/staff/residents/{id}/contact-book?date=`。
 （共通の関数 get_disclosed_records は通さない。R-06）。
 返事は取り消さず、開示の設定もないので、家族に出すものと同じ get_active_replies を使う。
 記録の画面（001-T032）も、今付いている値を出すためにこれを使う。
+返事には、直すための値（選んだ定型文の id・そのテーマの定型文・今日直せるか）も付ける（001-T063）。
 """
 
 from datetime import date, datetime
@@ -23,7 +24,10 @@ from app.clock import today_jst
 from app.db import get_session
 from app.errors import AppError, ErrorCode
 from app.models.core import Resident, Staff
+from app.models.disclosure import ReplyTemplate
 from app.models.records import CareRecord
+from app.models.replies import Reply
+from app.models.requests import Request
 from app.services.disclosure import get_active_replies
 
 router = APIRouter(prefix="/api/staff", tags=["staff"])
@@ -44,6 +48,11 @@ class StaffRecord(BaseModel):
     recorded_by_name: str
 
 
+class TemplateOption(BaseModel):
+    id: int
+    code: str  # 辞書のキー（例："template.meals.well"）
+
+
 class StaffReply(BaseModel):
     id: int
     request_id: int
@@ -56,6 +65,10 @@ class StaffReply(BaseModel):
     replied_at: datetime
     edited: bool
     read: bool
+    # 直すための値（001-T063）：選んだ定型文の id（選んだ順）、そのテーマの定型文、今日直せるか
+    template_ids: list[int]
+    template_options: list[TemplateOption]
+    editable: bool
 
 
 class StaffContactBook(BaseModel):
@@ -89,6 +102,27 @@ def get_contact_book(
         .order_by(CareRecord.recorded_at, CareRecord.id)
     )
     replies = get_active_replies(session, resident_id, target, target)
+    today = today_jst()
+    # 直すための値。返事の数だけ問い合わせないよう、まとめて読む
+    editing = {
+        reply_id: (template_ids, theme_id)
+        for reply_id, template_ids, theme_id in session.execute(
+            select(Reply.id, Reply.template_ids, Request.theme_id)
+            .join(Request, Request.id == Reply.request_id)
+            .where(Reply.id.in_([reply.id for reply in replies]))
+        )
+    }
+    # 定型文の候補は、今日直せる返事のテーマの分だけ読む（前の日の返事は直せないので空にする）
+    editable_themes = {
+        editing[reply.id][1] for reply in replies if reply.contact_book_date == today
+    }
+    options: dict[int, list[TemplateOption]] = {}
+    for theme_id, template_id, code in session.execute(
+        select(ReplyTemplate.theme_id, ReplyTemplate.id, ReplyTemplate.code)
+        .where(ReplyTemplate.theme_id.in_(editable_themes))
+        .order_by(ReplyTemplate.theme_id, ReplyTemplate.sort_order, ReplyTemplate.id)
+    ):
+        options.setdefault(theme_id, []).append(TemplateOption(id=template_id, code=code))
 
     return StaffContactBook(
         date=target,
@@ -118,6 +152,13 @@ def get_contact_book(
                 replied_at=reply.replied_at,
                 edited=reply.edited,
                 read=reply.read,
+                template_ids=editing[reply.id][0],
+                template_options=(
+                    options.get(editing[reply.id][1], [])
+                    if reply.contact_book_date == today
+                    else []
+                ),
+                editable=reply.contact_book_date == today,
             )
             for reply in replies
         ],

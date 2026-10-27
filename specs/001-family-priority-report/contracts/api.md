@@ -68,12 +68,12 @@
 | メソッド・パス | 役割 | 時期 | 中身 | spec |
 |---|---|---|---|---|
 | `GET /api/staff/residents?date=` | CW・L・CO・D | ミ | 入居者の一覧。食事区分ごとの記録済み／未記録、返事待ちのリクエストの件数 | FR-008・FR-029 |
-| `GET /api/staff/residents/{id}/contact-book?date=` | CW・L・CO・D | ミ | その日の記録と返事を時刻順に（非開示も含む。職員向け）。`{date, resident: {id, display_name, room}, records: [{id, item, slot, value, recorded_at, recorded_by_name}], replies: [{id, request_id, theme_code, theme_emoji, template_codes, note, replied_by_name, replied_at, edited, read}]}`。`date` を省くと今日（日本時間）。取り消した記録は出さない。記録の画面（T032）も、今付いている値を出すのに使う | FR-024 |
+| `GET /api/staff/residents/{id}/contact-book?date=` | CW・L・CO・D | ミ | その日の記録と返事を時刻順に（非開示も含む。職員向け）。`{date, resident: {id, display_name, room}, records: [{id, item, slot, value, recorded_at, recorded_by_name}], replies: [{id, request_id, theme_code, theme_emoji, template_codes, note, replied_by_name, replied_at, edited, read, template_ids, template_options: [{id, code}], editable}]}`（`template_ids`・`template_options`・`editable` は返事を直すため。`template_options` は今日直せる返事にだけ入り、前の日の返事は空。T063）。`date` を省くと今日（日本時間）。取り消した記録は出さない。記録の画面（T032）も、今付いている値を出すのに使う | FR-024 |
 | `PUT /api/staff/residents/{id}/records` | CW・L・CO・D | ミ | 記録する・押し直す（`date`・`item`・`slot`・`value`）。`date` は今日から 3 日前まで（範囲外は 422 `validation_error`）。押し直しは今日の記録だけ（409 `not_today`） | FR-001・FR-002・FR-005・FR-022 |
 | `DELETE /api/staff/records/{record_id}` | CW・L・CO・D | 作 | 当日中に取り消す | Edge Cases |
 | `GET /api/staff/residents/{id}/requests` | CW・L・CO・D | ミ | 返事待ちのリクエスト（テーマ・送られた日・日数・定型文の一覧） | FR-029 |
 | `POST /api/staff/requests/{id}/reply` | CW・L・CO・D | ミ | 返事をする（`template_ids`・`note`）。409：`already_replied`・`request_cancelled` | FR-030 |
-| `PATCH /api/staff/replies/{reply_id}` | CW・L・CO・D | 作 | 当日中に直す（再通知しない） | FR-030 |
+| `PATCH /api/staff/replies/{reply_id}` | CW・L・CO・D | 作 | 当日中に直す（再通知しない）。本文 `{template_ids, note}`（返事と同じ決まり：定型文は 1 つ以上でそのテーマのもの、書き足しは 100 文字まで）。`edited_at` を入れ、家族が読んだかは戻さない。返事をした職員は変えない。今日でなければ 409 `not_today`、ないものは 404 | FR-030 |
 
 ## 開示設定（ゆう）
 

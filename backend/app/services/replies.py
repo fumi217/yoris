@@ -9,9 +9,11 @@
   （さとこの create_reply_notice、001-T051）を同じトランザクションで作る（R-09）。
   返事だけ保存されてお知らせが消える、ということが起きない。
   初期データの返事のサンプルは save_reply だけを使う（デモのたびにメールを送らない）
+- 返事をした当日だけ、edit_reply で直せる（001-T063）。お知らせは作り直さない。取り消しはしない
 """
 
 from collections.abc import Sequence
+from datetime import UTC, datetime
 
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
@@ -53,6 +55,40 @@ class RequestCancelled(ReplyError):
     code = "request_cancelled"
 
 
+class ReplyNotFound(ReplyError):
+    """直す返事がない（404）。"""
+
+    code = "not_found"
+
+
+class ReplyNotToday(ReplyError):
+    """今日でない返事を直そうとした（409。直せるのは返事をした当日だけ。FR-030）。"""
+
+    code = "not_today"
+
+
+def _clean(
+    session: Session, *, theme_id: int, template_ids: Sequence[int], note: str | None
+) -> tuple[list[int], str | None]:
+    """定型文（1 つ以上・そのテーマのもの）と書き足し（100 文字まで）を確かめて、整えて返す。"""
+    ids = list(dict.fromkeys(template_ids))  # 同じ定型文を 2 回選んでも 1 つにする
+    if not ids:
+        raise InvalidReply("template_ids: empty")
+    note = (note or "").strip() or None
+    if note is not None and len(note) > MAX_NOTE_LENGTH:
+        raise InvalidReply(f"note: {len(note)} chars")
+    valid = set(
+        session.scalars(
+            select(ReplyTemplate.id).where(
+                ReplyTemplate.theme_id == theme_id, ReplyTemplate.id.in_(ids)
+            )
+        )
+    )
+    if valid != set(ids):
+        raise InvalidReply("template_ids: not for this theme")
+    return ids, note
+
+
 def save_reply(
     session: Session,
     *,
@@ -62,25 +98,12 @@ def save_reply(
     note: str | None = None,
 ) -> Reply:
     """リクエストに返事をする。同時に保存したときは、先の 1 つだけが保存される（R-07）。"""
-    ids = list(dict.fromkeys(template_ids))  # 同じ定型文を 2 回選んでも 1 つにする
-    if not ids:
+    if not list(template_ids):
         raise InvalidReply("template_ids: empty")
-    note = (note or "").strip() or None
-    if note is not None and len(note) > MAX_NOTE_LENGTH:
-        raise InvalidReply(f"note: {len(note)} chars")
-
     request = session.get(Request, request_id)
     if request is None:
         raise ReplyRequestNotFound(f"request_id: {request_id}")
-    valid = set(
-        session.scalars(
-            select(ReplyTemplate.id).where(
-                ReplyTemplate.theme_id == request.theme_id, ReplyTemplate.id.in_(ids)
-            )
-        )
-    )
-    if valid != set(ids):
-        raise InvalidReply("template_ids: not for this theme")
+    ids, note = _clean(session, theme_id=request.theme_id, template_ids=template_ids, note=note)
 
     # 返事待ちのときだけ answered にする。ほかの職員が同時に返事をしていたら、
     # 先の人の commit を待ってから 0 件になる（ロックを自分で取らずに済む）
@@ -125,3 +148,36 @@ def save_reply_with_notice(
         session, request_id=request_id, staff_id=staff_id, template_ids=template_ids, note=note
     )
     return reply, create_reply_notice(session, reply.id)
+
+
+def edit_reply(
+    session: Session,
+    *,
+    reply_id: int,
+    template_ids: Sequence[int],
+    note: str | None = None,
+    now: datetime | None = None,
+) -> Reply:
+    """返事をした当日だけ、選んだ定型文と書き足しを直す（001-T063・FR-030）。
+
+    edited_at を入れる。家族が読んだかどうか（read_at）は戻さない。お知らせ・メールは作り直さない
+    （通知には中身が入らないため。Clarifications）。返事をした職員の名前は変えない。返事の取り消しはしない。
+    2 人がほぼ同時に直しても、行を押さえて順番に処理する（あとの人の内容になる）。commit しない。
+    """
+    found = session.execute(
+        select(Reply, Request.theme_id)
+        .join(Request, Request.id == Reply.request_id)
+        .where(Reply.id == reply_id)
+        .with_for_update(of=Reply)
+    ).one_or_none()
+    if found is None:
+        raise ReplyNotFound(f"reply_id: {reply_id}")
+    reply, theme_id = found
+    if reply.contact_book_date != today_jst(now):
+        raise ReplyNotToday(f"contact_book_date: {reply.contact_book_date}")
+    ids, note = _clean(session, theme_id=theme_id, template_ids=template_ids, note=note)
+    reply.template_ids = ids
+    reply.note = note
+    reply.edited_at = now or datetime.now(UTC)
+    session.flush()
+    return reply
