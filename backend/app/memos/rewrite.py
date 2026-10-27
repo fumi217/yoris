@@ -58,15 +58,20 @@ def rewrite_memo(
     staff_lang: str,
     *,
     llm: ChatClient | None = None,
+    back_translate: bool = True,
 ) -> RewriteResult:
-    """原文を整えた日本語にし、職員の表示言語が日本語でなければ訳し戻す（FR-003・FR-007）。"""
+    """原文を整えた日本語にし、職員の表示言語が日本語でなければ訳し戻す（FR-003・FR-007）。
+
+    back_translate を False にすると、整えるだけで訳し戻さない（ミニマム版の「日本語にする」。
+    訳し戻しは、作り込みの 007-T017 で、呼ぶ側が True にして足す）。
+    """
     _check_lang(source_lang)
     _check_lang(staff_lang)
     llm = llm or get_rewrite_client()
     started = time.monotonic()
     rewritten, model = _ask(llm, build_rewrite_prompt(source_lang), original_text)
     back_translation = None
-    if staff_lang != "ja":
+    if back_translate and staff_lang != "ja":
         back_translation, model = _ask(llm, build_back_translation_prompt(staff_lang), rewritten)
     return RewriteResult(
         rewritten_text=rewritten,

@@ -89,9 +89,14 @@ def _no_ai_key(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture
 def fake_llm(monkeypatch: pytest.MonkeyPatch) -> FakeLLM:
-    """本物の LLMClient の代わりに、テスト用の LLM（モック）を使う（spec 004 の T004・T014）。"""
+    """本物の LLMClient の代わりに、テスト用の LLM（モック）を使う（spec 004 の T004・T014）。
+
+    問い合わせ AI（app.inquiry.llm.get_llm_client）と、様子のメモの整える用
+    （app.memos.rewrite.get_rewrite_client。spec 007）の、どちらも差し替える。
+    """
     fake = FakeLLM()
     monkeypatch.setattr("app.inquiry.llm.get_llm_client", lambda: fake)
+    monkeypatch.setattr("app.memos.rewrite.get_rewrite_client", lambda: fake)
     return fake
 
 

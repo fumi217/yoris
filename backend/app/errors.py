@@ -48,6 +48,8 @@ class ErrorCode(StrEnum):
     # 決済（spec 002 の contracts。002-T017）
     EMAIL_MISMATCH = "email_mismatch"
     PAYMENT_SERVICE_UNAVAILABLE = "payment_service_unavailable"
+    # 様子のメモ（spec 007 の contracts。007-T010）。AI が止まったときは ai_unavailable を使う
+    INVALID_STATE = "invalid_state"
 
 
 STATUS_CODES: dict[ErrorCode, int] = {
@@ -77,6 +79,7 @@ STATUS_CODES: dict[ErrorCode, int] = {
     ErrorCode.INQUIRY_LIMIT: 429,
     ErrorCode.EMAIL_MISMATCH: 422,
     ErrorCode.PAYMENT_SERVICE_UNAVAILABLE: 502,
+    ErrorCode.INVALID_STATE: 409,
 }
 
 
