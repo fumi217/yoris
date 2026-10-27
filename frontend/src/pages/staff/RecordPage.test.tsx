@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import '../../i18n'
 import { RecordView } from './RecordPage'
 import {
+  canWriteMemo,
   currentValue,
   firstUnrecordedMealSlot,
   withoutRecord,
@@ -35,6 +36,7 @@ const render = (props: Partial<Parameters<typeof RecordView>[0]> = {}) =>
       <RecordView
         book={book()}
         waitingRequests={0}
+        canWriteMemo={false}
         saving={null}
         cancelling={false}
         notice={null}
@@ -139,5 +141,25 @@ describe('RecordView', () => {
 
   it('「写真を載せる」から、その入居者の写真の画面へ進む', () => {
     expect(render()).toContain('href="/staff/residents/3/album"')
+  })
+
+  it('「様子のメモを書く」から、その入居者のメモを書く画面へ進む', () => {
+    expect(render({ canWriteMemo: true })).toContain('href="/staff/residents/3/memos/new"')
+  })
+
+  it('メモを書けない役割には、「様子のメモを書く」を出さない', () => {
+    expect(render({ canWriteMemo: false })).not.toContain('/memos/new')
+  })
+})
+
+describe('canWriteMemo', () => {
+  it('介護職員・リーダーだけが書ける（API と同じ）', () => {
+    expect(canWriteMemo('care_worker')).toBe(true)
+    expect(canWriteMemo('leader')).toBe(true)
+    expect(canWriteMemo('counselor')).toBe(false)
+    expect(canWriteMemo('clerk')).toBe(false)
+    expect(canWriteMemo('director')).toBe(false)
+    expect(canWriteMemo(null)).toBe(false)
+    expect(canWriteMemo(undefined)).toBe(false)
   })
 })

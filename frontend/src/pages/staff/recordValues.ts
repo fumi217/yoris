@@ -1,6 +1,7 @@
 // 記録の画面（UI-S02）で押せる値と、今付いている値の探し方（spec 001 の T032・docs/画面設計.md「5」）。
 // 値のコードは backend/app/models/records.py の VALUES と同じ。文言は辞書の record.value.*。
 
+import type { StaffRole } from '../../auth/me'
 import { MEAL_SLOTS, type MealSlot } from './residentRows'
 
 export type Item = 'meal' | 'mood' | 'sleep'
@@ -76,6 +77,14 @@ export function withRecord(book: StaffContactBook, record: StaffRecord): StaffCo
     (other) => !(other.item === record.item && other.slot === record.slot),
   )
   return { ...book, records: [...others, record] }
+}
+
+/**
+ * 「様子のメモを書く」を出す役割（spec 007 の T012）。メモを書く API が介護職員・リーダーだけのため、
+ * ほかの役割には出さない（押しても 403 になるだけ。docs/画面設計.md の「5」の 4）。
+ */
+export function canWriteMemo(role: StaffRole | null | undefined): boolean {
+  return role === 'care_worker' || role === 'leader'
 }
 
 /** 取り消した記録を外す（001-T034）。 */

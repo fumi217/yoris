@@ -9,6 +9,7 @@ import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
 import { Ruby } from '../../i18n/Ruby'
 import {
+  canWriteMemo,
   currentRecord,
   DAY_SLOT,
   firstUnrecordedMealSlot,
@@ -92,6 +93,7 @@ export function RecordPage() {
     <RecordView
       book={book.data}
       waitingRequests={requests.data?.requests.length ?? 0}
+      canWriteMemo={canWriteMemo(me?.role)}
       saving={save.isPending ? save.variables : null}
       cancelling={cancel.isPending}
       notice={notice}
@@ -111,6 +113,8 @@ export function RecordPage() {
 type ViewProps = {
   book: StaffContactBook
   waitingRequests: number
+  // 「様子のメモを書く」を出すか（介護職員・リーダーだけ）
+  canWriteMemo: boolean
   // 保存中の値（押したボタンだけ「保存中」にし、続けて押せないようにする）
   saving: Choice | null | undefined
   cancelling: boolean
@@ -124,6 +128,7 @@ type ViewProps = {
 export function RecordView({
   book,
   waitingRequests,
+  canWriteMemo,
   saving,
   cancelling,
   notice,
@@ -158,8 +163,7 @@ export function RecordView({
         </Link>
       )}
 
-      {/* 写真・様子のメモの入り口（docs/画面設計.md の「5」の 4）。横 1 列に並べる。
-          様子のメモ（007-T012・#127）は、みさきの画面ができたら同じ列に足す */}
+      {/* 写真・様子のメモの入り口（docs/画面設計.md の「5」の 4）。横 1 列に並べる */}
       <div className="flex flex-wrap gap-2 text-sm">
         {/* 写真を載せる（spec 005 の T015。職員の 4 つの役割すべて。画面はさとこ） */}
         <Link
@@ -169,6 +173,16 @@ export function RecordView({
           <span aria-hidden="true">📷 </span>
           <Text k="record_page.album" />
         </Link>
+        {canWriteMemo && (
+          // 様子のメモを書く（UI-S05。spec 007 の T012。介護職員・リーダーだけ。画面はみさき）
+          <Link
+            to={`/staff/residents/${resident.id}/memos/new`}
+            className="rounded border border-gray-300 px-3 py-2"
+          >
+            <span aria-hidden="true">✏️ </span>
+            <Text k="memo.write" />
+          </Link>
+        )}
       </div>
 
       <p role="status" aria-live="polite" className="min-h-6 text-sm">
