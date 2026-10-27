@@ -165,8 +165,8 @@ def test_staff_message_reply_notice_for_the_family(session, message_world, monke
     assert outbox.template == "staff_message_reply"
     assert outbox.sent_at is None
     assert outbox.to_email.endswith("@example.test")
-    # 渡すのはリンクだけ。質問・要約・入居者名は、メールの材料に入らない（SC-010）
-    assert outbox.params == {"link": "http://app.test/family"}
+    # 渡すのはリンクだけ（「お問い合わせ」の画面へ）。質問・要約・入居者名は入らない（SC-010）
+    assert outbox.params == {"link": "http://app.test/family/inquiry"}
     text = json.dumps(outbox.params, ensure_ascii=False)
     for secret in ("ひみつの質問の文", "ひみつの要約", "ひみつの入居者名"):
         assert secret not in text

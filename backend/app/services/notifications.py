@@ -67,7 +67,8 @@ def create_staff_message_reply_notice(session: Session, staff_message_id: int) -
     )
 
     base_url = get_settings().app_base_url
-    params = {"link": f"{base_url}/family"} if base_url else {}
+    # 返事は「お問い合わせ」の画面（UI-F05）で見るので、そこへのリンクにする（#85。PR #212）
+    params = {"link": f"{base_url}/family/inquiry"} if base_url else {}
     outbox = EmailOutbox(to_email=email, template="staff_message_reply", params=params)
     session.add(outbox)
     session.flush()
