@@ -46,9 +46,11 @@ export function ResidentTable({ data }: { data: ResidentListResponse }) {
             <Ruby text={t('resident_list.date', monthDay(data.date))} />
           </span>
         </h1>
-        {/* みさきの家族からのメッセージの一覧（spec 004）ができたら、押すとそこへ進むようにする */}
+        {/* 押すと、家族からのメッセージの一覧（UI-S08。spec 004 の T029）へ進む */}
         <p className="text-sm">
-          <Ruby text={t('resident_list.messages_total', { count: messages })} />
+          <Link to="/staff/messages" className="text-sky-700 underline">
+            <Ruby text={t('resident_list.messages_total', { count: messages })} />
+          </Link>
         </p>
       </div>
       <p className="px-4 pb-2 text-xs text-gray-600">

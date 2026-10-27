@@ -1,5 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router'
 import { AreaGuard } from '../../components/AreaGuard'
+import { FamilyMessage } from './FamilyMessage'
+import { FamilyMessages } from './FamilyMessages'
 import { RecordPage } from './RecordPage'
 import { ReplyPage } from './ReplyPage'
 import { ResidentList } from './ResidentList'
@@ -20,6 +22,9 @@ export default function StaffRoutes() {
           <Route path="residents/:residentId/contact-book" element={<StaffContactBook />} />
           {/* 職員の返事（UI-S03。001-T062 ゆう） */}
           <Route path="residents/:residentId/requests" element={<ReplyPage />} />
+          {/* 家族からのメッセージ（UI-S08・UI-S09。004-T029 みさき。管理画面からも同じ画面を開く） */}
+          <Route path="messages" element={<FamilyMessages />} />
+          <Route path="messages/:messageId" element={<FamilyMessage />} />
           <Route path="*" element={<Navigate to="/staff" replace />} />
         </Route>
       </Routes>

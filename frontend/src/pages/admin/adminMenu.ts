@@ -8,6 +8,8 @@ export type AdminMenuItem = {
   labelKey: string
   icon: string
   roles: StaffRole[]
+  // 家族からのメッセージの対応待ちの件数を添える入り口（#88）
+  showMessageCount?: boolean
 }
 
 export const adminMenu: AdminMenuItem[] = [
@@ -17,6 +19,14 @@ export const adminMenu: AdminMenuItem[] = [
     labelKey: 'admin.menu.disclosure',
     icon: '👁️',
     roles: ['counselor', 'director'],
+  },
+  // 家族からのメッセージ（UI-S08。spec 004 の T029。事務員の入り口。職員の画面と同じ画面を開く）
+  {
+    to: '/admin/messages',
+    labelKey: 'admin.menu.family_messages',
+    icon: '📩',
+    roles: ['counselor', 'clerk', 'director'],
+    showMessageCount: true,
   },
   // 利用料のお支払い（spec 002 の T026。施設長・事務員。守りは API の 403）
   {

@@ -1,5 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router'
 import { AreaGuard } from '../../components/AreaGuard'
+import { FamilyMessage } from '../staff/FamilyMessage'
+import { FamilyMessages } from '../staff/FamilyMessages'
 import { AdminHome } from './AdminHome'
 import { AdminLayout } from './AdminLayout'
 import { Billing } from './Billing'
@@ -18,6 +20,9 @@ export default function AdminRoutes() {
           <Route index element={<AdminHome />} />
           {/* 開示設定（UI-A01。001-T040 ゆう） */}
           <Route path="disclosure" element={<DisclosureSettings />} />
+          {/* 家族からのメッセージ（UI-S08・UI-S09。004-T029 みさき。職員の画面と同じ画面。事務員の入り口） */}
+          <Route path="messages" element={<FamilyMessages />} />
+          <Route path="messages/:messageId" element={<FamilyMessage />} />
           {/* 利用料のお支払い（spec 002 の T026。施設長・事務員） */}
           <Route path="billing" element={<Billing />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
