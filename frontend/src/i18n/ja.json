@@ -132,7 +132,8 @@
       "inquiry": "お{問|と}い{合|あ}わせ",
       "album": "アルバム",
       "settings": "{設定|せってい}"
-    }
+    },
+    "confirm_stop": "やめる"
   },
   "auth": {
     "title": "ログイン",
@@ -189,7 +190,21 @@
     "book_another": "ほかの{日|ひ}を{見|み}る",
     "month": "{{year}}{年|ねん}{{month}}{月|がつ}",
     "previous_month": "◀ {前|まえ}の{月|つき}",
-    "next_month": "{次|つぎ}の{月|つき} ▶"
+    "next_month": "{次|つぎ}の{月|つき} ▶",
+    "mine_title": "これからの{予約|よやく}",
+    "mine_empty": "これからの{予約|よやく}はありません",
+    "status": {
+      "booked": "{予約済|よやくず}み",
+      "cancelled_by_family": "{取|と}り{消|け}しました",
+      "cancelled_by_staff": "{施設|しせつ}が{取|と}り{消|け}しました"
+    },
+    "cancel_reason": "{理由|りゆう}：",
+    "cancel": "{取|と}り{消|け}す",
+    "cancel_confirm": "もう{一度|いちど}{押|お}すと{取|と}り{消|け}します",
+    "cancelling": "{取|と}り{消|け}しています",
+    "cancelled_notice": "{予約|よやく}を{取|と}り{消|け}しました",
+    "deadline_passed": "{締|し}め{切|き}りを{過|す}ぎたため、{施設|しせつ}にお{電話|でんわ}ください",
+    "mine_error": "{予約|よやく}を{読|よ}み{込|こ}めませんでした"
   },
   "staff_template": {
     "medical": {

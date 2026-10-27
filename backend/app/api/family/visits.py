@@ -15,7 +15,12 @@ from app.auth.deps import CurrentUser, require_family
 from app.db import get_session
 from app.errors import AppError, ErrorCode
 from app.services.visit_rules import VisitRuleError
-from app.services.visits import book_visit, get_availability
+from app.services.visits import (
+    book_visit,
+    cancel_by_family,
+    get_availability,
+    list_my_reservations,
+)
 
 router = APIRouter(prefix="/api/family/visits", tags=["family"])
 
@@ -103,3 +108,49 @@ def book(
         party_size=reservation.party_size,
         status=reservation.status,
     )
+
+
+class MyReservationOut(BaseModel):
+    id: int
+    visit_date: date
+    start_time: time
+    party_size: int
+    status: str  # booked / cancelled_by_family / cancelled_by_staff
+    # 施設が取り消したときだけ入る理由。画面では文字としてだけ出す（FR-016）
+    cancel_reason: str | None
+    # 今アプリで取り消せるか（予約済みで、前日 17 時より前）
+    can_cancel: bool
+
+
+@router.get("")
+def my_reservations(
+    user: Annotated[CurrentUser, Depends(require_family)],
+    session: Annotated[Session, Depends(get_session)],
+) -> list[MyReservationOut]:
+    """自分の入居者の、これからの予約（今日を含む）。日時の順（003-T017・FR-006）。"""
+    return [
+        MyReservationOut(
+            id=row.id,
+            visit_date=row.visit_date,
+            start_time=row.start_time,
+            party_size=row.party_size,
+            status=row.status,
+            cancel_reason=row.cancel_reason,
+            can_cancel=row.can_cancel,
+        )
+        for row in list_my_reservations(session, user)
+    ]
+
+
+@router.delete("/{reservation_id}", status_code=204)
+def cancel_reservation(
+    reservation_id: int,
+    user: Annotated[CurrentUser, Depends(require_family)],
+    session: Annotated[Session, Depends(get_session)],
+) -> None:
+    """自分の予約を取り消す。前日 17 時を過ぎたら 409、ほかの家族の予約は 404（FR-007・FR-015）。"""
+    try:
+        cancel_by_family(session, user, reservation_id)
+    except VisitRuleError as error:
+        raise _app_error(error) from error
+    session.commit()

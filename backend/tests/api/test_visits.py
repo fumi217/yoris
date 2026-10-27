@@ -191,3 +191,114 @@ def test_availability_mine_and_full_day(clients):
     assert mine["mine"] is True
     # 2 組入った日は、どれも選べない
     assert not any(slot["selectable"] for slot in full["start_times"])
+
+
+# --- 自分の予約を見て取り消す（003-T015。User Story 2） ---
+
+
+def _mine(client: TestClient) -> list[dict]:
+    response = client.get("/api/family/visits")
+    assert response.status_code == 200
+    return response.json()
+
+
+def _cancel(client: TestClient, reservation_id: int):
+    return client.delete(f"/api/family/visits/{reservation_id}", headers=FETCH)
+
+
+def test_my_reservations_are_only_mine(clients):
+    mine = _post(clients["a"]).json()["id"]
+    _post(clients["b"], start_time="13:00")
+
+    rows = _mine(clients["a"])
+
+    # 自分の入居者の予約だけ（FR-006・FR-015）
+    assert [row["id"] for row in rows] == [mine]
+    assert rows[0]["party_size"] == 2
+    assert rows[0]["status"] == "booked"
+    assert rows[0]["can_cancel"] is True
+    assert rows[0]["cancel_reason"] is None
+
+
+def test_cancel_before_deadline_frees_the_time(clients):
+    reservation = _post(clients["a"]).json()["id"]
+
+    assert _cancel(clients["a"], reservation).status_code == 204
+
+    # 取り消した予約は、状態がわかるように一覧に残る
+    [row] = _mine(clients["a"])
+    assert (row["status"], row["can_cancel"]) == ("cancelled_by_family", False)
+    # その時間がまた選べる（FR-007）
+    assert _post(clients["b"]).status_code == 201
+
+
+def test_cancel_after_deadline_is_409(clients, monkeypatch):
+    # 10/23 12:00 に、翌日（10/24）の面会を予約する
+    reservation = _post(clients["a"], visit_date="2026-10-24").json()["id"]
+    # 前日（10/23）の 17 時を過ぎた
+    monkeypatch.setattr(
+        "app.clock.now", lambda: datetime(2026, 10, 23, 17, 1, tzinfo=JST).astimezone(UTC)
+    )
+
+    assert _mine(clients["a"])[0]["can_cancel"] is False
+    response = _cancel(clients["a"], reservation)
+
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "visit_deadline_passed"
+
+
+def test_cancel_others_reservation_is_404(clients):
+    reservation = _post(clients["a"]).json()["id"]
+
+    # ほかの家族の予約の id は、ないものと同じ 404（存在するかも知らせない。SC-004）
+    response = _cancel(clients["b"], reservation)
+
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "not_found"
+    assert _cancel(clients["a"], 999_999_999).status_code == 404
+    # A の予約は残っている
+    assert _mine(clients["a"])[0]["status"] == "booked"
+
+
+def test_cancel_twice_is_404(clients):
+    reservation = _post(clients["a"]).json()["id"]
+    assert _cancel(clients["a"], reservation).status_code == 204
+
+    assert _cancel(clients["a"], reservation).status_code == 404
+
+
+def test_staff_cancel_reason_is_returned_as_text(clients, session):
+    from app.models.core import Staff, User
+    from app.models.visits import VisitReservation
+
+    reservation_id = _post(clients["a"]).json()["id"]
+    user = User(kind="staff", login_id="s99901", password_hash="x")
+    session.add(user)
+    session.flush()
+    reservation = session.get(VisitReservation, reservation_id)
+    staff = Staff(
+        user_id=user.id, facility_id=reservation.facility_id, display_name="職員", role="clerk"
+    )
+    session.add(staff)
+    session.flush()
+    reservation.status = "cancelled_by_staff"
+    reservation.cancelled_by_staff_id = staff.id
+    reservation.cancel_reason = "<b>感染症</b>のため"
+    session.flush()
+
+    [row] = _mine(clients["a"])
+
+    # 施設が取り消した理由は、文字としてそのまま返る（画面でも文字としてだけ出す。FR-016）
+    assert row["status"] == "cancelled_by_staff"
+    assert row["cancel_reason"] == "<b>感染症</b>のため"
+    assert row["can_cancel"] is False
+
+
+def test_past_reservations_are_not_listed(clients, monkeypatch):
+    _post(clients["a"])
+    # 面会の日（10/28）を過ぎた
+    monkeypatch.setattr(
+        "app.clock.now", lambda: datetime(2026, 10, 29, 9, 0, tzinfo=JST).astimezone(UTC)
+    )
+
+    assert _mine(clients["a"]) == []

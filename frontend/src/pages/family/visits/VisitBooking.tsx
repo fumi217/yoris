@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError, api, messageKeyOf } from '../../../api/client'
 import { Message } from '../../../components/Message'
 import { Text } from '../../../components/Text'
 import { Ruby } from '../../../i18n/Ruby'
 import { stripRuby } from '../../../i18n/rubyText'
+import { MyVisits } from './MyVisits'
 import {
   bookingRange,
   dayStatus,
@@ -20,6 +21,7 @@ import {
   type Availability,
   type Day,
   type Reservation,
+  MY_VISITS_KEY,
 } from './visitDates'
 
 type Booking = { visit_date: string; start_time: string; party_size: number }
@@ -41,13 +43,20 @@ export function VisitBooking() {
   })
   const book = useMutation({
     mutationFn: (booking: Booking) => api.post<Reservation>('/api/family/visits', booking),
-    onSettled: () => queryClient.invalidateQueries({ queryKey }),
+    // 空きと、いちばん上の「これからの予約」を読み直す
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey }),
+        queryClient.invalidateQueries({ queryKey: MY_VISITS_KEY }),
+      ]),
   })
 
   if (availability.isPending) return <Message k="layout.loading" />
   if (availability.isError) return <Message k={messageKeyOf(availability.error)} />
   return (
     <BookingView
+      // 自分の予約（003-T018）。題のすぐ下に出す
+      mine={<MyVisits />}
       days={availability.data.days}
       booking={book.isPending}
       confirmed={book.isSuccess ? book.data : null}
@@ -74,6 +83,8 @@ type ViewProps = {
   onReset: () => void
   // 初めから選んでおく日付（テスト用。画面では選ばない状態から始める）
   initialDate?: string | null
+  // 題のすぐ下に出す「これからの予約」（MyVisits）
+  mine?: ReactNode
 }
 
 /** 画面の中身（テストではこれを直接出す）。 */
@@ -85,6 +96,7 @@ export function BookingView({
   onBook,
   onReset,
   initialDate = null,
+  mine = null,
 }: ViewProps) {
   const { t } = useTranslation()
   const [date, setDate] = useState<string | null>(initialDate)
@@ -130,6 +142,7 @@ export function BookingView({
         >
           <Text k="visit.book_another" />
         </button>
+        {mine}
       </section>
     )
   }
@@ -149,6 +162,8 @@ export function BookingView({
           <Text k="visit.hours_note" />
         </p>
       </div>
+
+      {mine}
 
       {errorKey && (
         <p role="alert" className="rounded border border-red-700 p-3 text-red-700">

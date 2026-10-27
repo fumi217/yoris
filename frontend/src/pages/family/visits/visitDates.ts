@@ -104,3 +104,20 @@ export function calendarCells(month: string): (string | null)[] {
   while (cells.length % 7 !== 0) cells.push(null)
   return cells
 }
+
+// --- 自分の予約（003-T018） ---
+
+/** `GET /api/family/visits` の 1 件（backend/app/api/family/visits.py の MyReservationOut）。 */
+export type MyReservation = {
+  id: number
+  visit_date: string
+  start_time: string // "10:00:00"
+  party_size: number
+  status: 'booked' | 'cancelled_by_family' | 'cancelled_by_staff'
+  // 施設が取り消したときだけ入る理由
+  cancel_reason: string | null
+  // 今アプリで取り消せるか（予約済みで、前日 17 時より前。サーバーが日本時間で決める）
+  can_cancel: boolean
+}
+
+export const MY_VISITS_KEY = ['family', 'visits', 'mine']

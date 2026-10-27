@@ -5,6 +5,9 @@
 - 関数の中では commit しない（呼んだ API が最後に 1 回だけ commit する）。
   順番待ち（pg_advisory_xact_lock）は、その commit で外れる
 - 休みの日（visit_closed_days）は作り込み（003-T019 など）で足す。今は休みの日はない扱い
+- 家族の自分の予約の一覧（list_my_reservations）と取り消し（cancel_by_family）は 003-T016。
+  ほかの家族の予約は、ないものと同じ 404 にする（存在するかも知らせない。FR-015・SC-004）。
+  家族が自分で取り消したときは、お知らせを作らない（research.md R-07）
 """
 
 from dataclasses import dataclass
@@ -15,12 +18,15 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.deps import CurrentUser
+from app.clock import now_jst
 from app.models.core import Resident
 from app.models.visits import VisitReservation, VisitSetting, VisitStartTime
 from app.services.visit_rules import (
     VisitRuleError,
     check_bookable_date,
+    check_family_cancel,
     check_start_time,
+    is_before_deadline,
     overlaps,
     visit_range,
 )
@@ -54,6 +60,12 @@ class VisitInvalidInput(VisitError):
     """人数が 1 未満・期間の指定が逆、など（422）。"""
 
     code = "validation_error"
+
+
+class VisitNotFound(VisitError):
+    """自分の入居者の予約でない・もう取り消してある（404。存在するかも知らせない）。"""
+
+    code = "not_found"
 
 
 # DB の決まりに引っかかったときに、どのエラーにするか（R-01 の最後の守り）
@@ -219,3 +231,73 @@ def get_availability(
         days.append(DayAvailability(date=day, closed=False, mine=mine, start_times=start_times))
         day += timedelta(days=1)
     return days
+
+
+@dataclass(frozen=True)
+class MyReservation:
+    id: int
+    visit_date: date
+    start_time: time
+    party_size: int
+    status: str  # booked / cancelled_by_family / cancelled_by_staff
+    # 施設が取り消したときだけ入る理由（文字としてだけ出す。FR-016）
+    cancel_reason: str | None
+    # 今アプリで取り消せるか（予約済みで、前日 17 時より前）。過ぎていれば画面で電話を案内する
+    can_cancel: bool
+
+
+def list_my_reservations(
+    session: Session, current_user: CurrentUser, at: datetime | None = None
+) -> list[MyReservation]:
+    """自分の入居者の、これからの予約（今日を含む）を、日時の順に返す（003-T017・FR-006）。
+
+    取り消した予約も、状態がわかるように返す（施設が取り消したときは理由も）。
+    """
+    resident_id = _resident_id(current_user)
+    rows = session.scalars(
+        select(VisitReservation)
+        .where(
+            VisitReservation.resident_id == resident_id,
+            VisitReservation.visit_date >= now_jst(at).date(),
+        )
+        .order_by(VisitReservation.visit_date, VisitReservation.start_time, VisitReservation.id)
+    )
+    return [
+        MyReservation(
+            id=row.id,
+            visit_date=row.visit_date,
+            start_time=row.start_time,
+            party_size=row.party_size,
+            status=row.status,
+            cancel_reason=row.cancel_reason if row.status == "cancelled_by_staff" else None,
+            can_cancel=row.status == "booked" and is_before_deadline(row.visit_date, at),
+        )
+        for row in rows
+    ]
+
+
+def cancel_by_family(
+    session: Session, current_user: CurrentUser, reservation_id: int, at: datetime | None = None
+) -> VisitReservation:
+    """家族が自分の予約を取り消す（003-T016・FR-007）。取り消すと、その時間がまた選べる。
+
+    自分の入居者の予約済み（booked）でなければ 404。前日 17 時を過ぎていたら
+    visit_deadline_passed。お知らせは作らない（R-07）。commit しない。
+    """
+    resident_id = _resident_id(current_user)
+    reservation = session.scalars(
+        select(VisitReservation)
+        .where(
+            VisitReservation.id == reservation_id,
+            VisitReservation.resident_id == resident_id,
+            VisitReservation.status == "booked",
+        )
+        .with_for_update()
+    ).one_or_none()
+    if reservation is None:
+        raise VisitNotFound(f"reservation_id: {reservation_id}")
+    check_family_cancel(reservation.visit_date, at)
+    reservation.status = "cancelled_by_family"
+    reservation.cancelled_at = func.now()
+    session.flush()
+    return reservation

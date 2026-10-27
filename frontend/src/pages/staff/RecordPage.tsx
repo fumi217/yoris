@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router'
 import { api, messageKeyOf } from '../../api/client'
 import { useMe } from '../../auth/me'
+import { ConfirmButton } from '../../components/ConfirmButton'
 import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
 import { Ruby } from '../../i18n/Ruby'
@@ -258,12 +259,11 @@ type ChoicesProps = {
 
 /**
  * 値のボタンの並び。今付いている値は、色を変えて aria-pressed にする。
- * 記録があれば、下に「この記録を取り消す」（1 回目で確かめの文に変わり、2 回目で取り消す）。
+ * 記録があれば、下に「この記録を取り消す」（ConfirmButton。1 回目で確かめの文と「やめる」に変わり、2 回目で取り消す）。
  */
 function Choices({ item, slot, records, saving, cancelling, onChoose, onCancel }: ChoicesProps) {
   const record = currentRecord(records, item, slot)
   const current = record?.value ?? null
-  const [confirming, setConfirming] = useState(false)
   const busy = Boolean(saving) || cancelling
 
   return (
@@ -277,10 +277,7 @@ function Choices({ item, slot, records, saving, cancelling, onChoose, onCancel }
               type="button"
               aria-pressed={selected}
               disabled={busy}
-              onClick={() => {
-                setConfirming(false)
-                onChoose({ item, slot, value })
-              }}
+              onClick={() => onChoose({ item, slot, value })}
               className={`min-h-14 rounded border-2 px-3 py-2 text-lg disabled:opacity-60 ${
                 selected ? 'border-sky-700 bg-sky-700 text-white' : 'border-gray-300 bg-white'
               }`}
@@ -291,23 +288,17 @@ function Choices({ item, slot, records, saving, cancelling, onChoose, onCancel }
         })}
       </div>
       {record && (
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => {
-            if (!confirming) {
-              setConfirming(true)
-              return
-            }
-            setConfirming(false)
-            onCancel(record.id)
-          }}
-          className={`mt-2 text-sm underline disabled:opacity-60 ${
-            confirming ? 'font-bold text-red-700' : 'text-gray-600'
-          }`}
-        >
-          <Text k={confirming ? 'record_page.cancel_confirm' : 'record_page.cancel'} />
-        </button>
+        <div className="mt-2">
+          <ConfirmButton
+            // 値を押し直したら、確かめの文を元に戻す
+            key={`${record.id}-${record.value}`}
+            labelKey="record_page.cancel"
+            confirmKey="record_page.cancel_confirm"
+            disabled={busy}
+            onConfirm={() => onCancel(record.id)}
+            className="text-sm text-gray-600 underline"
+          />
+        </div>
       )}
     </div>
   )
