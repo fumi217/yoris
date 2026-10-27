@@ -63,7 +63,21 @@ export function FamilyMessages() {
           search={residentId === null ? '' : `?resident_id=${residentId}`}
         />
       )}
+      <BackToResidents base={base} />
     </section>
+  )
+}
+
+/**
+ * 職員の画面で開いたときの「入居者一覧へ」（#256）。
+ * 管理画面で開いたときは、枠の「管理画面のトップへ」があるので出さない。
+ */
+export function BackToResidents({ base }: { base: string }) {
+  if (base !== '/staff/messages') return null
+  return (
+    <Link to="/staff" className="inline-block text-sky-700 underline">
+      <Text k="family_messages.back_to_residents" />
+    </Link>
   )
 }
 

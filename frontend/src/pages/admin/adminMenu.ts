@@ -47,3 +47,8 @@ export const adminMenu: AdminMenuItem[] = [
 export function adminMenuFor(role: StaffRole | null): AdminMenuItem[] {
   return role ? adminMenu.filter((item) => item.roles.includes(role)) : []
 }
+
+/** 管理画面のトップ（`/admin`）か。トップ以外の画面には「管理画面のトップへ」を出す（#256）。 */
+export function isAdminHome(pathname: string): boolean {
+  return pathname.replace(/\/+$/, '') === '/admin'
+}

@@ -5,7 +5,7 @@ import i18n from '../../i18n'
 import { Ruby } from '../../i18n/Ruby'
 import { adminMenuFor } from '../admin/adminMenu'
 import { MessageDetailView } from './FamilyMessage'
-import { MessageListView } from './FamilyMessages'
+import { BackToResidents, MessageListView } from './FamilyMessages'
 import {
   arrivedKey,
   canAssign,
@@ -311,5 +311,22 @@ describe('入居者での絞り込み（?resident_id=。#88）', () => {
     expect(text(renderToStaticMarkup(<Ruby text={i18n.t('family_messages.show_all')} />))).toBe(
       'すべての入居者を見る',
     )
+  })
+})
+
+describe('BackToResidents', () => {
+  const render = (base: string) =>
+    renderToStaticMarkup(
+      <MemoryRouter>
+        <BackToResidents base={base} />
+      </MemoryRouter>,
+    )
+
+  it('職員の画面で開いたときは、入居者一覧へ戻れる（#256）', () => {
+    expect(render('/staff/messages')).toContain('href="/staff"')
+  })
+
+  it('管理画面で開いたときは出さない（枠の「管理画面のトップへ」がある）', () => {
+    expect(render('/admin/messages')).toBe('')
   })
 })
