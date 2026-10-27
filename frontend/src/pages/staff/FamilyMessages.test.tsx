@@ -11,7 +11,9 @@ import {
   canAssign,
   canReply,
   hasTemplates,
+  listUrl,
   messagesBase,
+  residentFilterOf,
   type ConversationMessage,
   type MessageDetail,
   type MessageRow,
@@ -244,5 +246,49 @@ describe('管理画面のトップの件数', () => {
     expect(
       text(renderToStaticMarkup(<Ruby text={i18n.t('admin.waiting_messages', { count: 3 })} />)),
     ).toBe('対応待ち 3 件')
+  })
+})
+
+describe('入居者での絞り込み（?resident_id=。#88）', () => {
+  it('正の整数が 1 つだけのときに、絞り込む入居者の id として読む', () => {
+    expect(residentFilterOf('?resident_id=12')).toBe(12)
+    expect(residentFilterOf('resident_id=3&other=x')).toBe(3)
+    // 安全な整数の範囲のいちばん大きい数までは読める
+    expect(residentFilterOf('?resident_id=9007199254740991')).toBe(9007199254740991)
+  })
+
+  it('ないとき・正の整数でないとき・複数あるときは、絞り込まない', () => {
+    for (const search of [
+      '',
+      '?',
+      '?resident_id=',
+      '?resident_id=0',
+      '?resident_id=-1',
+      '?resident_id=abc',
+      '?resident_id=1.5',
+      '?resident_id=1e3',
+      '?resident_id=12abc',
+      '?resident_id=1&resident_id=2',
+      // 安全な整数の範囲（9007199254740991）を超えるもの。Number() で丸められて別の値になる
+      '?resident_id=9007199254740992',
+      '?resident_id=9999999999999999',
+      `?resident_id=${'9'.repeat(30)}`,
+    ]) {
+      expect(residentFilterOf(search)).toBeNull()
+    }
+  })
+
+  it('一覧の API の URL に、状態と、読めた入居者の id だけを渡す', () => {
+    expect(listUrl('waiting', null)).toBe('/api/staff/messages?status=waiting')
+    expect(listUrl('answered', 7)).toBe('/api/staff/messages?status=answered&resident_id=7')
+  })
+
+  it('絞り込みの案内の文言が、ふりがなを外して読める', () => {
+    expect(text(renderToStaticMarkup(<Ruby text={i18n.t('family_messages.filtered')} />))).toBe(
+      'この入居者のメッセージだけを表示しています',
+    )
+    expect(text(renderToStaticMarkup(<Ruby text={i18n.t('family_messages.show_all')} />))).toBe(
+      'すべての入居者を見る',
+    )
   })
 })

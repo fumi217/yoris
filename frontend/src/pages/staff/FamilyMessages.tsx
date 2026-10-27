@@ -9,8 +9,10 @@ import { Ruby } from '../../i18n/Ruby'
 import {
   arrivedKey,
   categoryKey,
+  listUrl,
   MESSAGES_KEY,
   messagesBase,
+  residentFilterOf,
   STATUS_TABS,
   type MessageList,
   type MessageRow,
@@ -23,11 +25,14 @@ import {
  * 対応待ちを先に、担当が自分か空のものを先に、古い順（API が並べる。FR-012）。通知・音は出さない（FR-013）。
  */
 export function FamilyMessages() {
-  const base = messagesBase(useLocation().pathname)
+  const { pathname, search } = useLocation()
+  const base = messagesBase(pathname)
+  // 入居者の一覧の「📩 ◯件」から来たときは、その入居者の分だけに絞る（`?resident_id=`。#88）
+  const residentId = residentFilterOf(search)
   const [status, setStatus] = useState<Status>('waiting')
   const messages = useQuery({
-    queryKey: [...MESSAGES_KEY, 'list', status],
-    queryFn: () => api.get<MessageList>(`/api/staff/messages?status=${status}`),
+    queryKey: [...MESSAGES_KEY, 'list', status, residentId],
+    queryFn: () => api.get<MessageList>(listUrl(status, residentId)),
   })
 
   return (
@@ -35,6 +40,16 @@ export function FamilyMessages() {
       <h1 className="text-xl font-bold">
         <Text k="family_messages.title" />
       </h1>
+      {residentId !== null && (
+        <p className="flex flex-wrap items-center gap-x-3 rounded bg-sky-50 p-3 text-sm">
+          <span>
+            <Text k="family_messages.filtered" />
+          </span>
+          <Link to={base} className="text-sky-700 underline">
+            <Text k="family_messages.show_all" />
+          </Link>
+        </p>
+      )}
       <MessageTabs status={status} onChange={setStatus} />
       {messages.isPending ? (
         <Message k="layout.loading" />

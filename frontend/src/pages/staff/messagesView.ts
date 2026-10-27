@@ -56,6 +56,27 @@ export function messagesBase(pathname: string): '/staff/messages' | '/admin/mess
   return pathname.startsWith('/admin') ? '/admin/messages' : '/staff/messages'
 }
 
+/**
+ * URL の `?resident_id=` から、絞り込む入居者の id を読む。
+ * 正の整数だけを受け付ける（それ以外・複数・空は絞り込まない）。API には、読めた数だけを渡す。
+ * 安全な整数の範囲（`Number.MAX_SAFE_INTEGER`）を超える数は、`Number()` で丸められて別の値になるので、
+ * 読まない（PR #241 ようこ）。
+ * 入居者の id が合っていても、見られるメッセージは API が決める（苦情は生活相談員・施設長にだけ）。
+ */
+export function residentFilterOf(search: string): number | null {
+  const values = new URLSearchParams(search).getAll('resident_id')
+  if (values.length !== 1 || !/^[1-9][0-9]*$/.test(values[0])) return null
+  const id = Number(values[0])
+  return Number.isSafeInteger(id) ? id : null
+}
+
+/** 一覧の API の URL。入居者で絞るときは、`resident_id` を足す。 */
+export function listUrl(status: Status, residentId: number | null): string {
+  const query = new URLSearchParams({ status })
+  if (residentId !== null) query.set('resident_id', String(residentId))
+  return `/api/staff/messages?${query.toString()}`
+}
+
 /** 質問の種類の名前の辞書のキー。 */
 export function categoryKey(category: MessageRow['category']): string {
   return `inquiry.category.${category}`
