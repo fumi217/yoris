@@ -8,6 +8,10 @@
   休みにする処理（close_day）も同じその日だけの順番待ちを取るので、
   休みにした瞬間に予約が入ることはない
 - 施設の設定（開始時刻の候補・1 日の組数・休みの日）と、職員の取り消し・予約の一覧は 003-T022〜T024
+- 家族へのお知らせ（さとこの create_visit_notice。003-T030）は、
+  予約の確定（book_visit_with_notice）と職員の取り消し（cancel_by_staff。休みにするときも）で、
+  同じトランザクションの中で作る（R-07）。
+  家族が自分で取り消したときは作らない
 - 家族の自分の予約の一覧（list_my_reservations）と取り消し（cancel_by_family）は 003-T016。
   ほかの家族の予約は、ないものと同じ 404 にする（存在するかも知らせない。FR-015・SC-004）。
   家族が自分で取り消したときは、お知らせを作らない（research.md R-07）
@@ -24,6 +28,7 @@ from app.auth.deps import CurrentUser
 from app.clock import now_jst
 from app.models.core import Resident
 from app.models.visits import VisitClosedDay, VisitReservation, VisitSetting, VisitStartTime
+from app.services.notifications import create_visit_notice
 from app.services.visit_rules import (
     VisitRuleError,
     check_bookable_date,
@@ -208,6 +213,23 @@ def book_visit(
         constraint = getattr(getattr(error.orig, "diag", None), "constraint_name", None)
         raise _CONSTRAINT_ERRORS.get(constraint, VisitOverlap)(str(constraint)) from error
     return reservation
+
+
+def book_visit_with_notice(
+    session: Session,
+    current_user: CurrentUser,
+    visit_date: date,
+    start_time: time,
+    party_size: int,
+    at: datetime | None = None,
+) -> tuple[VisitReservation, int]:
+    """面会を予約し、家族へのお知らせ（予約が確定）とメールの送る予定も作る（003-T032）。
+
+    予約と email_outbox の id を返す。commit は呼んだ側が行い、そのあとに send_email_now で送る。
+    予約できなければ book_visit がエラーにするので、お知らせはできない。
+    """
+    reservation = book_visit(session, current_user, visit_date, start_time, party_size, at)
+    return reservation, create_visit_notice(session, reservation.id, "visit_confirmed")
 
 
 # --- 選べるかどうか（003-T010） ---
@@ -444,12 +466,13 @@ def cancel_by_staff(
     reservation_id: int,
     reason: str | None,
     at: datetime | None = None,
-) -> VisitReservation:
-    """職員が予約を取り消す（理由は必須。締め切りはない。FR-012）。予約済みでなければ 404。
+) -> tuple[VisitReservation, int]:
+    """職員が予約を取り消す（理由は必須。締め切りはない。FR-012・003-T031）。
 
-    家族へのお知らせ（create_visit_notice の visit_cancelled）は、
-    003-T031（#124）で、この関数のあとに足す。
-    commit しない。
+    予約済みでなければ 404。
+
+    同じトランザクションで、家族へのお知らせ（施設が取り消し）とメールの送る予定を作り、
+    予約と email_outbox の id を返す（R-07）。メールに理由は入れない（FR-014）。commit しない。
     """
     cleaned = _clean_reason(reason)
     reservation = session.scalars(
@@ -468,7 +491,7 @@ def cancel_by_staff(
     reservation.cancelled_by_staff_id = staff_id
     reservation.cancelled_at = at or func.now()
     session.flush()
-    return reservation
+    return reservation, create_visit_notice(session, reservation.id, "visit_cancelled")
 
 
 def close_day(
@@ -480,8 +503,10 @@ def close_day(
     confirm_cancel: bool = False,
     reason: str | None = None,
     at: datetime | None = None,
-) -> tuple[VisitClosedDay, list[VisitReservation]]:
-    """その日を休みにする（003-T023・FR-010・R-08）。休みの日と、取り消した予約を返す。
+) -> tuple[VisitClosedDay, list[tuple[VisitReservation, int]]]:
+    """その日を休みにする（003-T023・FR-010・R-08）。
+
+    休みの日と、取り消した予約（と email_outbox の id）を返す。
 
     その日に予約済みがあれば、confirm_cancel を付けないと 409（件数つき）。
     付けたら、理由を必須にして、その日の予約をすべて職員の取り消しにしてから休みにする

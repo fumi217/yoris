@@ -16,7 +16,7 @@ from app.auth.deps import CurrentUser, get_current_user
 from app.clock import JST
 from app.db import get_session
 from app.main import create_app
-from app.models.core import Facility, Resident
+from app.models.core import Facility, FamilyAccount, Resident, User
 from app.seed.visits import add_visit_settings
 
 FETCH = {"X-Requested-With": "fetch"}
@@ -88,6 +88,12 @@ def test_party_size_zero_is_422():
 # --- DB を使うテスト ---
 
 
+@pytest.fixture(autouse=True)
+def _no_mail(monkeypatch) -> None:
+    # 予約のあとに送るメールは、テストでは送らない（003-T032）
+    monkeypatch.setattr("app.api.family.visits.send_email_now", lambda _outbox_id: None)
+
+
 @pytest.fixture
 def clients(session: Session, monkeypatch) -> dict[str, TestClient]:
     monkeypatch.setattr("app.clock.now", lambda: AT)
@@ -100,6 +106,18 @@ def clients(session: Session, monkeypatch) -> dict[str, TestClient]:
         for n in (1, 2, 3)
     ]
     session.add_all(residents)
+    session.flush()
+    # 予約が確定すると、その入居者の家族アカウントにお知らせを作る（003-T032）ので、
+    # 家族アカウントも作る
+    users = [
+        User(kind="family", email=f"visit-family{r.id}@example.test", password_hash="x")
+        for r in residents
+    ]
+    session.add_all(users)
+    session.flush()
+    session.add_all(
+        FamilyAccount(user_id=u.id, resident_id=r.id) for u, r in zip(users, residents, strict=True)
+    )
     session.flush()
     return {
         name: _client(_user("family", r.id), session)

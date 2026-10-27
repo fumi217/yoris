@@ -7,16 +7,17 @@
 from datetime import date, time
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.auth.deps import CurrentUser, require_family
 from app.db import get_session
 from app.errors import AppError, ErrorCode
+from app.services.mail import send_email_now
 from app.services.visit_rules import VisitRuleError
 from app.services.visits import (
-    book_visit,
+    book_visit_with_notice,
     cancel_by_family,
     get_availability,
     list_my_reservations,
@@ -94,13 +95,21 @@ def book(
     body: BookRequest,
     user: Annotated[CurrentUser, Depends(require_family)],
     session: Annotated[Session, Depends(get_session)],
+    background_tasks: BackgroundTasks,
 ) -> ReservationResponse:
-    """面会を予約する。その場で確定する（施設の承認は待たない）。"""
+    """面会を予約する。その場で確定する（施設の承認は待たない）。
+
+    家族へのお知らせ（予約が確定）も同じトランザクションで作り、
+    commit のあとにメールを送る（003-T032）。
+    """
     try:
-        reservation = book_visit(session, user, body.visit_date, body.start_time, body.party_size)
+        reservation, outbox_id = book_visit_with_notice(
+            session, user, body.visit_date, body.start_time, body.party_size
+        )
     except VisitRuleError as error:
         raise _app_error(error) from error
     session.commit()
+    background_tasks.add_task(send_email_now, outbox_id)
     return ReservationResponse(
         id=reservation.id,
         visit_date=reservation.visit_date,

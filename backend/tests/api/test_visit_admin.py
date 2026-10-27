@@ -18,6 +18,18 @@ AT = datetime(2026, 10, 23, 12, 0, tzinfo=JST).astimezone(UTC)
 DAY = date(2026, 10, 28)
 
 
+@pytest.fixture(autouse=True)
+def sent(monkeypatch) -> list[int]:
+    """メールを送る関数を差し替える（本物のメールは送らない）。
+
+    呼ばれた email_outbox の id が入る。
+    """
+    calls: list[int] = []
+    monkeypatch.setattr("app.api.admin.visits.send_email_now", calls.append)
+    monkeypatch.setattr("app.api.family.visits.send_email_now", calls.append)
+    return calls
+
+
 @pytest.fixture
 def world(session, facility, make_staff, make_family, login_as, monkeypatch):
     monkeypatch.setattr("app.clock.now", lambda: AT)

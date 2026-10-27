@@ -3,14 +3,15 @@
 - 開始時刻の候補・1 日の組数・休みの日を変えられるのは、事務員・生活相談員・施設長だけ（R-06）
 - 予約の一覧を見られるのは、職員のすべて（FR-011）
 - 施設は、ログイン中の職員の施設から決める（画面からは受け取らない）
-- 職員の取り消し（`POST /api/admin/visits/{id}/cancel`）と、家族へのお知らせは
-  003-T031（#124）で足す
+- 職員の取り消し（`POST /api/admin/visits/{id}/cancel`。職員のすべて。003-T031）と、
+  休みにするときの取り消しは、同じトランザクションで家族へのお知らせを作り、
+  commit のあとにメールを送る（R-07）
 """
 
 from datetime import date, datetime, time
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from pydantic import BaseModel, ConfigDict, Field, StrictBool
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -19,10 +20,12 @@ from app.auth.deps import CurrentUser, require_staff
 from app.db import get_session
 from app.errors import AppError, ErrorCode
 from app.models.core import Staff
+from app.services.mail import send_email_now
 from app.services.visit_rules import VisitRuleError
 from app.services.visits import (
     CANCEL_REASON_MAX,
     VisitDayHasReservations,
+    cancel_by_staff,
     close_day,
     get_visit_settings,
     list_closed_days,
@@ -111,7 +114,7 @@ class ClosedDayIn(BaseModel):
 
 
 class ClosedDayResult(ClosedDayOut):
-    # 休みにするために取り消した予約の数（家族へのお知らせは #124 で足す）
+    # 休みにするために取り消した予約の数（その家族には、施設が取り消したお知らせが届く）
     cancelled: int
 
 
@@ -134,6 +137,7 @@ def post_closed_day(
     body: ClosedDayIn,
     user: Annotated[CurrentUser, Depends(VISIT_EDITORS)],
     session: Annotated[Session, Depends(get_session)],
+    background_tasks: BackgroundTasks,
 ) -> ClosedDayResult:
     """休みにする。予約があれば 409 visit_day_has_reservations（details.count に件数）。"""
     try:
@@ -148,6 +152,8 @@ def post_closed_day(
     except VisitRuleError as error:
         raise app_error(error) from error
     session.commit()
+    for _, outbox_id in cancelled:
+        background_tasks.add_task(send_email_now, outbox_id)
     return ClosedDayResult(
         id=closed_day.id, closed_date=closed_day.closed_date, cancelled=len(cancelled)
     )
@@ -213,3 +219,41 @@ def get_reservations(
     except VisitRuleError as error:
         raise app_error(error) from error
     return [reservation_out(row) for row in rows]
+
+
+class StaffCancelIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # 理由は必須（家族の画面に文字としてだけ出す。メールには入れない。FR-012〜FR-014・FR-016）
+    reason: str = Field(min_length=1, max_length=CANCEL_REASON_MAX)
+
+
+@router.post("/visits/{reservation_id}/cancel")
+def cancel_reservation(
+    reservation_id: int,
+    body: StaffCancelIn,
+    user: Annotated[CurrentUser, Depends(STAFF)],
+    session: Annotated[Session, Depends(get_session)],
+    background_tasks: BackgroundTasks,
+) -> StaffReservationOut:
+    """職員が予約を取り消す（003-T031・FR-012）。締め切りはない。予約済みでなければ 404。
+
+    同じトランザクションで家族へのお知らせ（施設が取り消し）を作り、commit のあとにメールを送る。
+    """
+    facility_id = facility_of(session, user)
+    try:
+        reservation, outbox_id = cancel_by_staff(
+            session, facility_id, user.staff_id, reservation_id, body.reason
+        )
+    except VisitRuleError as error:
+        raise app_error(error) from error
+    session.commit()
+    background_tasks.add_task(send_email_now, outbox_id)
+    [row] = [
+        row
+        for row in list_reservations(
+            session, facility_id, reservation.visit_date, reservation.visit_date
+        )
+        if row.id == reservation.id
+    ]
+    return reservation_out(row)
