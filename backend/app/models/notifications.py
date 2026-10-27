@@ -18,6 +18,9 @@ NOTIFICATION_KINDS = (
     "weekly_digest",
     "announcement",
     "staff_message_reply",
+    "visit_confirmed",
+    "visit_cancelled",
+    "visit_reminder",
 )
 EMAIL_TEMPLATES = (
     "reply",
@@ -27,6 +30,9 @@ EMAIL_TEMPLATES = (
     "invitation",
     "owner_account",
     "staff_message_reply",
+    "visit_confirmed",
+    "visit_cancelled",
+    "visit_reminder",
 )
 
 
@@ -34,7 +40,17 @@ class Notification(Base):
     """家族のお知らせの一覧（アプリ内）。"""
 
     __tablename__ = "notifications"
-    __table_args__ = (check_in("kind", NOTIFICATION_KINDS, name="kind"),)
+    __table_args__ = (
+        check_in("kind", NOTIFICATION_KINDS, name="kind"),
+        # 前日の知らせ（visit_reminder）は同じ予約に 1 件だけ（何度呼ばれても増えない。R-07）
+        Index(
+            "uq_notifications_visit_reminder",
+            "visit_reservation_id",
+            "kind",
+            unique=True,
+            postgresql_where=text("kind = 'visit_reminder'"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
     family_account_id: Mapped[int] = mapped_column(ForeignKey("family_accounts.id"))
@@ -44,6 +60,8 @@ class Notification(Base):
     reply_id: Mapped[int | None] = mapped_column(ForeignKey("replies.id"))
     # 職員の返事（問い合わせ AI。kind = 'staff_message_reply'）が、どのメッセージのものか
     staff_message_id: Mapped[int | None] = mapped_column(ForeignKey("staff_messages.id"))
+    # 面会予約のお知らせ（kind が visit_*）が、どの予約のものか
+    visit_reservation_id: Mapped[int | None] = mapped_column(ForeignKey("visit_reservations.id"))
     announcement_id: Mapped[int | None]
     # まとめ（daily_digest・weekly_digest）の対象の期間
     period_start: Mapped[datetime | None]

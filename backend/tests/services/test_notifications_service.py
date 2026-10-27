@@ -4,18 +4,25 @@
 """
 
 import json
+from datetime import UTC, date, datetime, time
 from types import SimpleNamespace
 
 import pytest
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.disclosure import ReplyTemplate, Theme
 from app.models.inquiry import InquiryConversation, InquiryMessage, StaffMessage
 from app.models.notifications import EmailOutbox, Notification
 from app.models.requests import Request
+from app.models.visits import VisitReservation
 from app.seed.themes import add_themes
-from app.services.notifications import create_reply_notice, create_staff_message_reply_notice
+from app.services.notifications import (
+    create_reply_notice,
+    create_staff_message_reply_notice,
+    create_visit_notice,
+)
 from app.services.replies import save_reply
 
 NOTE = "ひみつの書き足しの文"
@@ -188,3 +195,108 @@ def test_staff_message_reply_notice_does_not_commit(session, message_world):
     session.rollback()
     assert session.scalars(select(Notification)).first() is None
     assert session.scalars(select(EmailOutbox)).first() is None
+
+
+# --- 面会予約のお知らせ（003-T030）---
+
+
+@pytest.fixture
+def visit_world(session: Session, facility, make_family):
+    """家族 2 組と、1 組目の入居者の面会予約（2026-10-26 月曜 13:00。職員が取り消した理由つき）。"""
+    family = make_family(display_name="ひみつの入居者名")
+    other_family = make_family(display_name="べつの入居者")
+    reservation = VisitReservation(
+        facility_id=facility.id,
+        resident_id=family.resident_id,
+        visit_date=date(2026, 10, 26),
+        start_time=time(13, 0),
+        starts_at=datetime(2026, 10, 26, 4, 0, tzinfo=UTC),
+        ends_at=datetime(2026, 10, 26, 5, 30, tzinfo=UTC),
+        party_size=2,
+        cancel_reason="ひみつの取り消しの理由",
+    )
+    session.add(reservation)
+    session.flush()
+    return {"family": family, "other_family": other_family, "reservation": reservation}
+
+
+@pytest.mark.parametrize("kind", ["visit_confirmed", "visit_cancelled", "visit_reminder"])
+def test_visit_notice_for_the_family(session, visit_world, kind, monkeypatch):
+    _app_url(monkeypatch, "http://app.test")
+
+    outbox_id = create_visit_notice(session, visit_world["reservation"].id, kind)
+
+    notice = session.scalars(
+        select(Notification).where(
+            Notification.visit_reservation_id == visit_world["reservation"].id
+        )
+    ).one()
+    assert notice.kind == kind
+    assert notice.family_account_id == visit_world["family"].id
+    assert notice.read_at is None
+    outbox = session.get(EmailOutbox, outbox_id)
+    assert outbox is not None
+    assert isinstance(outbox_id, int)
+    assert outbox.template == kind
+    assert outbox.sent_at is None
+    assert outbox.to_email.endswith("@example.test")
+    # 渡すのは、面会の日時とリンクだけ（FR-014）
+    assert outbox.params == {
+        "visit_at": "10月26日（月）13:00",
+        "link": "http://app.test/family/visits",
+    }
+
+
+def test_visit_notice_has_no_resident_name_or_reason(session, visit_world, monkeypatch):
+    _app_url(monkeypatch, "http://app.test")
+
+    outbox_id = create_visit_notice(session, visit_world["reservation"].id, "visit_cancelled")
+
+    text = json.dumps(session.get(EmailOutbox, outbox_id).params, ensure_ascii=False)
+    for secret in ("ひみつの入居者名", "ひみつの取り消しの理由"):
+        assert secret not in text
+
+
+def test_visit_notice_has_no_link_without_the_app_url(session, visit_world, monkeypatch):
+    _app_url(monkeypatch, None)
+
+    outbox_id = create_visit_notice(session, visit_world["reservation"].id, "visit_confirmed")
+
+    assert session.get(EmailOutbox, outbox_id).params == {"visit_at": "10月26日（月）13:00"}
+
+
+def test_confirmed_then_cancelled_are_both_allowed(session, visit_world):
+    create_visit_notice(session, visit_world["reservation"].id, "visit_confirmed")
+    create_visit_notice(session, visit_world["reservation"].id, "visit_cancelled")
+
+    kinds = sorted(session.scalars(select(Notification.kind)))
+    assert kinds == ["visit_cancelled", "visit_confirmed"]
+
+
+def test_reminder_is_only_once_per_reservation(session, visit_world):
+    create_visit_notice(session, visit_world["reservation"].id, "visit_reminder")
+
+    # 前日の知らせは、同じ予約に 2 回送らない（20 時台に何度呼ばれても増えない）
+    with pytest.raises(IntegrityError):
+        create_visit_notice(session, visit_world["reservation"].id, "visit_reminder")
+        session.flush()
+
+
+def test_visit_notice_goes_only_to_that_family(session, visit_world):
+    create_visit_notice(session, visit_world["reservation"].id, "visit_confirmed")
+
+    families = set(session.scalars(select(Notification.family_account_id)))
+    assert visit_world["other_family"].id not in families
+
+
+def test_visit_notice_does_not_commit(session, visit_world):
+    create_visit_notice(session, visit_world["reservation"].id, "visit_confirmed")
+
+    session.rollback()
+    assert session.scalars(select(Notification)).first() is None
+    assert session.scalars(select(EmailOutbox)).first() is None
+
+
+def test_visit_notice_rejects_other_kinds(session, visit_world):
+    with pytest.raises(ValueError):
+        create_visit_notice(session, visit_world["reservation"].id, "reply")

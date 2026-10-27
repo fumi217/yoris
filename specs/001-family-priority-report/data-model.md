@@ -287,9 +287,10 @@ CurrentUser:
 |---|---|---|
 | id | bigint | |
 | family_account_id | bigint → family_accounts | |
-| kind | text | `reply`／`daily_digest`／`weekly_digest`／`announcement`／`staff_message_reply`（spec 004：問い合わせ AI のメッセージへの職員の返事） |
+| kind | text | `reply`／`daily_digest`／`weekly_digest`／`announcement`／`staff_message_reply`（spec 004：問い合わせ AI のメッセージへの職員の返事）／`visit_confirmed`・`visit_cancelled`・`visit_reminder`（spec 003：面会予約のお知らせ） |
 | reply_id | bigint → replies | kind が `reply` のとき |
 | staff_message_id | bigint → staff_messages | kind が `staff_message_reply` のとき、どのメッセージの返事か（spec 004。作る人：さとこ、004-T028） |
+| visit_reservation_id | bigint → visit_reservations | kind が `visit_*` のとき、どの予約のお知らせか（spec 003。作る人：さとこ、003-T030）。`visit_reminder` は、同じ予約に 1 件だけ（`UNIQUE (visit_reservation_id, kind) WHERE kind = 'visit_reminder'`） |
 | announcement_id | bigint → facility_announcements | kind が `announcement` のとき |
 | period_start / period_end | timestamptz | まとめのとき（`digest_runs` と同じ型） |
 | created_at | timestamptz | |
@@ -303,7 +304,7 @@ CurrentUser:
 |---|---|---|
 | id | bigint | |
 | to_email | text | |
-| template | text | `reply`／`daily_digest`／`weekly_digest`／`announcement`／`invitation`／`owner_account`（spec 002：施設長のログイン用の ID を知らせる。作り込み）／`staff_message_reply`（spec 004） |
+| template | text | `reply`／`daily_digest`／`weekly_digest`／`announcement`／`invitation`／`owner_account`（spec 002：施設長のログイン用の ID を知らせる。作り込み）／`staff_message_reply`（spec 004）／`visit_confirmed`・`visit_cancelled`・`visit_reminder`（spec 003） |
 | params | jsonb | **種類・お知らせのタイトル・リンクだけ**。記録・返事・本文は入れない（SC-010）。例外：`owner_account` だけは `login_id` を入れる（spec 002 の research.md R-08） |
 | created_at | timestamptz | |
 | sent_at | timestamptz | 送れたら入れる |

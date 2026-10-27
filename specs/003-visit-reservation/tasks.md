@@ -149,7 +149,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ### Implementation for User Story 4
 
-- [ ] T030 [US4] `notifications` に `visit_reservation_id`（→ `visit_reservations`）と、種類 `visit_confirmed`・`visit_cancelled`・`visit_reminder` を足し、`UNIQUE (visit_reservation_id, kind) WHERE kind = 'visit_reminder'` を付ける。
+- [x] T030 [US4] `notifications` に `visit_reservation_id`（→ `visit_reservations`）と、種類 `visit_confirmed`・`visit_cancelled`・`visit_reminder` を足し、`UNIQUE (visit_reservation_id, kind) WHERE kind = 'visit_reminder'` を付ける。
   `create_visit_notice(session, reservation_id, kind)` を `backend/app/services/notifications.py` に作る（関数の中では commit しない。通知の頻度の設定には関係なく作る）。T001 のあと（さとこ・作）
 - [ ] T031 [US4] 職員の取り消し `POST /api/admin/visits/{id}/cancel`（職員のすべて。`reason` は必須）を `backend/app/api/admin/visits.py` に、処理を `backend/app/services/visits.py` に作り、同じトランザクションで `create_visit_notice(..., "visit_cancelled")` を呼ぶ。
   予約の一覧の画面（T026）に、理由を入れて取り消すボタンを足す。締め切りは設けない（FR-012・FR-013）（ゆう・作。T030 のあと）
