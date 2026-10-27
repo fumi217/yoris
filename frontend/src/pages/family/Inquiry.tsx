@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, messageKeyOf } from '../../api/client'
 import { Message } from '../../components/Message'
@@ -9,6 +9,7 @@ import {
   aiNoticeKey,
   showsCallIfUrgent,
   chronological,
+  marksNoticeRead,
   nextBefore,
   PAGE_SIZE,
   sourceParts,
@@ -16,8 +17,11 @@ import {
   type InquirySource,
   type SendResult,
 } from './inquiryView'
+import { markSentOnce } from './contactBookView'
+import { useOnVisible } from './useOnVisible'
 
 const MESSAGES_KEY = ['family-inquiry-messages'] as const
+const NOTIFICATIONS_KEY = ['family', 'notifications'] as const
 // 1 回に送れる文字数（FR-001。API も 500 文字を超えると 422）
 const BODY_MAX = 500
 
@@ -52,6 +56,24 @@ export function Inquiry() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: MESSAGES_KEY }),
   })
 
+  // 職員の返事の発言が画面に出たら、その発言のお知らせを読んだことにする（Issue #244。
+  // 連絡帳の返事と同じ決まり。発言ごとに 1 回だけ送る）
+  const sent = useRef(new Set<number>())
+  const { mutate: markRead } = useMutation({
+    mutationFn: (messageId: number) => api.post(`/api/family/inquiry/messages/${messageId}/read`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_KEY }),
+    // 送れなかった発言は、次に画面に出たときに、また送れるようにする
+    onError: (_error, messageId) => {
+      sent.current.delete(messageId)
+    },
+  })
+  const onStaffReplySeen = useCallback(
+    (messageId: number) => {
+      if (markSentOnce(sent.current, messageId)) markRead(messageId)
+    },
+    [markRead],
+  )
+
   if (messages.isPending) return <Message k="layout.loading" />
   if (messages.isError) return <Message k={messageKeyOf(messages.error)} />
 
@@ -65,6 +87,7 @@ export function Inquiry() {
       sending={send.isPending ? send.variables : null}
       errorKey={errorKey}
       onSend={() => send.mutate(draft.trim())}
+      onStaffReplySeen={onStaffReplySeen}
     />
   )
 }
@@ -79,6 +102,8 @@ type ViewProps = {
   sending: string | null
   errorKey: string | null
   onSend: () => void
+  // 職員の返事の発言が画面に出たときに呼ばれる（省略できる。テストでは渡さない）
+  onStaffReplySeen?: (messageId: number) => void
 }
 
 /** 画面の見た目（API を呼ばない。テストではこれを描く）。 */
@@ -91,6 +116,7 @@ export function InquiryView({
   sending,
   errorKey,
   onSend,
+  onStaffReplySeen,
 }: ViewProps) {
   // 文字の数え方を backend（500 文字まで）とそろえる（絵文字なども 1 文字と数える。PR #213 さとこ）
   const tooLong = Array.from(draft).length > BODY_MAX
@@ -124,7 +150,7 @@ export function InquiryView({
           </li>
         )}
         {messages.map((message) => (
-          <MessageItem key={message.id} message={message} />
+          <MessageItem key={message.id} message={message} onStaffReplySeen={onStaffReplySeen} />
         ))}
         {sending !== null && (
           <>
@@ -176,9 +202,15 @@ export function InquiryView({
   )
 }
 
-function MessageItem({ message }: { message: InquiryMessage }) {
+function MessageItem({
+  message,
+  onStaffReplySeen,
+}: {
+  message: InquiryMessage
+  onStaffReplySeen?: (messageId: number) => void
+}) {
   if (message.sender === 'family') return <FamilyBubble body={message.body} />
-  if (message.sender === 'staff') return <StaffBubble message={message} />
+  if (message.sender === 'staff') return <StaffBubble message={message} onSeen={onStaffReplySeen} />
   return <AiBubble message={message} />
 }
 
@@ -252,13 +284,23 @@ function SourceItem({ source }: { source: InquirySource }) {
 // 辞書の「{{name}}からの返事」を、名前の前と後ろに分けるための目印（名前には入らない文字）
 const NAME_SLOT = '\u0000'
 
-function StaffBubble({ message }: { message: InquiryMessage }) {
+function StaffBubble({
+  message,
+  onSeen,
+}: {
+  message: InquiryMessage
+  onSeen?: (messageId: number) => void
+}) {
   const { t } = useTranslation()
+  // 画面に出たら、その発言のお知らせを読んだことにする（電話で対応した発言は送らない）
+  const ref = useOnVisible<HTMLLIElement>(
+    onSeen && marksNoticeRead(message) ? () => onSeen(message.id) : null,
+  )
   // 名前は辞書の文に差し込まず、文字のまま出す（名前の { | } を、ふりがなの書き方と取り違えないため。
   // 語順は辞書の文のまま使えるので、インドネシア語・英語でも同じ形で出せる。PR #213 さとこ）
   const [before, after = ''] = t('inquiry.reply_from', { name: NAME_SLOT }).split(NAME_SLOT)
   return (
-    <li className="mr-8 rounded border border-emerald-300 bg-emerald-50 p-3">
+    <li ref={ref} className="mr-8 rounded border border-emerald-300 bg-emerald-50 p-3">
       {/* 職員の返事は「◯◯からの返事」と、AI の答えと区別して出す（FR-005） */}
       <p className="text-xs text-gray-600">
         <Ruby text={before} />

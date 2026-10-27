@@ -28,6 +28,7 @@
 |---|---|---|---|---|
 | `GET /api/family/inquiry/messages?before=<id>&limit=30` | F | ミ | 会話の発言を新しい順に。AI の発言には「もとにした記録」（日付・項目／テーマ）、職員の発言には返事をした職員の表示名と定型文のコード・書き足した文、職員に渡した発言には状態（対応待ち／対応済み）と「3 日たったか」 | FR-004・FR-005・FR-008・FR-016b |
 | `POST /api/family/inquiry/messages` | F | ミ | 質問を送る（`body`：1〜500 文字）。AI の答え（または「職員にお伝えしました」）が決まってから、家族の発言と AI の発言を返す。429：`inquiry_limit`、503：`ai_unavailable`、422：`validation_error` | FR-001〜003・FR-009・FR-024・FR-026 |
+| `POST /api/family/inquiry/messages/{id}/read` | F | 作 | 職員の返事の発言が画面に出たとき、その発言のお知らせを読んだことにする（204。何度呼んでも同じ）。ほかの家族の発言・職員の返事でない発言（AI・家族・電話で対応した発言）は 404 | FR-014 |
 
 - 入居者は `CurrentUser.resident_id` から決める（FR-020）。返す値に、AI への指示の文・ツールの中身は入れない（FR-021）。
 - 職員の発言（`sender = staff`）は、`body` は空で、返した職員の**表示名**（`staff_name`。役割ではない）、選んだ定型文のコード（`template_codes`。選んだ順。画面が辞書で引く）、書き足した文（`note`。文字としてだけ出す）、返し方（`response_type`：`app`／`phone`）を持つ。ほかの発言では、この 4 つは null。
@@ -37,6 +38,11 @@
 - AI の発言の `body` は、答えたとき（`ai_result = answered`）だけ文が入る。`handed_off`・`no_record` のときは空で、画面が辞書の決まった文を出す（data-model.md）。
 - 根拠のうち 1 つでも、いま非開示になった答えは `hidden: true` で、`body` は空・`sources` は空にする。画面は `inquiry.answer_hidden` を出す（data-model.md）。
 - 503 `ai_unavailable` のときは、家族の発言も保存しない（送り直せる。data-model.md）。
+- 職員の返事のお知らせ（`kind = staff_message_reply`）は、返事の発言が画面に出たときに読んだことにする（連絡帳の返事と同じ決まり。spec 001 R-15）。
+  読んだことにするのは、その発言と同じ `staff_message_id` で、その発言の日時までに作られた、同じ家族の未読のお知らせ。
+  返事の発言とお知らせは同じトランザクションで作る（`reply_in_app`）ので、時刻が同じになる。列は足さない。
+  同じメッセージに返事が 2 回付いたときは、後の返事を見れば前の分も、前の返事だけなら前の分だけが、読んだことになる
+- 電話で対応した発言（`response_type = phone`）には、お知らせがないので、画面からこの API を呼ばない
 
 ## 職員の「家族からのメッセージ」
 

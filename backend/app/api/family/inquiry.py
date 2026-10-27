@@ -21,6 +21,7 @@ from app.inquiry.service import (
     MessageView,
     get_family_account_id,
     list_messages,
+    mark_staff_reply_read,
     send_message,
     to_views,
 )
@@ -146,3 +147,17 @@ def send(
             raise AppError(ErrorCode.AI_UNAVAILABLE) from error
         raise
     return SendOut(family=_out(family_view), ai=_out(ai_view))
+
+
+@router.post("/messages/{message_id}/read", status_code=204)
+def read_staff_reply(
+    message_id: int,
+    user: Annotated[CurrentUser, Depends(require_family)],
+    session: Annotated[Session, Depends(get_session)],
+) -> None:
+    """職員の返事の発言が画面に出たとき、その発言のお知らせを読んだことにする（Issue #244）。
+
+    get_session は commit しないので、書き込んだら、ここで 1 回だけ commit する（app/db.py）。
+    """
+    mark_staff_reply_read(session, user, message_id)
+    session.commit()

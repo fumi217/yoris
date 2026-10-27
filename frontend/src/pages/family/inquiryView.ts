@@ -79,6 +79,14 @@ export function showsCallIfUrgent(message: InquiryMessage): boolean {
   return message.ai_result === 'handed_off' && !message.hidden && message.handoff?.urgent === true
 }
 
+/**
+ * 画面に出たら、その発言のお知らせを読んだことにする発言か（Issue #244）。
+ * アプリで返した職員の返事だけ。電話で対応した発言は、お知らせがないので、送らない。
+ */
+export function marksNoticeRead(message: InquiryMessage): boolean {
+  return message.sender === 'staff' && message.response_type === 'app'
+}
+
 /** 「もとにした記録」の 1 つを、日付と辞書のキーの並びにする（例：10 月 23 日・食事・昼）。 */
 export function sourceParts(source: InquirySource): {
   month: number

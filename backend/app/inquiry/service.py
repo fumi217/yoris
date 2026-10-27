@@ -21,12 +21,13 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from app.auth.deps import CurrentUser
-from app.clock import today_jst
+from app.clock import now, today_jst
+from app.errors import AppError, ErrorCode
 from app.inquiry.agent import HISTORY_MESSAGES, HandOff, run_agent
 from app.inquiry.guard import detect_category
 from app.inquiry.llm import ChatClient
@@ -34,6 +35,7 @@ from app.inquiry.staff_replies import load_staff_reply_details
 from app.inquiry.tools import ToolContext
 from app.models.core import FamilyAccount, Resident
 from app.models.inquiry import InquiryConversation, InquiryMessage, StaffMessage
+from app.models.notifications import Notification
 from app.models.records import CareRecord
 from app.models.replies import Reply
 from app.models.requests import Request
@@ -112,6 +114,42 @@ def get_family_account_id(session: Session, user: CurrentUser) -> int:
     return session.scalars(
         select(FamilyAccount.id).where(FamilyAccount.user_id == user.user_id)
     ).one()
+
+
+def mark_staff_reply_read(session: Session, user: CurrentUser, message_id: int) -> None:
+    """職員の返事の発言を見たとき、その発言のお知らせを読んだことにする（Issue #244）。
+
+    読んだことにするのは、その発言と同じ staff_message_id で、その発言の日時までに作られた、
+    同じ家族の未読のお知らせ。返事の発言とお知らせは同じトランザクションで作る（reply_in_app）
+    ので、時刻が同じになる。同じメッセージに返事が 2 回付いたときは、後の返事を見れば前の分も、
+    前の返事だけなら前の分だけが読んだことになる。
+    ほかの家族の発言・職員の返事でない発言（電話で対応した発言を含む）は 404。何度呼んでも同じ。
+    commit しない。
+    """
+    family_account_id = get_family_account_id(session, user)
+    message = session.execute(
+        select(InquiryMessage)
+        .join(InquiryConversation, InquiryConversation.id == InquiryMessage.conversation_id)
+        .where(
+            InquiryMessage.id == message_id,
+            InquiryConversation.family_account_id == family_account_id,
+            InquiryMessage.sender == "staff",
+            InquiryMessage.response_type == "app",
+        )
+    ).scalar_one_or_none()
+    if message is None or message.staff_message_id is None:
+        raise AppError(ErrorCode.NOT_FOUND)
+    session.execute(
+        update(Notification)
+        .where(
+            Notification.family_account_id == family_account_id,
+            Notification.kind == "staff_message_reply",
+            Notification.staff_message_id == message.staff_message_id,
+            Notification.read_at.is_(None),
+            Notification.created_at <= message.created_at,
+        )
+        .values(read_at=now())
+    )
 
 
 def _get_or_create_conversation(session: Session, user: CurrentUser) -> InquiryConversation:

@@ -39,6 +39,7 @@ describe('NotificationsView', () => {
         notification({ id: 2, kind: 'daily_digest', reply_id: null }),
         notification({ id: 3, kind: 'weekly_digest', reply_id: null }),
         notification({ id: 4, kind: 'announcement', reply_id: null, announcement_id: 7 }),
+        notification({ id: 5, kind: 'staff_message_reply', reply_id: null }),
       ]),
     )
 
@@ -46,6 +47,7 @@ describe('NotificationsView', () => {
     expect(shown).toContain('今日の連絡帳がまとまりました')
     expect(shown).toContain('今週の連絡帳がまとまりました')
     expect(shown).toContain('施設からのお知らせが届きました')
+    expect(shown).toContain('施設からメッセージの返事が届きました')
     expect(shown).toContain('10月26日 9:30')
   })
 
@@ -67,6 +69,13 @@ describe('NotificationsView', () => {
 
     expect(html.match(/<a /g)).toHaveLength(1)
     expect(html).toContain('href="/family"')
+  })
+
+  it('職員の返事のお知らせは、「お問い合わせ」の画面へのリンクになる', () => {
+    const html = render([notification({ id: 1, kind: 'staff_message_reply', reply_id: null })])
+
+    expect(html.match(/<a /g)).toHaveLength(1)
+    expect(html).toContain('href="/family/inquiry"')
   })
 
   it('返事のお知らせは、種類と日時の文だけで、ほかの文字は出ない（SC-010）', () => {
@@ -96,12 +105,14 @@ describe('NotificationsView', () => {
 describe('notificationsView', () => {
   it('知らない種類は、施設からのお知らせの文言にする', () => {
     expect(kindKey('reply')).toBe('notifications.kind.reply')
+    expect(kindKey('staff_message_reply')).toBe('notifications.kind.staff_message_reply')
     expect(kindKey('something_new')).toBe('notifications.kind.announcement')
   })
 
   it('進む先', () => {
     expect(linkFor(notification({ kind: 'reply' }))).toBe('/family')
     expect(linkFor(notification({ kind: 'weekly_digest' }))).toBe('/family')
+    expect(linkFor(notification({ kind: 'staff_message_reply' }))).toBe('/family/inquiry')
     expect(linkFor(notification({ kind: 'announcement' }))).toBeNull()
   })
 })

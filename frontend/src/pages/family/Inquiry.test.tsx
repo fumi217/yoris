@@ -6,6 +6,7 @@ import {
   aiNoticeKey,
   showsCallIfUrgent,
   chronological,
+  marksNoticeRead,
   nextBefore,
   PAGE_SIZE,
   sourceParts,
@@ -219,6 +220,14 @@ describe('InquiryView', () => {
 })
 
 describe('inquiryView', () => {
+  it('既読を送るのは、アプリで返した職員の返事だけ（Issue #244）', () => {
+    expect(marksNoticeRead(message({ sender: 'staff', response_type: 'app' }))).toBe(true)
+    // 電話で対応した発言は、お知らせがないので送らない
+    expect(marksNoticeRead(message({ sender: 'staff', response_type: 'phone' }))).toBe(false)
+    expect(marksNoticeRead(message({ sender: 'ai', response_type: null }))).toBe(false)
+    expect(marksNoticeRead(message({ sender: 'family', response_type: null }))).toBe(false)
+  })
+
   it('新しい順に届いた発言を、古い順に並べ直す（FR-008）', () => {
     const pages = [[message({ id: 5 }), message({ id: 4 })], [message({ id: 2 })]]
 

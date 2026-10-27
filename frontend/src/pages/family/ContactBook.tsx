@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, messageKeyOf } from '../../api/client'
 import { Message } from '../../components/Message'
@@ -16,6 +16,7 @@ import {
   type ContactReply,
   type ContactSection,
 } from './contactBookView'
+import { useOnVisible } from './useOnVisible'
 
 const CONTACT_BOOK_KEY = ['family', 'contact-book'] as const
 const NOTIFICATIONS_KEY = ['family', 'notifications'] as const
@@ -187,37 +188,4 @@ function RecordSection({ section }: { section: ContactSection }) {
       </ul>
     </div>
   )
-}
-
-/**
- * 要素が画面に出たら、callback を 1 回呼ぶ（callback が null のときは何もしない）。
- * IntersectionObserver が使えない環境では、表示した時点で呼ぶ。
- */
-function useOnVisible(callback: (() => void) | null) {
-  const ref = useRef<HTMLElement | null>(null)
-  const latest = useRef(callback)
-  useEffect(() => {
-    latest.current = callback
-  })
-  const enabled = callback !== null
-  useEffect(() => {
-    const element = ref.current
-    if (!enabled || !element) return
-    if (typeof IntersectionObserver === 'undefined') {
-      latest.current?.()
-      return
-    }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          latest.current?.()
-          observer.disconnect()
-        }
-      },
-      { threshold: 0.5 },
-    )
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [enabled])
-  return ref
 }
