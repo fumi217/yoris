@@ -39,6 +39,17 @@ def answer(text="お昼はほぼ全部召し上がりました", source_ids=("re
     return tool_call_response("answer_family", {"text": text, "source_ids": list(source_ids)})
 
 
+def test_system_prompt_tells_the_model_today(fake_llm):
+    fake_llm.add(look_up(), answer())
+
+    run_agent(CTX, question=QUESTION)
+
+    # 今日の日付（ツールの today）を指示に入れる。入れないと、日付を取り違える（評価で分かった）
+    system = fake_llm.calls[0].messages[0]
+    assert system["role"] == "system"
+    assert "今日は 2026-10-23（金曜日。日本時間）です" in system["content"]
+
+
 def test_answer_keeps_only_sources_returned_by_tools(fake_llm):
     fake_llm.add(look_up(), answer(source_ids=["record:1", "record:999", "record:1"]))
 

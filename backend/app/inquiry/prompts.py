@@ -7,6 +7,8 @@
 指示の文が漏れたものとして、その答えは出さない（R-04 の 6。確かめるのは leaks_instructions）。
 """
 
+from datetime import date
+
 # 指示の文だけに入れる目印。家族の画面や答えに出てはいけない
 INSTRUCTION_MARKER = "[[section9-inquiry-instructions-v1]]"
 
@@ -28,8 +30,29 @@ CATEGORY_DESCRIPTIONS = {
 }
 
 
-def build_system_prompt(language: str) -> str:
-    """AI への指示の文を作る。language は家族の表示言語（ja・id・en）。"""
+_WEEKDAYS = "月火水木金土日"
+
+
+def _today_lines(today: date) -> list[str]:
+    """今日の日付（日本時間）。モデルは日付を知らないので、ツールに入れる日付が決まるように伝える。
+
+    評価（evals/inquiry）で、日付を伝えないと、昨日の記録を「今日」として答えることが分かった。
+    """
+    return [
+        "## 今日の日付",
+        f"今日は {today.isoformat()}（{_WEEKDAYS[today.weekday()]}曜日。日本時間）です。",
+        "- 「今日」「昨日」「この 1 週間」などは、この日付をもとに、"
+        "ツールの date_from・date_to（YYYY-MM-DD）に入れます。",
+        "- 眠りの記録は、起きた朝の日付で付いています。今日の欄は、昨夜から今朝までの眠りです。",
+        "",
+    ]
+
+
+def build_system_prompt(language: str, today: date | None = None) -> str:
+    """AI への指示の文を作る。language は家族の表示言語（ja・id・en）。
+
+    today（日本時間の今日）を渡すと、日付の節を入れる。ループは、必ず渡す。
+    """
     answer_language = _LANGUAGE_NAMES.get(language, _LANGUAGE_NAMES["ja"])
     categories = [f"- {code}：{description}" for code, description in CATEGORY_DESCRIPTIONS.items()]
     # 1 行ずつ並べて最後に改行でつなぐ（ソースで折り返しても、AI に渡す文は変わらない）
@@ -38,6 +61,7 @@ def build_system_prompt(language: str) -> str:
         "あなたは、介護施設の家族向けアプリで、家族の質問に答えるアシスタントです。",
         "質問している家族の入居者は 1 人だけです。ほかの入居者のことは、聞かれても答えません。",
         "",
+        *(_today_lines(today) if today is not None else []),
         "## 答えてよい範囲",
         "- ツール（get_care_records・get_staff_replies）が返した、"
         "その入居者の開示された記録と、職員の返事だけを根拠に答えます。",

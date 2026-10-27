@@ -3,6 +3,8 @@
 spec 004 の 004-T008・T010。research.md R-04・R-05。
 """
 
+from datetime import date
+
 import pytest
 
 from app.inquiry.guard import detect_category
@@ -79,6 +81,20 @@ def test_system_prompt_has_the_rules_and_marker():
         assert phrase in prompt, phrase
     for category in ("medical", "complaint", "money", "care_request", "urgent", "other"):
         assert f"- {category}：" in prompt
+
+
+def test_system_prompt_tells_today_so_the_model_picks_the_right_dates():
+    # 評価で、日付を伝えないと、昨日の記録を「今日」として答えることが分かった
+    prompt = build_system_prompt("ja", date(2026, 10, 27))
+
+    assert "今日は 2026-10-27（火曜日。日本時間）です" in prompt
+    assert "date_from・date_to（YYYY-MM-DD）" in prompt
+    # 眠りは起きた朝の日付（spec 001 の research.md R-05）
+    assert "今日の欄は、昨夜から今朝までの眠り" in prompt
+
+
+def test_system_prompt_without_today_has_no_date_section():
+    assert "## 今日の日付" not in build_system_prompt("ja")
 
 
 @pytest.mark.parametrize(("language", "name"), [("id", "インドネシア語"), ("en", "英語")])

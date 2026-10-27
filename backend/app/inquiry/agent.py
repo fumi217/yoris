@@ -23,6 +23,7 @@ import json
 import time
 from collections.abc import Iterable
 from dataclasses import dataclass, field
+from datetime import date
 from typing import Any
 
 from app.inquiry import llm as llm_module
@@ -76,8 +77,11 @@ def _build_messages(
     history: list[dict[str, Any]],
     waiting: list[dict[str, Any]],
     forced_category: str | None,
+    today: date,
 ) -> list[dict[str, Any]]:
-    messages: list[dict[str, Any]] = [{"role": "system", "content": build_system_prompt(language)}]
+    # 今日の日付（日本時間）を指示に入れる。モデルは日付を知らず、ツールに入れる日付を取り違える
+    system = build_system_prompt(language, today)
+    messages: list[dict[str, Any]] = [{"role": "system", "content": system}]
     messages.extend(history[-HISTORY_MESSAGES:])
     if waiting:
         # 対応待ちのメッセージは、指示とは別のデータとして渡す（research.md R-06）
@@ -131,7 +135,9 @@ def run_agent(
     waiting = waiting or []
     waiting_ids = {item["id"] for item in waiting if isinstance(item.get("id"), int)}
     other_names = [name for name in other_resident_names if name]
-    messages = _build_messages(question, language, history or [], waiting, forced_category)
+    messages = _build_messages(
+        question, language, history or [], waiting, forced_category, ctx.today
+    )
 
     started = time.monotonic()
     seen_sources: set[str] = set()
