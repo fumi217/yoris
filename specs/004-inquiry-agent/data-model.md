@@ -106,6 +106,9 @@ PostgreSQL のテーブルの形と、状態の動き。土台の `users`・`fam
 | from_value / to_value | text | 変わる前と後（担当の id・種類のコードなど） |
 | created_at | timestamptz | |
 
+- 「自分が対応する」を押したら `assigned`（`to_value` が担当の id）。アプリで返事をしたときは、返した職員が担当になる：担当が空だったときは `assigned`、ほかの職員が担当だったときは `reassigned`（`from_value` が前の担当）を残し、そのあとに `answered` を残す。もう自分が担当なら `answered` だけ。
+- 職員の発言（`inquiry_messages.sender = staff`）は、`body` を空にし、返した職員（`staff_id`）・選んだ定型文（`template_ids`。選んだ順）・書き足した文（`note`）・`response_type`（アプリで返事は `app`）・つないだメッセージ（`staff_message_id`）を持つ。家族の画面は、返した職員の**表示名**と定型文のコードを出す（辞書で引く）。
+
 ## `staff_message_templates`
 
 | 列 | 型 | 説明 |

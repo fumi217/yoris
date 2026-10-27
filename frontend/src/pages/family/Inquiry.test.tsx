@@ -21,6 +21,10 @@ const message = (overrides: Partial<InquiryMessage> = {}): InquiryMessage => ({
   ai_result: null,
   sources: [],
   hidden: false,
+  staff_name: null,
+  template_codes: null,
+  note: null,
+  response_type: null,
   ...overrides,
 })
 

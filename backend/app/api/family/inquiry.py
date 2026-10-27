@@ -57,6 +57,13 @@ class MessageOut(BaseModel):
     sources: list[SourceOut]
     # 根拠のうち 1 つでも非開示になった答え（body・sources は空。画面は inquiry.answer_hidden）
     hidden: bool
+    # 職員の発言だけ：返事をした職員の表示名（役割ではなく表示名）・
+    # 選んだ定型文のコード（辞書で引く）・書き足した文（辞書を通さず文字としてだけ出す）・
+    # 返し方（app／phone）
+    staff_name: str | None
+    template_codes: list[str] | None
+    note: str | None
+    response_type: str | None
     # 職員に渡した AI の発言だけ（ほかは null）
     handoff: HandoffOut | None
 
@@ -85,6 +92,10 @@ def _out(view: MessageView) -> MessageOut:
             for s in view.sources
         ],
         hidden=view.hidden,
+        staff_name=view.staff_name,
+        template_codes=view.template_codes,
+        note=view.note,
+        response_type=view.response_type,
         handoff=HandoffOut(
             status=view.handoff.status, urgent=view.handoff.urgent, already=view.handoff.already
         )

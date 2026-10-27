@@ -18,11 +18,12 @@ export type InquiryMessage = {
   ai_result: 'answered' | 'handed_off' | 'no_record' | null
   sources: InquirySource[]
   hidden: boolean
-  // ここから職員の返事だけ（004-T027・#87 で API に足す）
-  staff_name?: string
-  template_codes?: string[]
-  note?: string | null
-  response_type?: 'app' | 'phone'
+  // ここから職員の返事だけ（それ以外の発言では null）。名前は役割ではなく表示名。
+  // 定型文はコード（辞書で引く）、書き足しは文字としてだけ出す
+  staff_name: string | null
+  template_codes: string[] | null
+  note: string | null
+  response_type: 'app' | 'phone' | null
 }
 
 export type SendResult = { family: InquiryMessage; ai: InquiryMessage }

@@ -30,6 +30,7 @@ from app.clock import today_jst
 from app.inquiry.agent import HISTORY_MESSAGES, HandOff, run_agent
 from app.inquiry.guard import detect_category
 from app.inquiry.llm import ChatClient
+from app.inquiry.staff_replies import load_staff_reply_details
 from app.inquiry.tools import ToolContext
 from app.models.core import FamilyAccount, Resident
 from app.models.inquiry import InquiryConversation, InquiryMessage, StaffMessage
@@ -80,6 +81,12 @@ class MessageView:
     sources: list[SourceView] = field(default_factory=list)
     # 根拠のうち 1 つでも非開示になった答え（本文・根拠は空。画面は inquiry.answer_hidden）
     hidden: bool = False
+    # 職員の発言だけ：返事をした職員の表示名・選んだ定型文のコード・書き足した文・
+    # 返し方（app／phone）
+    staff_name: str | None = None
+    template_codes: list[str] | None = None
+    note: str | None = None
+    response_type: str | None = None
     # 職員に渡した AI の発言だけ
     handoff: HandoffView | None = None
 
@@ -148,7 +155,7 @@ def _history(session: Session, resident_id: int, conversation_id: int) -> list[d
             else:
                 content = message.body or _AI_RESULT_TEXT.get(message.ai_result or "", "")
             history.append({"role": "assistant", "content": content})
-        # 職員の返事は、004-T029（#87）で「施設の職員の返事」と分かる形で足す
+        # 職員の返事は、次の PR で「施設の職員の返事」と分かる形で足す（R-06）
     return history
 
 
@@ -283,9 +290,25 @@ def to_views(
     assert user.resident_id is not None
     all_ids = [s for m in messages for s in (m.source_ids or [])]
     sources = _disclosed_sources(session, user.resident_id, all_ids)
+    staff_replies = load_staff_reply_details(session, messages)
     handoffs = _handoffs(session, messages)
     views = []
     for m in messages:
+        if m.id in staff_replies:
+            reply = staff_replies[m.id]
+            views.append(
+                MessageView(
+                    id=m.id,
+                    sender=m.sender,
+                    body=m.body,
+                    created_at=m.created_at,
+                    staff_name=reply.staff_name,
+                    template_codes=reply.template_codes,
+                    note=reply.note,
+                    response_type=reply.response_type,
+                )
+            )
+            continue
         if _is_hidden(m, sources):
             # 根拠のうち 1 つでも非開示になった答えは、本文も根拠も出さない（原則 IV）
             views.append(MessageView(m.id, m.sender, "", m.created_at, m.ai_result, hidden=True))

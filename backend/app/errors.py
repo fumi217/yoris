@@ -26,6 +26,9 @@ class ErrorCode(StrEnum):
     REQUEST_LIMIT = "request_limit"
     THEME_WAITING = "theme_waiting"
     ALREADY_REPLIED = "already_replied"
+    # 職員の「家族からのメッセージ」（spec 004 の contracts）
+    ALREADY_ASSIGNED = "already_assigned"
+    ALREADY_ANSWERED = "already_answered"
     REQUEST_CANCELLED = "request_cancelled"
     NOT_TODAY = "not_today"
     INVALID_FILE = "invalid_file"
@@ -56,6 +59,8 @@ STATUS_CODES: dict[ErrorCode, int] = {
     ErrorCode.REQUEST_LIMIT: 409,
     ErrorCode.THEME_WAITING: 409,
     ErrorCode.ALREADY_REPLIED: 409,
+    ErrorCode.ALREADY_ASSIGNED: 409,
+    ErrorCode.ALREADY_ANSWERED: 409,
     ErrorCode.REQUEST_CANCELLED: 409,
     ErrorCode.NOT_TODAY: 409,
     ErrorCode.INVALID_FILE: 422,

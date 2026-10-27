@@ -5,6 +5,8 @@
 - `GET /api/staff/messages/count?resident_id=`：対応待ちの件数（FR-013）
 - `GET /api/staff/messages/{id}`：詳細。原文・直前の 3 往復・追加された家族の書き込み・
   その種類の定型文（FR-011・FR-012）
+- `POST /api/staff/messages/{id}/assign`：「自分が対応する」（004-T026。409 already_assigned）
+- `POST /api/staff/messages/{id}/reply`：アプリで返事（004-T027。409 already_answered）
 
 どれも visible_staff_messages(user) を通す。苦情は生活相談員・施設長だけに出し、
 ほかの役割が id で開いたら 404（research.md R-12）。家族が呼んだら 403。
@@ -16,8 +18,8 @@
 from datetime import datetime, timedelta
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import ColumnElement, case, func, select
 from sqlalchemy.orm import Session
 
@@ -25,6 +27,7 @@ from app import clock
 from app.auth.deps import CurrentUser, require_staff
 from app.db import get_session
 from app.errors import AppError, ErrorCode
+from app.inquiry.staff_actions import StaffMessageError, assign_to_me, reply_in_app
 from app.inquiry.visibility import (
     count_waiting_staff_messages,
     visible_conversation_messages,
@@ -32,10 +35,12 @@ from app.inquiry.visibility import (
 )
 from app.models.core import Resident, Staff
 from app.models.inquiry import (
+    NOTE_MAX,
     InquiryMessage,
     StaffMessage,
     StaffMessageTemplate,
 )
+from app.services.mail import send_email_now
 
 router = APIRouter(prefix="/api/staff", tags=["staff"])
 
@@ -259,3 +264,64 @@ def get_message(
         follow_ups=[_message_out(m, codes) for m in follow_ups],
         templates=[TemplateOut(id=t.id, code=t.code) for t in templates],
     )
+
+
+class ReplyBody(BaseModel):
+    # 入居者・状態などの余分な項目は受け付けない
+    model_config = ConfigDict(extra="forbid")
+
+    # 定型文は 1 つ以上。書き足しは 100 文字まで・任意（FR-014）
+    template_ids: list[int] = Field(min_length=1)
+    note: str | None = Field(default=None, max_length=NOTE_MAX)
+
+
+class ReplyOut(BaseModel):
+    # 家族の会話に足した、職員の発言の id
+    id: int
+    staff_message_id: int
+    status: str
+
+
+@router.post("/messages/{message_id}/assign", status_code=204)
+def assign(
+    message_id: int,
+    user: Annotated[CurrentUser, Depends(STAFF)],
+    session: Annotated[Session, Depends(get_session)],
+) -> None:
+    """「自分が対応する」。最初の 1 人だけが担当になる。
+
+    ほかの職員が先に担当になっていたら 409 `already_assigned`。
+    見られないメッセージ（ほかの役割の苦情・ないもの）は 404。
+    自分がもう担当なら、何度押しても同じ。職員への通知・音は出さない（SC-008）。
+    """
+    try:
+        assign_to_me(session, user, message_id)
+    except StaffMessageError as error:
+        raise AppError(ErrorCode(error.code)) from error
+    session.commit()
+
+
+@router.post("/messages/{message_id}/reply", status_code=201)
+def reply(
+    message_id: int,
+    body: ReplyBody,
+    user: Annotated[CurrentUser, Depends(STAFF)],
+    session: Annotated[Session, Depends(get_session)],
+    background_tasks: BackgroundTasks,
+) -> ReplyOut:
+    """アプリで返事をする。ほぼ同時に返事をしたときは、先の 1 つだけが有効。
+
+    後の返事は 409 `already_answered`。返した職員が担当になる。
+    家族の会話に職員の発言を足し、家族へのお知らせとメールの送る予定も、
+    同じトランザクションで作る。メールは、commit のあとに応答を返してから送る（R-09）。
+    送れなくても返事は保存済みで、送る予定が残るので、次の run_jobs() が送り直す。
+    """
+    try:
+        saved, outbox_id = reply_in_app(
+            session, user, message_id, template_ids=body.template_ids, note=body.note
+        )
+    except StaffMessageError as error:
+        raise AppError(ErrorCode(error.code)) from error
+    session.commit()
+    background_tasks.add_task(send_email_now, outbox_id)
+    return ReplyOut(id=saved.id, staff_message_id=message_id, status="answered")

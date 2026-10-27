@@ -8,6 +8,8 @@
     "request_limit": "返事を待っているリクエストが 3 件あります",
     "theme_waiting": "このテーマは返事を待っています",
     "already_replied": "ほかの職員が返事をしました",
+    "already_assigned": "ほかの{職員|しょくいん}が{対応|たいおう}しています",
+    "already_answered": "ほかの{職員|しょくいん}が{返事|へんじ}をしました",
     "request_cancelled": "このリクエストは取り消されました",
     "not_today": "今日の記録・返事だけ直せます",
     "invalid_file": "PDF・JPG・PNG で、10MB までのファイルを選んでください",
