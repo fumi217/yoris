@@ -20,13 +20,14 @@
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.deps import CurrentUser
 from app.clock import now_jst
-from app.models.core import Resident
+from app.models.core import FamilyAccount, Resident
+from app.models.notifications import Notification
 from app.models.visits import VisitClosedDay, VisitReservation, VisitSetting, VisitStartTime
 from app.services.notifications import create_visit_notice
 from app.services.visit_rules import (
@@ -338,6 +339,32 @@ def list_my_reservations(
         )
         for row in rows
     ]
+
+
+# 面会のお知らせの種類（予約の確定・施設からの取り消し・前日の知らせ。R-07）
+VISIT_NOTICE_KINDS = ("visit_confirmed", "visit_cancelled", "visit_reminder")
+
+
+def mark_visit_notices_read(session: Session, current_user: CurrentUser) -> int:
+    """自分の家族アカウントの、まだ読んでいない面会のお知らせを、まとめて読んだことにする（#272）。
+
+    面会の画面を開いたときに呼ぶ。面会のお知らせの中身は、どれも「これからの予約」に出ているため。
+    ほかの家族と、面会以外のお知らせには触らない。読んだことにした件数を返す。commit しない。
+    """
+    resident_id = _resident_id(current_user)
+    family_account_id = (
+        select(FamilyAccount.id).where(FamilyAccount.resident_id == resident_id).scalar_subquery()
+    )
+    result = session.execute(
+        update(Notification)
+        .where(
+            Notification.family_account_id == family_account_id,
+            Notification.kind.in_(VISIT_NOTICE_KINDS),
+            Notification.read_at.is_(None),
+        )
+        .values(read_at=func.now())
+    )
+    return result.rowcount
 
 
 def cancel_by_family(

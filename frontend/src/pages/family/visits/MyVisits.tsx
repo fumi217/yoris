@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, messageKeyOf } from '../../../api/client'
 import { ConfirmButton } from '../../../components/ConfirmButton'
@@ -12,6 +12,7 @@ import { endOf, hhmm, monthDay, MY_VISITS_KEY, weekdayOf, type MyReservation } f
  * 自分の予約（spec 003 の T018。面会の予約の画面のいちばん上に出す。docs/画面設計.md の UI-F01）。
  * これからの予約を日時・人数・状態とともに出し、前日 17 時までなら取り消せる（FR-006・FR-007）。
  * 押し間違えないよう、取り消しは 2 回押す（ConfirmButton。1 回目で「やめる」も出て、5 秒で元に戻る）。取り消すと、その時間がまた選べる（空きを読み直す）。
+ * 「これからの予約」を読めたら、面会のお知らせ（確定・取り消し・前日の知らせ）を読んだことにする（#272）。
  */
 export function MyVisits() {
   const queryClient = useQueryClient()
@@ -20,6 +21,21 @@ export function MyVisits() {
     queryKey: MY_VISITS_KEY,
     queryFn: () => api.get<MyReservation[]>('/api/family/visits'),
   })
+  // 面会のお知らせを読んだことにして、お知らせの一覧の「new」を読み直す（画面を開いたときに 1 回だけ）
+  const readNotices = useMutation({
+    mutationFn: () => api.post('/api/family/visits/notices/read'),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['family', 'notifications'] }),
+  })
+  const noticesRead = useRef(false)
+  const { mutate: markRead } = readNotices
+  // 前に開いたときの一覧が残っていても、この画面で読み直せてから呼ぶ（読み直す前に届いた
+  // 取り消しなどのお知らせを、中身を見る前に読んだことにしない。PR #273 さとこ）
+  useEffect(() => {
+    if (mine.isSuccess && mine.isFetchedAfterMount && !noticesRead.current) {
+      noticesRead.current = true
+      markRead()
+    }
+  }, [mine.isSuccess, mine.isFetchedAfterMount, markRead])
   const cancel = useMutation({
     mutationFn: (id: number) => api.delete(`/api/family/visits/${id}`),
     onSuccess: () => setNotice(true),

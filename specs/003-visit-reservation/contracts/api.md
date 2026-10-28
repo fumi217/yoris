@@ -35,6 +35,7 @@
 | `POST /api/family/visits` | F | 予約する（`visit_date`・`start_time`・`party_size`）。入居者は送らない。予約が確定したら、同じトランザクションで `create_visit_notice(..., "visit_confirmed")` を呼び、commit のあとにメールを送る（作り込み・T032）。409：`visit_overlap`・`visit_day_full`・`visit_already_booked_day`・`visit_deadline_passed`・`visit_closed_day`、422：`visit_out_of_range` | ミニマム版 | FR-002・FR-003・FR-005・FR-008 |
 | `GET /api/family/visits` | F | 自分のこれからの予約（日時・人数・状態。職員が取り消したときは理由も） | 作り込み | FR-006 |
 | `DELETE /api/family/visits/{id}` | F | 自分の予約を取り消す。前日 17 時を過ぎたら 409 `visit_deadline_passed`。ほかの家族の予約は 404 | 作り込み | FR-007・FR-015 |
+| `POST /api/family/visits/notices/read` | F | 自分の家族アカウントの、まだ読んでいない面会のお知らせ（`visit_confirmed`・`visit_cancelled`・`visit_reminder`）を、まとめて読んだことにする（204。何度呼んでも同じ。ほかの家族と、面会以外のお知らせには触らない。家族で共有）。面会の画面（UI-F01）が「これからの予約」を読めたときに呼ぶ。面会のお知らせの中身（確定・取り消し・明日の予定）は、どれも「これからの予約」に出ているため（#272） | 作り込み | FR-013 |
 
 ```json
 // GET /api/family/visits/availability?from=2026-10-26&to=2026-10-30 の返り値（例）

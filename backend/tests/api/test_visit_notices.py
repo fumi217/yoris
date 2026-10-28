@@ -183,3 +183,51 @@ def test_staff_cancel_by_family_is_forbidden(client, session, world, login_as):
         select(func.count()).select_from(Notification).where(Notification.kind == "visit_cancelled")
     )
     assert count == 0
+
+
+# --- 面会の画面を開いたら、面会のお知らせを読んだことにする（#272） ---
+
+READ_URL = "/api/family/visits/notices/read"
+
+
+def test_opening_visits_marks_visit_notices_read(client, session, world, login_as):
+    reservation_id = _book(client, login_as, world)
+    # 面会以外のお知らせ（まとめ）には触らない
+    other_kind = Notification(family_account_id=world["family"].id, kind="daily_digest")
+    session.add(other_kind)
+    session.flush()
+
+    response = client.post(READ_URL)
+
+    assert response.status_code == 204
+    [notice] = _notices(session, reservation_id, "visit_confirmed")
+    session.refresh(notice)
+    session.refresh(other_kind)
+    assert notice.read_at is not None
+    assert other_kind.read_at is None
+    # 何度呼んでも同じ
+    assert client.post(READ_URL).status_code == 204
+
+
+def test_other_family_visit_notices_stay_unread(client, session, world, login_as, make_family):
+    other = make_family(display_name="べつの入居者")
+    login_as(other.user_id)
+    response = client.post(
+        "/api/family/visits",
+        json={"visit_date": DAY.isoformat(), "start_time": "10:00", "party_size": 1},
+    )
+    assert response.status_code == 201
+    other_reservation = response.json()["id"]
+
+    login_as(world["family"].user_id)
+    assert client.post(READ_URL).status_code == 204
+
+    [notice] = _notices(session, other_reservation, "visit_confirmed")
+    session.refresh(notice)
+    assert notice.read_at is None
+
+
+def test_staff_cannot_mark_visit_notices_read(client, world, login_as):
+    login_as(world["staff"].user_id)
+
+    assert client.post(READ_URL).status_code == 403

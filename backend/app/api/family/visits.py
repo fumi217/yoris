@@ -21,6 +21,7 @@ from app.services.visits import (
     cancel_by_family,
     get_availability,
     list_my_reservations,
+    mark_visit_notices_read,
 )
 
 router = APIRouter(prefix="/api/family/visits", tags=["family"])
@@ -162,4 +163,17 @@ def cancel_reservation(
         cancel_by_family(session, user, reservation_id)
     except VisitRuleError as error:
         raise _app_error(error) from error
+    session.commit()
+
+
+@router.post("/notices/read", status_code=204)
+def read_visit_notices(
+    user: Annotated[CurrentUser, Depends(require_family)],
+    session: Annotated[Session, Depends(get_session)],
+) -> None:
+    """面会のお知らせ（確定・取り消し・前日の知らせ）を、まとめて読んだことにする（#272）。
+
+    面会の画面が「これからの予約」を読めたときに呼ぶ。何度呼んでも同じ。家族で共有。
+    """
+    mark_visit_notices_read(session, user)
     session.commit()
