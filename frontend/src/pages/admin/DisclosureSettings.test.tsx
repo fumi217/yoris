@@ -12,6 +12,7 @@ const disclosure: Disclosure = {
     { code: 'sleep', visible: true },
   ],
   themes: [{ code: 'theme.meals', emoji: '🍚', visible: true }],
+  features: [{ code: 'album', visible: true }],
   related: [{ item: 'meal', theme: 'theme.meals' }],
 }
 
@@ -43,14 +44,21 @@ describe('adminMenu', () => {
 })
 
 describe('DisclosureForm', () => {
+  it('機能の欄に、アルバムの行（見せる／見せない）を出す（spec 005 の 005-T023）', () => {
+    const html = render()
+
+    expect(html).toContain('name="feature-album"')
+    expect(html).toContain('アルバム')
+  })
+
   it('記録の項目とテーマを、今の設定で並べる', () => {
     const html = render()
 
     expect(html).toContain('食事')
     expect(html).toContain('name="theme-theme.meals"')
     expect(html).toContain('🍚')
-    // 見せる：食事・眠り・テーマ、見せない：機嫌
-    expect(html.match(/type="radio"[^>]*checked=""/g)).toHaveLength(4)
+    // 見せる：食事・眠り・テーマ・アルバム、見せない：機嫌（行ごとに 1 つ選ばれている）
+    expect(html.match(/type="radio"[^>]*checked=""/g)).toHaveLength(5)
   })
 
   it('何も変えていなければ、保存のボタンは押せない', () => {

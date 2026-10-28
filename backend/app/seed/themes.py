@@ -11,7 +11,13 @@ DB にはコードだけを入れ、文言は辞書（frontend/src/i18n/ja.json 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.disclosure import DISCLOSURE_ITEMS, DisclosureSetting, ReplyTemplate, Theme
+from app.models.disclosure import (
+    DISCLOSURE_FEATURES,
+    DISCLOSURE_ITEMS,
+    DisclosureSetting,
+    ReplyTemplate,
+    Theme,
+)
 
 # (テーマの code, 絵文字, 定型文の code の並び)。テーマは spec 001 の FR-013 の 8 個
 THEMES: list[tuple[str, str, list[str]]] = [
@@ -111,7 +117,7 @@ def add_themes(session: Session) -> None:
 
 
 def add_disclosure_settings(session: Session, *, facility_id: int) -> None:
-    """記録項目（様子のメモを含む）とテーマを、すべて「見せる」で入れる（FR-009）。
+    """記録項目（様子のメモを含む）・テーマ・機能（アルバム）を、すべて「見せる」で入れる（FR-009）。
 
     commit は呼んだ側が行う。
     """
@@ -122,9 +128,11 @@ def add_disclosure_settings(session: Session, *, facility_id: int) -> None:
             )
         ).all()
     )
-    targets = [("item", item) for item in DISCLOSURE_ITEMS] + [
-        ("theme", code) for code, _, _ in THEMES
-    ]
+    targets = (
+        [("item", item) for item in DISCLOSURE_ITEMS]
+        + [("theme", code) for code, _, _ in THEMES]
+        + [("feature", feature) for feature in DISCLOSURE_FEATURES]
+    )
     for target_type, target_code in targets:
         if (target_type, target_code) not in existing:
             session.add(

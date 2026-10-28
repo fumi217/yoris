@@ -20,6 +20,7 @@ from app.services.disclosure import (
     get_disclosed_records,
     get_disclosed_themes,
     get_requested_themes,
+    is_feature_disclosed,
     is_item_disclosed,
 )
 
@@ -139,6 +140,25 @@ def test_is_item_disclosed(session, world):
     assert is_item_disclosed(session, "memo") is True
     # 開示設定に行がない項目は、見せない側に倒す
     assert is_item_disclosed(session, "unknown") is False
+
+
+def test_is_feature_disclosed(session, world):
+    """アルバム（feature）は、初期データで「見せる」。見せない設定にすると False。
+
+    spec 005 の 005-T003。
+    """
+    assert is_feature_disclosed(session, "album") is True
+
+    _hide(session, world, "feature", "album")
+
+    assert is_feature_disclosed(session, "album") is False
+    # 行がない機能は、見せない側に倒す
+    assert is_feature_disclosed(session, "unknown") is False
+
+
+def test_feature_row_does_not_mix_into_items(session, world):
+    """機能の行（album）は、記録項目の判断（is_item_disclosed）に混ざらない。"""
+    assert is_item_disclosed(session, "album") is False
 
 
 def test_hidden_theme_is_not_returned(session, world):

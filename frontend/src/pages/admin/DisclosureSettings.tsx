@@ -11,20 +11,28 @@ import { HISTORY_QUERY_KEY } from './historyRows'
 
 type ItemSetting = { code: string; visible: boolean }
 type ThemeSetting = { code: string; emoji: string; visible: boolean }
+type FeatureSetting = { code: string; visible: boolean }
 export type Disclosure = {
   items: ItemSetting[]
   themes: ThemeSetting[]
+  // 機能（アルバム。spec 005 の 005-T023）
+  features: FeatureSetting[]
   // 関係しそうな組み合わせの一覧（T042。backend の RELATED_PAIRS）
   related: RelatedPair[]
 }
 // 変えたものだけ（code → 見せるか）
-export type DisclosureChanges = { items: Record<string, boolean>; themes: Record<string, boolean> }
+export type DisclosureChanges = {
+  items: Record<string, boolean>
+  themes: Record<string, boolean>
+  features: Record<string, boolean>
+}
+type Kind = keyof DisclosureChanges
 
 const QUERY_KEY = ['admin', 'disclosure']
 
 /**
  * 開示設定（UI-A01。spec 001 の T040。`/admin/disclosure`。生活相談員・施設長）。
- * 記録項目とテーマごとに、家族に見せるかを選んで「保存する」（FR-009）。
+ * 記録項目・テーマ・機能（アルバム。spec 005 の 005-T023）ごとに、家族に見せるかを選んで「保存する」（FR-009）。
  * 家族に見えるものが変わるので、押してすぐには保存しない。保存すると、次に家族が開いたときから変わる（FR-012）。
  * 下に、変更の履歴（いつ・誰が・何を。FR-011・T041）を出す。
  */
@@ -72,16 +80,16 @@ type FormProps = {
 /** 画面の中身（テストではこれを直接出す）。 */
 export function DisclosureForm({ disclosure, saving, saved, errorKey, onSave }: FormProps) {
   const { t } = useTranslation()
-  const [changes, setChanges] = useState<DisclosureChanges>({ items: {}, themes: {} })
+  const [changes, setChanges] = useState<DisclosureChanges>({ items: {}, themes: {}, features: {} })
   // 今の選び方（まだ保存していない変更も含む）
   const isVisible = (kind: 'items' | 'themes', code: string) =>
     changes[kind][code] ?? disclosure[kind].find((row) => row.code === code)?.visible ?? false
   const warnings = warningsFor(disclosure.related, isVisible)
   const themeEmoji = (code: string) =>
     disclosure.themes.find((theme) => theme.code === code)?.emoji ?? ''
-  const dirty = Object.keys(changes.items).length + Object.keys(changes.themes).length > 0
+  const dirty = Object.values(changes).some((changed) => Object.keys(changed).length > 0)
 
-  const toggle = (kind: 'items' | 'themes', code: string, original: boolean, visible: boolean) =>
+  const toggle = (kind: Kind, code: string, original: boolean, visible: boolean) =>
     setChanges((current) => {
       const next = { ...current[kind] }
       // 元に戻したら、変えたものから外す
@@ -128,6 +136,18 @@ export function DisclosureForm({ disclosure, saving, saved, errorKey, onSave }: 
             labelKey={theme.code}
             visible={changes.themes[theme.code] ?? theme.visible}
             onChange={(visible) => toggle('themes', theme.code, theme.visible, visible)}
+          />
+        ))}
+      </Section>
+
+      <Section titleKey="disclosure.features">
+        {disclosure.features.map((feature) => (
+          <Row
+            key={feature.code}
+            name={`feature-${feature.code}`}
+            labelKey={`disclosure.feature.${feature.code}`}
+            visible={changes.features[feature.code] ?? feature.visible}
+            onChange={(visible) => toggle('features', feature.code, feature.visible, visible)}
           />
         ))}
       </Section>

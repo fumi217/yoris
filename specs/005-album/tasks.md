@@ -39,7 +39,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T002 [P] 写真の処理を `backend/app/services/uploads.py` に足す（001-T069・001-T075 のあと）：呼び出し側が受け付ける形式を渡せるようにし、アルバムでは **`image/jpeg`・`image/png` だけ**にする（PDF は `invalid_file`）。
   画像を Pillow で開いたら、`ImageOps.exif_transpose` で向きを実際の画素に反映してから、Exif を付けずに保存する。サムネイル（**長い辺 480px の JPEG、画質 80**）を作って別の `uploaded_files` に保存する。
   画素数が極端に大きい画像は `Image.MAX_IMAGE_PIXELS` で、アニメーション PNG・壊れた画像と一緒に `invalid_file` にする。1 枚は **10MB まで**（research.md R-02。FR-003・FR-004）（さとこ）
-- [ ] T003 [P] 開示設定に「アルバム」を足す（**ゆうに依頼**。001-T036・001-T038 のあと）：`disclosure_settings.target_type` に `feature` を足し、初期データに `(facility_id, 'feature', 'album', visible = true)` の 1 行を入れる（`backend/app/seed/`）。
+- [x] T003 [P] 開示設定に「アルバム」を足す（**ゆうに依頼**。001-T036・001-T038 のあと）：`disclosure_settings.target_type` に `feature` を足し、初期データに `(facility_id, 'feature', 'album', visible = true)` の 1 行を入れる（`backend/app/seed/`）。
   `backend/app/services/disclosure.py` に `is_feature_disclosed(code)` を足す（開示設定のキャッシュを読む。`get_disclosed_records` や通知の項目の選択肢に `feature` の行が混ざらないようにする）（FR-013・research.md R-04）（ゆう）
 - [ ] T004 家族に出す共通の関数を `backend/app/services/album.py` に作る：`get_visible_album_photos(resident_id, before=None, limit=30)`（アルバムが「見せる」のとき、その入居者の削除されていない写真を新しい順に返す。「見せない」のときは呼び出し側が 404 にする）、
   `can_family_view_photo(photo, resident_id)`（自分の入居者の写真・削除されていない・アルバムが「見せる」）、`count_new_photos(resident_id, since, until)`（削除されていない写真の数）。家族に写真を出す道は、これらの関数だけにする（T003 のあと。research.md R-03。FR-006・FR-014）（さとこ）
@@ -115,9 +115,9 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ### Implementation for User Story 3
 
-- [ ] T022 [US3] 開示設定の API が `feature` の行（アルバム）を扱えるようにする（**ゆうに依頼**。001-T039 のあと）：`GET /api/admin/disclosure` の返り値に `feature` の行を足し、`PUT /api/admin/disclosure` で変えられるようにする。保存したら開示設定のキャッシュを必ず消す。
+- [x] T022 [US3] 開示設定の API が `feature` の行（アルバム）を扱えるようにする（**ゆうに依頼**。001-T039 のあと）：`GET /api/admin/disclosure` の返り値に `feature` の行を足し、`PUT /api/admin/disclosure` で変えられるようにする。保存したら開示設定のキャッシュを必ず消す。
   変更は `disclosure_setting_histories`（誰が・いつ・何を）に残る。役割：生活相談員・施設長（FR-013・FR-015）（ゆう）
-- [ ] T023 [US3] 開示設定の画面に「アルバム」の行（見せる／見せない）を足す（**ゆうに依頼**。001-T040 のあと）：`frontend/src/pages/admin/DisclosureSettings.tsx`。履歴の画面にも出る（FR-013・FR-015）（ゆう）
+- [x] T023 [US3] 開示設定の画面に「アルバム」の行（見せる／見せない）を足す（**ゆうに依頼**。001-T040 のあと）：`frontend/src/pages/admin/DisclosureSettings.tsx`。履歴の画面にも出る（FR-013・FR-015）（ゆう）
 - [ ] T024 [US3] 「見せない」設定のときの動きを確かめる・直す：メニュー（T013）、アルバムの API（T010）、ファイル（T011）、通知の選択肢（T028）のどれにも出ない。開示設定を保存した直後に、古いキャッシュで出ないことをテストで確かめる（FR-014）（さとこ）
 
 **Checkpoint**: 「見せない」にすると、家族の画面・URL・通知のどこにもアルバムが出ない

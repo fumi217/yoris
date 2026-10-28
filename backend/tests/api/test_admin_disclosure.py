@@ -38,8 +38,10 @@ def test_get_lists_items_and_themes_in_order(client, world):
     # 記録の 3 つと、様子のメモ（spec 007 の 007-T025）
     assert [row["code"] for row in data["items"]] == ["meal", "mood", "sleep", "memo"]
     assert [row["code"] for row in data["themes"]] == [code for code, _, _ in THEMES]
+    # 機能は、アルバム（spec 005 の 005-T022）
+    assert [row["code"] for row in data["features"]] == ["album"]
     # 初期データはすべて見せる（FR-009）
-    assert all(row["visible"] for row in [*data["items"], *data["themes"]])
+    assert all(row["visible"] for row in [*data["items"], *data["themes"], *data["features"]])
 
 
 def test_missing_setting_is_hidden(client, session, world):
@@ -233,3 +235,27 @@ def test_hiding_memo_is_read_by_is_item_disclosed(client, session, world):
 
     assert _visible(data, "items", "memo") is False
     assert is_item_disclosed(session, "memo") is False
+
+
+def test_album_can_be_hidden_and_is_kept_in_history(client, session, world):
+    """アルバムを見せない設定にすると、is_feature_disclosed も見せない扱いになる。
+
+    変更は履歴に残る（spec 005 の 005-T022）。
+    """
+    from app.services.disclosure import is_feature_disclosed
+
+    data = client.put(URL, json={"features": {"album": False}}).json()
+
+    assert _visible(data, "features", "album") is False
+    assert is_feature_disclosed(session, "album") is False
+    [row] = client.get(f"{URL}/history").json()
+    assert (row["target_type"], row["target_code"], row["old_visible"], row["new_visible"]) == (
+        "feature",
+        "album",
+        True,
+        False,
+    )
+
+
+def test_unknown_feature_is_422(client, world):
+    assert client.put(URL, json={"features": {"unknown_feature": True}}).status_code == 422

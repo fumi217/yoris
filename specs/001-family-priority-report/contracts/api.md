@@ -81,8 +81,8 @@
 
 | メソッド・パス | 役割 | 時期 | 中身 | spec |
 |---|---|---|---|---|
-| `GET /api/admin/disclosure` | CO・D | ミ | 記録項目とテーマの、見せる／見せない。`{items: [{code, visible}], themes: [{code, emoji, visible}]}`（記録の項目の順・テーマの順。設定の行がないものは `visible: false`）。関係しそうな組み合わせ（作り込み・T042）：`related: [{item, theme}]`（組の一覧。data-model.md）と、保存した設定で当てはまる組 `warnings: [{item, theme}]`。画面は、まだ保存していない選び方でも `related` から注意書きを出す（止めない） | FR-009 |
-| `PUT /api/admin/disclosure` | CO・D | ミ | 変える。本文 `{items: {<code>: true/false}, themes: {<code>: true/false}}`（変えるものだけ）。知らないコード・真偽でない値は 422（何も変えない）。保存したら commit のあとに開示設定のキャッシュを消す。返り値は GET と同じ | FR-009・FR-012 |
+| `GET /api/admin/disclosure` | CO・D | ミ | 記録項目とテーマと機能の、見せる／見せない。`{items: [{code, visible}], themes: [{code, emoji, visible}], features: [{code, visible}]}`（`features` はアルバム `album`。spec 005 の 005-T022）（記録の項目の順・テーマの順。設定の行がないものは `visible: false`）。関係しそうな組み合わせ（作り込み・T042）：`related: [{item, theme}]`（組の一覧。data-model.md）と、保存した設定で当てはまる組 `warnings: [{item, theme}]`。画面は、まだ保存していない選び方でも `related` から注意書きを出す（止めない） | FR-009 |
+| `PUT /api/admin/disclosure` | CO・D | ミ | 変える。本文 `{items: {<code>: true/false}, themes: {<code>: true/false}, features: {<code>: true/false}}`（変えるものだけ）。知らないコード・真偽でない値は 422（何も変えない）。保存したら commit のあとに開示設定のキャッシュを消す。返り値は GET と同じ | FR-009・FR-012 |
 | `GET /api/admin/disclosure/history` | CO・D | 作 | 変更履歴（いつ・誰が・何を）。`[{id, target_type, target_code, old_visible, new_visible, changed_by_name, changed_at}]`、新しい順に 100 件まで。保存で変わったものだけを残す（行がなかったものの前の値は「見せない」） | FR-011 |
 
 ## 家族の画面（さとこ）

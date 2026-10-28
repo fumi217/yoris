@@ -22,6 +22,7 @@ from app.db import get_session
 from app.errors import AppError, ErrorCode
 from app.models.core import Staff
 from app.models.disclosure import (
+    DISCLOSURE_FEATURES,
     DISCLOSURE_ITEMS,
     DisclosureSetting,
     DisclosureSettingHistory,
@@ -56,6 +57,11 @@ class ThemeSetting(BaseModel):
     visible: bool
 
 
+class FeatureSetting(BaseModel):
+    code: str  # "album"
+    visible: bool
+
+
 class RelatedPair(BaseModel):
     item: str
     theme: str
@@ -64,6 +70,8 @@ class RelatedPair(BaseModel):
 class DisclosureResponse(BaseModel):
     items: list[ItemSetting]
     themes: list[ThemeSetting]
+    # 機能（アルバム。spec 005 の 005-T022）
+    features: list[FeatureSetting]
     # 関係しそうな組み合わせの一覧（画面は、まだ保存していない選び方でもここから注意書きを出す）
     related: list[RelatedPair]
     # 保存した設定で当てはまる組（記録の項目は見せないのに、テーマは見せる）
@@ -77,6 +85,7 @@ class DisclosureUpdate(BaseModel):
     # "yes" や 1 を真偽に読み替えない
     items: dict[str, StrictBool] = {}
     themes: dict[str, StrictBool] = {}
+    features: dict[str, StrictBool] = {}
 
 
 def _facility_id(session: Session, user: CurrentUser) -> int:
@@ -110,6 +119,10 @@ def _response(session: Session, facility_id: int) -> DisclosureResponse:
             )
             for theme in themes
         ],
+        features=[
+            FeatureSetting(code=feature, visible=visible.get(("feature", feature), False))
+            for feature in DISCLOSURE_FEATURES
+        ],
         related=related,
         warnings=[
             pair
@@ -125,7 +138,7 @@ def get_disclosure(
     user: Annotated[CurrentUser, Depends(DISCLOSURE_EDITORS)],
     session: Annotated[Session, Depends(get_session)],
 ) -> DisclosureResponse:
-    """記録項目とテーマの、見せる／見せない（並びは記録の項目の順・テーマの順）。"""
+    """記録項目・テーマ・機能の、見せる／見せない（並びは記録の項目の順・テーマの順）。"""
     return _response(session, _facility_id(session, user))
 
 
@@ -137,7 +150,11 @@ def put_disclosure(
 ) -> DisclosureResponse:
     """見せる／見せないを変える。知らない項目・テーマのコードがあれば 422（何も変えない）。"""
     theme_codes = set(session.scalars(select(Theme.code)))
-    if not set(body.items) <= set(DISCLOSURE_ITEMS) or not set(body.themes) <= theme_codes:
+    if (
+        not set(body.items) <= set(DISCLOSURE_ITEMS)
+        or not set(body.themes) <= theme_codes
+        or not set(body.features) <= set(DISCLOSURE_FEATURES)
+    ):
         raise AppError(ErrorCode.VALIDATION_ERROR)
 
     facility_id = _facility_id(session, user)
@@ -147,9 +164,11 @@ def put_disclosure(
             select(DisclosureSetting).where(DisclosureSetting.facility_id == facility_id)
         )
     }
-    changes = [("item", code, visible) for code, visible in body.items.items()] + [
-        ("theme", code, visible) for code, visible in body.themes.items()
-    ]
+    changes = (
+        [("item", code, visible) for code, visible in body.items.items()]
+        + [("theme", code, visible) for code, visible in body.themes.items()]
+        + [("feature", code, visible) for code, visible in body.features.items()]
+    )
     for target_type, code, visible in changes:
         setting = existing.get((target_type, code))
         # 行がないものは「見せない」として扱っているので、前の値は False（FR-011）
@@ -191,7 +210,7 @@ HISTORY_LIMIT = 100
 
 class HistoryOut(BaseModel):
     id: int
-    target_type: str  # "item" / "theme"
+    target_type: str  # "item" / "theme" / "feature"
     target_code: str
     old_visible: bool
     new_visible: bool

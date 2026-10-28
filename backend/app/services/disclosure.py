@@ -84,7 +84,10 @@ def _facility_id(session: Session, resident_id: int | None = None) -> int | None
 
 
 def _visible_targets(session: Session, facility_id: int) -> dict[str, set[str]]:
-    """{"item": {見せる項目}, "theme": {見せるテーマの code}}。キャッシュになければ DB から読む。"""
+    """{"item": {見せる項目}, "theme": {見せるテーマの code}, "feature": {見せる機能}}。
+
+    キャッシュになければ DB から読む。
+    """
     try:
         cached = get_redis().get(_cache_key(facility_id))
     except Exception:
@@ -100,7 +103,7 @@ def _visible_targets(session: Session, facility_id: int) -> dict[str, set[str]]:
             DisclosureSetting.facility_id == facility_id, DisclosureSetting.visible.is_(True)
         )
     )
-    visible: dict[str, set[str]] = {"item": set(), "theme": set()}
+    visible: dict[str, set[str]] = {"item": set(), "theme": set(), "feature": set()}
     for target_type, target_code in rows:
         visible.setdefault(target_type, set()).add(target_code)
     try:
@@ -132,6 +135,17 @@ def is_item_disclosed(session: Session, code: str) -> bool:
     if facility_id is None:
         return False
     return code in _visible_targets(session, facility_id)["item"]
+
+
+def is_feature_disclosed(session: Session, code: str) -> bool:
+    """その機能（"album" など）を家族に見せる設定か。知らないコード・行がないものは False。
+
+    spec 005 の 005-T003。アルバムの API・写真のファイル・家族のメニューが、これで判断する。
+    """
+    facility_id = _facility_id(session)
+    if facility_id is None:
+        return False
+    return code in _visible_targets(session, facility_id).get("feature", set())
 
 
 # --- 記録 ---

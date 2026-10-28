@@ -3,7 +3,7 @@
 /** `GET /api/admin/disclosure/history` の 1 件（backend/app/api/admin/disclosure.py の HistoryOut）。 */
 export type DisclosureHistoryRow = {
   id: number
-  target_type: 'item' | 'theme'
+  target_type: 'item' | 'theme' | 'feature'
   target_code: string
   old_visible: boolean
   new_visible: boolean
@@ -13,9 +13,11 @@ export type DisclosureHistoryRow = {
 
 export const HISTORY_QUERY_KEY = ['admin', 'disclosure', 'history']
 
-/** 何を変えたかの辞書のキー（記録の項目は disclosure.item.*、テーマはそのコード）。 */
+/** 何を変えたかの辞書のキー（記録の項目は disclosure.item.*、機能は disclosure.feature.*、テーマはそのコード）。 */
 export function targetLabelKey(row: DisclosureHistoryRow): string {
-  return row.target_type === 'item' ? `disclosure.item.${row.target_code}` : row.target_code
+  if (row.target_type === 'item') return `disclosure.item.${row.target_code}`
+  if (row.target_type === 'feature') return `disclosure.feature.${row.target_code}`
+  return row.target_code
 }
 
 /** 変えた日時を、日本時間の月・日・時刻に分ける（端末のタイムゾーンに関わらず）。 */

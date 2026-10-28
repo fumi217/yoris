@@ -12,13 +12,17 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db import Base, check_in
 from app.models.records import ITEMS
 
-# 記録項目（item）と「知りたいこと」のテーマ（theme）。
-# アルバム（feature、spec 005 の 005-T003）は、そのタスクで足す
-TARGET_TYPES = ("item", "theme")
+# 記録項目（item）と「知りたいこと」のテーマ（theme）と、
+# 機能（feature。アルバム。spec 005 の 005-T003）
+TARGET_TYPES = ("item", "theme", "feature")
 
 # 開示設定で見せる・見せないを選べる記録項目：記録の 3 つと、様子のメモ（spec 007 の 007-T025）。
 # 様子のメモは care_records ではなく care_memos にあるので、記録の ITEMS とは分けて持つ
 DISCLOSURE_ITEMS = (*ITEMS, "memo")
+
+# 開示設定で見せる・見せないを選べる機能：アルバム（spec 005 の 005-T003）。
+# 記録の読み出し（get_disclosed_records）や通知の選択肢は item の行だけを見るので、混ざらない
+DISCLOSURE_FEATURES = ("album",)
 
 
 class Theme(Base):

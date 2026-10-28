@@ -25,6 +25,10 @@ describe('disclosureHistory', () => {
     expect(targetLabelKey(row({ target_type: 'theme', target_code: 'theme.meals' }))).toBe(
       'theme.meals',
     )
+    // 機能（アルバム。spec 005 の 005-T023）
+    expect(targetLabelKey(row({ target_type: 'feature', target_code: 'album' }))).toBe(
+      'disclosure.feature.album',
+    )
   })
 })
 
