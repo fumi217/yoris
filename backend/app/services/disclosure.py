@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 
 from app.models.core import Facility, Resident, Staff
 from app.models.disclosure import DisclosureSetting, ReplyTemplate, Theme
+from app.models.memos import CareMemo
 from app.models.records import ITEMS, MEAL_SLOTS, CareRecord
 from app.models.replies import Reply
 from app.models.requests import Request
@@ -72,6 +73,21 @@ class DisclosedReply:
     replied_at: datetime
     edited: bool  # 当日中に直したか
     read: bool  # 家族が読んだか（家族で共有）
+
+
+@dataclass(frozen=True)
+class DisclosedMemo:
+    """家族に出す様子のメモ。原文・訳し戻し・機械の目の印は持たない（家族に見せない。FR-012）。"""
+
+    id: int  # care_memos.id
+    memo_date: date  # 書いた日（日本時間）。承認が日付をまたいでも、この日の連絡帳に出す
+    written_at: datetime  # 書いた時刻（連絡帳の並び順）
+    text: str  # 整えた日本語（職員が直したものを含む）。辞書を通さず、文字としてだけ出す
+    author_name: str  # 書いた職員の表示名
+    # 書いた職員の職種のコード（辞書の occupation.*。返事の replied_by_occupation と同じ）。
+    # 空なら名前だけを出す（#263）
+    author_occupation: str | None
+    approved_at: datetime  # 承認した日時（通知のまとめが、承認日時で数えるため。FR-012b）
 
 
 # --- 開示設定（キャッシュつき） ---
@@ -295,4 +311,68 @@ def get_active_replies(
             read=reply.read_at is not None,
         )
         for reply, theme_code, theme_emoji, staff_name, occupation in rows
+    ]
+
+
+# --- 様子のメモ（spec 007 の 007-T024。research.md R-07） ---
+
+
+def get_disclosed_memos(
+    session: Session,
+    resident_id: int,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    *,
+    approved_from: datetime | None = None,
+    approved_to: datetime | None = None,
+) -> list[DisclosedMemo]:
+    """承認済みの様子のメモを、書いた時刻の順に返す。
+
+    開示設定の「様子のメモ」（memo）を見せる設定のときだけ。見せない設定なら、空を返す。
+    承認されていないもの（下書き・承認待ち・戻された・取り下げた）は返さない。
+    絞り方は 2 つ（どちらか 1 つ以上を必ず渡す。両方渡したら、両方に当てはまるもの）。
+    - date_from〜date_to：メモを書いた日（memo_date。両端を含む）。家族の連絡帳（007-T026）が使う
+    - approved_from〜approved_to：承認した日時（approved_from 以上、approved_to より前）。
+      通知のまとめ（007-T027）が使う（昨日書いて、今日承認したメモを、今日のまとめに入れるため。FR-012b）
+    返すのは、整えた日本語・書いた職員の表示名と職種・書いた日・書いた時刻・承認した日時だけ
+    （原文・訳し戻し・印は返さない）。
+    問い合わせ AI（spec 004）は、様子のメモを読まない（R-07）。
+    """
+    if date_from is None and date_to is None and approved_from is None and approved_to is None:
+        raise ValueError("書いた日か承認した日時の、どちらかの範囲を渡してください")
+    if not is_item_disclosed(session, "memo"):
+        return []
+    conditions = [
+        CareMemo.resident_id == resident_id,
+        CareMemo.status == "approved",
+        # 承認されたメモには、整えた日本語と承認した日時が必ずある。念のため、空のものは出さない
+        CareMemo.rewritten_text.is_not(None),
+        CareMemo.approved_at.is_not(None),
+    ]
+    if date_from is not None:
+        conditions.append(CareMemo.memo_date >= date_from)
+    if date_to is not None:
+        conditions.append(CareMemo.memo_date <= date_to)
+    if approved_from is not None:
+        conditions.append(CareMemo.approved_at >= approved_from)
+    if approved_to is not None:
+        conditions.append(CareMemo.approved_at < approved_to)
+    rows = session.execute(
+        select(CareMemo, Staff.display_name, Staff.occupation)
+        .join(Staff, Staff.id == CareMemo.author_staff_id)
+        .where(*conditions)
+        .order_by(CareMemo.written_at, CareMemo.id)
+    )
+    return [
+        DisclosedMemo(
+            id=memo.id,
+            memo_date=memo.memo_date,
+            written_at=memo.written_at,
+            text=memo.rewritten_text or "",
+            author_name=author_name,
+            author_occupation=occupation,
+            approved_at=memo.approved_at,
+        )
+        for memo, author_name, occupation in rows
+        if memo.approved_at is not None
     ]

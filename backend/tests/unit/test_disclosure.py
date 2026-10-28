@@ -5,7 +5,7 @@ DB はテストごとに取り消し、Redis はテストの前後で空にす�
 """
 
 from collections.abc import Iterator
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from sqlalchemy import update
@@ -13,10 +13,12 @@ from sqlalchemy.orm import Session
 
 from app.models.core import Facility, Resident, Staff, User
 from app.models.disclosure import DisclosureSetting, Theme
+from app.models.memos import CareMemo
 from app.models.records import CareRecord
 from app.seed.themes import THEMES, add_disclosure_settings, add_themes
 from app.services.disclosure import (
     clear_disclosure_cache,
+    get_disclosed_memos,
     get_disclosed_records,
     get_disclosed_themes,
     get_requested_themes,
@@ -223,3 +225,167 @@ def test_works_without_redis(session, world, monkeypatch):
 
     assert [r.item for r in _records(session, world)] == ["meal"]
     assert is_item_disclosed(session, "sleep") is False
+
+
+# --- 様子のメモ（spec 007 の 007-T024） ---
+
+
+def _memo(
+    session,
+    world,
+    *,
+    status="approved",
+    text="今日は、よく笑っていました。",
+    day=DAY,
+    written_at=None,
+    approved_at=None,
+    resident_id=None,
+) -> CareMemo:
+    memo = CareMemo(
+        resident_id=resident_id or world["resident"],
+        author_staff_id=world["staff"],
+        memo_date=day,
+        written_at=written_at or datetime(2026, 10, 23, 3, 0, tzinfo=UTC),
+        # 承認したものにだけ、承認した日時が入る
+        approved_at=(approved_at or datetime(2026, 10, 23, 4, 0, tzinfo=UTC))
+        if status == "approved"
+        else None,
+        source_lang="id",
+        original_text="Hari ini beliau banyak tersenyum.",
+        rewritten_text=text,
+        back_translation="今日は、たくさん笑っていました。",
+        warnings=["length_changed"],
+        status=status,
+    )
+    session.add(memo)
+    session.flush()
+    return memo
+
+
+def _memos(session, world):
+    return get_disclosed_memos(session, world["resident"], DAY, DAY)
+
+
+def test_approved_memo_is_returned_with_only_what_the_family_may_see(session, world):
+    memo = _memo(session, world)
+
+    [shown] = _memos(session, world)
+
+    assert (shown.id, shown.memo_date) == (memo.id, DAY)
+    assert shown.text == "今日は、よく笑っていました。"
+    assert shown.author_name == "職員A"
+    # 原文・訳し戻し・機械の目の印は、家族に見せない（FR-012）。そもそも持っていない
+    assert set(vars(shown)) == {
+        "id",
+        "memo_date",
+        "written_at",
+        "text",
+        "author_name",
+        "author_occupation",
+        "approved_at",
+    }
+    assert shown.approved_at == datetime(2026, 10, 23, 4, 0, tzinfo=UTC)
+    # 職種を入れていない職員は、空（名前だけを出す）
+    assert shown.author_occupation is None
+
+
+def test_memo_has_the_author_occupation_like_a_reply(session, world):
+    session.get(Staff, world["staff"]).occupation = "nurse"
+    _memo(session, world)
+
+    [shown] = _memos(session, world)
+
+    assert shown.author_occupation == "nurse"
+
+
+@pytest.mark.parametrize("status", ["draft", "pending", "returned", "withdrawn"])
+def test_memo_that_is_not_approved_is_not_returned(session, world, status):
+    # 下書き・承認待ち・戻された（公開を取り下げたものも「戻された」になる）・取り下げた
+    _memo(session, world, status=status)
+
+    assert _memos(session, world) == []
+
+
+def test_memo_is_not_returned_when_the_setting_hides_it(session, world):
+    _memo(session, world)
+    _hide(session, world, "item", "memo")
+
+    assert _memos(session, world) == []
+
+
+def test_memo_setting_is_independent_of_the_records(session, world):
+    _memo(session, world)
+    _hide(session, world, "item", "meal")
+
+    assert len(_memos(session, world)) == 1
+
+
+def test_memos_are_picked_by_the_day_written_in_time_order(session, world):
+    late = _memo(session, world, text="夕方", written_at=datetime(2026, 10, 23, 8, 0, tzinfo=UTC))
+    early = _memo(session, world, text="朝", written_at=datetime(2026, 10, 23, 0, 0, tzinfo=UTC))
+    _memo(session, world, text="前の日", day=DAY - timedelta(days=1))
+    _memo(session, world, text="次の日", day=DAY + timedelta(days=1))
+
+    memos = _memos(session, world)
+
+    assert [m.id for m in memos] == [early.id, late.id]
+
+
+def test_digest_picks_memos_by_the_time_approved_not_the_day_written(session, world):
+    # 昨日書いて、今日の 19 時（日本時間。UTC の 10 時）に承認したメモは、今日のまとめに入る
+    # （FR-012b）
+    approved_today = _memo(
+        session,
+        world,
+        text="昨日書いた",
+        day=DAY - timedelta(days=1),
+        approved_at=datetime(2026, 10, 23, 10, 0, tzinfo=UTC),
+    )
+    # 今日書いても、前の日に承認したものは、今日のまとめに入らない
+    _memo(
+        session, world, text="前の日に承認", approved_at=datetime(2026, 10, 22, 10, 0, tzinfo=UTC)
+    )
+    # 期間の終わりちょうど（approved_to）は、次のまとめに回す
+    _memo(session, world, text="次のまとめ", approved_at=datetime(2026, 10, 24, 0, 0, tzinfo=UTC))
+
+    memos = get_disclosed_memos(
+        session,
+        world["resident"],
+        approved_from=datetime(2026, 10, 23, 0, 0, tzinfo=UTC),
+        approved_to=datetime(2026, 10, 24, 0, 0, tzinfo=UTC),
+    )
+
+    assert [m.id for m in memos] == [approved_today.id]
+
+
+def test_digest_range_still_hides_what_the_setting_hides_and_what_is_not_approved(session, world):
+    _memo(session, world, status="pending")
+    _memo(session, world, text="承認済み")
+    window = {
+        "approved_from": datetime(2026, 10, 23, 0, 0, tzinfo=UTC),
+        "approved_to": datetime(2026, 10, 24, 0, 0, tzinfo=UTC),
+    }
+
+    assert [m.text for m in get_disclosed_memos(session, world["resident"], **window)] == [
+        "承認済み"
+    ]
+    _hide(session, world, "item", "memo")
+    assert get_disclosed_memos(session, world["resident"], **window) == []
+
+
+def test_a_range_is_required(session, world):
+    # 範囲なしで呼ぶと、その入居者の承認済みのメモが全部返ってしまうので、断る
+    with pytest.raises(ValueError):
+        get_disclosed_memos(session, world["resident"])
+
+
+def test_only_the_residents_own_memos_are_returned(session, world, facility):
+    other = Resident(
+        facility_id=facility.id, name="架空 次郎", display_name="ほかさんの父", room="102"
+    )
+    session.add(other)
+    session.flush()
+    _memo(session, world, text="よその入居者", resident_id=other.id)
+    mine = _memo(session, world)
+
+    assert [m.id for m in _memos(session, world)] == [mine.id]

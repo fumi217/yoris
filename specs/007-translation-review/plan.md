@@ -115,7 +115,7 @@ frontend/src/
 |---|---|---|
 | `LLMClient`・テスト用の LLM（モック） | みさき（spec 004 T003・T004）→ みさき | 同じクライアントとテスト用の LLM（モック）を使う |
 | 開示設定の記録項目 `memo` | ゆう → みさき | spec 001 の `disclosure_settings` に `target_code = 'memo'`（初期値は見せる）を足し、設定の画面に出す |
-| `get_disclosed_memos(resident_id, date_from, date_to)` | みさき → さとこ | `services/disclosure.py` に足す。開示の判断はゆうの `is_item_disclosed("memo")`（001-T038。開示設定のキャッシュを読む）を呼び、ゆうが確かめる |
+| `get_disclosed_memos(resident_id, date_from, date_to, *, approved_from, approved_to)` | みさき → さとこ | `services/disclosure.py` に足す。開示の判断はゆうの `is_item_disclosed("memo")`（001-T038。開示設定のキャッシュを読む）を呼び、ゆうが確かめる |
 | 家族の連絡帳に「様子のメモ」を出す | さとこ | spec 001 の連絡帳（001-T055・001-T059）で `get_disclosed_memos()` を呼ぶ。そばに「職員が書いた内容を、AI で読みやすい日本語に整えています」 |
 | 通知の選択肢とまとめ | さとこ | spec 001 の通知設定（001-T064）の `notify_items` に `memo` を足し、まとめ（001-T065）で承認日時でメモを数え、書いた日の連絡帳へのリンクを付ける |
 | 「様子のメモを書く」ボタン・承認待ちの件数 | みさき → ゆう | ゆうの入居者を選んだあとの画面にボタンを置き、みさきの画面に進む。件数は `count_pending_memos(user)` をゆうの画面から呼ぶ（リーダー・施設長だけ、施設全体の件数） |

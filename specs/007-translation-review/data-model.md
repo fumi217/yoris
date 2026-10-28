@@ -71,15 +71,20 @@ draft・pending・returned ──取り下げる（本人）──→ withdrawn
 ## 家族に出すときの共通の関数（spec 001 の `services/disclosure.py` に足す）
 
 ```text
-get_disclosed_memos(resident_id, date_from, date_to) -> list[DisclosedMemo]
+get_disclosed_memos(resident_id, date_from=None, date_to=None, *, approved_from=None, approved_to=None) -> list[DisclosedMemo]
 
 DisclosedMemo:
   id, memo_date, written_at
   text               整えた日本語（rewritten_text）
   author_name        書いた職員の表示名
+  author_occupation  書いた職員の職種のコード（Staff.occupation。空なら名前だけを出す。返事の replied_by_occupation と同じ）
+  approved_at        承認した日時
 ```
 
 - `status = 'approved'` で、開示設定の `memo` が見せる設定のものだけ。原文・訳し戻し・印は返さない。
+- 絞り方は 2 つ。どちらか 1 つ以上を必ず渡す（何も渡さないと `ValueError`）。両方渡したら、両方に当てはまるもの。
+  - `date_from`〜`date_to`：書いた日（`memo_date`。両端を含む）。家族の連絡帳（007-T026）が使う
+  - `approved_from`〜`approved_to`：承認した日時（`approved_from` 以上、`approved_to` より前）。通知のまとめ（007-T027）が使う。昨日書いて今日承認したメモを、今日のまとめに入れるため（FR-012b）
 - 作る人：みさき。開示の判断は、ゆうが 001-T038 で作る `is_item_disclosed(code)`（開示設定のキャッシュを読む。H の `is_feature_disclosed(code)` と同じ形）を `is_item_disclosed("memo")` で呼び、ゆうが確かめる。使う人：さとこ（連絡帳・通知のまとめ）。
 
 ## 承認待ちの件数（ゆうの画面から呼ぶ）

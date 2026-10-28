@@ -56,7 +56,7 @@
 
 ## R-07 家族に出す道（共通の関数）
 
-- **決めたこと**：`services/disclosure.py` に `get_disclosed_memos(resident_id, date_from, date_to)` を足す。`status = 'approved'` で、開示設定の `memo` が見せる設定のものだけを、書いた時刻の順に返す（整えた日本語・書いた職員の表示名・書いた日・書いた時刻）。原文・訳し戻しは返さない。
+- **決めたこと**：`services/disclosure.py` に `get_disclosed_memos(resident_id, date_from, date_to, *, approved_from, approved_to)` を足す。`status = 'approved'` で、開示設定の `memo` が見せる設定のものだけを、書いた時刻の順に返す（整えた日本語・書いた職員の表示名と職種・書いた日・書いた時刻・承認した日時）。連絡帳は書いた日（`date_from`〜`date_to`）、通知のまとめは承認した日時（`approved_from`〜`approved_to`）で絞る（どちらもこの関数を通す。FR-012b）。原文・訳し戻しは返さない。
   開示の判断は、ゆうが 001-T038 で作る `is_item_disclosed(code)`（開示設定のキャッシュを読む。H の `is_feature_disclosed(code)` と同じ形）を `is_item_disclosed("memo")` で呼ぶ（同じ判断を 2 か所に書かない。PR #44 のゆうの提案）。
   家族の連絡帳・通知のまとめ（さとこ）は、必ずこの関数を通す。問い合わせ AI（spec 004）は様子のメモを読まない。
 - **理由**：spec 001 の「家族に出すものは共通の関数を通す」と同じ。承認されていないメモが家族に出ないことを 1 か所で守れる（SC-004）。

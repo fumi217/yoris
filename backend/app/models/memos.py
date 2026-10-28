@@ -2,7 +2,7 @@
 
 職員が書いた原文・AI が整えた日本語・訳し戻しを、どれも残す（FR-004）。
 家族に出すのは承認済み（status = 'approved'）だけで、必ず services/disclosure.py の
-get_disclosed_memos を通す（research.md R-07。007-T024 で作る）。
+get_disclosed_memos を通す（research.md R-07。007-T024）。
 """
 
 from datetime import date, datetime
