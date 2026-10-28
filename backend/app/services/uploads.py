@@ -11,13 +11,14 @@
 """
 
 import secrets
+from collections.abc import Collection
 from pathlib import Path
 
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.errors import AppError, ErrorCode
-from app.models.files import MAX_UPLOAD_BYTES, UPLOAD_PURPOSES, UploadedFile
+from app.models.files import FILE_CONTENT_TYPES, MAX_UPLOAD_BYTES, UPLOAD_PURPOSES, UploadedFile
 
 # 先頭のバイトと、その形式（research.md R-10）
 _SIGNATURES: tuple[tuple[bytes, str], ...] = (
@@ -56,18 +57,26 @@ def read_upload(storage_key: str) -> bytes:
     return (_upload_dir() / storage_key).read_bytes()
 
 
-def save_upload(session: Session, *, data: bytes, purpose: str, uploaded_by: int) -> UploadedFile:
+def save_upload(
+    session: Session,
+    *,
+    data: bytes,
+    purpose: str,
+    uploaded_by: int,
+    allowed_types: Collection[str] = FILE_CONTENT_TYPES,
+) -> UploadedFile:
     """形式と大きさを確かめて保存し、uploaded_files に 1 行足す。
 
-    断るときは invalid_file（422）。purpose は呼ぶ側が決める固定の値で、
-    利用者の入力ではない（違えばプログラムの間違い）。
+    断るときは invalid_file（422）。purpose・allowed_types は呼ぶ側が決める固定の値で、
+    利用者の入力ではない（purpose が違えばプログラムの間違い）。
+    allowed_types は、受け付ける形式（既定は PDF・JPEG・PNG）。アルバムは JPEG・PNG だけを渡す。
     """
     if purpose not in UPLOAD_PURPOSES:
         raise ValueError(f"purpose が正しくありません: {purpose}")
     if not data or len(data) > MAX_UPLOAD_BYTES:
         raise AppError(ErrorCode.INVALID_FILE)
     content_type = detect_content_type(data)
-    if content_type is None:
+    if content_type is None or content_type not in allowed_types:
         raise AppError(ErrorCode.INVALID_FILE)
 
     uploaded = UploadedFile(

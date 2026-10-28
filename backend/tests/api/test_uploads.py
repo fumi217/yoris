@@ -15,6 +15,9 @@ import pytest
 from app.errors import AppError, ErrorCode
 from app.models.files import MAX_UPLOAD_BYTES, UploadedFile
 from app.services.uploads import detect_content_type, save_upload
+from tests.helpers.images import fake_jpeg, fake_png, pdf_named_jpg
+
+ALBUM_TYPES = ("image/jpeg", "image/png")
 
 PDF = b"%PDF-1.4\n%fake\n"
 JPEG = b"\xff\xd8\xff\xe0" + b"\x00" * 16
@@ -163,3 +166,37 @@ def test_album_photos_cannot_be_opened_until_the_album_rules_exist(
     login_as(staff.user_id)
 
     assert client.get(f"/api/files/{saved.id}").status_code == 404
+
+
+@pytest.mark.parametrize("data", [fake_jpeg(), fake_png()])
+def test_album_types_accept_jpeg_and_png(session, make_staff, upload_dir, data):
+    staff = make_staff()
+
+    saved = save_upload(
+        session, data=data, purpose="album", uploaded_by=staff.id, allowed_types=ALBUM_TYPES
+    )
+
+    assert saved.content_type in ALBUM_TYPES
+
+
+def test_album_types_refuse_pdf_even_when_named_jpg(session, make_staff, upload_dir):
+    staff = make_staff()
+    _name, pdf = pdf_named_jpg()
+
+    with pytest.raises(AppError) as error:
+        save_upload(
+            session, data=pdf, purpose="album", uploaded_by=staff.id, allowed_types=ALBUM_TYPES
+        )
+
+    assert error.value.code == ErrorCode.INVALID_FILE
+    assert list(upload_dir.iterdir()) == []  # 断ったものは保存しない
+
+
+def test_without_allowed_types_pdf_is_still_accepted(session, make_staff, upload_dir):
+    # 既定は今までどおり（お知らせの添付は PDF を受け付ける）
+    staff = make_staff()
+    _name, pdf = pdf_named_jpg()
+
+    saved = save_upload(session, data=pdf, purpose="announcement", uploaded_by=staff.id)
+
+    assert saved.content_type == "application/pdf"
