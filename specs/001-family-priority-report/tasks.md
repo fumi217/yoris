@@ -220,7 +220,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T088 職員のアカウントを作る `POST /api/admin/staff`（ID と初期パスワード）と画面 `frontend/src/pages/admin/StaffAccounts.tsx` を作る（ようこ・作）
 - [ ] T089 家族の招待：`invitations`（家族だけ、7 日で切れる、1 回だけ使える）を `backend/app/models/core.py` に足し、`POST /api/admin/invitations`・`POST /api/invitations/accept`（トークンは本文で受ける、メールのリンクは `#token=`）と画面を作る。招待のメールは `email_outbox`（`invitation`）を使う（research.md R-03）（ようこ・作）
 - [x] T090 CI（`.github/workflows/ci.yml`）に `alembic heads` が 1 つであることの確認を足す（PostgreSQL・Redis のサービスは T020 で入れる。research.md R-17）（ようこ・作）
-- [ ] T091 E2E の仕組みを `frontend/tests/e2e/` に Playwright で作る：設定（`playwright.config.ts`・`npm run e2e`）、ユーザー切り替えの共通部品、1 本目「家族が職員の画面を開けないこと」。CI には入れない（手元で動かす。ゆうの 003-T036 などが、この仕組みを使う）（ようこ・作）
+- [x] T091 E2E の仕組みを `frontend/tests/e2e/` に Playwright で作る：設定（`playwright.config.ts`・`npm run e2e`）、ユーザー切り替えの共通部品、1 本目「家族が職員の画面を開けないこと」。CI には入れない（手元で動かす。ゆうの 003-T036 などが、この仕組みを使う）（ようこ・作）
 - [ ] T091b E2E に quickstart.md の通しの確認（記録 → 開示 → 頼む → 返事 → メール → お知らせ）を足す。メールを送る仕組み（T057）は main に入っているので、メールは開発用の Mailpit で確かめる（本物の Resend は要らない）。通しがそろったら、CI に E2E の job を足すかを決める（ようこ・作）
 - [ ] T092 本番デプロイ（Render の無料のプラン）：フロントは Static Site に置き、書き換えのルールで `/api/*` をバックエンド（無料の Web Service 1 つだけ）に中継する構成（最初に、中継を通してログインの Cookie が付くかを確かめる）、https、本番のメール送信サービス（Resend。送信元のドメインの確認）とファイルの保存先の環境変数（research.md R-03・R-09・R-10）。
   決まった時刻の処理の受け口 `POST /api/internal/jobs/run` を `backend/app/api/internal.py` に作り（`JOBS_TOKEN` が空なら登録しない。テストつき。contracts/api.md）、cron-job.org から 1 分ごとに呼ぶ設定をする（ようこ・作）
