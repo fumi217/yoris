@@ -27,6 +27,8 @@ export type ContactReply = {
   // 職員が書き足した文。辞書を通さず、文字としてだけ出す
   note: string | null
   replied_by_name: string
+  // 職種のコード（辞書の occupation.*。#263）
+  replied_by_occupation: string | null
   replied_at: string
   edited: boolean
   read: boolean

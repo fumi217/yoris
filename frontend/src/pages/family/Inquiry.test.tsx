@@ -24,6 +24,7 @@ const message = (overrides: Partial<InquiryMessage> = {}): InquiryMessage => ({
   sources: [],
   hidden: false,
   staff_name: null,
+  staff_occupation: null,
   template_codes: null,
   note: null,
   response_type: null,
@@ -136,12 +137,13 @@ describe('InquiryView', () => {
     expect(text).not.toContain('もとにした記録')
   })
 
-  it('職員の返事は「◯◯からの返事」と、AI の答えと区別して出す（FR-005）', () => {
+  it('職員の返事は「◯◯（職種）からの返事」と、AI の答えと区別して出す（FR-005・#263）', () => {
     const staff = message({
       id: 3,
       sender: 'staff',
       body: '',
       staff_name: '山本',
+      staff_occupation: 'counselor',
       template_codes: ['staff_template.care_request.next_visit'],
       note: '冬の上着をお預かりします',
       response_type: 'app',
@@ -149,7 +151,7 @@ describe('InquiryView', () => {
 
     const text = visibleText(render({ messages: [staff] }))
 
-    expect(text).toContain('山本からの返事')
+    expect(text).toContain('山本（生活相談員）からの返事')
     expect(text).toContain('次の面会のときにお渡しします')
     expect(text).toContain('冬の上着をお預かりします')
     expect(text).not.toContain('AI がお答えしています')

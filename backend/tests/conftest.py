@@ -208,7 +208,10 @@ def make_staff(session: Session, facility: Facility) -> Callable[..., Staff]:
     """架空の職員を作る。返す Staff の user_id でログインでき、id が staff_id になる。"""
 
     def make(
-        role: str = "care_worker", display_name: str = "テスト職員", language: str = "ja"
+        role: str = "care_worker",
+        display_name: str = "テスト職員",
+        language: str = "ja",
+        occupation: str | None = None,
     ) -> Staff:
         user = User(
             kind="staff",
@@ -219,7 +222,11 @@ def make_staff(session: Session, facility: Facility) -> Callable[..., Staff]:
         session.add(user)
         session.flush()
         staff = Staff(
-            user_id=user.id, facility_id=facility.id, display_name=display_name, role=role
+            user_id=user.id,
+            facility_id=facility.id,
+            display_name=display_name,
+            role=role,
+            occupation=occupation,
         )
         session.add(staff)
         session.flush()

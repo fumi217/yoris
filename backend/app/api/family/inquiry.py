@@ -62,6 +62,8 @@ class MessageOut(BaseModel):
     # 選んだ定型文のコード（辞書で引く）・書き足した文（辞書を通さず文字としてだけ出す）・
     # 返し方（app／phone）
     staff_name: str | None
+    # 職種のコード（画面が辞書の occupation.* で引く。空なら名前だけを出す。#263）
+    staff_occupation: str | None
     template_codes: list[str] | None
     note: str | None
     response_type: str | None
@@ -94,6 +96,7 @@ def _out(view: MessageView) -> MessageOut:
         ],
         hidden=view.hidden,
         staff_name=view.staff_name,
+        staff_occupation=view.staff_occupation,
         template_codes=view.template_codes,
         note=view.note,
         response_type=view.response_type,

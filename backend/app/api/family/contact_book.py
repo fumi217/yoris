@@ -68,6 +68,9 @@ class ReplyOut(BaseModel):
     # 職員が書き足した文。辞書を通さず、文字としてだけ出す
     note: str | None
     replied_by_name: str
+    # 職種のコード（画面が辞書の occupation.* で引き、「表示名（職種）からの返事」と出す。#263）。
+    # 空なら、画面は名前だけを出す
+    replied_by_occupation: str | None
     replied_at: datetime
     edited: bool
     read: bool
@@ -89,6 +92,7 @@ def _reply_out(reply: DisclosedReply) -> ReplyOut:
         template_codes=reply.template_codes,
         note=reply.note,
         replied_by_name=reply.replied_by_name,
+        replied_by_occupation=reply.replied_by_occupation,
         replied_at=reply.replied_at,
         edited=reply.edited,
         read=reply.read,

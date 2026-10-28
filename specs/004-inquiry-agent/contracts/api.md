@@ -31,7 +31,7 @@
 | `POST /api/family/inquiry/messages/{id}/read` | F | 作 | 職員の返事の発言が画面に出たとき、その発言のお知らせを読んだことにする（204。何度呼んでも同じ）。ほかの家族の発言・職員の返事でない発言（AI・家族・電話で対応した発言）は 404 | FR-014 |
 
 - 入居者は `CurrentUser.resident_id` から決める（FR-020）。返す値に、AI への指示の文・ツールの中身は入れない（FR-021）。
-- 職員の発言（`sender = staff`）は、`body` は空で、返した職員の**表示名**（`staff_name`。役割ではない）、選んだ定型文のコード（`template_codes`。選んだ順。画面が辞書で引く）、書き足した文（`note`。文字としてだけ出す）、返し方（`response_type`：`app`／`phone`）を持つ。ほかの発言では、この 4 つは null。
+- 職員の発言（`sender = staff`）は、`body` は空で、返した職員の**表示名**（`staff_name`）と職種のコード（`staff_occupation`。職員の `occupation`。空なら null で、画面は名前だけを出す（役割では補わない）。画面が辞書の `occupation.*` で引き、「表示名（職種）からの返事」と出す。#263）、選んだ定型文のコード（`template_codes`。選んだ順。画面が辞書で引く）、書き足した文（`note`。文字としてだけ出す）、返し方（`response_type`：`app`／`phone`）を持つ。ほかの発言では、この 5 つは null。
 - 職員に渡した AI の発言（`ai_result = handed_off`）には `handoff` を付ける：`status`（`waiting`／`answered`）、`urgent`（種類が緊急なら true。画面は「お急ぎのときは、施設にお電話ください」も出す）、
   `already`（同じ内容の対応待ちにつないだなら true。画面は「施設の職員にお伝えしました」の代わりに「すでに施設の職員にお伝えしています」を出す）。
   質問の種類そのものは家族に返さない。ほかの発言では `handoff` は空（FR-009〜011・FR-016・Edge Cases）。

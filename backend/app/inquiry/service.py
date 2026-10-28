@@ -86,6 +86,7 @@ class MessageView:
     # 職員の発言だけ：返事をした職員の表示名・選んだ定型文のコード・書き足した文・
     # 返し方（app／phone）
     staff_name: str | None = None
+    staff_occupation: str | None = None
     template_codes: list[str] | None = None
     note: str | None = None
     response_type: str | None = None
@@ -341,6 +342,7 @@ def to_views(
                     body=m.body,
                     created_at=m.created_at,
                     staff_name=reply.staff_name,
+                    staff_occupation=reply.staff_occupation,
                     template_codes=reply.template_codes,
                     note=reply.note,
                     response_type=reply.response_type,

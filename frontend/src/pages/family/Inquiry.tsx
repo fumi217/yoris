@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, messageKeyOf } from '../../api/client'
 import { Message } from '../../components/Message'
+import { OccupationLabel } from '../../components/OccupationLabel'
 import { Text } from '../../components/Text'
 import { Ruby } from '../../i18n/Ruby'
 import {
@@ -305,6 +306,8 @@ function StaffBubble({
       <p className="text-xs text-gray-600">
         <Ruby text={before} />
         {message.staff_name}
+        {/* 職種は辞書で引く（「山本（生活相談員）からの返事」。空なら名前だけ。#263） */}
+        <OccupationLabel code={message.staff_occupation} />
         <Ruby text={after} />
       </p>
       {message.response_type === 'phone' ? (

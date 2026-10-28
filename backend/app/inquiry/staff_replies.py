@@ -1,8 +1,10 @@
 """家族の会話に出す、職員の返事の中身（spec 004 の 004-T027・FR-014・FR-005）。
 
 職員の発言は、返事をした職員の表示名と、選んだ定型文のコード（文言は画面の辞書で引く）と、
-書き足した短い文を持つ。職員の発言は職種（役割）ではなく表示名で出す（spec 004 の Clarifications。
-看護職員・機能訓練指導員・ケアマネジャーが同じ役割 care_worker のため）。
+書き足した短い文を持つ。職員の発言は「表示名（職種）」で出す（spec 004 の Clarifications の
+Session 2026-10-27・#263）。職種は役割ではなく職員の occupation（空なら名前だけ）。看護職員・
+機能訓練指導員・ケアマネジャーは役割が同じ care_worker のため。
+職員の名前と職種は、家族の画面に出すだけで、AI には渡さない（_history には入れない）。
 """
 
 from collections.abc import Iterable
@@ -18,6 +20,8 @@ from app.models.inquiry import InquiryMessage, StaffMessageTemplate
 @dataclass(frozen=True)
 class StaffReplyDetail:
     staff_name: str
+    # 職種のコード（辞書の occupation.*）。空なら、画面は名前だけを出す
+    staff_occupation: str | None
     # 選んだ定型文のコード（選んだ順。電話で対応したときは空）
     template_codes: list[str]
     # 書き足した短い文。辞書を通さず、文字としてだけ出す
@@ -33,13 +37,14 @@ def load_staff_reply_details(
     staff_messages = [m for m in messages if m.sender == "staff"]
     if not staff_messages:
         return {}
-    names = dict(
-        session.execute(
-            select(Staff.id, Staff.display_name).where(
+    people = {
+        staff_id: (name, occupation)
+        for staff_id, name, occupation in session.execute(
+            select(Staff.id, Staff.display_name, Staff.occupation).where(
                 Staff.id.in_({m.staff_id for m in staff_messages if m.staff_id is not None})
             )
-        ).all()
-    )
+        )
+    }
     template_ids = {i for m in staff_messages for i in (m.template_ids or [])}
     codes = (
         dict(
@@ -54,7 +59,8 @@ def load_staff_reply_details(
     )
     return {
         m.id: StaffReplyDetail(
-            staff_name=names.get(m.staff_id, ""),
+            staff_name=people.get(m.staff_id, ("", None))[0],
+            staff_occupation=people.get(m.staff_id, ("", None))[1],
             template_codes=[codes[i] for i in (m.template_ids or []) if i in codes],
             note=m.note,
             response_type=m.response_type,

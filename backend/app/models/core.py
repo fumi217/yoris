@@ -15,6 +15,18 @@ from app.db import Base, check_in
 USER_KINDS = ("staff", "family")
 LANGUAGES = ("ja", "id", "en")
 STAFF_ROLES = ("care_worker", "leader", "counselor", "clerk", "director")
+# 職種（家族の画面の返事に「表示名（職種）」と出す。#263）。役割とは別に、決まった候補から選ぶ。
+# 看護師・機能訓練指導員・ケアマネジャーも役割は care_worker のため、役割から職種は決めない
+STAFF_OCCUPATIONS = (
+    "care_worker",
+    "leader",
+    "counselor",
+    "clerk",
+    "director",
+    "nurse",
+    "functional_trainer",
+    "care_manager",
+)
 
 # 職員のログイン用の ID（`s` ＋ 5 桁の数字。s00001〜s99999）の番号。
 # 作り方は app/auth/login_ids.py（spec 002 の T006）にまとめる。spec 002 の research.md R-06
@@ -93,7 +105,10 @@ class Staff(Base):
     """職員と役割。"""
 
     __tablename__ = "staff"
-    __table_args__ = (check_in("role", STAFF_ROLES, name="role"),)
+    __table_args__ = (
+        check_in("role", STAFF_ROLES, name="role"),
+        check_in("occupation", STAFF_OCCUPATIONS, name="occupation"),
+    )
 
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
@@ -101,3 +116,7 @@ class Staff(Base):
     # 返事に出す名前（spec 001 の FR-030）
     display_name: Mapped[str]
     role: Mapped[str]
+    # 職種。家族の画面の返事に「表示名（職種）」と出す（#263）。空なら名前だけを出す
+    # （役割で補うと、看護師が「介護職員」と出てしまうため）。
+    # 役割は画面で何ができるかを決めるもので、看護師なども care_worker のため、分けて持つ
+    occupation: Mapped[str | None]

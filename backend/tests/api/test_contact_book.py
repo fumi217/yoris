@@ -212,7 +212,22 @@ def test_unread_replies_come_first_whatever_the_date(world, session):
     first = body["unread_replies"][0]
     assert first["note"] == "三日前の返事"
     assert first["replied_by_name"] == world["staff"].display_name
+    # 職種が空の職員は、空のまま返す（役割では補わない。画面は名前だけを出す。#263）
+    assert first["replied_by_occupation"] is None
     assert first["read"] is False
+
+
+def test_reply_has_the_occupation_not_the_role(world, session, make_staff):
+    # 看護師も役割は care_worker。家族には役割ではなく職種を返す（#263。spec 004 の Clarifications）
+    nurse = make_staff(display_name="西村", occupation="nurse")
+    _reply_to(session, world["mine"], nurse)
+    session.commit()
+
+    body = world["client"].get("/api/family/contact-book").json()
+
+    [reply] = body["unread_replies"]
+    assert reply["replied_by_name"] == "西村"
+    assert reply["replied_by_occupation"] == "nurse"
 
 
 def test_read_replies_show_only_on_their_day(world, session):

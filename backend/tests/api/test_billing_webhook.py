@@ -114,6 +114,8 @@ def test_completed_creates_facility_account_and_subscription(client, session, fa
         "架空 太郎",
         facility.id,
     )
+    # 家族の画面の返事に「名前（施設長）」と出すため、職種も入れる（#263）
+    assert staff.occupation == "director"
     user = session.get(User, staff.user_id)
     assert user.kind == "staff"
     assert user.login_id.startswith("s") and len(user.login_id) == 6

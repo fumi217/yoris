@@ -3,6 +3,7 @@ import { useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, messageKeyOf } from '../../api/client'
 import { Message } from '../../components/Message'
+import { OccupationLabel } from '../../components/OccupationLabel'
 import { Text } from '../../components/Text'
 import { Ruby } from '../../i18n/Ruby'
 import {
@@ -119,8 +120,11 @@ function ReplyCard({
         <Text k={reply.theme_code} />
       </p>
       <p className="text-sm">
-        {/* 職員の名前は、辞書を通さず、そのまま出す */}
-        <span className="font-bold">{reply.replied_by_name}</span>
+        {/* 職員の名前は、辞書を通さず、そのまま出す。職種は辞書で引く（「シティ（介護職員）からの返事」。#263） */}
+        <span className="font-bold">
+          {reply.replied_by_name}
+          <OccupationLabel code={reply.replied_by_occupation} />
+        </span>
         <Text k="contact_book.reply_from" />
         <span className="ml-2 text-gray-600">{timeInJapan(reply.replied_at)}</span>
         {unread && (

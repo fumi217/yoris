@@ -23,25 +23,27 @@ FACILITY_NAME = "デモ施設 みどりの家"
 # どのハッシュとも一致しない値（bcrypt のハッシュは $2b$ で始まるので、この値ではログインできない）
 NO_PASSWORD = "!"
 
-# (返事に出す名前, 役割, 表示言語)。16 人（うち外国人 3 人）。施設の職種との当てはめは
-# spec 001 の data-model.md「初期データの人」。名前は PRD のペルソナと、架空の名字
-STAFF: list[tuple[str, str, str]] = [
-    ("田中", "care_worker", "ja"),
-    ("シティ", "care_worker", "id"),
-    ("デウィ", "care_worker", "id"),
-    ("マリア", "care_worker", "en"),
-    ("鈴木", "care_worker", "ja"),
-    ("高橋", "care_worker", "ja"),
-    ("渡辺", "care_worker", "ja"),
-    ("小松", "care_worker", "ja"),
-    ("伊藤", "leader", "ja"),
-    ("中村", "leader", "ja"),
-    ("西村（看護師）", "care_worker", "ja"),
-    ("原田（機能訓練指導員）", "care_worker", "ja"),
-    ("青木（ケアマネジャー）", "care_worker", "ja"),
-    ("山本", "counselor", "ja"),
-    ("佐々木", "clerk", "ja"),
-    ("猪熊", "director", "ja"),
+# (返事に出す名前, 役割, 表示言語, 職種)。16 人（うち外国人 3 人）。施設の職種との当てはめは
+# spec 001 の data-model.md「初期データの人」。名前は PRD のペルソナと、架空の名字。
+# 職種は全員に入れる（看護師などは役割が care_worker でも職種で分かる）。家族の画面の返事に
+# 「表示名（職種）」と出す（#263）
+STAFF: list[tuple[str, str, str, str]] = [
+    ("田中", "care_worker", "ja", "care_worker"),
+    ("シティ", "care_worker", "id", "care_worker"),
+    ("デウィ", "care_worker", "id", "care_worker"),
+    ("マリア", "care_worker", "en", "care_worker"),
+    ("鈴木", "care_worker", "ja", "care_worker"),
+    ("高橋", "care_worker", "ja", "care_worker"),
+    ("渡辺", "care_worker", "ja", "care_worker"),
+    ("小松", "care_worker", "ja", "care_worker"),
+    ("伊藤", "leader", "ja", "leader"),
+    ("中村", "leader", "ja", "leader"),
+    ("西村", "care_worker", "ja", "nurse"),
+    ("原田", "care_worker", "ja", "functional_trainer"),
+    ("青木", "care_worker", "ja", "care_manager"),
+    ("山本", "counselor", "ja", "counselor"),
+    ("佐々木", "clerk", "ja", "clerk"),
+    ("猪熊", "director", "ja", "director"),
 ]
 
 # 入居者 30 人の名字。呼び名は「◯◯さんの母」「◯◯さんの父」（家族から見た呼び方）
@@ -98,7 +100,7 @@ def add_people(session: Session, *, facility_id: int) -> list[Staff]:
     # 1. ログインの情報（職員・家族）と入居者を、まとめて入れる（id が決まる）
     staff_users = [
         User(kind="staff", login_id=login_id, password_hash=NO_PASSWORD, language=language)
-        for login_id, (_, _, language) in zip(
+        for login_id, (_, _, language, _) in zip(
             next_login_ids(session, len(staff_rows)), staff_rows, strict=True
         )
     ]
@@ -121,8 +123,14 @@ def add_people(session: Session, *, facility_id: int) -> list[Staff]:
 
     # 2. 職員の役割と、家族アカウント（入居者と 1 対 1）を、まとめて入れる
     staff = [
-        Staff(user_id=user.id, facility_id=facility_id, display_name=display_name, role=role)
-        for user, (display_name, role, _) in zip(staff_users, staff_rows, strict=True)
+        Staff(
+            user_id=user.id,
+            facility_id=facility_id,
+            display_name=display_name,
+            role=role,
+            occupation=occupation,
+        )
+        for user, (display_name, role, _, occupation) in zip(staff_users, staff_rows, strict=True)
     ]
     families = [
         FamilyAccount(user_id=user.id, resident_id=resident.id)

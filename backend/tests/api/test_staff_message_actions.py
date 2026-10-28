@@ -398,6 +398,8 @@ def test_family_sees_the_reply_with_the_display_name(client, session, world):
     [staff_message] = [m for m in messages if m["sender"] == "staff"]
     # 役割ではなく表示名で出す。定型文はコード（文言は画面の辞書）。書き足しは文字のまま
     assert staff_message["staff_name"] == "山本"
+    # 職種が空の職員は、空のまま返す（役割では補わない。#263）
+    assert staff_message["staff_occupation"] is None
     codes = dict(
         session.execute(
             select(StaffMessageTemplate.id, StaffMessageTemplate.code).where(
@@ -409,3 +411,17 @@ def test_family_sees_the_reply_with_the_display_name(client, session, world):
     assert staff_message["note"] == "冬の上着をお預かりします"
     assert staff_message["response_type"] == "app"
     assert staff_message["body"] == ""
+
+
+def test_family_sees_the_occupation_of_the_staff(client, world):
+    """看護師など、役割（care_worker）と違う職種の職員は、職種のコードを返す（#263）。"""
+    nurse = world["make_staff"](role="care_worker", display_name="西村", occupation="nurse")
+    world["login_as"](nurse.user_id)
+    message = world["add_message"]("care_request")
+    _reply(client, message.id, template_ids=world["template_ids"]("care_request")[:1])
+
+    world["login_as"](world["family"].user_id)
+    [staff_message] = [m for m in client.get(FAMILY_URL).json() if m["sender"] == "staff"]
+
+    assert staff_message["staff_name"] == "西村"
+    assert staff_message["staff_occupation"] == "nurse"

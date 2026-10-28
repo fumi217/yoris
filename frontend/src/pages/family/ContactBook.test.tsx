@@ -20,7 +20,8 @@ const reply = (overrides: Partial<ContactReply> = {}): ContactReply => ({
   theme_emoji: '👀',
   template_codes: ['template.daily_life.usual'],
   note: null,
-  replied_by_name: '西村（看護師）',
+  replied_by_name: '西村',
+  replied_by_occupation: 'nurse',
   replied_at: '2026-10-26T00:30:00Z',
   edited: false,
   read: false,
@@ -87,6 +88,31 @@ describe('ContactBookView', () => {
 
     expect(shown).toContain('西村（看護師）からの返事')
     expect(shown.indexOf('西村（看護師）')).toBeLessThan(shown.indexOf('食事'))
+  })
+
+  it('返事には、職員の名前と職種を出す（職種は辞書で引く。#263）', () => {
+    const shown = text(
+      render(
+        book({
+          unread_replies: [
+            reply({ replied_by_name: 'シティ', replied_by_occupation: 'care_worker' }),
+          ],
+        }),
+      ),
+    )
+
+    expect(shown).toContain('シティ（介護職員）からの返事')
+  })
+
+  it('職種が空なら、かっこを付けず名前だけを出す（役割では補わない。#263）', () => {
+    const shown = text(
+      render(
+        book({ unread_replies: [reply({ replied_by_name: '高橋', replied_by_occupation: null })] }),
+      ),
+    )
+
+    expect(shown).toContain('高橋からの返事')
+    expect(shown).not.toContain('高橋（')
   })
 
   it('別の日の未読の返事には、その日の連絡帳に入った返事だと添える', () => {

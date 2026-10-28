@@ -67,6 +67,8 @@ class DisclosedReply:
     template_codes: list[str]  # 選んだ定型文の辞書のキー（選んだ順）
     note: str | None  # 書き足した短い文。辞書を通さず、文字としてだけ出す
     replied_by_name: str  # 返事をした職員の表示名
+    # 返事をした職員の職種のコード（辞書の occupation.*。#263）。空なら名前だけを出す
+    replied_by_occupation: str | None
     replied_at: datetime
     edited: bool  # 当日中に直したか
     read: bool  # 家族が読んだか（家族で共有）
@@ -234,7 +236,13 @@ def get_active_replies(
     返事は取り消さないので、保存されたものはすべて有効（R-06）。
     """
     rows = session.execute(
-        select(Reply, Theme.code, Theme.emoji, Staff.display_name)
+        select(
+            Reply,
+            Theme.code,
+            Theme.emoji,
+            Staff.display_name,
+            Staff.occupation,
+        )
         .join(Request, Request.id == Reply.request_id)
         .join(Theme, Theme.id == Request.theme_id)
         .join(Staff, Staff.id == Reply.replied_by)
@@ -267,9 +275,10 @@ def get_active_replies(
             template_codes=[codes[t] for t in reply.template_ids if t in codes],
             note=reply.note,
             replied_by_name=staff_name,
+            replied_by_occupation=occupation,
             replied_at=reply.replied_at,
             edited=reply.edited_at is not None,
             read=reply.read_at is not None,
         )
-        for reply, theme_code, theme_emoji, staff_name in rows
+        for reply, theme_code, theme_emoji, staff_name, occupation in rows
     ]

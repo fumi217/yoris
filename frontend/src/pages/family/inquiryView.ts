@@ -35,6 +35,8 @@ export type InquiryMessage = {
   // ここから職員の返事だけ（それ以外の発言では null）。名前は役割ではなく表示名。
   // 定型文はコード（辞書で引く）、書き足しは文字としてだけ出す
   staff_name: string | null
+  // 職種のコード（辞書の occupation.*。空なら名前だけを出す。#263）
+  staff_occupation: string | null
   template_codes: string[] | null
   note: string | null
   response_type: 'app' | 'phone' | null

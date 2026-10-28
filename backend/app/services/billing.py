@@ -311,6 +311,8 @@ def _on_checkout_completed(session: Session, event: Any) -> None:
                 facility_id=facility.id,
                 display_name=application.director_name,
                 role="director",
+                # 家族の画面の返事に「名前（施設長）」と出す（#263）
+                occupation="director",
             ),
             FacilitySubscription(
                 facility_id=facility.id,

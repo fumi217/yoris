@@ -54,6 +54,16 @@ def test_add_people_fills_a_new_facility(session):
     )
     # 外国人の職員（spec 007 で母国語のメモを試す）がいる
     assert staff_languages == {"ja", "id", "en"}
+    # 職種は全員に入れる。看護師なども、役割は care_worker で職種で分かる（#263）
+    occupations = dict(
+        session.execute(
+            select(Staff.display_name, Staff.occupation).where(Staff.facility_id == facility.id)
+        ).all()
+    )
+    assert None not in occupations.values()
+    assert occupations["西村"] == "nurse"
+    assert occupations["原田"] == "functional_trainer"
+    assert occupations["青木"] == "care_manager"
 
     # 2 回目は、もう入居者がいるので何もしない
     assert add_people(session, facility_id=facility.id) == []
