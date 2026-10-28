@@ -163,7 +163,8 @@ describe('CompleteView', () => {
       </MemoryRouter>,
     )
 
-    expect(html).toMatch(/<button type="button"[^>]*>IDをコピーする<\/button>/)
+    // 文言は Text の <span> の中（#196）
+    expect(html).toMatch(/<button type="button"[^>]*><span>IDをコピーする<\/span><\/button>/)
     // 押すまでは、「コピーしました」は出さない
     expect(textOf(html)).not.toContain('コピーしました')
   })
