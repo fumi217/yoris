@@ -29,6 +29,8 @@ plan.md の Technical Context と、spec の FR を作るときに決める必�
 
 ## R-03 ログインとセッション
 
+> **10/28 の会議で決定：今回の開発ではデプロイしない（ローカルの Docker Compose で動かすところまで）。** この節の「本番」の部分（Render・Resend・外部のスケジューラー・オブジェクトストレージ）は作らない。開発の構成（Vite の proxy・Mailpit・worker・`UPLOAD_DIR`）だけを使う。
+
 - **決めたこと**：
   - バックエンドが発行するセッション（Cookie、Redis に保存）。Cookie は `HttpOnly`・`Secure`（本番）・`SameSite=Lax`。
     書き込みの API は、`SameSite=Lax` に加えて、フロントが付ける独自のヘッダー（`X-Requested-With: fetch`）があることを確かめる（CSRF 対策）。
@@ -104,6 +106,8 @@ plan.md の Technical Context と、spec の FR を作るときに決める必�
 
 ## R-09 メールとアプリ内のお知らせの送り方
 
+> **10/28 の会議で決定：今回の開発ではデプロイしない（ローカルの Docker Compose で動かすところまで）。** この節の「本番」の部分（Render・Resend・外部のスケジューラー・オブジェクトストレージ）は作らない。開発の構成（Vite の proxy・Mailpit・worker・`UPLOAD_DIR`）だけを使う。
+
 - **決めたこと**：
   - お知らせ（アプリ内）は `notifications` に、メールは送る予定として `email_outbox` に書く（アウトボックス）。メールを送る部品はさとこが作り、ようこが招待で使い回す。
   - **返事のお知らせ**は、ゆうの返事の保存処理が、さとこの `create_reply_notice(session, reply_id)`（`services/notifications.py`）を**同じ DB のセッションを渡して呼ぶ**。
@@ -131,6 +135,8 @@ plan.md の Technical Context と、spec の FR を作るときに決める必�
   Render の有料のプランで worker を常に動かす（今の設計のまま使えるが、Background Worker は月 7 ドルから。PRD 9 章の案 B）、GitHub Actions の schedule で呼ぶ（5 分より短くできず、遅れることがある）。
 
 ## R-10 ファイルの保存先と配り方
+
+> **10/28 の会議で決定：今回の開発ではデプロイしない（ローカルの Docker Compose で動かすところまで）。** この節の「本番」の部分（Render・Resend・外部のスケジューラー・オブジェクトストレージ）は作らない。開発の構成（Vite の proxy・Mailpit・worker・`UPLOAD_DIR`）だけを使う。
 
 - **決めたこと**：
   - お知らせの添付（毎月の献立表も、これで出す）・アルバムの写真は、`uploaded_files` の 1 つのテーブルと `services/uploads.py` の 1 つの処理で扱う。

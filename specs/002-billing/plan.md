@@ -32,7 +32,7 @@ Stripe の支払い画面（Checkout）でカードで払うと、Stripe から�
 
 **Testing**: pytest（Stripe のライブラリはモック。Webhook はテスト用の秘密で署名を作って送る。R-11）、Vitest（申し込みページの入力の確かめ）
 
-**Target Platform**: spec 001 と同じ（Docker Compose、本番は Render）。Stripe CLI は `stripe` の profile で、決済を試すときだけ起動する
+**Target Platform**: spec 001 と同じ（Docker Compose、本番は Render）。Stripe CLI は `stripe` の profile で、決済を試すときだけ起動する （10/28 の会議で決定：今回の開発ではデプロイしないので、Render の部分は作らない）
 
 **Project Type**: Web アプリケーション（`frontend/`・`backend/`）
 

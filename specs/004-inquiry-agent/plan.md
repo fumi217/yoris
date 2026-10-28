@@ -33,7 +33,7 @@
 **Testing**: pytest ＋ httpx（AI はテスト用の LLM（モック）に差し替える。FR-030・SC-011）、Vitest、Playwright。
 AI の答えの質（SC-002〜006）は、本物のモデルに質問の例を流す**評価のスクリプト**で確かめる（手で動かす。CI では動かさない。R-11）
 
-**Target Platform**: spec 001 と同じ（Docker Compose ／ Render、`/api` は同じオリジンで中継）
+**Target Platform**: spec 001 と同じ（Docker Compose ／ Render、`/api` は同じオリジンで中継） （10/28 の会議で決定：今回の開発ではデプロイしないので、Render の部分は作らない）
 
 **Project Type**: Web アプリケーション（`frontend/`・`backend/`）
 

@@ -34,7 +34,7 @@
 
 **Testing**: pytest（アクセス制御・Exif の削除・形式の偽装・削除・まとめ）、Vitest（載せる画面・アルバムの画面）、Playwright（[quickstart.md](./quickstart.md) の通しの確認）
 
-**Target Platform**: spec 001 の plan と同じ（Docker Compose、Render。家族はスマートフォン、職員はタブレットのブラウザ）
+**Target Platform**: spec 001 の plan と同じ（Docker Compose、Render。家族はスマートフォン、職員はタブレットのブラウザ） （10/28 の会議で決定：今回の開発ではデプロイしないので、Render の部分は作らない）
 
 **Project Type**: Web アプリケーション（`frontend/` と `backend/` を分ける）
 

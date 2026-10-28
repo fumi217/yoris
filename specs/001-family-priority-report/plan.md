@@ -31,11 +31,11 @@
 **Storage**:
 - PostgreSQL：記録・返事・開示設定・お知らせ・メールの送信予定など、すべての業務データ
 - Redis：ログインのセッションと、開示設定のキャッシュ（期限 5 分）。家族の連絡帳はキャッシュしない（開発前MTG の決定事項）。作り込みで、ログインの試行回数の制限を足す（[research.md R-12](./research.md#r-12-redis-の使い道課題要件のキャッシュサーバー)）
-- ファイル：開発はコンテナのボリューム、本番は S3 互換のオブジェクトストレージ（[research.md R-10](./research.md#r-10-ファイルの保存先と配り方)）
+- ファイル：開発はコンテナのボリューム、本番は S3 互換のオブジェクトストレージ（[research.md R-10](./research.md#r-10-ファイルの保存先と配り方)）。**（10/28 の会議で決定：今回の開発ではデプロイしないため、本番の保存先（T076）は見送り。コンテナのボリュームだけを使う）**
 
 **Testing**: pytest ＋ httpx2（バックエンドの単体・API）、Vitest（フロントエンドの単体）、Playwright（E2E。受け入れシナリオから作る）
 
-**Target Platform**: Docker Compose（開発：frontend・backend・worker・PostgreSQL・Redis・Mailpit）、Render（本番。コンテナのまま。無料のプランなので worker は置かず、決まった時刻の処理は外部のスケジューラーが API を呼ぶ。[research.md R-09](./research.md#r-09-メールとアプリ内のお知らせの送り方)）。
+**Target Platform**: Docker Compose（開発：frontend・backend・worker・PostgreSQL・Redis・Mailpit）、Render（本番。コンテナのまま。無料のプランなので worker は置かず、決まった時刻の処理は外部のスケジューラーが API を呼ぶ。[research.md R-09](./research.md#r-09-メールとアプリ内のお知らせの送り方)）。 **（10/28 の会議で決定：今回の開発ではデプロイしない（ローカルの Docker Compose で動かすところまで）。Render の部分は作らない）**
 ブラウザからは `/api` をフロントと同じオリジンで呼び、バックエンドへ中継する（Cookie を確実に送るため。[research.md R-03](./research.md#r-03-ログインとセッション)）。
 家族はスマートフォンのブラウザ、職員は施設のタブレットのブラウザ
 
@@ -194,7 +194,7 @@ Day 1〜3 のミニマム版で作るものと、Day 4 以降の作り込みで�
 | 家族がパスワードを忘れたとき | ミニマム版は施設がもう一度招待する。再設定の画面は作り込みで検討 | ようこ |
 | PDF の表示 | `sandbox` は付けず、Day 3 に iPhone の Safari と Android の Chrome で確かめる。表示できなければダウンロードにする（[research.md R-10](./research.md#r-10-ファイルの保存先と配り方)） | さとこ（Day 3） |
 | 返事のお知らせの呼び方 | 開発前MTG の案（保存を確定したあとに呼ぶ）ではなく、PR #17 のさとこの提案（同じセッションを渡して呼び、中では commit しない）を採った（[research.md R-09](./research.md#r-09-メールとアプリ内のお知らせの送り方)） | ゆう・さとこ |
-| 本番のメール送信サービス・ファイルの保存先 | （決定）メールは本番は Resend の API、開発は Mailpit に SMTP（[PRD](../../docs/PRD.md) 9 章の案 A、PR #28。[research.md R-09](./research.md#r-09-メールとアプリ内のお知らせの送り方)）。ファイルは S3 互換（Cloudflare R2 など） | ようこ（本番デプロイのとき） |
+| 本番のメール送信サービス・ファイルの保存先 | （決定）メールは本番は Resend の API、開発は Mailpit に SMTP（[PRD](../../docs/PRD.md) 9 章の案 A、PR #28。[research.md R-09](./research.md#r-09-メールとアプリ内のお知らせの送り方)）。ファイルは S3 互換（Cloudflare R2 など）。**（10/28 の会議で決定：今回の開発ではデプロイしないため、Resend（T057b）と本番の保存先（T076）は見送り。メールは Mailpit、ファイルはコンテナのボリュームだけ）** | ようこ（本番デプロイのとき。今回は見送り） |
 
 ## Complexity Tracking
 

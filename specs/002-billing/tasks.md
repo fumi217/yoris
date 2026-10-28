@@ -125,7 +125,7 @@ spec 001 のタスクは「001-T009」のように書く（[spec 001 の tasks.m
 
 - [ ] T040 [P] Stripe の鍵を、必要な操作（Checkout・Subscription の読み取り・Customer Portal）だけができる制限付きの鍵に替え、漏れたときの差し替えの手順を quickstart.md に書く（FR-026）（作）
 - [ ] T041 [P] 利用料のお支払いの文言にふりがなを付け、インドネシア語・英語の辞書に足す（申し込みページ・完了の画面は、ふりがななしと決めた。spec.md の Assumptions）（みさきの 001-T082・001-T083 の仕組みを使う。Constitution の UI 方針）（作）
-- [ ] T042 本番の Webhook の受け口を Stripe の管理画面に登録し、本番用の `STRIPE_WEBHOOK_SECRET` と `STRIPE_SECRET_KEY`（テスト環境の鍵）を Render に置く（001-T092 と一緒に）（作）
+- [ ] T042 **（見送り。10/28 の会議で決定：今回の開発ではデプロイしない（ローカルの Docker Compose で動かすところまで）。Webhook は開発の Stripe CLI で確かめる）** 本番の Webhook の受け口を Stripe の管理画面に登録し、本番用の `STRIPE_WEBHOOK_SECRET` と `STRIPE_SECRET_KEY`（テスト環境の鍵）を Render に置く（001-T092 と一緒に）（作）
 - [ ] T043 quickstart.md の確認をすべて通し、`docs/テスト設計書.md` に決済のテストシナリオと結果を書く（Constitution の課題要件のテスト。001-T093 と一緒に）（作）
 
 ---

@@ -30,7 +30,7 @@
 
 **Testing**: pytest（テスト用の PostgreSQL。同時の予約はスレッドで同時に送って確かめる）、Vitest（予約の画面）、Playwright（[quickstart.md](./quickstart.md) の通しの確認）
 
-**Target Platform**: spec 001 の plan と同じ（Docker Compose、Render。家族はスマートフォン、職員はタブレットのブラウザ）
+**Target Platform**: spec 001 の plan と同じ（Docker Compose、Render。家族はスマートフォン、職員はタブレットのブラウザ） （10/28 の会議で決定：今回の開発ではデプロイしないので、Render の部分は作らない）
 
 **Project Type**: Web アプリケーション（`frontend/` と `backend/` を分ける）
 

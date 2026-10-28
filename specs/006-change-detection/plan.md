@@ -33,7 +33,7 @@
 
 **Testing**: pytest（決まりの関数の単体テスト＝SC-002 の 20 件、調べ直し・役割・家族に出ないことの API テスト）、Vitest（目印の表示・絞り込み）、Playwright（[quickstart.md](./quickstart.md) の通しの確認）
 
-**Target Platform**: spec 001 の plan と同じ（Docker Compose、Render。職員は施設のタブレットのブラウザ）
+**Target Platform**: spec 001 の plan と同じ（Docker Compose、Render。職員は施設のタブレットのブラウザ） （10/28 の会議で決定：今回の開発ではデプロイしないので、Render の部分は作らない）
 
 **Project Type**: Web アプリケーション（`frontend/` と `backend/` を分ける）
 
