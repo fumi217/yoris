@@ -135,8 +135,10 @@ def test_is_item_disclosed(session, world):
     _hide(session, world, "item", "meal")
 
     assert is_item_disclosed(session, "meal") is False
-    # 開示設定に行がない項目（spec 007 の memo を足す前など）は、見せない側に倒す
-    assert is_item_disclosed(session, "memo") is False
+    # 様子のメモは、初期データで「見せる」の行がある（spec 007 の 007-T025）
+    assert is_item_disclosed(session, "memo") is True
+    # 開示設定に行がない項目は、見せない側に倒す
+    assert is_item_disclosed(session, "unknown") is False
 
 
 def test_hidden_theme_is_not_returned(session, world):

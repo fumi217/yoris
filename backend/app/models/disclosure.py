@@ -10,10 +10,15 @@ from sqlalchemy import ForeignKey, Identity, Index, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base, check_in
+from app.models.records import ITEMS
 
 # 記録項目（item）と「知りたいこと」のテーマ（theme）。
 # アルバム（feature、spec 005 の 005-T003）は、そのタスクで足す
 TARGET_TYPES = ("item", "theme")
+
+# 開示設定で見せる・見せないを選べる記録項目：記録の 3 つと、様子のメモ（spec 007 の 007-T025）。
+# 様子のメモは care_records ではなく care_memos にあるので、記録の ITEMS とは分けて持つ
+DISCLOSURE_ITEMS = (*ITEMS, "memo")
 
 
 class Theme(Base):
@@ -58,7 +63,7 @@ class DisclosureSetting(Base):
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
     facility_id: Mapped[int] = mapped_column(ForeignKey("facilities.id"))
     target_type: Mapped[str]
-    # item なら "meal"・"mood"・"sleep"、theme ならテーマの code
+    # item なら "meal"・"mood"・"sleep"・"memo"（様子のメモ）、theme ならテーマの code
     target_code: Mapped[str]
     visible: Mapped[bool] = mapped_column(server_default=text("true"))
     updated_by: Mapped[int | None] = mapped_column(ForeignKey("staff.id"))

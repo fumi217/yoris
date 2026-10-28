@@ -35,7 +35,8 @@ def test_get_lists_items_and_themes_in_order(client, world):
 
     assert response.status_code == 200
     data = response.json()
-    assert [row["code"] for row in data["items"]] == ["meal", "mood", "sleep"]
+    # 記録の 3 つと、様子のメモ（spec 007 の 007-T025）
+    assert [row["code"] for row in data["items"]] == ["meal", "mood", "sleep", "memo"]
     assert [row["code"] for row in data["themes"]] == [code for code, _, _ in THEMES]
     # 初期データはすべて見せる（FR-009）
     assert all(row["visible"] for row in [*data["items"], *data["themes"]])
@@ -107,7 +108,7 @@ def test_missing_row_is_created_on_save(client, session, world):
 @pytest.mark.parametrize(
     "body",
     [
-        {"items": {"memo": True}},  # 知らない項目
+        {"items": {"unknown_item": True}},  # 知らない項目
         {"themes": {"theme.unknown": True}},  # 知らないテーマ
         {"items": {"meal": "yes"}},  # 真偽でない
         {"facility_id": 1},  # 余分な項目
@@ -216,3 +217,19 @@ def test_warning_when_item_hidden_but_theme_visible(client, world):
     # テーマも見せないにすれば、その組の注意書きは消える（止めはしないので、どちらでも保存できる）
     data = client.put(URL, json={"themes": {"theme.enjoying": False}}).json()
     assert [(p["item"], p["theme"]) for p in data["warnings"]] == [("mood", "theme.daily_life")]
+
+
+def test_hiding_memo_is_read_by_is_item_disclosed(client, session, world):
+    """様子のメモを見せない設定にすると、is_item_disclosed("memo") も見せない扱いになる。
+
+    007-T025。家族にメモが出ないことは、みさきさんの get_disclosed_memos（007-T024）の
+    テストで確かめる。
+    """
+    from app.services.disclosure import is_item_disclosed
+
+    assert is_item_disclosed(session, "memo") is True
+
+    data = client.put(URL, json={"items": {"memo": False}}).json()
+
+    assert _visible(data, "items", "memo") is False
+    assert is_item_disclosed(session, "memo") is False

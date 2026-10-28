@@ -192,7 +192,7 @@ CurrentUser:
 | id | bigint | |
 | facility_id | bigint → facilities | |
 | target_type | text | `item`（記録項目）／`theme`（テーマ） |
-| target_code | text | `meal`・`mood`・`sleep`、またはテーマの code |
+| target_code | text | `meal`・`mood`・`sleep`・`memo`（様子のメモ。spec 007 の 007-T025）、またはテーマの code |
 | visible | boolean | 初期値はすべて `true`（FR-009） |
 | updated_by / updated_at | | |
 

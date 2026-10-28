@@ -21,7 +21,12 @@ from app.auth.deps import CurrentUser, require_staff
 from app.db import get_session
 from app.errors import AppError, ErrorCode
 from app.models.core import Staff
-from app.models.disclosure import DisclosureSetting, DisclosureSettingHistory, Theme
+from app.models.disclosure import (
+    DISCLOSURE_ITEMS,
+    DisclosureSetting,
+    DisclosureSettingHistory,
+    Theme,
+)
 from app.models.records import ITEMS
 from app.services.disclosure import clear_disclosure_cache
 
@@ -94,7 +99,8 @@ def _response(session: Session, facility_id: int) -> DisclosureResponse:
     ]
     return DisclosureResponse(
         items=[
-            ItemSetting(code=item, visible=visible.get(("item", item), False)) for item in ITEMS
+            ItemSetting(code=item, visible=visible.get(("item", item), False))
+            for item in DISCLOSURE_ITEMS
         ],
         themes=[
             ThemeSetting(
@@ -131,7 +137,7 @@ def put_disclosure(
 ) -> DisclosureResponse:
     """見せる／見せないを変える。知らない項目・テーマのコードがあれば 422（何も変えない）。"""
     theme_codes = set(session.scalars(select(Theme.code)))
-    if not set(body.items) <= set(ITEMS) or not set(body.themes) <= theme_codes:
+    if not set(body.items) <= set(DISCLOSURE_ITEMS) or not set(body.themes) <= theme_codes:
         raise AppError(ErrorCode.VALIDATION_ERROR)
 
     facility_id = _facility_id(session, user)
