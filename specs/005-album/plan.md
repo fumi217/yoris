@@ -14,8 +14,8 @@
 ファイルの保存と配り方、お知らせとメールの送り方、開示設定）。新しい仕組みはほとんど作らず、spec 001 の仕組みを使い回す。
 設計の柱は次の 3 つ（詳しくは [research.md](./research.md)）。
 
-1. **ファイルは spec 001 の `uploaded_files` と `services/uploads.py` を使う**：形式の確認・Exif の削除・保存・配り方は共通。
-   アルバムで足すのは、写真の向きの直し（`exif_transpose`）と一覧用の小さい画像（サムネイル）だけ。ライブラリは増やさない
+1. **ファイルは spec 001 の `uploaded_files` と `services/uploads.py` を使う**：形式の確認・保存・配り方は共通。
+   アルバムで足すのは、受け付ける形式（JPG・PNG だけ）を渡す機能だけ。Pillow は使わない（向きの直し・サムネイルは、やらない。Session 2026-10-28）。ライブラリは増やさない
 2. **家族に出す道は 1 つだけ**：家族の写真の一覧も、写真のファイルを返す API も、「自分の入居者の写真か・削除されていないか・アルバムが開示されているか」を
    同じ関数 `get_visible_album_photos` で確かめる。URL を直接開いても同じ結果になる
 3. **通知は新しい仕組みを作らず、まとめに 1 行足す**：`digest.py` が作る「今日のまとめ」に、載せた写真の有無を足す。通知の頻度の設定にそのまま従い、
@@ -25,14 +25,14 @@
 
 **Language/Version**: Python 3.13（バックエンド）、TypeScript 6・Node 24（フロントエンド）。spec 001 の plan と同じ
 
-**Primary Dependencies**: spec 001 の plan と同じ（FastAPI、SQLAlchemy 2、Alembic、Pydantic 2、Pillow、React（Vite）、React Router、TanStack Query、react-i18next、Tailwind CSS）。
-**新しいライブラリは足さない**（Pillow は spec 001 の R-10 で入る予定）
+**Primary Dependencies**: spec 001 の plan と同じ（FastAPI、SQLAlchemy 2、Alembic、Pydantic 2、React（Vite）、React Router、TanStack Query、react-i18next、Tailwind CSS）。
+**新しいライブラリは足さない**（Pillow も足さない。Session 2026-10-28）
 
 **Storage**:
 - PostgreSQL：アルバムの写真（[data-model.md](./data-model.md)）。ファイルそのものは spec 001 の `uploaded_files` と保存先（開発はボリューム、本番は S3 互換）
 - Redis：開示設定のキャッシュ（spec 001 R-12）を読むだけ。この spec では新しいキャッシュを作らない
 
-**Testing**: pytest（アクセス制御・Exif の削除・形式の偽装・削除・まとめ）、Vitest（載せる画面・アルバムの画面）、Playwright（[quickstart.md](./quickstart.md) の通しの確認）
+**Testing**: pytest（アクセス制御・形式の偽装・削除・まとめ）、Vitest（載せる画面・アルバムの画面）、Playwright（[quickstart.md](./quickstart.md) の通しの確認）
 
 **Target Platform**: spec 001 の plan と同じ（Docker Compose、Render。家族はスマートフォン、職員はタブレットのブラウザ） （10/28 の会議で決定：今回の開発ではデプロイしないので、Render の部分は作らない）
 
@@ -45,7 +45,7 @@
 
 **Constraints**:
 - ほかの入居者の家族に写真が見えない・開けない。ログインしていなければファイルを開けない（SC-003）
-- JPG・PNG 以外、10MB 超は載せられず、保存した写真に Exif が残らない（SC-004）
+- JPG・PNG 以外、10MB 超は載せられない（SC-004。Exif の確認はやめた）
 - 削除した写真は、画面からも URL からも見えず、保存先のファイルも消える（SC-005）
 - 通知とメールに、写真・ファイル名・コメント・入居者名を入れない（SC-007）
 - 日付のくくり（「載せた日ごと」）とまとめの時刻は日本時間（spec 001 R-14）
@@ -114,7 +114,7 @@ backend/
 │   ├── models/album.py              # album_photos
 │   ├── services/
 │   │   ├── album.py                 # 写真を載せる・削除する、get_visible_album_photos（家族に出す唯一の道）
-│   │   ├── uploads.py               # （spec 001）写真の向きの直しとサムネイルを足す
+│   │   ├── uploads.py               # （spec 001）受け付ける形式を渡せるようにする
 │   │   ├── disclosure.py            # （spec 001・ゆう）feature の開示設定を読む関数を足す
 │   │   └── notifications.py         # （spec 001）まとめに「写真あり」を足す
 │   ├── api/
@@ -126,7 +126,7 @@ backend/
 ├── alembic/versions/                # album_photos、uploaded_files・notifications・notification_settings に列を足す
 └── tests/
     ├── unit/test_album_visibility.py
-    └── api/test_album.py            # 他の入居者の写真は 404、Exif、形式の偽装、削除、まとめ
+    └── api/test_album.py            # 他の入居者の写真は 404、形式の偽装、削除、まとめ
 
 frontend/
 └── src/pages/
@@ -152,7 +152,7 @@ frontend/
 
 | 順 | 内容 | spec |
 |---|---|---|
-| 1 | `album_photos`・`uploads.py` の足し（サムネイル・向き）・`files.py` の足し・`get_visible_album_photos` | US1・FR-003〜007 |
+| 1 | `album_photos`・`uploads.py` の足し（形式を渡す）・`files.py` の足し・`get_visible_album_photos` | US1・FR-003〜007 |
 | 2 | 職員の API と画面（載せる、載せた写真の一覧）、家族の API と画面、「☰ その他」への置き | US1・FR-001・FR-005・FR-010・FR-023 |
 | 3 | 削除（API・画面・保存先のファイルを消す） | US2・FR-011・FR-012 |
 | 4 | 開示設定に「アルバム」を足す（ゆうと相談）、見せない設定のときの動き | US3・FR-013〜016 |
@@ -164,7 +164,6 @@ frontend/
 |---|---|---|
 | 開示設定の `feature` の行を足すのを、ゆうと相談する | `target_type = 'feature'`、`target_code = 'album'`。`GET/PUT /api/admin/disclosure` が `feature` を扱えるようにする。ゆうに頼む | #37 のレビュー（ゆう） |
 | （決定）職員の画面のボタンの置き方 | 記録の画面（`RecordPage.tsx`）の上に「📷 写真を載せる」のボタンを 1 つ置く。ボタンはゆうが足す（PR #39 ゆう）。#38 のボタンと並べるため、みさきと合わせる | 決定済み |
-| サムネイルの大きさ | 長い辺 480px（JPEG）。表示の速さを見て、実装のときに変えてよい | 実装のとき |
 
 ## Complexity Tracking
 

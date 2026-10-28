@@ -163,7 +163,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ## Phase 6: ファイルの共通の処理（User Story 4 は削除。User Story 5 とアルバム（H）が使う）
 
-**Goal**: （User Story 4「献立表」は削除。Session 2026-10-22）お知らせの添付とアルバムの写真で使う、ファイルの形式の確認・Exif の削除・保存・配信を作る。毎月の献立表も、お知らせの添付で出す
+**Goal**: （User Story 4「献立表」は削除。Session 2026-10-22）お知らせの添付とアルバムの写真で使う、ファイルの形式の確認・保存・配信を作る。毎月の献立表も、お知らせの添付で出す
 
 **Independent Test**: 事務員で、行事の案内（PDF）を添付してお知らせを投稿し、家族で開ける。ログインしていないと開けない（spec の US5）
 
@@ -180,10 +180,10 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - T072 [US4] （削除: 献立表の専用の機能をやめたため。毎月の献立表は、お知らせの添付で出す（FR-034）。Session 2026-10-22）
 - T073 [US4] （削除: 献立表のアップロードの画面と、連絡帳の「献立を見る」をやめたため。Session 2026-10-22）
 - [ ] T074 [US5] 架空のお知らせの PDF（献立表など）を iPhone の Safari と Android の Chrome で、別タブと画面の中の両方で開けるかを確かめ、結果を research.md R-10 に書く。表示できない環境があれば、PDF を `Content-Disposition: attachment` にする（さとこ・作）
-- [ ] T075 [US5] 画像の Exif を取り除く処理（Pillow で開き直して保存）を `backend/app/services/uploads.py` に足し、テストを `backend/tests/api/test_uploads.py` に足す（FR-034）（さとこ・作）
+- T075 [US5] （削除: 画像の位置情報（Exif）の除去はやめた。位置情報が写真に残る可能性は承知のうえ。Session 2026-10-28）
 - [ ] T076 [US5] **（見送り。10/28 の会議で決定：今回の開発ではデプロイしない（ローカルの Docker Compose で動かすところまで））** 本番の保存先（S3 互換のオブジェクトストレージ、非公開のバケット）への切り替えを `backend/app/services/uploads.py` に足す（環境変数で切り替える）（さとこ・作）
 
-**Checkpoint**: ファイルの形式の確認・Exif の削除・保存・配信ができ、ログインしていない人は開けない
+**Checkpoint**: ファイルの形式の確認・保存・配信ができ、ログインしていない人は開けない
 
 ---
 
@@ -243,7 +243,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - **US1（P1）**：Foundational のあとすぐ始められる
 - **US2（P2）**：テーブルは US1 と別。`get_disclosed_records`（T038）は `care_records`（T025）が要る
 - **US3（P3）**：`get_disclosed_records`・`get_disclosed_themes`（T038）、テーマ・定型文（T037）が要る。記録がない状態でも、テーマと返事だけでデモできる
-- **US4（P4）**：削除（Session 2026-10-22）。ファイルの共通の処理（T067〜T069・T071・T074〜T076）は、US5 の前に作る
+- **US4（P4）**：削除（Session 2026-10-22）。ファイルの共通の処理（T067〜T069・T071・T074・T076。T075 は削除）は、US5 の前に作る
 - **US5（P5）**：`uploaded_files`・`services/uploads.py`（T068・T069）と、`notifications`・`email_outbox`・worker（T048・T057）が要る
 
 ### 人をまたぐつなぎ目（先に形を合わせる）

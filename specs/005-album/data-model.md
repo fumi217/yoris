@@ -11,7 +11,7 @@ PostgreSQL のテーブルの形と、状態の動き。土台は [spec 001 の 
 | テーブル | 中身 | 担当 | 時期 | spec |
 |---|---|---|---|---|
 | `album_photos`（新規） | 載せた写真（入居者ごと） | さとこ | 作り込み | FR-001・FR-023 |
-| `uploaded_files`（既存に足す） | `purpose` に `album` を足す | さとこ | 作り込み | FR-004 |
+| `uploaded_files`（既存に足す） | `purpose` に `album` を足す | さとこ | 作り込み | FR-034（spec 001） |
 | `disclosure_settings`（既存に足す） | `target_type` に `feature` を足し、`album` の行を持つ | ゆう | 作り込み | FR-013 |
 | `notifications`（既存に足す） | `has_album` を足す | さとこ | 作り込み | FR-017・FR-018 |
 | `notification_settings`（既存に足す） | `notify_album` を足す | さとこ | 作り込み | FR-017 |
@@ -22,8 +22,7 @@ PostgreSQL のテーブルの形と、状態の動き。土台は [spec 001 の 
 |---|---|---|
 | id | bigint | |
 | resident_id | bigint → residents | 載せた入居者。家族には、この入居者の家族アカウントだけが見える |
-| file_id | bigint → uploaded_files | 元の写真（Exif を消し、向きを直したもの）。削除したら空にする |
-| thumb_file_id | bigint → uploaded_files | 一覧用のサムネイル（長い辺 480px）。削除したら空にする |
+| file_id | bigint → uploaded_files | 写真（加工しない。サムネイルは作らない。Session 2026-10-28）。削除したら空にする |
 | comment | varchar(100) | 一言コメント（任意）。職員が自由に書いた文。辞書を通さずそのまま出す。削除したら空にする |
 | posted_by | bigint → staff | 載せた職員 |
 | posted_at | timestamptz | 載せた日時 |
@@ -32,7 +31,7 @@ PostgreSQL のテーブルの形と、状態の動き。土台は [spec 001 の 
 
 - **索引**：`(resident_id, posted_at DESC, id DESC)`（家族の一覧と、まとめで使う）
 - **状態の動き**：載せた（`deleted_at` が空）→ 削除した（`deleted_at` あり）。元に戻せない。
-- **削除したときの行**：行は「誰がいつ削除したか」の記録として残す。`file_id`・`thumb_file_id`・`comment` は空にし、`uploaded_files` の 2 行と保存先のファイルは消す（[research.md R-05](./research.md#r-05-写真の削除)）。
+- **削除したときの行**：行は「誰がいつ削除したか」の記録として残す。`file_id`・`comment` は空にし、`uploaded_files` の 1 行と保存先のファイルは消す（[research.md R-05](./research.md#r-05-写真の削除)）。
 - コメントは載せたあとに直せない（FR-023）。直したいときは削除して載せ直す。
 - 家族アカウントがない入居者の写真も保存する。家族アカウントができたら、過去の写真も含めて見られる（Edge Cases）。
 
@@ -40,7 +39,7 @@ PostgreSQL のテーブルの形と、状態の動き。土台は [spec 001 の 
 
 | 列 | 変更 |
 |---|---|
-| purpose | `menu`／`announcement` に **`album`** を足す。アルバムの写真の元とサムネイルは、どちらも `album` |
+| purpose | `menu`／`announcement` に **`album`** を足す。アルバムの写真は `album` |
 | content_type | アルバムでは `image/jpeg`／`image/png` のみ（PDF は受け付けない） |
 
 ## `disclosure_settings`（既存に足す・ゆう）
@@ -60,7 +59,7 @@ PostgreSQL のテーブルの形と、状態の動き。土台は [spec 001 の 
 
 | 関数 | 返すもの | 使う人 |
 |---|---|---|
-| `get_visible_album_photos(resident_id, before=None, limit=30)` | アルバムが「見せる」のときだけ、その入居者の削除されていない写真（id・サムネイル・元の写真・コメント・載せた日時）を新しい順に返す。「見せない」のときは空にせず、呼び出し側が 404 にする | 家族のアルバムの API |
+| `get_visible_album_photos(resident_id, before=None, limit=12)` | アルバムが「見せる」のときだけ、その入居者の削除されていない写真（id・写真・コメント・載せた日時）を新しい順に返す。「見せない」のときは空を返す（呼び出し側の API が、先に 404 にする） | 家族のアルバムの API |
 | `can_family_view_photo(photo, resident_id)` | その写真を、その入居者の家族が見てよいか（自分の入居者の写真・削除されていない・アルバムが「見せる」） | `GET /api/files/{id}` |
 | `count_new_photos(resident_id, since, until)` | まとめ用。期間内に載せられ、削除されていない写真の数 | `digest.py` |
 
@@ -80,4 +79,4 @@ PostgreSQL のテーブルの形と、状態の動き。土台は [spec 001 の 
 
 | ファイル | 開ける人 |
 |---|---|
-| アルバムの写真（元・サムネイル） | ログインした職員（CW・L・CO・D。削除されていないもの）と、その入居者の家族（アルバムが「見せる」のとき）。事務員とそのほかは 404（ログインしていなければ 401） |
+| アルバムの写真 | ログインした職員（CW・L・CO・D。削除されていないもの）と、その入居者の家族（アルバムが「見せる」のとき）。事務員とそのほかは 404（ログインしていなければ 401） |

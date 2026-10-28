@@ -31,21 +31,21 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 **Purpose**: アルバムのテーブル、写真の処理、家族に出す共通の関数、開示設定の「アルバム」
 
-**⚠️ CRITICAL**: spec 001 の 001-T009（共通のテーブル）・001-T010（`CurrentUser` と役割のチェック）・001-T012（エラーの形）・001-T015（初期データの仕組み）・001-T036（開示設定のテーブル）・001-T038（`disclosure.py`）・001-T068（`uploaded_files`）・001-T069（`uploads.py`）・001-T075（Exif の削除）のあとに始める
+**⚠️ CRITICAL**: spec 001 の 001-T009（共通のテーブル）・001-T010（`CurrentUser` と役割のチェック）・001-T012（エラーの形）・001-T015（初期データの仕組み）・001-T036（開示設定のテーブル）・001-T038（`disclosure.py`）・001-T068（`uploaded_files`）・001-T069（`uploads.py`）のあとに始める
 
-- [ ] T001 アルバムのテーブルを `backend/app/models/album.py` に作り、マイグレーションを足す（data-model.md）。`album_photos`：`resident_id`（→ `residents`）、`file_id`・`thumb_file_id`（→ `uploaded_files`、削除したら空にする）、
+- [ ] T001 アルバムのテーブルを `backend/app/models/album.py` に作り、マイグレーションを足す（data-model.md）。`album_photos`：`resident_id`（→ `residents`）、`file_id`（→ `uploaded_files`、削除したら空にする）、
   `comment` は **`varchar(100)`、任意（空でよい）、削除したら空にする**、`posted_by`（→ `staff`）、`posted_at`、`deleted_by`・`deleted_at`。索引は `(resident_id, posted_at DESC, id DESC)`。
-  `uploaded_files.purpose` に `album` を足す（元の写真もサムネイルも `album`）（FR-023・FR-012）（さとこ）
-- [ ] T002 [P] 写真の処理を `backend/app/services/uploads.py` に足す（001-T069・001-T075 のあと）：呼び出し側が受け付ける形式を渡せるようにし、アルバムでは **`image/jpeg`・`image/png` だけ**にする（PDF は `invalid_file`）。
-  画像を Pillow で開いたら、`ImageOps.exif_transpose` で向きを実際の画素に反映してから、Exif を付けずに保存する。サムネイル（**長い辺 480px の JPEG、画質 80**）を作って別の `uploaded_files` に保存する。
-  画素数が極端に大きい画像は `Image.MAX_IMAGE_PIXELS` で、アニメーション PNG・壊れた画像と一緒に `invalid_file` にする。1 枚は **10MB まで**（research.md R-02。FR-003・FR-004）（さとこ）
+  `uploaded_files.purpose` に `album` を足す（元の写真は `album`）（FR-023・FR-012）（さとこ）
+- [ ] T002 [P] 写真の処理を `backend/app/services/uploads.py` に足す（001-T069 のあと）：呼び出し側が受け付ける形式を渡せるようにし、アルバムでは **`image/jpeg`・`image/png` だけ**にする（PDF は `invalid_file`）。
+  Pillow は使わない（Exif の除去・向きの直し・サムネイルは、やらない。Session 2026-10-28。向きは、ブラウザが写真の向きの情報を見て表示する）。
+  1 枚は **10MB まで**。先頭のバイトで JPEG・PNG だけを確かめる（それ以外は `invalid_file`）。極端に大きい画像・アニメーション PNG・壊れた画像を断る確認は、やらない（Session 2026-10-28）（research.md R-02。FR-003）（さとこ）
 - [x] T003 [P] 開示設定に「アルバム」を足す（**ゆうに依頼**。001-T036・001-T038 のあと）：`disclosure_settings.target_type` に `feature` を足し、初期データに `(facility_id, 'feature', 'album', visible = true)` の 1 行を入れる（`backend/app/seed/`）。
   `backend/app/services/disclosure.py` に `is_feature_disclosed(code)` を足す（開示設定のキャッシュを読む。`get_disclosed_records` や通知の項目の選択肢に `feature` の行が混ざらないようにする）（FR-013・research.md R-04）（ゆう）
-- [ ] T004 家族に出す共通の関数を `backend/app/services/album.py` に作る：`get_visible_album_photos(resident_id, before=None, limit=30)`（アルバムが「見せる」のとき、その入居者の削除されていない写真を新しい順に返す。「見せない」のときは呼び出し側が 404 にする）、
+- [ ] T004 家族に出す共通の関数を `backend/app/services/album.py` に作る：`get_visible_album_photos(resident_id, before=None, limit=12)`（アルバムが「見せる」のとき、その入居者の削除されていない写真を新しい順に返す。「見せない」のときは呼び出し側が 404 にする）、
   `can_family_view_photo(photo, resident_id)`（自分の入居者の写真・削除されていない・アルバムが「見せる」）、`count_new_photos(resident_id, since, until)`（削除されていない写真の数）。家族に写真を出す道は、これらの関数だけにする（T003 のあと。research.md R-03。FR-006・FR-014）（さとこ）
-- [ ] T005 [P] テスト用の架空の画像を作る補助を `backend/tests/helpers/images.py` に作る：位置情報（Exif）の入った JPG、縦向きの JPG、PNG、名前だけ `.jpg` の PDF、10MB を超える画像を、テストの中で作る（実在の人物の写真は使わない。research.md R-08）（さとこ）
+- [ ] T005 [P] テスト用の架空の画像を作る補助を `backend/tests/helpers/images.py` に作る：JPG、PNG、名前だけ `.jpg` の PDF、10MB を超える画像を、テストの中で作る（実在の人物の写真は使わない。research.md R-08）（さとこ）
 
-**Checkpoint**: マイグレーションが通り、サムネイルつきで写真を保存でき、開示設定の「アルバム」（見せる）が入っている
+**Checkpoint**: マイグレーションが通り、写真を保存でき、開示設定の「アルバム」（見せる）が入っている
 
 ---
 
@@ -57,19 +57,19 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ### Tests for User Story 1（先に書いて、失敗することを確かめる）⚠️
 
-- [ ] T006 [P] [US1] 単体テスト `backend/tests/unit/test_album_visibility.py`：`can_family_view_photo`（自分の入居者の写真は見える、ほかの入居者の写真・削除された写真・アルバムを見せない設定は見えない）、`get_visible_album_photos`（新しい順、30 枚で切る、`before` で続きを読む）（さとこ）
+- [ ] T006 [P] [US1] 単体テスト `backend/tests/unit/test_album_visibility.py`：`can_family_view_photo`（自分の入居者の写真は見える、ほかの入居者の写真・削除された写真・アルバムを見せない設定は見えない）、`get_visible_album_photos`（新しい順、12 枚で切る、`before` で続きを読む）（さとこ）
 - [ ] T007 [P] [US1] API テスト `backend/tests/api/test_album.py`（載せる）：職員が 1 枚載せられる／**コメントなしで載る**／コメントが **100 文字**までは載り、101 文字は 422 `validation_error`／JPG・PNG 以外（PDF、名前だけ JPG の PDF）と 10MB 超は 422 `invalid_file`／
-  保存した写真に **Exif が残っていない**／縦向きの画像の向きが保たれる／家族のロールで載せる API を呼ぶと 403（FR-001・FR-003・FR-004・FR-023）（さとこ）
+  （Exif・向きの確認は、やらない。Session 2026-10-28）／家族のロールで載せる API を呼ぶと 403（FR-001・FR-003・FR-023）（さとこ）
 - [ ] T008 [P] [US1] API テスト `backend/tests/api/test_album.py`（見る）：家族 A が自分の入居者の写真を日ごとに見られる／**家族 B が家族 A の入居者の写真を一覧でも、ファイルの URL（`/api/files/{id}`）でも見られず 404**／ログインなしは 401／写真が 0 枚のときは空の配列（FR-005〜008）（さとこ）
 
 ### Implementation for User Story 1
 
 - [ ] T009 [US1] 職員の API を `backend/app/api/staff/album.py` に作る：`POST /api/staff/residents/{id}/album`（`multipart/form-data`、写真 **1 枚**＋任意の `comment`。T002 の処理を通して保存し、`album_photos` に足す。載せた職員と日時を残す）、
   `GET /api/staff/residents/{id}/album`（削除されていない写真の一覧と、`family_visible`）。役割：職員（CW・L・CO・D）。422：`invalid_file`・`validation_error`（FR-001・FR-002）（さとこ）
-- [ ] T010 [US1] 家族の API を `backend/app/api/family/album.py` に作る：`GET /api/family/album?before=&limit=`（`get_visible_album_photos` を通す。載せた日（日本時間）ごとにまとめ、1 回で最大 30 枚、`next_before` で続きを読む。アルバムを見せない設定のときは 404）、
+- [ ] T010 [US1] 家族の API を `backend/app/api/family/album.py` に作る：`GET /api/family/album?before=&limit=`（`get_visible_album_photos` を通す。載せた日（日本時間）ごとにまとめ、1 回の既定は 12 枚（`limit` の上限は 30）、`next_before` で続きを読む。アルバムを見せない設定のときは 404）、
   `GET /api/family/features`（`{ "album": true }`。開示設定の `feature` の状態だけ）。入居者は送らせず、ログイン中の家族から決める（FR-005・FR-006・FR-010）（T004 のあと）（さとこ）
 - [ ] T011 [US1] `GET /api/files/{id}` に、アルバムの写真の条件を `backend/app/api/files.py` に足す（001-T071 のあと）：職員（CW・L・CO・D）は削除されていないものを開ける。事務員は 404。家族は `can_family_view_photo` が真のときだけ開ける。それ以外は 404、ログインなしは 401。`Content-Type` は保存した形式に固定し、`X-Content-Type-Options: nosniff` を付ける（FR-006・FR-007・FR-022）（さとこ）
-- [ ] T012 [US1] 家族のアルバムの画面を `frontend/src/pages/family/Album.tsx` に作る：載せた日ごとにサムネイルを並べ、タップで元の写真を大きく出す。コメントは**文字としてのみ**写真の下に出す（辞書を通さず、HTML として解釈しない）。「もっと見る」で続きを読む。写真がないときは「まだ写真はありません」。
+- [ ] T012 [US1] 家族のアルバムの画面を `frontend/src/pages/family/Album.tsx` に作る：載せた日ごとに、元の写真を小さく（CSS）並べ、`loading="lazy"` で読み込み、タップで大きく出す（サムネイルは作らない。Session 2026-10-28）。コメントは**文字としてのみ**写真の下に出す（辞書を通さず、HTML として解釈しない）。「もっと見る」で続きを読む（最初は 12 枚）。写真がないときは「まだ写真はありません」。写真の枠の大きさ（`aspect-ratio`、または width・height）を先に決める（`loading="lazy"` が、画面の外の写真までまとめて読み込まないため。12 枚は 2・3・4 列のどれでも割り切れる。Session 2026-10-28）。
   固定の文言は辞書（`frontend/src/i18n/ja.json`）から引き、ふりがなは spec 001 の R-11 の書き方にする（FR-005・FR-008・FR-021・FR-022）（さとこ）
 - [ ] T013 [US1] 家族の画面の枠に、「☰ その他」の中の「アルバム」のリンクと `/family/album` のルートを足す（`frontend/src/pages/family/` の枠。001-T019 のあと）。`GET /api/family/features` が `album: false` のときは出さない。spec 003 の面会の置き方と同じ形にする（FR-010）（さとこ）
 - [ ] T014 [US1] 職員の「写真を載せる」画面を `frontend/src/pages/staff/AlbumUpload.tsx` に作る：「📷 撮る」（`<input type="file" accept="image/jpeg,image/png" capture="environment">`）と「🖼 写真から選ぶ」（複数枚・**10 枚まで**）を置き、選んだ写真にプレビューと、
@@ -90,12 +90,12 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T017 [P] [US2] API テスト `backend/tests/api/test_album.py`（削除）：職員（CW・L・CO・D の各役割）が削除できる。事務員（CL）は 403／削除後、家族の一覧から消え、ファイルの URL（元・サムネイル）が 404／**保存先のファイルが消えている**／`album_photos` に `deleted_by`・`deleted_at` が残り、`file_id`・`thumb_file_id`・`comment` が空／
+- [ ] T017 [P] [US2] API テスト `backend/tests/api/test_album.py`（削除）：職員（CW・L・CO・D の各役割）が削除できる。事務員（CL）は 403／削除後、家族の一覧から消え、ファイルの URL（元の写真）が 404／**保存先のファイルが消えている**／`album_photos` に `deleted_by`・`deleted_at` が残り、`file_id`・`comment` が空／
   家族のロールで削除の API を呼ぶと 403／削除済みの写真をもう一度削除しても壊れない（FR-011・FR-012）（さとこ）
 
 ### Implementation for User Story 2
 
-- [ ] T018 [US2] 削除の処理を `backend/app/services/album.py` に足す：1 つのトランザクションで `deleted_by`・`deleted_at` を入れ、`file_id`・`thumb_file_id`・`comment` を空にして `uploaded_files` の 2 行を消す。**そのあとで**保存先のファイル 2 つを消す。消せなかったときは、`storage_key` の id をログに出す（ファイル名・コメントは出さない）（research.md R-05）（さとこ）
+- [ ] T018 [US2] 削除の処理を `backend/app/services/album.py` に足す：1 つのトランザクションで `deleted_by`・`deleted_at` を入れ、`file_id`・`comment` を空にして `uploaded_files` の 1 行を消す。**そのあとで**保存先のファイル 1 つを消す。消せなかったときは、`storage_key` の id をログに出す（ファイル名・コメントは出さない）（research.md R-05）（さとこ）
 - [ ] T019 [US2] `DELETE /api/staff/album/{id}` を `backend/app/api/staff/album.py` に足す（役割：職員（CW・L・CO・D）。家族のロール・事務員は 403）（FR-011）（さとこ）
 - [ ] T020 [US2] 載せた写真の一覧と削除のボタンを `frontend/src/pages/staff/AlbumUpload.tsx` に足す（削除の前に確認を出す）。アルバムを家族に見せていないとき（`family_visible = false`）は、「いま家族には見せていません」を出す（FR-011・FR-016）（さとこ）
 
