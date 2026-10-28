@@ -9,6 +9,7 @@ from datetime import date
 from sqlalchemy import func, select
 
 from app.auth.login_ids import next_login_ids
+from app.models.change_flags import ChangeRule
 from app.models.core import STAFF_ROLES, Facility, FamilyAccount, Resident, Staff, User
 from app.models.records import CareRecord
 from app.models.visits import VisitReservation
@@ -100,7 +101,19 @@ def test_seed_twice_adds_nothing(session):
         # 空の DB（CI）では、デモ用の記録と予約も入る
         assert _count(session, CareRecord) > 0
         assert _count(session, VisitReservation) > 0
-    before = (_count(session, User), _count(session, Resident), _count(session, CareRecord))
+    # 変化の決まりは 3 つ（spec 006）
+    assert _count(session, ChangeRule) == 3
+    before = (
+        _count(session, User),
+        _count(session, Resident),
+        _count(session, CareRecord),
+        _count(session, ChangeRule),
+    )
 
     assert seed(session, today=TODAY) is False
-    assert (_count(session, User), _count(session, Resident), _count(session, CareRecord)) == before
+    assert (
+        _count(session, User),
+        _count(session, Resident),
+        _count(session, CareRecord),
+        _count(session, ChangeRule),
+    ) == before

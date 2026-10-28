@@ -34,20 +34,20 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 **⚠️ CRITICAL**: spec 001 の 001-T009（共通のテーブル）・001-T010（`CurrentUser` と役割のチェック）・001-T012（エラーの形）・001-T015（初期データの仕組み）・001-T020（テストの土台）・001-T025（`care_records`）のあとに始める。
 ただし T001・T002（決まりの関数とそのテスト）は DB を使わないので、いつでも始められる
 
-- [ ] T001 [P] テスト `backend/tests/unit/test_change_rules.py` を書く（DB なし）：決まりの関数に、**当てはまる 10 件・当てはまらない 10 件**の記録の並びを渡し、付け間違い・付け忘れが 0 件（SC-002）。
+- [x] T001 [P] テスト `backend/tests/unit/test_change_rules.py` を書く（DB なし）：決まりの関数に、**当てはまる 10 件・当てはまらない 10 件**の記録の並びを渡し、付け間違い・付け忘れが 0 件（SC-002）。
   次を必ず含める：前の日の夜「少し」→ 朝「食べていない」は当てはまる（US1 シナリオ 1）／夜「食事なし」→ 朝「食事なし」は当てはまらない（すきまが 2 食続く）／昼「少し」→ おやつ「食べていない」は当てはまらない（おやつは数えない。US1 シナリオ 3a）／
   機嫌 月「元気がない」・火 未記録・水「元気がない」は当てはまる／機嫌 月「元気がない」・火〜木 未記録・金「元気がない」は当てはまらない（Edge Cases）／取り消した記録は数えない／最新の記録が「ほぼ全部」なら当てはまらない／
   まだ記録のない「これからの枠」はすきまに数えない／7 日より前の記録は読まない／当てはまったときに返す記録の id・日付・枠・値がすきまを含まない（research.md R-02）（みさき）
-- [ ] T002 [P] 決まりの関数を `backend/app/services/change_rules.py` に作る（DB に触らない。research.md R-01・R-02）：決まりのコード **`meal_low`（`item = meal`、`slot` が `breakfast`・`lunch`・`dinner`、値 `2`・`0`、2 食）／`mood_low`（`item = mood`、値 `low`、2 日）／`sleep_poor`（`item = sleep`、値 `poor`、2 日）** を定数で持つ。
+- [x] T002 [P] 決まりの関数を `backend/app/services/change_rules.py` に作る（DB に触らない。research.md R-01・R-02）：決まりのコード **`meal_low`（`item = meal`、`slot` が `breakfast`・`lunch`・`dinner`、値 `2`・`0`、2 食）／`mood_low`（`item = mood`、値 `low`、2 日）／`sleep_poor`（`item = sleep`、値 `poor`、2 日）** を定数で持つ。
   入力は 1 人の入居者の記録の並び（取り消していないもの、直近 7 日分）、出力は「当てはまるか・続いた数・当てはまった記録の `{record_id, date, slot, value}` の一覧（古い順）」。
   いちばん新しい記録のある枠からさかのぼり、当てはまる値は数える、**未記録・取り消し・「食事なし（`none`）」はすきま**（当てはまる値として数えない）、すきまが 2 枠続いたら・当てはまらない値が来たらやめる。続いた数が 2 以上で当てはまる。T001 を通す（みさき）
-- [ ] T003 変化の検知のテーブルを `backend/app/models/change_flags.py` に作り、マイグレーションを足す（data-model.md）：
+- [x] T003 変化の検知のテーブルを `backend/app/models/change_flags.py` に作り、マイグレーションを足す（data-model.md）：
   `change_rules`（`code` は **主キー、`meal_low`／`mood_low`／`sleep_poor`**、`enabled` は **boolean、初期値 true**、`updated_at`、`updated_by` → `staff`（初期データは空））、
   `change_rule_histories`（`rule_code` → `change_rules`、`enabled_before`・`enabled_after`、`changed_by` → `staff`、`changed_at`）、
   `change_flags`（`resident_id` → `residents`、`rule_code` → `change_rules`、`started_at`、`cleared_at`（**空なら今の目印**）、`cleared_reason` は **`not_matching`／`rule_disabled`（消えたときだけ）**、`streak`（int）、`evidence`（jsonb、**`[{record_id, date, slot, value}]` 古い順**）、`status` は **`unconfirmed`／`confirmed`／`cleared`**、`updated_at`。**`CHECK ((status = 'cleared') = (cleared_at IS NOT NULL))`**。
   **一意：`(resident_id, rule_code) WHERE cleared_at IS NULL`**（部分インデックス））、
   `change_flag_confirmations`（`change_flag_id` → `change_flags`、`confirmed_by` → `staff`、`confirmed_at`、`note` は **100 文字まで・任意**、`streak_at_confirmation`（int））。マイグレーションを作る直前に main を取り込む（001 の R-17）（みさき）
-- [ ] T004 [P] 決まりの初期データを `backend/app/seed/change_rules.py` に作り、001-T015 の `backend/app/seed/__main__.py` から呼ぶ：`change_rules` に 3 行（**すべて `enabled = true`**）。すでにあれば足さない（何度流してもよい）（みさき）
+- [x] T004 [P] 決まりの初期データを `backend/app/seed/change_rules.py` に作り、001-T015 の `backend/app/seed/__main__.py` から呼ぶ：`change_rules` に 3 行（**すべて `enabled = true`**）。すでにあれば足さない（何度流してもよい）（みさき）
 
 **Checkpoint**: 決まりの関数が単体テストを通り、テーブルと決まりの初期データができている
 

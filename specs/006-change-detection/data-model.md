@@ -59,6 +59,7 @@ spec 001 の [data-model.md](../001-family-priority-report/data-model.md) の `c
 
 - **一意**：`(resident_id, rule_code) WHERE cleared_at IS NULL`（今の目印は、入居者 × 決まりごとに 1 つ。部分インデックス）。
 - **状態と消えた日時をそろえる**：`CHECK ((status = 'cleared') = (cleared_at IS NOT NULL))`。消すときは `status = 'cleared'`・`cleared_at`・`cleared_reason` を 1 回の更新でまとめて入れる（消えた目印の `status` が `unconfirmed`・`confirmed` のまま残らないように）。消える前に確かめていたかは `change_flag_confirmations` に残る。
+- **消えた理由は、消えたときだけ入れる**：`CHECK ((cleared_reason IS NOT NULL) = (cleared_at IS NOT NULL))`。`cleared_reason` だけ入って消えていない、消えたのに理由がない、を DB で防ぐ。
 - 書き込むのは `evaluate_change_flags`（[research.md R-03](./research.md)）と、確かめる処理・決まりのオン／オフだけ。
 - `evidence` には記録の値（コード）が入るが、ログには出さない（FR-014）。
 
