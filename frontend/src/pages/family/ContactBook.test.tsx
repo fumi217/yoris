@@ -5,8 +5,11 @@ import { ContactBookView } from './ContactBook'
 import {
   markSentOnce,
   monthDayOf,
+  pickDate,
+  shiftDate,
   slotLabelKey,
   timeInJapan,
+  todayInJapan,
   valueKey,
   type ContactBookData,
   type ContactReply,
@@ -60,6 +63,11 @@ const book = (overrides: Partial<ContactBookData> = {}): ContactBookData => ({
 
 const render = (data: ContactBookData) =>
   renderToStaticMarkup(<ContactBookView book={data} onRead={vi.fn()} />)
+
+const renderWithNav = (data: ContactBookData, today: string) =>
+  renderToStaticMarkup(
+    <ContactBookView book={data} onRead={vi.fn()} today={today} onMove={vi.fn()} />,
+  )
 
 /** 画面に出る文字だけにする（ふりがな・タグを除く）。 */
 const text = (html: string) =>
@@ -161,6 +169,44 @@ describe('ContactBookView', () => {
   })
 })
 
+describe('日付の切り替え（T094）', () => {
+  it('過去の日を見ているときは、前の日・次の日・今日へのボタンと日付の選択が出る', () => {
+    const html = renderWithNav(book({ date: '2026-10-26' }), '2026-10-27')
+    const shown = text(html)
+
+    expect(shown).toContain('前の日')
+    expect(shown).toContain('次の日')
+    expect(shown).toContain('今日へ')
+    expect(html).toContain('type="date"')
+    expect(html).toContain('max="2026-10-27"')
+    expect(html).toContain('value="2026-10-26"')
+  })
+
+  it('今日を見ているときは、次の日が押せず、今日へのボタンは出ない', () => {
+    const html = renderWithNav(book({ date: '2026-10-27' }), '2026-10-27')
+    const past = renderWithNav(book({ date: '2026-10-26' }), '2026-10-27')
+
+    // 押せないボタンは、今日を見ているときの「次の日」だけ
+    expect(html).toContain('disabled=""')
+    expect(past).not.toContain('disabled=""')
+    expect(text(html)).not.toContain('今日へ')
+  })
+
+  it('日付の切り替えを渡さないときは、出ない（今までの画面のまま）', () => {
+    expect(render(book())).not.toContain('type="date"')
+  })
+
+  it('過去の日でも、未読の返事は一番上に出る（日付に関わらない）', () => {
+    const html = renderWithNav(
+      book({ date: '2026-10-20', unread_replies: [reply({ contact_book_date: '2026-10-26' })] }),
+      '2026-10-27',
+    )
+
+    expect(text(html)).toContain('新しい返事')
+    expect(html.indexOf('<article')).toBeLessThan(html.indexOf('食事'))
+  })
+})
+
 describe('contactBookView', () => {
   it('時刻は日本時間の HH:MM', () => {
     expect(timeInJapan('2026-10-26T00:30:00Z')).toBe('09:30')
@@ -177,6 +223,33 @@ describe('contactBookView', () => {
 
   it('値の辞書のキーは項目ごと', () => {
     expect(valueKey('sleep', 'good')).toBe('record.value.sleep.good')
+  })
+
+  it('日付を日数ずらす（月・年をまたぐ。うるう日も）', () => {
+    expect(shiftDate('2026-10-27', -1)).toBe('2026-10-26')
+    expect(shiftDate('2026-11-01', -1)).toBe('2026-10-31')
+    expect(shiftDate('2027-01-01', -1)).toBe('2026-12-31')
+    expect(shiftDate('2028-03-01', -1)).toBe('2028-02-29')
+    expect(shiftDate('2026-10-31', 1)).toBe('2026-11-01')
+  })
+
+  it('今日は日本時間で数える（日本の 0 時を過ぎたら、UTC ではまだ前の日でも次の日）', () => {
+    expect(todayInJapan(new Date('2026-10-26T15:30:00Z'))).toBe('2026-10-27')
+    expect(todayInJapan(new Date('2026-10-26T14:59:00Z'))).toBe('2026-10-26')
+  })
+
+  it('?date= は、正しい過去の日だけ使い、それ以外は今日にする', () => {
+    const today = '2026-10-27'
+
+    expect(pickDate('2026-10-20', today)).toBe('2026-10-20')
+    expect(pickDate('2026-10-27', today)).toBe(today)
+    expect(pickDate(null, today)).toBe(today)
+    expect(pickDate('', today)).toBe(today)
+    expect(pickDate('あした', today)).toBe(today)
+    expect(pickDate('2026-13-40', today)).toBe(today)
+    expect(pickDate('2026-02-30', today)).toBe(today)
+    expect(pickDate('2026-10-28', today)).toBe(today)
+    expect(pickDate('1999-01-01', today)).toBe('1999-01-01')
   })
 
   it('既読を送るのは、返事 1 つにつき 1 回だけ', () => {

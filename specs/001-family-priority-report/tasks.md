@@ -153,7 +153,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T064 [US3] `notification_settings` を `backend/app/models/notifications.py` に足し（`notify_reply` 初期値 `true`、`notify_items` 初期値 `{meal,mood,sleep}`、`frequency`：`daily`（初期値）／`weekly`／`none`）、`GET/PUT /api/family/notification-settings` と画面 `frontend/src/pages/family/NotificationSettings.tsx` を作る。送り先のメールアドレスを表示する（FR-023・Edge Cases）（さとこ・作）
 - [ ] T065 [US3] まとめの通知を `backend/app/jobs/digest.py` に作り、`run_jobs()` から呼ぶ：日本時間で 20:00 を過ぎて最初に呼ばれたときに、毎日「1 日 1 回」、日曜は「1 週間に 1 回」の家族へ（締めは 20:00）、`get_disclosed_records` で新しい記録があるときだけまとめを作る。`digest_runs`（一意：`(family_account_id, kind, period_end)`）で 2 回送らない。止まっていたらその日のうちだけ取り戻す。`--at` で時刻を指定して動かせる（research.md R-13・quickstart.md）（さとこ・作）
 - [ ] T066 [P] [US3] テスト `backend/tests/api/test_digest.py`：同じ時刻で 2 回動かしても 1 回だけ、記録がない日は送らない、非開示の項目だけの日は送らない、20 時台に `run_jobs()` が何度も呼ばれても 1 回だけ、`run_jobs()` と `--at` のコマンドが重なっても 2 回送らない（SC-010・research.md R-13）（さとこ・作）
-- [ ] T094 [US3] 家族の連絡帳で過去の日付を選べるようにする（日数の制限なし。過去の日の記録と返事を出す）を `frontend/src/pages/family/ContactBook.tsx` に足す（FR-019。T059 から分けた。PR #23 さとこ）（さとこ・作）
+- [x] T094 [US3] 家族の連絡帳で過去の日付を選べるようにする（日数の制限なし。過去の日の記録と返事を出す）を `frontend/src/pages/family/ContactBook.tsx` に足す（FR-019。T059 から分けた。PR #23 さとこ）（さとこ・作）
 - [x] T095 [P] [US3] 家族の画面の単体テスト `frontend/src/pages/family/ContactBook.test.tsx`（Vitest。ほかのテストと同じく画面の隣に置く。型チェックは `src` だけが対象のため）：未記録の欄に「まだ記録されていません」が出る、未読の返事のカードが一番上に出る（FR-015・FR-017。PR #23 さとこ）（さとこ・ミ）
 
 **Checkpoint**: 記録 → 開示 → 頼む → 返事 → メール の通しのデモ（quickstart.md の 1〜9）ができる

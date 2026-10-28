@@ -51,6 +51,30 @@ export function timeInJapan(at: string): string {
   }).format(new Date(at))
 }
 
+/** 日本時間の今日（"2026-10-27"）。端末のタイムゾーンに関わらず、API の「今日」と同じ日にする。 */
+export function todayInJapan(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(now)
+}
+
+/** "2026-10-27" を days 日ずらす。UTC で数えるので、端末の時刻に左右されない。 */
+export function shiftDate(date: string, days: number): string {
+  const shifted = new Date(`${date}T00:00:00Z`)
+  shifted.setUTCDate(shifted.getUTCDate() + days)
+  return shifted.toISOString().slice(0, 10)
+}
+
+/**
+ * URL の `?date=` を、見せる日にする。形が違う・実在しない日・今日より先は、今日にする
+ * （記録がない日を API に送らない）。
+ */
+export function pickDate(value: string | null, today: string): string {
+  if (value === null || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return today
+  // 13 月・2 月 30 日のような、実在しない日は Date が無効か、別の日に直してしまう
+  const parsed = new Date(`${value}T00:00:00Z`)
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) return today
+  return value > today ? today : value
+}
+
 /** "2026-10-26" → { month: 10, day: 26 } */
 export function monthDayOf(date: string): { month: number; day: number } {
   const [, month, day] = date.split('-').map(Number)

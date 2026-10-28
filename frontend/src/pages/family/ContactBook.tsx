@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router'
 import { api, messageKeyOf } from '../../api/client'
 import { Message } from '../../components/Message'
 import { OccupationLabel } from '../../components/OccupationLabel'
@@ -10,8 +11,11 @@ import {
   itemKey,
   markSentOnce,
   monthDayOf,
+  pickDate,
+  shiftDate,
   slotLabelKey,
   timeInJapan,
+  todayInJapan,
   valueKey,
   type ContactBookData,
   type ContactReply,
@@ -26,14 +30,23 @@ const NOTIFICATIONS_KEY = ['family', 'notifications'] as const
  * 家族の連絡帳（ホーム。UI-F02。spec 001 の T059・docs/画面設計.md「7」）。`/family`
  * 上から、未読の返事のカード（日付に関わらず一番上。カードが画面に出たら自動で既読にする）、
  * その日の読んだ返事、食事 → 機嫌・様子 → 眠り（まだ記録がない欄は「まだ記録されていません」）、
- * 画面の下に「緊急のときは、施設から電話します」。ミニマム版は「今日」だけ（過去の日付は T094）。
+ * 画面の下に「緊急のときは、施設から電話します」。
+ * 見る日は URL の `?date=` で決める（なければ今日。日数の制限はない。T094・FR-019）。
  */
 export function ContactBook() {
   const queryClient = useQueryClient()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const today = todayInJapan()
+  const date = pickDate(searchParams.get('date'), today)
+  // 今日のときは日付を付けない（API の「今日」と同じ日になる）
+  const move = (next: string) => setSearchParams(next === today ? {} : { date: next })
   // 画面を開いたとき・戻ったときに読み直す（リアルタイムの配信は使わない。R-15）
   const book = useQuery({
-    queryKey: CONTACT_BOOK_KEY,
-    queryFn: () => api.get<ContactBookData>('/api/family/contact-book'),
+    queryKey: [...CONTACT_BOOK_KEY, date],
+    queryFn: () =>
+      api.get<ContactBookData>(
+        date === today ? '/api/family/contact-book' : `/api/family/contact-book?date=${date}`,
+      ),
   })
   const sent = useRef(new Set<number>())
   const { mutate: markRead } = useMutation({
@@ -54,23 +67,28 @@ export function ContactBook() {
 
   if (book.isPending) return <Message k="layout.loading" />
   if (book.isError) return <Message k={messageKeyOf(book.error)} />
-  return <ContactBookView book={book.data} onRead={onRead} />
+  return <ContactBookView book={book.data} onRead={onRead} today={today} onMove={move} />
 }
 
 type ViewProps = {
   book: ContactBookData
   // 未読の返事のカードが画面に出たときに呼ばれる
   onRead: (replyId: number) => void
+  // 日付の切り替えを出すときだけ渡す（今日の日付と、見る日を変える関数）
+  today?: string
+  onMove?: (date: string) => void
 }
 
 /** 画面の中身（テストではこれを直接出す）。 */
-export function ContactBookView({ book, onRead }: ViewProps) {
+export function ContactBookView({ book, onRead, today, onMove }: ViewProps) {
   const { t } = useTranslation()
   return (
     <section className="space-y-6 p-4">
       <h1 className="text-xl font-bold">
         <Ruby text={t('contact_book.title', monthDayOf(book.date))} />
       </h1>
+
+      {today !== undefined && onMove && <DayNav date={book.date} today={today} onMove={onMove} />}
 
       {(book.unread_replies.length > 0 || book.day_replies.length > 0) && (
         <div className="space-y-3">
@@ -91,6 +109,57 @@ export function ContactBookView({ book, onRead }: ViewProps) {
         <Text k="contact_book.emergency" />
       </p>
     </section>
+  )
+}
+
+/** 見る日の切り替え。今日より先は選べない（記録がないため）。 */
+function DayNav({
+  date,
+  today,
+  onMove,
+}: {
+  date: string
+  today: string
+  onMove: (date: string) => void
+}) {
+  const isToday = date === today
+  const button = 'min-h-12 rounded border-2 border-gray-300 px-3 disabled:opacity-40'
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <button type="button" className={button} onClick={() => onMove(shiftDate(date, -1))}>
+          <span aria-hidden="true">◀ </span>
+          <Text k="contact_book.prev_day" />
+        </button>
+        <button
+          type="button"
+          className={button}
+          disabled={isToday}
+          onClick={() => onMove(shiftDate(date, 1))}
+        >
+          <Text k="contact_book.next_day" />
+          <span aria-hidden="true"> ▶</span>
+        </button>
+        {!isToday && (
+          <button type="button" className={button} onClick={() => onMove(today)}>
+            <Text k="contact_book.go_today" />
+          </button>
+        )}
+      </div>
+      <label className="block text-sm">
+        <Text k="contact_book.pick_date" />
+        <input
+          type="date"
+          value={date}
+          max={today}
+          onChange={(event) => {
+            const picked = pickDate(event.target.value, today)
+            if (picked !== date) onMove(picked)
+          }}
+          className="ml-2 min-h-10 rounded border-2 border-gray-300 px-2"
+        />
+      </label>
+    </div>
   )
 }
 
