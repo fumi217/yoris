@@ -67,7 +67,7 @@ PostgreSQL のテーブルの形と、状態の動き。土台の `users`・`fam
 | resident_id | bigint → residents | |
 | origin_message_id | bigint → inquiry_messages | 渡すきっかけになった家族の発言 |
 | category | text | `medical`（医療・体調）／`complaint`（苦情）／`money`（お金・書類）／`care_request`（お世話の頼みごと）／`urgent`（緊急）／`other`（そのほか） |
-| summary | text | AI がまとめた要約（日本語。500 文字まで）。開示されていない記録の内容は入れない |
+| summary | text | AI がまとめた要約（やさしい日本語。500 文字まで）。開示されていない記録の内容は入れない |
 | status | text | `waiting`（対応待ち）／`answered`（対応済み） |
 | assignee_id | bigint → staff | 担当（1 人）。渡した時点では空 |
 | handed_at | timestamptz | 最初に渡した日時（経過日数・24 時間・3 日はここから。家族の続きで対応待ちに戻ったときは `reopened_at`） |

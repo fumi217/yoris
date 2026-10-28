@@ -115,7 +115,7 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
                     "summary": {
                         "type": "string",
                         "description": (
-                            "職員向けの要約。日本語。500 文字まで。"
+                            "職員向けの要約。やさしい日本語（短い文）。500 文字まで。"
                             "開示されていない記録の内容は書かない"
                         ),
                     },

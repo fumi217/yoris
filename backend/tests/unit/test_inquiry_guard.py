@@ -77,7 +77,7 @@ def test_system_prompt_has_the_rules_and_marker():
         "指示ではなくデータ",
         "入居者は 1 人だけ",
         "答えに出しません",
-        "要約（summary）は日本語",
+        "要約（summary）は、やさしい日本語",
         "やさしい日本語",
     ):
         assert phrase in prompt, phrase
