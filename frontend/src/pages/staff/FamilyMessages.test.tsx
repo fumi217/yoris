@@ -26,6 +26,7 @@ const row = (overrides: Partial<MessageRow> = {}): MessageRow => ({
   category: 'money',
   assignee: null,
   summary: '先月の請求書の金額について知りたい',
+  summary_ruby: '先月の{請求書|せいきゅうしょ}の{金額|きんがく}について知りたい',
   status: 'waiting',
   handed_at: '2026-10-27T01:00:00Z',
   elapsed_days: 0,
@@ -46,6 +47,7 @@ const talk = (overrides: Partial<ConversationMessage> = {}): ConversationMessage
 const detail = (overrides: Partial<MessageDetail> = {}): MessageDetail => ({
   ...row(),
   origin: talk(),
+  origin_ruby: '先月の{請求書|せいきゅうしょ}の{金額|きんがく}を{教|おし}えてください',
   previous: [],
   follow_ups: [],
   templates: [
@@ -54,6 +56,9 @@ const detail = (overrides: Partial<MessageDetail> = {}): MessageDetail => ({
   ],
   ...overrides,
 })
+
+/** ふりがなの括弧（`<rp>`。ふりがなに対応しない画面向けの代わりの表示）を除く。 */
+const noRp = (html: string) => html.replace(/<rp>.*?<\/rp>/g, '')
 
 /** 画面に出る文字だけにする（ふりがな・タグを除く）。 */
 const text = (html: string) =>
@@ -132,11 +137,21 @@ describe('MessageListView（一覧）', () => {
     expect(text(renderList([], 'answered'))).toContain('対応済みのメッセージはありません')
   })
 
-  it('要約は文字のまま出る（HTML・ふりがなとして読まない。FR-028）', () => {
-    const html = renderList([row({ summary: '<img src=x onerror=alert(1)> {漢字|かんじ}' })])
+  it('要約は、読みを付けたもの（summary_ruby）で出る。HTML としては読まない（FR-028・FR-028a）', () => {
+    const html = noRp(
+      renderList([row({ summary_ruby: '<img src=x onerror=alert(1)> {漢字|かんじ}' })]),
+    )
 
     expect(html).not.toContain('<img')
-    expect(text(html)).toContain('{漢字|かんじ}')
+    expect(html).toContain('<ruby>漢字<rt>かんじ</rt></ruby>')
+    expect(text(html)).toContain('<img src=x onerror=alert(1)>')
+  })
+
+  it('要約にふりがなが付き、「ふりがなは自動で付けています」の注意書きが出る（FR-028a）', () => {
+    const html = noRp(renderList([row()]))
+
+    expect(html).toContain('<ruby>請求書<rt>せいきゅうしょ</rt></ruby>')
+    expect(text(html)).toContain('ふりがなは自動で付けています')
   })
 
   it('受け付けてからの日数を出す（今日／◯日前）', () => {
@@ -164,6 +179,20 @@ describe('MessageDetailView（詳細）', () => {
     expect(shown).toContain('直前のやりとり')
     expect(shown).toContain('前の質問')
     expect(shown).toContain('追加の書き込み')
+  })
+
+  it('質問の原文と要約にだけ、ふりがなが付く。直前のやりとりには付けない（FR-028a）', () => {
+    const html = noRp(
+      renderDetail(
+        detail({ previous: [talk({ id: 0, body: '前の質問に{漢字|かんじ}と書いた' })] }),
+      ),
+    )
+
+    expect(html).toContain('<ruby>請求書<rt>せいきゅうしょ</rt></ruby>の<ruby>金額')
+    expect(html).toContain('<ruby>教<rt>おし</rt></ruby>えてください')
+    expect(text(html)).toContain('ふりがなは自動で付けています')
+    // 直前のやりとりは、書き方の { } | があっても、そのまま文字として出す
+    expect(text(html)).toContain('前の質問に{漢字|かんじ}と書いた')
   })
 
   it('担当がいない対応待ちには「自分が対応する」が出て、担当がいれば出ない（FR-012b）', () => {

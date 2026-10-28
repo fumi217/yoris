@@ -48,9 +48,9 @@
 
 | メソッド・パス | 役割 | 時期 | 中身 | spec |
 |---|---|---|---|---|
-| `GET /api/staff/messages?status=waiting&resident_id=` | S（苦情は CO・D だけに出る） | ミ | 一覧：入居者の呼び名・種類・担当・要約・受け付けた日時・経過日数・「1 日以上待っています」・状態。対応待ち → 担当が自分か空 → 古い順 | FR-012・FR-016b |
+| `GET /api/staff/messages?status=waiting&resident_id=` | S（苦情は CO・D だけに出る） | ミ | 一覧：入居者の呼び名・種類・担当・要約（`summary`。読みを付けた `summary_ruby` も返す）・受け付けた日時・経過日数・「1 日以上待っています」・状態。対応待ち → 担当が自分か空 → 古い順 | FR-012・FR-016b・FR-028a |
 | `GET /api/staff/messages/count?resident_id=` | S | ミ | 対応待ちの件数（ゆうの入居者一覧から呼ぶ。苦情は CO・D にだけ数える） | FR-013 |
-| `GET /api/staff/messages/{id}` | S（苦情は CO・D） | ミ | 詳細：原文・要約・種類・担当・状態・直前の 3 往復・追加された家族の書き込み・その種類の定型文の一覧。見られなければ 404 | FR-011・FR-012 |
+| `GET /api/staff/messages/{id}` | S（苦情は CO・D） | ミ | 詳細：原文（`origin`。読みを付けた `origin_ruby` も返す）・要約（`summary`・`summary_ruby`）・種類・担当・状態・直前の 3 往復・追加された家族の書き込み・その種類の定型文の一覧。見られなければ 404。`*_ruby` は表示用で、`{漢字\|かんじ}` の書き方。保存している原文・要約は変えない | FR-011・FR-012・FR-028a |
 | `POST /api/staff/messages/{id}/assign` | S（苦情は CO・D） | ミ | 「自分が対応する」。409：`already_assigned` | FR-012b |
 | `DELETE /api/staff/messages/{id}/assign` | S（苦情は CO・D） | 作 | 担当を外す | FR-012b |
 | `PUT /api/staff/messages/{id}/assignee` | S（苦情は CO・D） | 作 | 担当をほかの職員に変える（`staff_id`） | FR-012b |

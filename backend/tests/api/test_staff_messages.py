@@ -74,6 +74,7 @@ def add_message(session, say):
         handed_at: datetime = NOW - timedelta(hours=1),
         reopened_at: datetime | None = None,
         body: str = "質問",
+        summary: str = "要約",
     ) -> StaffMessage:
         origin = say(family, "family", body)
         message = StaffMessage(
@@ -81,7 +82,7 @@ def add_message(session, say):
             resident_id=family.resident_id,
             origin_message_id=origin.id,
             category=category,
-            summary="要約",
+            summary=summary,
             status=status,
             assignee_id=assignee.id if assignee else None,
             handed_at=handed_at,
@@ -236,6 +237,26 @@ def test_list_row(staff_client, make_staff, make_family, add_message):
     assert row["assignee"] == {"id": assignee.id, "display_name": "担当の職員"}
     assert row["summary"] == "要約"
     assert row["status"] == "waiting"
+
+
+def test_summary_and_origin_come_with_readings_without_changing_the_saved_text(
+    staff_client, make_family, add_message
+):
+    client, _ = staff_client()
+    family = make_family()
+    message = add_message(family, body="父が転倒しました", summary="体調の相談です")
+
+    row = client.get("/api/staff/messages", params={"resident_id": family.resident_id}).json()[
+        "messages"
+    ][0]
+    detail = client.get(f"/api/staff/messages/{message.id}").json()
+
+    # 保存している文は、そのまま。読みを付けたものは、別の項目（FR-028a）
+    assert row["summary"] == "体調の相談です"
+    assert row["summary_ruby"] == "{体調|たいちょう}の{相談|そうだん}です"
+    assert detail["origin"]["body"] == "父が転倒しました"
+    assert detail["origin_ruby"] == "{父|ちち}が{転倒|てんとう}しました"
+    assert detail["summary_ruby"] == row["summary_ruby"]
 
 
 def test_elapsed_days_and_waiting_over_a_day(staff_client, make_family, add_message):

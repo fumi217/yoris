@@ -141,12 +141,17 @@ export function MessageDetailView({
         </p>
       )}
 
+      <p className="text-xs text-gray-600">
+        <Text k="family_messages.furigana_auto" />
+      </p>
       <Block titleKey="family_messages.origin_title">
-        <Bubble message={message.origin} />
+        <Bubble message={message.origin} bodyRuby={message.origin_ruby} />
       </Block>
       <Block titleKey="family_messages.summary_title">
-        {/* AI の要約は、辞書を通さず、文字としてだけ出す（FR-028） */}
-        <p className="whitespace-pre-wrap rounded bg-gray-50 p-3">{message.summary}</p>
+        {/* AI の要約は、辞書を通さず、文字としてだけ出す（FR-028）。読みは自動で付けたもの（FR-028a） */}
+        <p className="whitespace-pre-wrap rounded bg-gray-50 p-3">
+          <Ruby text={message.summary_ruby} />
+        </p>
       </Block>
       {message.previous.length > 0 && (
         <Block titleKey="family_messages.previous_title">
@@ -208,14 +213,21 @@ function Conversation({ messages }: { messages: ConversationMessage[] }) {
   )
 }
 
-/** 発言 1 つ。家族・AI・職員の文は、辞書を通さず、文字としてだけ出す（FR-028）。 */
-function Bubble({ message }: { message: ConversationMessage }) {
+/**
+ * 発言 1 つ。家族・AI・職員の文は、辞書を通さず、文字としてだけ出す（FR-028）。
+ * bodyRuby があるとき（質問の原文だけ）は、読みを付けた文を `Ruby` で出す（FR-028a）。
+ */
+function Bubble({ message, bodyRuby }: { message: ConversationMessage; bodyRuby?: string }) {
   return (
     <div className="space-y-1 rounded border p-3">
       <p className="text-xs text-gray-600">
         <Text k={senderKey(message.sender)} />
       </p>
-      {message.body !== '' && <p className="whitespace-pre-wrap">{message.body}</p>}
+      {message.body !== '' && (
+        <p className="whitespace-pre-wrap">
+          {bodyRuby === undefined ? message.body : <Ruby text={bodyRuby} />}
+        </p>
+      )}
       {message.template_codes?.map((code) => (
         <p key={code}>
           <Text k={code} />

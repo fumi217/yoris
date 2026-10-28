@@ -27,6 +27,7 @@ from app import clock
 from app.auth.deps import CurrentUser, require_staff
 from app.db import get_session
 from app.errors import AppError, ErrorCode
+from app.furigana import add_furigana
 from app.inquiry.staff_actions import StaffMessageError, assign_to_me, reply_in_app
 from app.inquiry.visibility import (
     count_waiting_staff_messages,
@@ -65,6 +66,8 @@ class StaffMessageRow(BaseModel):
     category: str
     assignee: AssigneeOut | None
     summary: str
+    # 要約に、ふりがなの読みを付けたもの（`{漢字|かんじ}`。表示のためだけ。FR-028a）
+    summary_ruby: str
     status: str
     # 受け付けた日時（最初に渡した日時）
     handed_at: datetime
@@ -99,6 +102,8 @@ class TemplateOut(BaseModel):
 class StaffMessageDetail(StaffMessageRow):
     # 質問の原文（渡すきっかけになった家族の発言）
     origin: ConversationMessageOut
+    # 質問の原文に、ふりがなの読みを付けたもの（`{漢字|かんじ}`。表示のためだけ。FR-028a）
+    origin_ruby: str
     # 原文の直前の 3 往復（古い順）
     previous: list[ConversationMessageOut]
     # 渡したあとに、このメッセージに続けて家族が書いたもの（古い順）
@@ -124,6 +129,7 @@ def _row(
         if assignee
         else None,
         summary=message.summary,
+        summary_ruby=add_furigana(message.summary),
         status=message.status,
         handed_at=message.handed_at,
         elapsed_days=max(elapsed // timedelta(days=1), 0),
@@ -260,6 +266,7 @@ def get_message(
     return StaffMessageDetail(
         **row.model_dump(),
         origin=_message_out(origin, codes),
+        origin_ruby=add_furigana(origin.body),
         previous=[_message_out(m, codes) for m in previous],
         follow_ups=[_message_out(m, codes) for m in follow_ups],
         templates=[TemplateOut(id=t.id, code=t.code) for t in templates],

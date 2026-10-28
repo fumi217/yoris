@@ -121,13 +121,18 @@ export function MessageListView({
     return <Message k={`family_messages.empty_${status}`} />
   }
   return (
-    <ul className="divide-y rounded border">
-      {messages.map((message) => (
-        <li key={message.id}>
-          <MessageItem base={base} message={message} search={search} />
-        </li>
-      ))}
-    </ul>
+    <>
+      <p className="text-xs text-gray-600">
+        <Text k="family_messages.furigana_auto" />
+      </p>
+      <ul className="divide-y rounded border">
+        {messages.map((message) => (
+          <li key={message.id}>
+            <MessageItem base={base} message={message} search={search} />
+          </li>
+        ))}
+      </ul>
+    </>
   )
 }
 
@@ -155,8 +160,10 @@ function MessageItem({
           <Ruby text={t(arrivedKey(message.elapsed_days), { count: message.elapsed_days })} />
         </p>
       </div>
-      {/* AI の要約は、辞書を通さず、文字としてだけ出す（FR-028） */}
-      <p className="whitespace-pre-wrap">{message.summary}</p>
+      {/* AI の要約は、辞書を通さず、文字としてだけ出す（FR-028）。読みは自動で付けたもの（FR-028a） */}
+      <p className="whitespace-pre-wrap">
+        <Ruby text={message.summary_ruby} />
+      </p>
       <p className="text-sm text-gray-600">
         {message.assignee ? (
           <>

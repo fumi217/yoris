@@ -447,6 +447,7 @@
     "arrived_days": "{{count}}{日前|にちまえ}に{届|とど}きました",
     "origin_title": "{質問|しつもん}の{原文|げんぶん}",
     "summary_title": "AI の{要約|ようやく}",
+    "furigana_auto": "ふりがなは{自動|じどう}で{付|つ}けています。{読|よ}みがちがうことがあります",
     "previous_title": "{直前|ちょくぜん}のやりとり",
     "follow_ups_title": "{追加|ついか}の{書|か}き{込|こ}み",
     "sender_family": "{家族|かぞく}",

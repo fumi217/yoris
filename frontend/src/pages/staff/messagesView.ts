@@ -14,6 +14,8 @@ export type MessageRow = {
   assignee: Assignee | null
   // AI がまとめた要約。辞書を通さず、文字としてだけ出す（FR-028）
   summary: string
+  // 要約に、ふりがなの読みを自動で付けたもの（`{漢字|かんじ}`。`Ruby` で出す。FR-028a）
+  summary_ruby: string
   status: 'waiting' | 'answered'
   handed_at: string
   elapsed_days: number
@@ -38,6 +40,8 @@ export type StaffTemplate = { id: number; code: string }
 /** 詳細（StaffMessageDetail）。 */
 export type MessageDetail = MessageRow & {
   origin: ConversationMessage
+  // 質問の原文に、ふりがなの読みを自動で付けたもの（FR-028a）
+  origin_ruby: string
   previous: ConversationMessage[]
   follow_ups: ConversationMessage[]
   templates: StaffTemplate[]
