@@ -89,7 +89,7 @@
 - `main` への直接 push は禁止。実装は Issue を立て、`feature/<Issue番号>-<短い英語名>` のブランチで作業する
 - コミット・PR のタイトル: `<type>(<scope>): #<Issue番号> <要約>`（docs・chore は scope と Issue 番号を省いてよい）
 - レビュー: 関わる人を PR ごとに決めて Reviewers に入れる。目安は半日以内
-- マージ: Reviewers のうち誰か 1 名の Approve・AI チューターの指摘に対応済み・CI が緑で、Squash and merge。Approve のあとの指摘対応・誤字修正は、コメントに一言書けば再 Approve は不要
+- マージ: Reviewers のうち誰か 1 名の Approve・AI チューターの指摘に対応済み・CI が緑（CI が動かないときは、理由と手元の結果を PR に書く）で、Squash and merge。Approve のあとの指摘対応・誤字修正は、コメントに一言書けば再 Approve は不要
 
 ### はじめに（1 回だけ）
 

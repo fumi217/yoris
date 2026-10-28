@@ -60,9 +60,10 @@
 
 ## テストと CI
 
-- CI（`.github/workflows/ci.yml`）は PR ごとに、秘密情報の確認、`backend/` の `ruff check .`・`ruff format --check .`・`python -m pytest`、`frontend/` の `npm run lint`・`npm run format:check`・`npm run test`・`npm run build` を動かす。
+- CI（`.github/workflows/ci.yml`）は PR ごとに、秘密情報の確認、`backend/` の `ruff check .`・`ruff format --check .`・`alembic heads`（1 つか）・`alembic upgrade head`・`python -m pytest`、`frontend/` の `npm run lint`・`npm run format:check`・`npm run test`・`npm run build` を動かす。
 - CI は `backend/requirements-dev.txt`・`frontend/package-lock.json` があるときだけ動く。骨格を作るときは、この名前で依存を管理するか、CI もあわせて直す。
-- 手元でも、push の前に同じコマンドを通す。
+- 手元でも、push の前に同じコマンドを通す。pytest は DB と Redis がないと飛ばすので、`docker compose exec` で流し、skipped でなく通ったことを確かめる。
+- CI が動かないとき（請求の問題など）は、手元の結果を PR に書けば、CI が緑の代わりにできる（github-workflow スキルの「CI が動かないとき」）。
 
 ## Git / GitHub
 

@@ -29,6 +29,7 @@ Closes #
 - [ ] constitution の原則 III（AI は医療判断をしない）・IV（開示の範囲）に反していない
 - [ ] 技術選定（docs/技術選定.md）を変えた場合は、CLAUDE.md の「技術の前提」も合わせた（変えていなければチェック不要）
 - [ ] CI（GitHub Actions）が緑
+- [ ] （CI が動かないときだけ）理由と、手元で CI と同じコマンドを通した結果を書いた（`.claude/skills/github-workflow/SKILL.md` の「CI が動かないとき」）
 
 ## AI チューターレビューへの対応
 
