@@ -25,6 +25,23 @@ docker compose exec backend python -m app.seed   # 入居者 30 人・職員・�
 
 開発環境では、画面の上の「ユーザー切り替え」で、初期データの職員・家族に切り替えられる（[research.md R-02](./research.md#r-02-開発用のユーザー切り替え)）。
 
+## E2E テスト（Playwright）
+
+アプリを起動し、マイグレーションと初期データを入れたあとで、次のコマンドを動かす（開発の DB と、開発用のユーザー切り替えを使う。CI には入れない。T091）。
+
+```bash
+docker compose --profile e2e run --rm e2e                          # すべて動かす
+docker compose --profile e2e run --rm e2e tests/e2e/foo.spec.ts   # 1 つだけ動かす
+```
+
+- 初回は Playwright のイメージ（約 1.5 GB）の取得と、依存の取得で数分かかる。
+- 失敗すると、`frontend/playwright-report/` にレポート、`frontend/test-results/` に画面の写真とトレースが残る（どちらも Git に入れない）。
+- テストは `frontend/tests/e2e/` に置く。ユーザー切り替えは `helpers.ts` の `loginAs()` を使う。
+- イメージの版は、`docker-compose.yml` の `e2e` と `frontend/package.json` の `@playwright/test` をそろえる。
+- `vite.config.ts` や `docker-compose.yml` を変えたあとは、すでに起動している frontend を起動し直す：`docker compose up -d --force-recreate frontend`（読み直さないと、E2E のコンテナから `frontend` の名前で呼べない）。
+- `@playwright/test` の版を変えたら、依存を取り直すため、保存してある依存を消す：`docker compose down` のあと `docker volume rm section9_e2e_node_modules`（ボリューム名は `docker volume ls` で確かめる）。
+- 手元の Node で動かしてもよい（任意）：`cd frontend && npm ci && npx playwright install chromium && E2E_BASE_URL=http://localhost:5173 npx playwright test`
+
 ## 通しの確認（Day 3 のデモの流れ）
 
 | # | だれで | すること | こうなれば OK | spec |

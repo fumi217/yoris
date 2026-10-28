@@ -239,4 +239,5 @@ plan.md の Technical Context と、spec の FR を作るときに決める必�
     DB・Redis がないとき、手元では飛ばし、CI では失敗にする。準備は `backend/tests/conftest.py` にまとめる
   - フロントエンド：Vitest。`Ruby` の部品と、辞書の日本語にふりがなのない漢字が残っていないか（SC-011）。
   - E2E：Playwright で、quickstart.md の通しの流れ（記録 → 開示 → 頼む → 返事 → メール）を確かめる。
+    動かし方：`docker compose up -d`（マイグレーションと初期データのあと）、`docker compose --profile e2e run --rm e2e`（quickstart.md）。開発の DB と開発用のユーザー切り替え（R-02）を使う。CI には、通し（T091b）がそろってから足すかを決める（仕組みだけの間は入れない）。
 - **理由**：課題要件（単体テストはコード、結合・総合は テスト設計書）と、各 spec の受け入れシナリオをテストシナリオの元にする決まり（Constitution）。
