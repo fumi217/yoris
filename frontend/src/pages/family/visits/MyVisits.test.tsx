@@ -69,8 +69,20 @@ describe('MyVisitsView', () => {
     expect(render({ rows: [] })).toContain('ありません')
   })
 
-  it('取り消せなかったら、理由を出す', () => {
-    expect(render({ errorKey: 'error.visit_deadline_passed' })).toContain('施設にお電話ください')
+  it('取り消せなかったら、理由を出す（家族の画面なので、ふりがななし）', () => {
+    const html = renderToStaticMarkup(
+      <FuriganaContext.Provider value={false}>
+        <MyVisitsView
+          rows={[row()]}
+          cancellingId={null}
+          notice={false}
+          errorKey="error.visit_deadline_passed"
+          onCancel={() => {}}
+        />
+      </FuriganaContext.Provider>,
+    )
+
+    expect(html).toContain('施設にお電話ください')
   })
 })
 

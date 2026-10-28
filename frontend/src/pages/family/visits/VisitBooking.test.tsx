@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import '../../../i18n'
+import { FuriganaContext } from '../../../i18n/furigana'
 import { BookingView } from './VisitBooking'
 import {
   addDays,
@@ -138,7 +139,20 @@ describe('BookingView', () => {
     expect(html).toContain('2<ruby>人')
   })
 
-  it('予約できなかったら、理由を出す', () => {
-    expect(render({ errorKey: 'error.visit_overlap' })).toContain('ほかの予約と重なっています')
+  it('予約できなかったら、理由を出す（家族の画面なので、ふりがななし）', () => {
+    const html = renderToStaticMarkup(
+      <FuriganaContext.Provider value={false}>
+        <BookingView
+          days={[day()]}
+          booking={false}
+          confirmed={null}
+          errorKey="error.visit_overlap"
+          onBook={() => {}}
+          onReset={() => {}}
+        />
+      </FuriganaContext.Provider>,
+    )
+
+    expect(html).toContain('ほかの予約と重なっています')
   })
 })
