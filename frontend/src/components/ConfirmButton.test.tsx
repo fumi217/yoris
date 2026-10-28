@@ -9,6 +9,11 @@ describe('canConfirm', () => {
     expect(canConfirm(1000, 1000 + CONFIRM_MIN_MS - 1)).toBe(false)
     expect(canConfirm(1000, 1000 + CONFIRM_MIN_MS)).toBe(true)
   })
+
+  it('時間がたっても、2 回目を受け付ける（5 秒で元に戻すのはやめた。#300）', () => {
+    expect(canConfirm(1000, 1000 + 5_000)).toBe(true)
+    expect(canConfirm(1000, 1000 + 10 * 60_000)).toBe(true)
+  })
 })
 
 describe('ConfirmButton', () => {
