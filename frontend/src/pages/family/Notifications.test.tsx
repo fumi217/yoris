@@ -51,10 +51,36 @@ describe('NotificationsView', () => {
     expect(shown).toContain('10月26日 9:30')
   })
 
-  it('まだ読んでいないものにだけ「新しい」の印が出る', () => {
+  it('面会のお知らせは、専用の文言で出る', () => {
+    const shown = text(
+      render([
+        notification({ id: 1, kind: 'visit_confirmed', reply_id: null }),
+        notification({ id: 2, kind: 'visit_cancelled', reply_id: null }),
+        notification({ id: 3, kind: 'visit_reminder', reply_id: null }),
+      ]),
+    )
+
+    expect(shown).toContain('面会の予約が確定しました')
+    expect(shown).toContain('面会の予約が取り消されました')
+    expect(shown).toContain('明日は面会の予定があります')
+    expect(shown).not.toContain('施設からのお知らせ')
+  })
+
+  it('まだ読んでいないものにだけ「new」の印が出る', () => {
     const shown = text(render([notification({ id: 1 }), notification({ id: 2, read: true })]))
 
-    expect(shown.match(/新しい/g)).toHaveLength(1)
+    expect(shown.match(/new/g)).toHaveLength(1)
+  })
+
+  it('面会のお知らせは、面会の画面へのリンクになる', () => {
+    const html = render([
+      notification({ id: 1, kind: 'visit_confirmed', reply_id: null }),
+      notification({ id: 2, kind: 'visit_cancelled', reply_id: null }),
+      notification({ id: 3, kind: 'visit_reminder', reply_id: null }),
+    ])
+
+    expect(html.match(/<a /g)).toHaveLength(3)
+    expect(html.match(/href="\/family\/visits"/g)).toHaveLength(3)
   })
 
   it('お知らせがなければ、そう伝える', () => {
@@ -81,8 +107,8 @@ describe('NotificationsView', () => {
   it('返事のお知らせは、種類と日時の文だけで、ほかの文字は出ない（SC-010）', () => {
     const shown = text(render([notification()]))
 
-    // 見出し・「新しい」の印・お知らせの文・日時、これだけ
-    expect(shown).toBe('お知らせ新しい知りたいことへの返事が届きました10月26日 9:30')
+    // 見出し・「new」の印・お知らせの文・日時、これだけ
+    expect(shown).toBe('お知らせnew知りたいことへの返事が届きました10月26日 9:30')
   })
 
   it('API がうっかり返事の中身や職員の名前を返しても、画面には出ない', () => {
@@ -106,6 +132,9 @@ describe('notificationsView', () => {
   it('知らない種類は、施設からのお知らせの文言にする', () => {
     expect(kindKey('reply')).toBe('notifications.kind.reply')
     expect(kindKey('staff_message_reply')).toBe('notifications.kind.staff_message_reply')
+    expect(kindKey('visit_confirmed')).toBe('notifications.kind.visit_confirmed')
+    expect(kindKey('visit_cancelled')).toBe('notifications.kind.visit_cancelled')
+    expect(kindKey('visit_reminder')).toBe('notifications.kind.visit_reminder')
     expect(kindKey('something_new')).toBe('notifications.kind.announcement')
   })
 
@@ -113,6 +142,9 @@ describe('notificationsView', () => {
     expect(linkFor(notification({ kind: 'reply' }))).toBe('/family')
     expect(linkFor(notification({ kind: 'weekly_digest' }))).toBe('/family')
     expect(linkFor(notification({ kind: 'staff_message_reply' }))).toBe('/family/inquiry')
+    expect(linkFor(notification({ kind: 'visit_confirmed' }))).toBe('/family/visits')
+    expect(linkFor(notification({ kind: 'visit_cancelled' }))).toBe('/family/visits')
+    expect(linkFor(notification({ kind: 'visit_reminder' }))).toBe('/family/visits')
     expect(linkFor(notification({ kind: 'announcement' }))).toBeNull()
   })
 })

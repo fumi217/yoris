@@ -19,7 +19,10 @@ export function kindKey(kind: string): string {
     kind === 'reply' ||
     kind === 'daily_digest' ||
     kind === 'weekly_digest' ||
-    kind === 'staff_message_reply'
+    kind === 'staff_message_reply' ||
+    kind === 'visit_confirmed' ||
+    kind === 'visit_cancelled' ||
+    kind === 'visit_reminder'
   ) {
     return `notifications.kind.${kind}`
   }
@@ -29,6 +32,7 @@ export function kindKey(kind: string): string {
 /**
  * 押したときに進む先。返事・まとめは連絡帳（返事のカードが出て、既読になる）。
  * 職員の返事（問い合わせ AI のメッセージへの返事）は「お問い合わせ」の画面（返事の発言が出て、既読になる）。
+ * 面会のお知らせ（確定・取り消し・前日の知らせ）は、面会の画面。
  * 施設からのお知らせは、画面（作り込み）ができるまで、進む先がない。
  */
 export function linkFor(notification: FamilyNotification): string | null {
@@ -36,5 +40,11 @@ export function linkFor(notification: FamilyNotification): string | null {
   if (notification.kind === 'daily_digest' || notification.kind === 'weekly_digest')
     return '/family'
   if (notification.kind === 'staff_message_reply') return '/family/inquiry'
+  if (
+    notification.kind === 'visit_confirmed' ||
+    notification.kind === 'visit_cancelled' ||
+    notification.kind === 'visit_reminder'
+  )
+    return '/family/visits'
   return null
 }

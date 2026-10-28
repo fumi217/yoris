@@ -148,9 +148,9 @@ describe('ContactBookView', () => {
     const unread = text(render(book({ unread_replies: [reply()] })))
     const read = text(render(book({ day_replies: [reply({ read: true })] })))
 
-    expect(unread).toContain('新しい返事')
+    expect(unread).toContain('new')
     expect(read).toContain('西村（看護師）からの返事')
-    expect(read).not.toContain('新しい返事')
+    expect(read).not.toContain('new')
   })
 
   it('返事がなければ、返事のカードは出ない', () => {
@@ -202,7 +202,7 @@ describe('日付の切り替え（T094）', () => {
       '2026-10-27',
     )
 
-    expect(text(html)).toContain('新しい返事')
+    expect(text(html)).toContain('new')
     expect(html.indexOf('<article')).toBeLessThan(html.indexOf('食事'))
   })
 })
