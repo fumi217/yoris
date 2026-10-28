@@ -30,6 +30,8 @@
 """
 
 import gzip
+import secrets
+import string
 from functools import cache
 from pathlib import Path
 
@@ -74,6 +76,27 @@ def validate_password(password: str) -> None:
 def hash_password(password: str) -> str:
     """bcrypt のハッシュにする。決まりを確かめてから呼ぶ。"""
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(BCRYPT_ROUNDS)).decode("ascii")
+
+
+# 初期パスワードに使う文字（半角の英数字。紙や口で伝えるときに読み違えやすい 0・O・1・l・I は除く）
+_INITIAL_PASSWORD_CHARS = "".join(
+    c for c in string.ascii_letters + string.digits if c not in "0O1lI"
+)
+INITIAL_PASSWORD_LENGTH = 8
+
+
+def generate_initial_password() -> str:
+    """職員のアカウントを作るときの初期パスワードを、暗号用の乱数で作る（001-T088）。
+
+    決まり（8 文字以上・よく使われるものは不可）に通るものだけを返す
+    （一覧に当たった場合は作り直す）。
+    """
+    while True:
+        password = "".join(
+            secrets.choice(_INITIAL_PASSWORD_CHARS) for _ in range(INITIAL_PASSWORD_LENGTH)
+        )
+        if password_problem(password) is None:
+            return password
 
 
 @cache

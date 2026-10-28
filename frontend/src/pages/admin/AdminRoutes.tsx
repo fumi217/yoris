@@ -7,6 +7,7 @@ import { AdminHome } from './AdminHome'
 import { AdminLayout } from './AdminLayout'
 import { Billing } from './Billing'
 import { DisclosureSettings } from './DisclosureSettings'
+import { StaffAccounts } from './StaffAccounts'
 import { VisitSettings } from './VisitSettings'
 
 /**
@@ -31,6 +32,8 @@ export default function AdminRoutes() {
           <Route path="visit-settings" element={<VisitSettings />} />
           {/* 面会の予約の一覧（UI-S11。003-T026 ゆう。職員の画面と同じ画面） */}
           <Route path="visits" element={<VisitReservations />} />
+          {/* 職員のアカウントを作る（001-T088。生活相談員・施設長） */}
+          <Route path="staff-accounts" element={<StaffAccounts />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Route>
       </Routes>

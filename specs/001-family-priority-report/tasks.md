@@ -218,7 +218,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T085 [P] テスト `frontend/tests/unit/i18n.test.ts`：`ja.json` にふりがなの付いていない漢字が残っていない、`id.json`・`en.json` に `{|}` の書き方がない（SC-011）（みさき・作）
 - [ ] T086 職員は操作がないまま 30 分で自動ログアウト、家族は 30 日、を `backend/app/auth/` に足す（research.md R-01）（ようこ・作）
 - [ ] T087 ログインの試行回数の制限（Redis の `ratelimit:login:<ID>`、例：15 分に 10 回、超えたら 429 `too_many_attempts`）を `backend/app/auth/routes.py` に足す（research.md R-03）（ようこ・作）
-- [ ] T088 職員のアカウントを作る `POST /api/admin/staff`（ID と初期パスワード）と画面 `frontend/src/pages/admin/StaffAccounts.tsx` を作る（ようこ・作）
+- [x] T088 職員のアカウントを作る `POST /api/admin/staff`（表示名・役割・職種。ID と初期パスワードを 1 回だけ返す）と画面 `frontend/src/pages/admin/StaffAccounts.tsx` を作る（ようこ・作）
 - [ ] T089 家族の招待：`invitations`（家族だけ、7 日で切れる、1 回だけ使える）を `backend/app/models/core.py` に足し、`POST /api/admin/invitations`・`POST /api/invitations/accept`（トークンは本文で受ける、メールのリンクは `#token=`）と画面を作る。招待のメールは `email_outbox`（`invitation`）を使う（research.md R-03）（ようこ・作）
 - [x] T090 CI（`.github/workflows/ci.yml`）に `alembic heads` が 1 つであることの確認を足す（PostgreSQL・Redis のサービスは T020 で入れる。research.md R-17）（ようこ・作）
 - [x] T091 E2E の仕組みを `frontend/tests/e2e/` に Playwright で作る：設定（`playwright.config.ts`・`npm run e2e`）、ユーザー切り替えの共通部品、1 本目「家族が職員の画面を開けないこと」。CI には入れない（手元で動かす。ゆうの 003-T036 などが、この仕組みを使う）（ようこ・作）

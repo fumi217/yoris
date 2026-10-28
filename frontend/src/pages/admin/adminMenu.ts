@@ -49,6 +49,13 @@ export const adminMenu: AdminMenuItem[] = [
     icon: '📋',
     roles: ['clerk', 'counselor', 'director'],
   },
+  // 職員のアカウントを作る（001-T088。生活相談員・施設長。守りは API の 403）
+  {
+    to: '/admin/staff-accounts',
+    labelKey: 'admin.menu.staff_accounts',
+    icon: '🧑‍💼',
+    roles: ['counselor', 'director'],
+  },
 ]
 
 export function adminMenuFor(role: StaffRole | null): AdminMenuItem[] {

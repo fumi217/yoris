@@ -91,3 +91,23 @@ def test_missing_or_unusable_hash_still_does_the_dummy_calculation(monkeypatch, 
 
 def test_over_72_bytes_never_matches():
     assert not verify_password("あ" * 25, hash_password("kumoyama-sora"))
+
+
+def test_initial_password_follows_the_rules_and_avoids_look_alike_characters():
+    for _ in range(200):
+        password = passwords.generate_initial_password()
+
+        assert len(password) == passwords.INITIAL_PASSWORD_LENGTH == 8
+        assert password_problem(password) is None
+        assert password.isascii() and password.isalnum()
+        assert not set(password) & set("0O1lI")
+
+
+def test_initial_password_is_made_again_when_it_is_on_the_common_list(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    answers = iter(["too_common", "too_common", None])
+    monkeypatch.setattr(passwords, "password_problem", lambda _: next(answers))
+
+    assert len(passwords.generate_initial_password()) == 8
+    assert next(answers, "used up") == "used up"
