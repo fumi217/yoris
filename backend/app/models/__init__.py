@@ -7,6 +7,7 @@ from app.models import (  # noqa: F401
     billing,
     core,
     disclosure,
+    files,
     inquiry,
     memos,
     notifications,

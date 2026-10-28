@@ -169,14 +169,14 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ### Tests（ファイルの共通の処理）
 
-- [ ] T067 [P] [US5] テスト `backend/tests/api/test_uploads.py`：PDF・JPG・PNG 以外（先頭のバイトで判定）や 10MB を超えるファイルは 422 `invalid_file`、ログインしていないと `GET /api/files/{id}` は 401（FR-034・SC-016）（さとこ・作）
+- [x] T067 [P] [US5] テスト `backend/tests/api/test_uploads.py`：PDF・JPG・PNG 以外（先頭のバイトで判定）や 10MB を超えるファイルは 422 `invalid_file`、ログインしていないと `GET /api/files/{id}` は 401（FR-034・SC-016）（さとこ・作）
 
 ### Implementation（ファイルの共通の処理）
 
-- [ ] T068 [P] [US5] `uploaded_files` を `backend/app/models/files.py` に作り、マイグレーションを足す。`content_type`：`application/pdf`／`image/jpeg`／`image/png`、`size_bytes` は 10MB まで、`purpose`：`announcement`／`album`（data-model.md）（さとこ・作）
-- [ ] T069 [US5] アップロードの共通の処理を `backend/app/services/uploads.py` に作る：先頭のバイトで形式を確かめる（PDF は `%PDF-`、JPEG は `FF D8 FF`、PNG は `89 50 4E 47`）、10MB まで、推測できない `storage_key` で `UPLOAD_DIR` に保存（お知らせ・アルバムで共通。research.md R-10）（さとこ・作）
+- [x] T068 [P] [US5] `uploaded_files` を `backend/app/models/files.py` に作り、マイグレーションを足す。`content_type`：`application/pdf`／`image/jpeg`／`image/png`、`size_bytes` は 10MB まで、`purpose`：`announcement`／`album`（data-model.md）（さとこ・作）
+- [x] T069 [US5] アップロードの共通の処理を `backend/app/services/uploads.py` に作る：先頭のバイトで形式を確かめる（PDF は `%PDF-`、JPEG は `FF D8 FF`、PNG は `89 50 4E 47`）、10MB まで、推測できない `storage_key` で `UPLOAD_DIR` に保存（お知らせ・アルバムで共通。research.md R-10）（さとこ・作）
 - T070 [US4] （削除: 献立表の専用の機能をやめたため。毎月の献立表は、お知らせの添付で出す（FR-034）。Session 2026-10-22）
-- [ ] T071 [US5] `GET /api/files/{id}` を `backend/app/api/files.py` に作る：ログインと役割を確かめてから返す。`Content-Type` は保存した形式に固定し、`X-Content-Type-Options: nosniff` を付ける（FR-025・FR-034・research.md R-10）（さとこ・作）
+- [x] T071 [US5] `GET /api/files/{id}` を `backend/app/api/files.py` に作る：ログインと役割を確かめてから返す。`Content-Type` は保存した形式に固定し、`X-Content-Type-Options: nosniff` を付ける（FR-025・FR-034・research.md R-10）（さとこ・作）
 - T072 [US4] （削除: 献立表の専用の機能をやめたため。毎月の献立表は、お知らせの添付で出す（FR-034）。Session 2026-10-22）
 - T073 [US4] （削除: 献立表のアップロードの画面と、連絡帳の「献立を見る」をやめたため。Session 2026-10-22）
 - [ ] T074 [US5] 架空のお知らせの PDF（献立表など）を iPhone の Safari と Android の Chrome で、別タブと画面の中の両方で開けるかを確かめ、結果を research.md R-10 に書く。表示できない環境があれば、PDF を `Content-Disposition: attachment` にする（さとこ・作）
