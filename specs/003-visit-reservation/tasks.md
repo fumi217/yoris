@@ -165,7 +165,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
 - [ ] T035 [P] 面会予約の画面の固定の文言に、`{漢字|かんじ}` でふりがなを付ける（`frontend/src/i18n/ja.json`）。家族の面会の予約の画面（UI-F01）は、画面ではふりがなを出さない（Constitution 3.2.0。#260）が、辞書は職員の画面と同じ書き方にそろえる。インドネシア語・英語の訳は 001-T082（みさき）にまとめて頼む（FR-021 は spec 001。Constitution の UI 方針）（ゆう・作）
-- [ ] T036 [P] E2E（Playwright）に、quickstart.md の 1〜7（予約 → 重なる時刻が選べない → 2 組で満員 → 同じ家族の 2 回目）を `frontend/tests/e2e/visits.spec.ts` として足す（001-T091 の E2E の仕組みを使う）（ゆう・作。ようこと相談）
+- [x] T036 [P] E2E（Playwright）に、quickstart.md の 1〜7（予約 → 重なる時刻が選べない → 2 組で満員 → 同じ家族の 2 回目）を `frontend/tests/e2e/visits.spec.ts` として足す（001-T091 の E2E の仕組みを使う）（ゆう・作。ようこと相談）
 - [ ] T037 `docs/テスト設計書.md` に、面会予約の結合・総合テストのシナリオ（quickstart.md の 1〜19）と結果を書く（001-T093 と同じ形）（ゆう・作）
 - [ ] T038 quickstart.md の確認をすべて通す（ゆう・作）
 
