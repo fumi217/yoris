@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router'
 import { AreaGuard } from '../../components/AreaGuard'
 import { ComingSoon } from '../../components/ComingSoon'
+import { FamilyContext } from '../../i18n/audience'
 import { FuriganaContext } from '../../i18n/furigana'
 import { ContactBook } from './ContactBook'
 import { FamilyLayout } from './FamilyLayout'
@@ -17,28 +18,30 @@ import { VisitBooking } from './visits/VisitBooking'
 export default function FamilyRoutes() {
   return (
     <FuriganaContext.Provider value={false}>
-      <AreaGuard area="family">
-        <Routes>
-          <Route element={<FamilyLayout />}>
-            {/* 連絡帳（ホーム。001-T059 さとこ） */}
-            <Route index element={<ContactBook />} />
-            {/* 知りたいことを頼む（001-T060 さとこ） */}
-            <Route path="requests/*" element={<Requests />} />
-            {/* お知らせの一覧（001-T061 さとこ） */}
-            <Route path="notifications" element={<Notifications />} />
-            <Route path="more" element={<FamilyMorePage />} />
-            {/* 面会の予約（003-T014 ゆう） */}
-            <Route path="visits" element={<VisitBooking />} />
-            {/* お問い合わせ（AI に質問する。004-T020 みさき） */}
-            <Route path="inquiry" element={<Inquiry />} />
-            {/* アルバム（spec 005） */}
-            <Route path="album" element={<ComingSoon />} />
-            {/* 設定（通知・言語） */}
-            <Route path="settings" element={<ComingSoon />} />
-            <Route path="*" element={<Navigate to="/family" replace />} />
-          </Route>
-        </Routes>
-      </AreaGuard>
+      <FamilyContext.Provider value={true}>
+        <AreaGuard area="family">
+          <Routes>
+            <Route element={<FamilyLayout />}>
+              {/* 連絡帳（ホーム。001-T059 さとこ） */}
+              <Route index element={<ContactBook />} />
+              {/* 知りたいことを頼む（001-T060 さとこ） */}
+              <Route path="requests/*" element={<Requests />} />
+              {/* お知らせの一覧（001-T061 さとこ） */}
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="more" element={<FamilyMorePage />} />
+              {/* 面会の予約（003-T014 ゆう） */}
+              <Route path="visits" element={<VisitBooking />} />
+              {/* お問い合わせ（AI に質問する。004-T020 みさき） */}
+              <Route path="inquiry" element={<Inquiry />} />
+              {/* アルバム（spec 005） */}
+              <Route path="album" element={<ComingSoon />} />
+              {/* 設定（通知・言語） */}
+              <Route path="settings" element={<ComingSoon />} />
+              <Route path="*" element={<Navigate to="/family" replace />} />
+            </Route>
+          </Routes>
+        </AreaGuard>
+      </FamilyContext.Provider>
     </FuriganaContext.Provider>
   )
 }

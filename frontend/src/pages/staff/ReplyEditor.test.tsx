@@ -50,6 +50,6 @@ describe('ReplyEditor', () => {
   })
 
   it('保存できなかったら、理由を出す', () => {
-    expect(render({ errorKey: 'error.not_today' })).toContain('直せます')
+    expect(render({ errorKey: 'error.not_today' })).toContain('取り消したりできます')
   })
 })
