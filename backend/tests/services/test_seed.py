@@ -6,10 +6,11 @@
 
 from datetime import date
 
+import pytest
 from sqlalchemy import func, select
 
 from app.auth.login_ids import next_login_ids
-from app.models.change_flags import ChangeRule
+from app.models.change_flags import ChangeFlag, ChangeRule
 from app.models.core import STAFF_ROLES, Facility, FamilyAccount, Resident, Staff, User
 from app.models.records import CareRecord
 from app.models.visits import VisitReservation
@@ -117,3 +118,14 @@ def test_seed_twice_adds_nothing(session):
         _count(session, CareRecord),
         _count(session, ChangeRule),
     ) == before
+
+
+def test_seed_makes_a_demo_flag(session):
+    # 空の DB（CI）だけ、デモ用の目印が付く（人がいる手元の DB では、足されない）
+    if not seed(session, today=TODAY):
+        pytest.skip("人がいる DB では、デモの目印は足されない")
+    first = session.scalar(select(Resident.id).order_by(Resident.id))
+    flags = session.scalars(
+        select(ChangeFlag).where(ChangeFlag.resident_id == first, ChangeFlag.cleared_at.is_(None))
+    ).all()
+    assert [(f.rule_code, f.status, f.streak) for f in flags] == [("meal_low", "unconfirmed", 2)]

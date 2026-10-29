@@ -19,7 +19,7 @@ from app.db import get_engine
 from app.models.core import Resident
 from app.models.disclosure import Theme
 from app.seed.billing import add_subscription
-from app.seed.change_rules import add_change_rules
+from app.seed.change_rules import add_change_rules, add_sample_change_flags
 from app.seed.inquiry import add_staff_message_templates
 from app.seed.people import add_people, get_or_add_facility, set_seed_passwords
 from app.seed.records import add_sample_records
@@ -56,6 +56,10 @@ def seed(session: Session, *, today: date) -> bool:
         # デモの記録は、いま入れた介護職員の最初の人（田中）が付けたことにする
         care_worker_id = next(s.id for s in added_staff if s.role == "care_worker")
         add_sample_records(session, resident_ids=resident_ids, staff_id=care_worker_id, today=today)
+        # 記録を入れたあとに、変化の目印を付ける（spec 006 の 006-T009）
+        add_sample_change_flags(
+            session, resident_ids=resident_ids, staff_id=care_worker_id, today=today
+        )
         add_sample_reservations(
             session, facility_id=facility.id, resident_ids=resident_ids, today=today
         )

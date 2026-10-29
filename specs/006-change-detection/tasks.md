@@ -61,25 +61,27 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ### Tests for User Story 1
 
-- [ ] T005 [P] [US1] テスト `backend/tests/api/test_change_flags.py` を書く（テスト用の PostgreSQL）：
-  記録の保存（`PUT /api/staff/residents/{id}/records`）で当てはまれば目印が付く（`status = unconfirmed`、`evidence` と `streak` が入る）／押し直し・取り消し（001-T034）で当てはまらなくなれば消える（`status = cleared`・`cleared_at`・`cleared_reason = not_matching`）／
+- [x] T005 [P] [US1] テスト `backend/tests/api/test_change_flags.py` を書く（テスト用の PostgreSQL）：
+  `evaluate_change_flags` を直接呼んで、当てはまれば目印が付く（`status = unconfirmed`、`evidence` と `streak` が入る）／当てはまらなくなれば消える（`status = cleared`・`cleared_at`・`cleared_reason = not_matching`）／
   同じ記録で `evaluate_change_flags` を何度呼んでも目印は 1 つ（一意）／**目印がまだない入居者に、2 つのセッションでほぼ同時に記録を保存しても、目印は 1 つで一意制約の違反にならない**（research.md R-03）／2 つの決まりに当てはまると行は 2 つ・`get_flag_summary` の `unconfirmed_resident_count` は 1／
   `GET /api/staff/residents/{id}/change-flags` は介護職員・リーダー・生活相談員・施設長が開け、**事務員・家族は 403**（FR-006）／入居者一覧（`GET /api/staff/residents`）は、**事務員は 403**（spec 001 のまま。FR-006）／
-  目印が付いても `notifications`・`email_outbox` の行が増えない（SC-004）／家族の連絡帳・通知のまとめ・spec 001 の共通の関数の返す値に目印が入らない（FR-007・SC-005）／ログに入居者の氏名・記録の値が出ない（FR-014）（みさき）
+  目印が付いても `notifications`・`email_outbox` の行が増えない（SC-004）／家族の連絡帳・通知のまとめ・spec 001 の共通の関数の返す値に目印が入らない（FR-007・SC-005）／ログに入居者の氏名・記録の値が出ない（FR-014）
+  （みさき。記録の保存・押し直し・取り消しの API 経由の確認は、下の T005b に切り出した）
+- [ ] T005b [P] [US1] テスト `backend/tests/api/test_change_flags.py` に足す（T008 のあと）：記録の保存（`PUT /api/staff/residents/{id}/records`）で当てはまれば目印が付く／押し直し・取り消し（001-T034）で当てはまらなくなれば消える。T005 は `evaluate_change_flags` を直接呼んで確かめたので、**保存・取り消しの処理から実際に呼ばれること**をここで確かめる。**2 人が同時に、同じ入居者の別の食事区分を新しく記録しても、止まらない**（deadlock にならない）テストも入れる（`evaluate_change_flags` の入居者の行のロックが `FOR UPDATE` だと、保存の API 経由でだけ起きるため。R-03。PR #310 のゆうの指摘）（ゆう）
 - [ ] T006 [P] [US1] テスト `frontend/src/components/change-flags/ChangeFlagPanel.test.tsx` を書く（Vitest）：`rule_code`・`evidence` から「食事量：昨日の夜ごはんから 2 食続けて、少し以下」のような文を辞書で組み立てる／案内「気になるときは、看護職員・生活相談員に相談してください。急変は電話で」が出る／
   **辞書の目印まわり（`change.*`）の日本語に、医療の言葉（病気・疑い・診断・症状・脱水 など）が入っていない**（SC-003・research.md R-06）（みさき）
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] 調べ直しを `backend/app/services/change_detection.py` の `evaluate_change_flags(session, resident_id)` に作る（research.md R-03）：**関数の中では commit しない**。最初に **`residents` のその入居者の行**を `SELECT ... FOR UPDATE` で押さえ（目印がまだなくても同時の調べ直しが順番になる）、
-  オンの決まりごとに直近 7 日分の `care_records`（`deleted_at` が空のもの。非開示の項目も含めて直接読む。001 の R-06）を T002 の関数に渡し、今の目印（`cleared_at` が空）と突き合わせる：
+- [x] T007 [US1] 調べ直しを `backend/app/services/change_detection.py` の `evaluate_change_flags(session, resident_id)` に作る（research.md R-03）：**関数の中では commit しない**。最初に **`residents` のその入居者の行**を `SELECT ... FOR NO KEY UPDATE`（`with_for_update(key_share=True)`。`FOR UPDATE` だと、2 人が同時に新しく記録したときに止まる。R-03）で押さえ（目印がまだなくても同時の調べ直しが順番になる）、
+  オンの決まりごとに、いちばん新しい記録の日を含む 7 日分（その日から 6 日前まで。今日からではない）の `care_records`（`deleted_at` が空のもの。非開示の項目も含めて直接読む。001 の R-06）を T002 の関数に渡し、今の目印（`cleared_at` が空）と突き合わせる：
   当てはまる・目印なし → 作る（`unconfirmed`）／当てはまる・目印あり → `evidence`・`streak` を上書きし、`confirmed` で `streak` が最後の `streak_at_confirmation` より増えたら `unconfirmed` に戻す（FR-010）／当てはまらない・目印あり → `status = cleared`・`cleared_at`・`cleared_reason = not_matching` を 1 回の更新でまとめて入れる（FR-008）。
   ログは目印の id・決まりのコード・付いた／消えたの別・入居者の id だけ（FR-014）（みさき）
-- [ ] T008 [US1] 記録の保存・押し直し（`backend/app/services/records.py`、001-T026）と取り消し（001-T034）の処理のあとに、`evaluate_change_flags(session, resident_id)` を**同じセッションで**呼ぶ（記録と目印が同じトランザクションで確定する。spec 001 の `create_reply_notice` と同じ形。PR #40）（ゆう）
-- [ ] T009 [P] [US1] 初期データで記録を入れたあと（001-T030 の `backend/app/seed/records.py` のあと）、入居者全員について `evaluate_change_flags` を呼ぶ処理を `backend/app/seed/change_rules.py` に足す。あわせて、デモ用に目印が付く架空の記録（ある入居者の前の日の夜「少し」・朝「食べていない」）を入れる（みさき）
-- [ ] T010 [US1] 入居者一覧に返すものを `backend/app/services/change_detection.py` の `get_flag_summary(session)` に作る：`residents: {resident_id: {has_flag, has_unconfirmed}}`（今の目印がある入居者だけ）と、`unconfirmed_resident_count`（**まだ確かめていない目印がある入居者の人数**。research.md R-04）（data-model.md）（みさき）
+- [ ] T008 [US1] 記録の保存・押し直し（`backend/app/services/records.py`、001-T026）と取り消し（001-T034）の処理のあとに、`evaluate_change_flags(session, resident_id)` を**同じセッションで**呼ぶ（記録と目印が同じトランザクションで確定する。spec 001 の `create_reply_notice` と同じ形。PR #40）。**あわせて T005b のテストも足す**（ゆう）
+- [x] T009 [P] [US1] 初期データで記録を入れたあと（001-T030 の `backend/app/seed/records.py` のあと）、入居者全員について `evaluate_change_flags` を呼ぶ処理を `backend/app/seed/change_rules.py` に足す。あわせて、デモ用に目印が付く架空の記録（ある入居者の前の日の夜「少し」・朝「食べていない」）を入れる（みさき）
+- [x] T010 [US1] 入居者一覧に返すものを `backend/app/services/change_detection.py` の `get_flag_summary(session)` に作る：`residents: {resident_id: {has_flag, has_unconfirmed}}`（今の目印がある入居者だけ）と、`unconfirmed_resident_count`（**まだ確かめていない目印がある入居者の人数**。research.md R-04）（data-model.md）（みさき）
 - [ ] T011 [US1] 入居者一覧の API（`backend/app/api/staff/residents.py`、001-T028）で `get_flag_summary` を呼び、`residents[].change_flag`（目印がなければ `null`）と `unconfirmed_flag_count` を足す。一覧を開けるのは事務員以外の職員だけ（spec 001）なので、役割で分けない（contracts/api.md）（ゆう）
-- [ ] T012 [US1] `GET /api/staff/residents/{id}/change-flags` を `backend/app/api/staff/change_flags.py` に作る（役割：介護職員・リーダー・生活相談員・施設長。`require_staff(roles)`）：`current`（今の目印：`id`・`rule_code`・`started_at`・`streak`・`evidence`・`status`・`confirmations`）と
+- [x] T012 [US1] `GET /api/staff/residents/{id}/change-flags` を `backend/app/api/staff/change_flags.py` に作る（役割：介護職員・リーダー・生活相談員・施設長。`require_staff(roles)`）：`current`（今の目印：`id`・`rule_code`・`started_at`・`streak`・`evidence`・`status`・`confirmations`）と
   `history`（消えた目印：あわせて `cleared_at`・`cleared_reason`。新しい順）を返す。文言は返さずコードで返す。確かめた職員は `display_name` だけ。ない入居者は 404。ルーターを `backend/app/main.py` に登録する（contracts/api.md）（みさき）
 - [ ] T013 [US1] 目印の欄 `frontend/src/components/change-flags/ChangeFlagPanel.tsx` を作る：当てはまった決まりともとの記録（日付・項目・区分・値）を辞書で組み立てて表示し、そばに案内「気になるときは、看護職員・生活相談員に相談してください。急変は電話で」を出す（FR-003・FR-004）。
   目印・決まりの名前・案内の日本語を `frontend/src/i18n/ja.json` の `change.*` に足す（医療の言葉を使わない）。T006 を通す（みさき）
@@ -106,7 +108,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 ### Implementation for User Story 2
 
 - [ ] T017 [US2] 確かめる処理を `backend/app/services/change_detection.py` に足し、`POST /api/staff/residents/{id}/change-flags/confirm` を `backend/app/api/staff/change_flags.py` に作る（役割：介護職員・リーダー・生活相談員・施設長）：本文 `{note}`（**100 文字まで・任意**）。
-  `residents` のその入居者の行、続いてその入居者の今の目印を `FOR UPDATE` で押さえ（T007 と同じ順番）、`unconfirmed` のものを `confirmed` にして、それぞれに `change_flag_confirmations`（`confirmed_by`・`confirmed_at`・`note`・`streak_at_confirmation` ＝そのときの `streak`）を足す。1 つもなければ 409 `already_confirmed`（research.md R-04、contracts/api.md）（みさき）
+  `residents` のその入居者の行を `FOR NO KEY UPDATE`、続いてその入居者の今の目印を `FOR UPDATE` で押さえ（T007 と同じ順番・同じ強さ）、`unconfirmed` のものを `confirmed` にして、それぞれに `change_flag_confirmations`（`confirmed_by`・`confirmed_at`・`note`・`streak_at_confirmation` ＝そのときの `streak`）を足す。1 つもなければ 409 `already_confirmed`（research.md R-04、contracts/api.md）（みさき）
 - [ ] T018 [US2] `ChangeFlagPanel.tsx` に足す：「確かめた」ボタンとひとことの入力（100 文字まで・任意。文字としてだけ表示）、確かめ済みの目印を色を変えて区別し、確かめた職員・日時・ひとことを出す（FR-009・FR-010）。
   `history` を「過去の目印」として、付いた日・消えた日・当てはまった決まり・確かめた職員・ひとことを新しい順に並べる（FR-008）。409 のときは「ほかの職員が確かめました」と出して読み直す。文言を `ja.json` の `change.*` に足す（みさき）
 
