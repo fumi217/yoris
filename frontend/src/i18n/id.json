@@ -93,11 +93,10 @@
     "daily_limit": "Batas pertanyaan hari ini sudah tercapai. Silakan coba lagi besok. Jika mendesak, silakan telepon fasilitas",
     "unavailable": "Kami belum dapat menjawab sekarang. Mohon tunggu sebentar lalu coba lagi. Jika mendesak, silakan telepon fasilitas",
     "sender_family": "Anda",
-    "sender_ai": "AI",
+    "sender_ai": "YORIS (AI)",
     "input_label": "Pertanyaan (maksimal 500 karakter)",
     "send": "Kirim",
     "thinking": "AI sedang memeriksa catatan…",
-    "empty": "Belum ada pertanyaan. Coba tanyakan tentang makan hari ini atau keadaan beliau",
     "too_long": "Tulis dalam 500 karakter",
     "load_older": "Lihat percakapan sebelumnya",
     "category": {
@@ -107,7 +106,27 @@
       "care_request": "Permintaan perawatan",
       "urgent": "Darurat",
       "other": "Lainnya"
-    }
+    },
+    "greeting": "Halo! Saya asisten AI YORIS. Silakan pilih hal yang ingin Anda tanyakan. Anda juga dapat menulis pertanyaan secara bebas di bawah",
+    "choices_label": "Hal yang ingin ditanyakan",
+    "choice": {
+      "condition": "Keadaan anggota keluarga Anda di fasilitas",
+      "visit": "Kunjungan dan jadwal",
+      "other": "Pertanyaan lain"
+    },
+    "guide_label": "Panduan aplikasi",
+    "guide": {
+      "condition": "Makan, suasana hati, dan tidur setiap hari dapat dilihat di buku harian",
+      "condition_link": "Lihat buku harian",
+      "visit": "Reservasi dan pembatalan kunjungan dapat dilakukan di layar kunjungan",
+      "visit_link": "Lihat reservasi kunjungan",
+      "other": "Silakan tulis pertanyaan Anda di kolom di bawah. Jika AI tidak dapat menjawab, kami akan menyampaikannya kepada staf fasilitas"
+    },
+    "input_hint": {
+      "condition": "Hal yang tidak ada di buku harian dapat ditanyakan di sini",
+      "other": "Silakan tulis pertanyaan Anda di sini"
+    },
+    "count": "{{count}} / 500"
   },
   "memo": {
     "title": "Catatan keadaan",

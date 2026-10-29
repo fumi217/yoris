@@ -93,11 +93,10 @@
     "daily_limit": "You have reached today's limit for questions. Please try again tomorrow. If it is urgent, please call the facility",
     "unavailable": "We cannot answer right now. Please wait a moment and try again. If it is urgent, please call the facility",
     "sender_family": "You",
-    "sender_ai": "AI",
+    "sender_ai": "YORIS (AI)",
     "input_label": "Your question (up to 500 characters)",
     "send": "Send",
     "thinking": "The AI is checking the records…",
-    "empty": "No questions yet. Try asking about today's meals or how they are doing",
     "too_long": "Please keep it within 500 characters",
     "load_older": "Show earlier messages",
     "category": {
@@ -107,7 +106,27 @@
       "care_request": "Care request",
       "urgent": "Urgent",
       "other": "Other"
-    }
+    },
+    "greeting": "Hello! I am the YORIS AI assistant. Please choose what you would like to ask about. You can also type a question freely below",
+    "choices_label": "What you would like to ask about",
+    "choice": {
+      "condition": "How your family member in the facility is doing",
+      "visit": "Visits and schedules",
+      "other": "Other questions"
+    },
+    "guide_label": "App guide",
+    "guide": {
+      "condition": "You can see their daily meals, mood and sleep in the daily notes",
+      "condition_link": "See the daily notes",
+      "visit": "You can book or cancel a visit on the visits screen",
+      "visit_link": "See visit bookings",
+      "other": "Please write your question in the box below. If the AI cannot answer, we will pass it to the facility staff"
+    },
+    "input_hint": {
+      "condition": "For anything not in the daily notes, you can ask here",
+      "other": "Please write your question here"
+    },
+    "count": "{{count}} / 500"
   },
   "memo": {
     "title": "Observation memo",

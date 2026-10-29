@@ -105,3 +105,47 @@ export function sourceParts(source: InquirySource): {
   if (source.slot && source.slot !== 'day') labelKeys.push(`record.slot.${source.slot}`)
   return { month, day, labelKeys }
 }
+
+/** 用件の選択肢（spec 004 の FR-001a。デザインの決めごと 13 章。#348）。並び順のとおりに出す。 */
+export const CHOICES = ['condition', 'visit', 'other'] as const
+export type Choice = (typeof CHOICES)[number]
+
+/** 選択肢を押したときに出す「アプリの案内」。AI は呼ばず、会話にも保存しない。 */
+export type Guide = {
+  // 案内の文（辞書のキー）
+  textKey: string
+  // 行き先のリンク（ある選択肢だけ）
+  link: { to: string; labelKey: string } | null
+  // 入力欄の上に出す案内（ある選択肢だけ）
+  inputHintKey: string | null
+  // 押したあと、入力欄にフォーカスを移すか（リンクがあるときは移さない。リンクを飛ばさないように）
+  focusInput: boolean
+}
+
+export function guideFor(choice: Choice): Guide {
+  switch (choice) {
+    // 毎日の様子は連絡帳で見られる（聞かずに知れる）。連絡帳にないことは、入力欄から AI に聞ける
+    case 'condition':
+      return {
+        textKey: 'inquiry.guide.condition',
+        link: { to: '/family', labelKey: 'inquiry.guide.condition_link' },
+        inputHintKey: 'inquiry.input_hint.condition',
+        focusInput: false,
+      }
+    // 面会の予約は記録ではないので、AI に答えさせない（FR-003）。面会の画面へ案内する
+    case 'visit':
+      return {
+        textKey: 'inquiry.guide.visit',
+        link: { to: '/family/visits', labelKey: 'inquiry.guide.visit_link' },
+        inputHintKey: null,
+        focusInput: false,
+      }
+    case 'other':
+      return {
+        textKey: 'inquiry.guide.other',
+        link: null,
+        inputHintKey: 'inquiry.input_hint.other',
+        focusInput: true,
+      }
+  }
+}

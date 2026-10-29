@@ -1,9 +1,12 @@
 import { renderToStaticMarkup } from 'react-dom/server'
+import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import '../../i18n'
 import { InquiryView } from './Inquiry'
 import {
   aiNoticeKey,
+  CHOICES,
+  guideFor,
   showsCallIfUrgent,
   chronological,
   marksNoticeRead,
@@ -45,17 +48,19 @@ const answer = (overrides: Partial<InquiryMessage> = {}) =>
 
 const render = (props: Partial<Parameters<typeof InquiryView>[0]> = {}) =>
   renderToStaticMarkup(
-    <InquiryView
-      messages={[]}
-      hasOlder={false}
-      onLoadOlder={() => {}}
-      draft=""
-      onDraftChange={() => {}}
-      sending={null}
-      errorKey={null}
-      onSend={() => {}}
-      {...props}
-    />,
+    <MemoryRouter>
+      <InquiryView
+        messages={[]}
+        hasOlder={false}
+        onLoadOlder={() => {}}
+        draft=""
+        onDraftChange={() => {}}
+        sending={null}
+        errorKey={null}
+        onSend={() => {}}
+        {...props}
+      />
+    </MemoryRouter>,
   )
 
 // 画面に見える文字だけ（ふりがなの <rt>・<rp> とタグを外す）
@@ -71,7 +76,8 @@ describe('InquiryView', () => {
 
     expect(text).toContain('お問い合わせ')
     expect(text).toContain('AI がお答えできないときは、施設の職員にこの会話の一部をお伝えします')
-    expect(text).toContain('まだ質問はありません')
+    // 会話がなくても、あいさつと用件の選択肢を出す（FR-001a）
+    expect(text).toContain('YORIS の AI アシスタントです')
   })
 
   it('AI の答えのそばに「AI がお答えしています」ともとにした記録を出す（FR-004・FR-005）', () => {
@@ -181,7 +187,9 @@ describe('InquiryView', () => {
     })
 
     expect(html).not.toContain('<script>')
-    expect(html).not.toContain('<img')
+    // AI の答えに書かれた img のタグは、画像にならない（画面の img は、飾りのキャラクターだけ）
+    expect(html).not.toContain('<img src=x')
+    expect(html).not.toMatch(/<img[^>]*onerror/)
     expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
   })
 
@@ -296,5 +304,123 @@ describe('inquiryView', () => {
         theme_code: 'theme.meals',
       }),
     ).toEqual({ month: 10, day: 1, labelKeys: ['theme.meals'] })
+  })
+})
+
+describe('お問い合わせの画面の刷新（spec 004 の FR-001a・T048。#348）', () => {
+  it('用件の選択肢を 3 つ、この順に出す。押しても AI を呼ばない（送るボタンではない）', () => {
+    const text = visibleText(render())
+    const order = ['入居中のご家族の様子について', '面会・予定について', 'その他のご質問']
+
+    order.forEach((label) => expect(text).toContain(label))
+    expect(order.map((label) => text.indexOf(label))).toEqual(
+      [...order.map((label) => text.indexOf(label))].sort((a, b) => a - b),
+    )
+    // 選択肢は、送るボタン（type="submit"）ではない
+    const group = render().match(/<div role="group"[\s\S]*?<\/div>/)?.[0] ?? ''
+    expect(group.match(/<button type="button"/g)).toHaveLength(3)
+    expect(group).not.toContain('type="submit"')
+  })
+
+  it('押す前は、アプリの案内を出さない', () => {
+    expect(visibleText(render())).not.toContain('アプリの案内')
+  })
+
+  it('「入居中のご家族の様子について」：連絡帳へのリンクと、入力欄への案内を、アプリの案内として出す', () => {
+    const html = render({ choice: 'condition' })
+    const text = visibleText(html)
+
+    expect(text).toContain('アプリの案内')
+    expect(text).toContain('連絡帳で見られます')
+    expect(html).toMatch(/<a [^>]*href="\/family"/)
+    expect(text).toContain('連絡帳を見る')
+    expect(text).toContain('連絡帳にないことは、ここから質問できます')
+  })
+
+  it('「面会・予定について」：面会の画面へのリンクを出す（AI に答えさせない。FR-003）', () => {
+    const html = render({ choice: 'visit' })
+
+    expect(visibleText(html)).toContain('面会の予約・取り消しは、面会の画面からできます')
+    expect(html).toMatch(/<a [^>]*href="\/family\/visits"/)
+  })
+
+  it('「その他のご質問」：入力欄への案内だけ（リンクなし）', () => {
+    const html = render({ choice: 'other' })
+
+    expect(visibleText(html)).toContain('ここに、ご質問を書いてください')
+    expect(html).not.toMatch(/<a [^>]*href="\/family/)
+  })
+
+  it('案内のカードは、AI の答えと見た目を分ける（キャラクターを付けない。13.3）', () => {
+    const html = render({ choice: 'visit' })
+    const card = html.slice(html.indexOf('アプリの'), html.indexOf('<form'))
+
+    expect(card).not.toContain('<img')
+  })
+
+  it('AI の発言には、キャラクター（飾り）と「YORIS（AI）」の文字。職員の返事には付けない', () => {
+    const html = render({
+      messages: [
+        answer(),
+        message({
+          id: 3,
+          sender: 'staff',
+          body: '',
+          staff_name: '山本',
+          template_codes: ['reply.template.clothes.will_keep'],
+          response_type: 'app',
+        }),
+      ],
+    })
+    const ai = html.slice(html.indexOf('<ol'), html.indexOf('山本'))
+    const staff = html.slice(html.indexOf('山本'), html.indexOf('</ol>'))
+
+    expect(ai).toMatch(/<img[^>]*alt=""/)
+    expect(visibleText(ai)).toContain('YORIS（AI）')
+    expect(staff).not.toContain('<img')
+  })
+
+  it('送るボタンは丸い絵だけにせず、読み上げの名前「送る」を付ける。文字数を出す', () => {
+    const html = render({ draft: 'お昼は？' })
+
+    expect(html).toMatch(/<button type="submit"[^>]*aria-label="送る"/)
+    expect(visibleText(html)).toContain('4 / 500')
+  })
+
+  it('選択肢ごとの案内の決まり', () => {
+    expect(CHOICES).toEqual(['condition', 'visit', 'other'])
+    expect(guideFor('condition').link?.to).toBe('/family')
+    expect(guideFor('condition').focusInput).toBe(false)
+    expect(guideFor('visit').link?.to).toBe('/family/visits')
+    expect(guideFor('visit').inputHintKey).toBeNull()
+    expect(guideFor('other').link).toBeNull()
+    expect(guideFor('other').focusInput).toBe(true)
+  })
+})
+
+describe('並び順（PR #349 ようこさん）', () => {
+  it('あいさつは会話のいちばん上。新しい発言は、その下へ続く', () => {
+    const text = visibleText(render({ messages: [message(), answer()], sending: 'じゃあ夜は？' }))
+
+    const greeting = text.indexOf('YORIS の AI アシスタントです')
+    expect(greeting).toBeLessThan(text.indexOf('今日のお昼は食べましたか？'))
+    expect(text.indexOf('今日のお昼は食べましたか？')).toBeLessThan(
+      text.indexOf('今日のお昼は、ほぼ全部召し上がりました。'),
+    )
+    expect(text.indexOf('今日のお昼は、ほぼ全部召し上がりました。')).toBeLessThan(
+      text.indexOf('じゃあ夜は？'),
+    )
+  })
+
+  it('用件の選択肢と案内のカードは、会話の下・入力欄のすぐ上', () => {
+    const html = render({ messages: [message(), answer()], choice: 'visit' })
+
+    const conversationEnd = html.indexOf('</ol>')
+    const choices = html.indexOf('role="group"')
+    const guide = html.indexOf('アプリの')
+    const form = html.indexOf('<form')
+    expect(conversationEnd).toBeLessThan(choices)
+    expect(choices).toBeLessThan(guide)
+    expect(guide).toBeLessThan(form)
   })
 })
