@@ -3,6 +3,7 @@ import en from './en.json'
 import i18n, { SUPPORTED_LANGUAGES, isLanguage } from './index'
 import id from './id.json'
 import ja from './ja.json'
+import { parseRuby } from './rubyText'
 
 // {a: {b: 'x'}} → {'a.b': 'x'}
 function flatten(object: Record<string, unknown>, prefix = ''): Record<string, string> {
@@ -107,10 +108,14 @@ describe('表示言語の辞書（spec 001 の T082・T084・T085）', () => {
     const withoutFurigana = ['signup', 'signup_complete', 'steps']
     const exceptKeys = ['error.email_mismatch']
     const KANJI = /[㐀-鿿々]/
-    const RUBY = /{[^{}|]+|[^{}|]+}/g
+    // ふりがなの外の文は、画面が読むときと同じ parseRuby で取り出す
+    const outsideRuby = (text: string) =>
+      parseRuby(text)
+        .flatMap((part) => (part.kind === 'text' ? [part.text] : []))
+        .join('')
     const missing = Object.entries(jaKeys)
       .filter(([key]) => !withoutFurigana.includes(key.split('.')[0]) && !exceptKeys.includes(key))
-      .filter(([, text]) => KANJI.test(text.replace(RUBY, '')))
+      .filter(([, text]) => KANJI.test(outsideRuby(text)))
       .map(([key]) => key)
     expect(missing, 'ja.json でふりがなが足りないキー').toEqual([])
   })
