@@ -17,7 +17,8 @@ return <Ruby text={t('error.forbidden')} />
   - 家族の画面（`/family` の下）は、ふりがなを出さない（constitution 3.2.0。#260）。辞書は同じ書き方のまま、`FamilyRoutes` が `FuriganaContext` を false にし、`Ruby` が漢字だけにする
   - 同じエラーでも家族の画面だけ言い方を変えたいときは、辞書に `<キー>_family` を足す（例：`error.validation_error_family`）。`Text` が、`FamilyRoutes` の下（`FamilyContext` が true）だけ、こちらを引く（#79）。`_family` があるかは今の言語の辞書だけで確かめるので、`id.json`・`en.json`（001-T082）にも `_family` のキーを足す（足さないと、その言語の家族の画面には、ふつうのキーの文が出る）
   - ミニマム版はふりがななしでよい。Day 5 に 001-T083 などでまとめて付ける（spec 001 の tasks.md）
-  - `id.json`・`en.json` には、この書き方を使わない
+  - `id.json`・`en.json` には、この書き方を使わない（`ja.json` と同じキーで書く。まだ無いキーは日本語が出る。`ja.json` にないキーは `i18n.test.ts` が止める）
+  - 表示言語は、ログイン中のアカウントの言語（`GET /api/me` の `language`）。`useUserLanguage`（App で 1 回）が画面の言語にし、`LanguageSwitcher` が `PUT /api/me/language` で変える（001-T084）
 - 職員が自由に書いた文・お知らせの本文・ファイルの中身は、辞書を通さずそのまま出す
 - ルビを出せないところ（`title`・`aria-label` など）は、`rubyText.ts` の `stripRuby` で漢字だけにする。メールは backend の `app/i18n.py` の `strip_ruby`
 

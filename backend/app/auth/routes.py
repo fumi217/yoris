@@ -3,11 +3,12 @@
 spec 001 の T022・contracts「ログイン・アカウント」。
 """
 
+from dataclasses import replace
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, Field
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
 
 from app.auth.deps import CurrentUser, get_current_user, load_current_user
@@ -94,3 +95,22 @@ def logout(request: Request, response: Response) -> None:
 def me(user: Annotated[CurrentUser, Depends(get_current_user)]) -> MeResponse:
     """自分の種類・役割・表示名・表示言語。表示名は、職員は返事に出す名前、家族は入居者の呼び名。"""
     return _me_response(user)
+
+
+class LanguageRequest(BaseModel):
+    language: Literal["ja", "id", "en"]
+
+
+@router.put("/me/language")
+def change_language(
+    body: LanguageRequest,
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)],
+) -> MeResponse:
+    """表示言語を変える（spec 001 の T084・FR-021）。変えたあとの `GET /api/me` と同じ中身を返す。
+
+    変えるのは自分の言語だけ。ログインの言語は、次にログインしたときもそのまま使う。
+    """
+    session.execute(update(User).where(User.id == user.user_id).values(language=body.language))
+    session.commit()
+    return _me_response(replace(user, language=body.language))

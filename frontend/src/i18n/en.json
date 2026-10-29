@@ -1,0 +1,79 @@
+{
+  "error": {
+    "not_logged_in": "Please log in",
+    "login_failed": "The ID (email address) or password is incorrect",
+    "forbidden": "You cannot open this page",
+    "not_found": "Not found",
+    "too_many_attempts": "You have tried too many times in a short period, so this is unavailable for a while. Please wait a little and try again",
+    "request_limit": "You already have 3 requests waiting for a reply. Please send another after you receive a reply",
+    "theme_waiting": "This topic is waiting for a reply. Please wait until the reply arrives",
+    "already_replied": "Another staff member has already replied",
+    "already_assigned": "Another staff member is already handling this",
+    "already_answered": "Another staff member has already replied",
+    "request_cancelled": "This request was cancelled",
+    "not_today": "You can only edit or cancel today's records and replies",
+    "invalid_file": "Please choose a PDF, JPG or PNG file up to 10 MB",
+    "validation_error": "Please check what you entered",
+    "validation_error_family": "Please try again",
+    "server_error": "Something went wrong. Please wait a moment and try again",
+    "visit_overlap": "That time overlaps with another reservation. Please choose another time",
+    "visit_day_full": "This day is fully booked. Please choose another day",
+    "visit_already_booked_day": "You already have a reservation on this day. You can book once per day",
+    "visit_deadline_passed": "It is past 5 PM on the previous day, so you can no longer book or cancel in the app. Please call the facility",
+    "visit_closed_day": "Visits are closed on this day",
+    "visit_day_has_reservations": "There are reservations on this day. If you close it, those reservations will be cancelled",
+    "visit_out_of_range": "You can book from tomorrow up to 4 weeks ahead",
+    "ai_unavailable": "We cannot answer right now. Please wait a moment and try again. If it is urgent, please call the facility",
+    "inquiry_limit": "You have reached today's limit for questions. Please try again tomorrow. If it is urgent, please call the facility",
+    "email_mismatch": "The two email addresses you entered do not match",
+    "payment_service_unavailable": "We could not open the payment page. Please wait a moment and try again",
+    "billing_not_connected": "This facility is not connected to the payment service yet, so you cannot open this from here",
+    "invalid_state": "This action cannot be done in the current state"
+  },
+  "layout": {
+    "app_name": "Family Contact App",
+    "loading": "Loading",
+    "coming_soon": "This page is not ready yet",
+    "login_required": "Please log in",
+    "to_admin": "Admin",
+    "to_staff": "Staff",
+    "family_menu": {
+      "contact_book": "Daily notes",
+      "requests": "Ask us",
+      "notifications": "Notices",
+      "more": "More",
+      "visits": "Visits",
+      "inquiry": "Questions",
+      "album": "Album",
+      "settings": "Settings"
+    },
+    "confirm_stop": "Cancel",
+    "back_to_admin": "Back to Admin"
+  },
+  "auth": {
+    "title": "Log in",
+    "login": "ID (staff) or email address (family)",
+    "password": "Password",
+    "submit": "Log in",
+    "submitting": "Logging in",
+    "logout": "Log out"
+  },
+  "role": {
+    "care_worker": "Care worker",
+    "leader": "Team leader",
+    "counselor": "Counselor",
+    "clerk": "Office clerk",
+    "director": "Facility director"
+  },
+  "occupation": {
+    "care_worker": "Care worker",
+    "leader": "Team leader",
+    "counselor": "Counselor",
+    "clerk": "Office clerk",
+    "director": "Facility director",
+    "nurse": "Nurse",
+    "functional_trainer": "Functional training instructor",
+    "care_manager": "Care manager",
+    "paren": " ({{occupation}})"
+  }
+}

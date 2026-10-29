@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { canOpen, useMe, type Area } from '../auth/me'
+import { LanguageSwitcher } from './LanguageSwitcher'
 import { LogoutButton } from './LogoutButton'
 import { Text } from './Text'
 
@@ -29,6 +30,7 @@ export function StaffHeader({ homeTo, titleKey, otherArea, otherTo, otherKey }: 
           </Link>
         )}
         <span>{me?.display_name}</span>
+        <LanguageSwitcher className="rounded border px-1" />
         <LogoutButton className="text-sky-700 underline" />
       </div>
     </header>

@@ -213,9 +213,12 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 **Purpose**: 多言語・ふりがな、ログインの作り込み、E2E（本番デプロイは見送り。10/28 の会議）
 
 - [ ] T082 [P] インドネシア語・英語の辞書 `frontend/src/i18n/id.json`・`frontend/src/i18n/en.json` を作る（テーマ・定型文・ボタン・見出し・案内文。ふりがなの書き方は使わない）（FR-021）（みさき・作）
+  - 済み（#79）：`error`・`layout`・`auth`・`role`・`occupation`。残り：ほかのグループ（`ja.json` と同じキーで足していく）
 - [ ] T083 spec 001 の全画面（ログイン・記録・開示設定・職員の返事・家族の連絡帳・知りたいこと・お知らせ・管理画面など、ほかの人が作った画面も含む）の日本語の文言に `{漢字|かんじ}` でふりがなを付ける（固定の文言だけ。利用者が自由に入力した文・お知らせの添付ファイルは対象外）。各画面の文言が固まってから（Day 5）まとめて付ける。spec 002〜007 の画面は、それぞれの spec のタスク（002-T041・003-T035・005-T016・006-T022・007-T029 など）で各担当が付ける。どちらも `ja.json` を書き換えてぶつかりやすいので、ほかの spec のふりがなのタスクは Day 5 より前に済ませるか、T083 のあとに行う（PR #54 ゆう）。最後に T085 で全体の付け忘れを確かめる（担当は PR #52 の相談で決めた）（FR-021）（みさき・作）
 - [ ] T084 表示言語の切り替え `PUT /api/me/language` を `backend/app/auth/routes.py` に、切り替えの部品を `frontend/src/components/LanguageSwitcher.tsx` に作る。メールは家族の言語の文言で、漢字だけにして送る（FR-021）（みさき・作）
+  - 済み（#79）：`PUT /api/me/language`・`LanguageSwitcher`（職員の上の部分と家族の「☰ その他」）・ログイン中の言語を画面に反映（`useUserLanguage`）。残り：メールの言語
 - [ ] T085 [P] テスト `frontend/tests/unit/i18n.test.ts`：`ja.json` にふりがなの付いていない漢字が残っていない、`id.json`・`en.json` に `{|}` の書き方がない（SC-011）（みさき・作）
+  - 進め方：テストは、ほかのテストと同じく `src` の中に置く（`frontend/src/i18n/i18n.test.ts`）。済み（#79）：辞書の言語の切り替え・id/en だけにあるキーがない・id/en に `{|}` がない。残り：id/en に足りないキーがない（T082 が済んでから）・`ja.json` のふりがなの付け忘れ（T083 が済んでから）
 - [ ] T086 職員は操作がないまま 30 分で自動ログアウト、家族は 30 日、を `backend/app/auth/` に足す（research.md R-01）（ようこ・作）
 - [ ] T087 ログインの試行回数の制限（Redis の `ratelimit:login:<ID>`、例：15 分に 10 回、超えたら 429 `too_many_attempts`）を `backend/app/auth/routes.py` に足す（research.md R-03）（ようこ・作）
 - [x] T088 職員のアカウントを作る `POST /api/admin/staff`（表示名・役割・職種。ID と初期パスワードを 1 回だけ返す）と画面 `frontend/src/pages/admin/StaffAccounts.tsx` を作る（ようこ・作）

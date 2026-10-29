@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
 import { api } from '../../api/client'
+import { LanguageSwitcher } from '../../components/LanguageSwitcher'
 import { LogoutButton } from '../../components/LogoutButton'
 import { Text } from '../../components/Text'
 import type { FamilyFeatures } from './albumView'
@@ -23,6 +24,7 @@ export function FamilyMorePage() {
         </li>
       ))}
       <li className="flex flex-wrap items-center gap-3 p-4">
+        <LanguageSwitcher className="rounded border p-1" />
         <LogoutButton className="text-sky-700 underline" />
       </li>
     </ul>

@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router'
 import { DevUserSwitcher } from './components/DevUserSwitcher'
 import AdminRoutes from './pages/admin/AdminRoutes'
 import FamilyRoutes from './pages/family/FamilyRoutes'
+import { useUserLanguage } from './i18n/useUserLanguage'
 import { HomeRedirect } from './pages/HomeRedirect'
 import { LoginPage } from './pages/LoginPage'
 import { Signup } from './pages/signup/Signup'
@@ -11,6 +12,9 @@ import StaffRoutes from './pages/staff/StaffRoutes'
 // 画面のまとまりごとに、URL の先頭を分ける（spec 001 の T019・docs/画面設計.md「3」）。
 // 中の画面は、それぞれの *Routes.tsx に足す（同じファイルを同時に触らないように）
 export default function App() {
+  // ログイン中のアカウントの表示言語を、画面の言語にする（001-T084）
+  useUserLanguage()
+
   return (
     <>
       <Routes>

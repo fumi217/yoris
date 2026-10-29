@@ -1,0 +1,79 @@
+{
+  "error": {
+    "not_logged_in": "Silakan masuk",
+    "login_failed": "ID (alamat email) atau kata sandi salah",
+    "forbidden": "Halaman ini tidak dapat dibuka",
+    "not_found": "Tidak ditemukan",
+    "too_many_attempts": "Anda terlalu sering mencoba dalam waktu singkat, jadi untuk sementara tidak bisa digunakan. Mohon tunggu sebentar lalu coba lagi",
+    "request_limit": "Ada 3 permintaan yang masih menunggu balasan. Kirim lagi setelah balasan diterima",
+    "theme_waiting": "Topik ini sedang menunggu balasan. Mohon tunggu sampai balasan datang",
+    "already_replied": "Staf lain sudah membalas",
+    "already_assigned": "Staf lain sedang menanganinya",
+    "already_answered": "Staf lain sudah membalas",
+    "request_cancelled": "Permintaan ini telah dibatalkan",
+    "not_today": "Hanya catatan dan balasan hari ini yang dapat diubah atau dibatalkan",
+    "invalid_file": "Pilih file PDF, JPG, atau PNG dengan ukuran maksimal 10 MB",
+    "validation_error": "Mohon periksa kembali isian Anda",
+    "validation_error_family": "Silakan coba lagi",
+    "server_error": "Terjadi kesalahan. Mohon tunggu sebentar lalu coba lagi",
+    "visit_overlap": "Waktu itu bertabrakan dengan reservasi lain. Silakan pilih waktu lain",
+    "visit_day_full": "Hari ini sudah penuh. Silakan pilih hari lain",
+    "visit_already_booked_day": "Anda sudah punya reservasi pada hari ini. Reservasi hanya bisa satu kali per hari",
+    "visit_deadline_passed": "Sudah lewat pukul 17.00 pada hari sebelumnya, jadi reservasi dan pembatalan tidak bisa dilakukan lewat aplikasi. Silakan telepon fasilitas",
+    "visit_closed_day": "Kunjungan ditutup pada hari ini",
+    "visit_day_has_reservations": "Sudah ada reservasi pada hari ini. Jika hari ini ditutup, reservasi tersebut akan dibatalkan",
+    "visit_out_of_range": "Reservasi dapat dilakukan mulai besok sampai 4 minggu ke depan",
+    "ai_unavailable": "Kami belum dapat menjawab sekarang. Mohon tunggu sebentar lalu coba lagi. Jika mendesak, silakan telepon fasilitas",
+    "inquiry_limit": "Batas pertanyaan hari ini sudah tercapai. Silakan coba lagi besok. Jika mendesak, silakan telepon fasilitas",
+    "email_mismatch": "Kedua alamat email yang Anda masukkan tidak sama",
+    "payment_service_unavailable": "Halaman pembayaran tidak dapat dibuka. Mohon tunggu sebentar lalu coba lagi",
+    "billing_not_connected": "Fasilitas ini belum terhubung ke layanan pembayaran, jadi tidak dapat dibuka dari sini",
+    "invalid_state": "Tindakan ini tidak dapat dilakukan pada keadaan saat ini"
+  },
+  "layout": {
+    "app_name": "Aplikasi Kontak Keluarga",
+    "loading": "Memuat",
+    "coming_soon": "Halaman ini belum siap",
+    "login_required": "Silakan masuk",
+    "to_admin": "Halaman admin",
+    "to_staff": "Halaman staf",
+    "family_menu": {
+      "contact_book": "Buku harian",
+      "requests": "Ingin tahu",
+      "notifications": "Pemberitahuan",
+      "more": "Lainnya",
+      "visits": "Kunjungan",
+      "inquiry": "Pertanyaan",
+      "album": "Album",
+      "settings": "Pengaturan"
+    },
+    "confirm_stop": "Batal",
+    "back_to_admin": "Kembali ke halaman admin"
+  },
+  "auth": {
+    "title": "Masuk",
+    "login": "ID (staf) atau alamat email (keluarga)",
+    "password": "Kata sandi",
+    "submit": "Masuk",
+    "submitting": "Sedang masuk",
+    "logout": "Keluar"
+  },
+  "role": {
+    "care_worker": "Petugas perawatan",
+    "leader": "Ketua tim",
+    "counselor": "Konselor",
+    "clerk": "Staf administrasi",
+    "director": "Kepala fasilitas"
+  },
+  "occupation": {
+    "care_worker": "Petugas perawatan",
+    "leader": "Ketua tim",
+    "counselor": "Konselor",
+    "clerk": "Staf administrasi",
+    "director": "Kepala fasilitas",
+    "nurse": "Perawat",
+    "functional_trainer": "Instruktur pelatihan fungsional",
+    "care_manager": "Manajer perawatan",
+    "paren": " ({{occupation}})"
+  }
+}
