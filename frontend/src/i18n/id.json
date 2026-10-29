@@ -29,7 +29,9 @@
     "payment_service_unavailable": "Halaman pembayaran tidak dapat dibuka. Mohon tunggu sebentar lalu coba lagi",
     "billing_not_connected": "Fasilitas ini belum terhubung ke layanan pembayaran, jadi tidak dapat dibuka dari sini",
     "invalid_state": "Tindakan ini tidak dapat dilakukan pada keadaan saat ini",
-    "self_approval": "Anda tidak dapat menyetujui catatan yang Anda tulis sendiri. Mohon minta pemimpin lain atau kepala fasilitas"
+    "self_approval": "Anda tidak dapat menyetujui catatan yang Anda tulis sendiri. Mohon minta pemimpin lain atau kepala fasilitas",
+    "memo_limit": "Anda sudah menulis 3 catatan tentang penghuni ini hari ini. Silakan lanjutkan besok",
+    "rewrite_limit": "Batas pengulangan untuk catatan ini sudah tercapai. Mohon perbaiki teks aslinya, lalu tunggu sebentar sebelum mencoba lagi"
   },
   "theme": {
     "daily_life": "Keseharian seperti biasa",

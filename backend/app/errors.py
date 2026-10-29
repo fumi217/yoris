@@ -57,6 +57,9 @@ class ErrorCode(StrEnum):
     INVALID_STATE = "invalid_state"
     # 書いた職員本人が、自分のメモを承認・戻そうとした（007-T022。FR-011a）
     SELF_APPROVAL = "self_approval"
+    # 1 日 3 件・やり直し 5 回の上限（007-T013・T014。research.md R-06・R-08）
+    MEMO_LIMIT = "memo_limit"
+    REWRITE_LIMIT = "rewrite_limit"
 
 
 STATUS_CODES: dict[ErrorCode, int] = {
@@ -89,6 +92,8 @@ STATUS_CODES: dict[ErrorCode, int] = {
     ErrorCode.BILLING_NOT_CONNECTED: 409,
     ErrorCode.INVALID_STATE: 409,
     ErrorCode.SELF_APPROVAL: 403,
+    ErrorCode.MEMO_LIMIT: 409,
+    ErrorCode.REWRITE_LIMIT: 409,
 }
 
 

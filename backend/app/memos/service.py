@@ -6,21 +6,23 @@
 - 直す・整える・確かめる・取り下げるのは本人だけ。本人でないメモは、あることも分からないよう
   「ない」として扱う（NOT_FOUND）。承認待ち以降をリーダー・施設長が見られる条件は、
   007-T016・T018（作り込み）で足す
-- 今は「整える」だけ。訳し戻し・機械の目の印・1 日 3 件・やり直しの上限は、作り込み
-  （007-T008・T013・T014・T017）で足す
+- 「整える」のあとに機械の目の印を付ける（checks.py）。1 日 3 件（409 `memo_limit`）と
+  やり直しの上限（409 `rewrite_limit`）もここで守る。訳し戻しは、作り込み（007-T017）で足す
 
 サービスの関数は commit しない（API の最後で 1 回 commit する。app/db.py）。
 """
 
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.auth.deps import CurrentUser
 from app.clock import today_jst
+from app.config import get_settings
 from app.errors import AppError, ErrorCode
 from app.inquiry.llm import ChatClient
+from app.memos.checks import check_memo
 from app.memos.rewrite import rewrite_memo
 from app.models.core import Resident, Staff
 from app.models.memos import CareMemo, CareMemoRevision
@@ -47,10 +49,25 @@ def create_memo(
     facility_id = session.scalars(select(Staff.facility_id).where(Staff.id == user.staff_id)).one()
     if resident is None or resident.facility_id != facility_id:
         raise AppError(ErrorCode.NOT_FOUND)
+    # 職員の行を押さえてから数える（同時に押しても 4 件目が入らない。R-06）
+    session.scalars(select(Staff.id).where(Staff.id == user.staff_id).with_for_update()).one()
+    today = today_jst()
+    written_today = session.scalar(
+        select(func.count())
+        .select_from(CareMemo)
+        .where(
+            CareMemo.author_staff_id == user.staff_id,
+            CareMemo.resident_id == resident_id,
+            CareMemo.memo_date == today,
+            CareMemo.status != "withdrawn",
+        )
+    )
+    if written_today >= get_settings().memo_daily_limit:
+        raise AppError(ErrorCode.MEMO_LIMIT)
     memo = CareMemo(
         resident_id=resident_id,
         author_staff_id=user.staff_id,
-        memo_date=today_jst(),
+        memo_date=today,
         source_lang=source_lang,
         original_text=original_text,
         status="draft",
@@ -58,6 +75,20 @@ def create_memo(
     session.add(memo)
     session.flush()
     return memo
+
+
+def _other_resident_names(session: Session, resident_id: int) -> list[str]:
+    """同じ施設の、ほかの入居者の呼び名（機械の目の other_name に使う。R-03）。"""
+    facility_id = session.scalars(
+        select(Resident.facility_id).where(Resident.id == resident_id)
+    ).one()
+    return list(
+        session.scalars(
+            select(Resident.display_name).where(
+                Resident.facility_id == facility_id, Resident.id != resident_id
+            )
+        )
+    )
 
 
 def get_own_memo(
@@ -104,11 +135,26 @@ def rewrite(
     memo = get_own_memo(session, user, memo_id, for_update=True)
     if memo.status not in EDITABLE_STATUSES:
         raise AppError(ErrorCode.INVALID_STATE)
+    # 履歴の数で数える。AI が止まったときは履歴を作らないので、数えない（R-08・R-09）
+    revisions = session.scalar(
+        select(func.count())
+        .select_from(CareMemoRevision)
+        .where(CareMemoRevision.memo_id == memo.id)
+    )
+    if revisions >= get_settings().memo_rewrite_limit:
+        raise AppError(ErrorCode.REWRITE_LIMIT)
     result = rewrite_memo(
         memo.original_text, memo.source_lang, user.language, llm=llm, back_translate=False
     )
     memo.rewritten_text = result.rewritten_text
     memo.back_translation = None
+    memo.warnings = check_memo(
+        original_text=memo.original_text,
+        source_lang=memo.source_lang,
+        rewritten_text=result.rewritten_text,
+        back_translation=None,
+        other_resident_names=_other_resident_names(session, memo.resident_id),
+    )
     session.add(
         CareMemoRevision(
             memo_id=memo.id,

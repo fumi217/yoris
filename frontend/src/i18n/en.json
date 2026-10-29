@@ -29,7 +29,9 @@
     "payment_service_unavailable": "We could not open the payment page. Please wait a moment and try again",
     "billing_not_connected": "This facility is not connected to the payment service yet, so you cannot open this from here",
     "invalid_state": "This action cannot be done in the current state",
-    "self_approval": "You cannot approve a note you wrote yourself. Please ask another leader or the facility director"
+    "self_approval": "You cannot approve a note you wrote yourself. Please ask another leader or the facility director",
+    "memo_limit": "You have already written 3 notes about this resident today. Please continue tomorrow",
+    "rewrite_limit": "You have reached the limit for redoing this note. Please edit the original text and wait a little before trying again"
   },
   "theme": {
     "daily_life": "How they usually are",
