@@ -101,4 +101,17 @@ describe('表示言語の辞書（spec 001 の T082・T084・T085）', () => {
       ).toEqual([])
     }
   })
+
+  it('日本語の辞書に、ふりがなの付いていない漢字が残っていない（SC-011）', () => {
+    // 申し込みの画面は、ふりがななし（constitution 3.1.0）。email_mismatch は申し込みの画面だけで出る
+    const withoutFurigana = ['signup', 'signup_complete', 'steps']
+    const exceptKeys = ['error.email_mismatch']
+    const KANJI = /[㐀-鿿々]/
+    const RUBY = /{[^{}|]+|[^{}|]+}/g
+    const missing = Object.entries(jaKeys)
+      .filter(([key]) => !withoutFurigana.includes(key.split('.')[0]) && !exceptKeys.includes(key))
+      .filter(([, text]) => KANJI.test(text.replace(RUBY, '')))
+      .map(([key]) => key)
+    expect(missing, 'ja.json でふりがなが足りないキー').toEqual([])
+  })
 })

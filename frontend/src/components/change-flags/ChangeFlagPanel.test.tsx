@@ -226,6 +226,24 @@ describe('目印の欄（spec 006 の T006・T013）', () => {
     expect(shown).not.toContain('unknown_rule')
   })
 
+  it('出せる目印が 1 つもないときは、欄も「確かめた」も出さない（見えない目印を確かめさせない）', () => {
+    const html = render({
+      current: [mealFlag({ rule_code: 'unknown_rule' }), mealFlag({ id: 14, evidence: [] })],
+      history: [],
+    })
+
+    expect(html).toBe('')
+  })
+
+  it('出せない目印があっても、出せる目印だけで欄を出す', () => {
+    const shown = text(
+      render({ current: [mealFlag({ rule_code: 'unknown_rule' }), moodFlag()], history: [] }),
+    )
+
+    expect(shown).toContain('機嫌：')
+    expect(shown).toContain('確かめた')
+  })
+
   it('ほかの職員が先に確かめたときは、その案内を出す（409。FR-009）', () => {
     const shown = text(render({ current: [mealFlag()], history: [] }, { conflict: true }))
 

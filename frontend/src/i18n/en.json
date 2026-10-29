@@ -577,7 +577,16 @@
     "send": "Send",
     "retry": "Send again",
     "remove": "Remove",
-    "back": "Back to the record screen"
+    "back": "Back to the record screen",
+    "posted_title": "Posted photos",
+    "posted_empty": "No photos have been posted yet",
+    "family_hidden": "Not shown to families right now",
+    "delete": "Delete",
+    "delete_confirm": "Press again to delete",
+    "deleting": "Deleting",
+    "deleted": "Deleted",
+    "already_deleted": "That photo has already been deleted",
+    "posted_at": "Photo posted on {{month}}/{{day}} at {{time}}"
   },
   "album": {
     "title": "Album",
@@ -613,5 +622,33 @@
     "copied": "✓ Copied the ID and initial password",
     "copy_failed": "Could not copy. Please select the text and copy it",
     "close": "Close this screen"
+  },
+  "change": {
+    "title": "⚠️ Different from usual",
+    "guide": "If you are concerned, talk to a nurse or a life counselor. For sudden changes, call by phone",
+    "from_meal": "{{date}} {{slot}}",
+    "rule": {
+      "meal_low": "Meal: from {{from}}, {{count}} meals in a row at a small amount or less",
+      "mood_low": "Mood: from {{from}}, {{count}} days in a row of seeming low in spirits",
+      "sleep_poor": "Sleep: from {{from}}, {{count}} days in a row of not sleeping well"
+    },
+    "evidence_title": "Records this is based on",
+    "evidence": "{{date}} {{item}}: {{value}}",
+    "evidence_slot": "{{date}} {{item}} ({{slot}}): {{value}}",
+    "status": {
+      "unconfirmed": "⚠️ Not checked yet",
+      "confirmed": "✔ Checked"
+    },
+    "confirmed_by": "Checked by: ",
+    "note": "Note: ",
+    "note_label": "A short note (optional, up to 100 characters)",
+    "note_count": "{{count}} / 100",
+    "confirm": "I have checked",
+    "confirming": "Saving",
+    "already_confirmed": "Another staff member has already checked it",
+    "history_title": "Past flags",
+    "started": "Started: {{date}}",
+    "cleared": "Ended: {{date}}",
+    "unconfirmed_count": "Flags not checked yet: {{count}}"
   }
 }

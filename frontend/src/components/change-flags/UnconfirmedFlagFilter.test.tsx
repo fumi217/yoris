@@ -19,7 +19,7 @@ function text(html: string): string {
 
 describe('確かめていない目印の絞り込み（spec 006 の T014・FR-003）', () => {
   it('「確かめていない目印：◯件」を出す', () => {
-    expect(text(render(3, false))).toBe('確かめていない目印：3 件')
+    expect(text(render(3, false))).toBe('⚠️ 確かめていない目印：3 件')
   })
 
   it('絞っていないときは押された状態にしない', () => {
@@ -27,6 +27,8 @@ describe('確かめていない目印の絞り込み（spec 006 の T014・FR-00
 
     expect(html).toContain('aria-pressed="false"')
     expect(text(html)).not.toContain('✔')
+    // 画面設計のとおり、押していないときは ⚠️ が付く
+    expect(text(html)).toContain('⚠️')
   })
 
   it('絞っているときは、色だけでなく ✔ と押された状態でも示す', () => {
@@ -38,7 +40,7 @@ describe('確かめていない目印の絞り込み（spec 006 の T014・FR-00
 
   it('目印がなくて絞っていないときは押せない', () => {
     expect(render(0, false)).toContain('disabled=""')
-    expect(text(render(0, false))).toBe('確かめていない目印：0 件')
+    expect(text(render(0, false))).toBe('⚠️ 確かめていない目印：0 件')
   })
 
   it('目印があるとき、絞っているあいだは件数が 0 になっても、押して戻せる', () => {

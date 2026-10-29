@@ -66,7 +66,7 @@ describe('DisclosureForm', () => {
   })
 
   it('保存できなかったら、理由を出す', () => {
-    expect(render({ errorKey: 'error.forbidden' })).toContain('表示できません')
+    expect(render({ errorKey: 'error.forbidden' })).toContain('できません')
   })
 })
 

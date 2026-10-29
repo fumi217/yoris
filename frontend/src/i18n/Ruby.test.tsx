@@ -48,7 +48,7 @@ describe('辞書', () => {
   // エラーのコードの足し忘れは backend/tests/unit/test_errors.py（#181）で確かめる
   it('初めは日本語で、辞書から文言を引ける', () => {
     expect(i18n.language).toBe('ja')
-    expect(i18n.t('error.already_replied')).toBe('ほかの職員が返事をしました')
+    expect(i18n.t('error.already_replied')).toBe('ほかの{職員|しょくいん}が{返事|へんじ}をしました')
   })
 })
 

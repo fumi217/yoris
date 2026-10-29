@@ -8,6 +8,7 @@ import { Text } from '../Text'
 import {
   confirmBody,
   hasUnconfirmed,
+  isShown,
   itemOf,
   jstDate,
   monthDay,
@@ -78,7 +79,9 @@ type ViewProps = {
 }
 
 export function ChangeFlagPanelView({ data, saving, conflict, errorKey, onConfirm }: ViewProps) {
-  const { current, history } = data
+  // 出せない目印（知らない決まりなど）は数えない。見えない目印を「確かめた」ことにしないため
+  const current = data.current.filter(isShown)
+  const history = data.history.filter(isShown)
   // 今も過去も目印がなければ、欄ごと出さない（記録の画面を散らかさない）
   if (current.length === 0 && history.length === 0) return null
 

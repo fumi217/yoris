@@ -72,7 +72,7 @@ describe('ReplyView', () => {
   })
 
   it('ほかの職員が先に返事をしたら、そう伝える', () => {
-    expect(render({ errorKey: 'error.already_replied' })).toContain('ほかの職員が返事をしました')
+    expect(render({ errorKey: 'error.already_replied' })).toContain('をしました')
   })
 
   it('記録の画面に戻るリンクがある', () => {

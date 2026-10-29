@@ -85,7 +85,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
   `history`（消えた目印：あわせて `cleared_at`・`cleared_reason`。新しい順）を返す。文言は返さずコードで返す。確かめた職員は `display_name` だけ。ない入居者は 404。ルーターを `backend/app/main.py` に登録する（contracts/api.md）（みさき）
 - [x] T013 [US1] 目印の欄 `frontend/src/components/change-flags/ChangeFlagPanel.tsx` を作る：当てはまった決まりともとの記録（日付・項目・区分・値）を辞書で組み立てて表示し、そばに案内「気になるときは、看護職員・生活相談員に相談してください。急変は電話で」を出す（FR-003・FR-004）。
   目印・決まりの名前・案内の日本語を `frontend/src/i18n/ja.json` の `change.*` に足す（医療の言葉を使わない）。T006 を通す（みさき）
-- [x] T014 [P] [US1] 入居者一覧の上の部品 `frontend/src/components/change-flags/UnconfirmedFlagFilter.tsx` を作る：「確かめていない目印：◯件」（`unconfirmed_flag_count`）を出し、押すと目印の付いた入居者だけに絞れる（FR-003）。（みさき）
+- [x] T014 [P] [US1] 入居者一覧の上の部品 `frontend/src/components/change-flags/UnconfirmedFlagFilter.tsx` を作る：「確かめていない目印：◯件」（`unconfirmed_flag_count`）を出し、押すと、まだ確かめていない目印のある入居者だけに絞れる（FR-003）。（みさき）
 - [ ] T015 [US1] 入居者一覧（`frontend/src/pages/staff/ResidentList.tsx`、001-T031）に `UnconfirmedFlagFilter` を置き、目印のある入居者の行に「⚠️ いつもと違う様子」を出して上のほうに並べる。記録の画面（`frontend/src/pages/staff/RecordPage.tsx`、001-T032）に `ChangeFlagPanel` を置く（事務員のときは出さない）。
   ほかの表示との並べ方は、ゆうの画面設計で決めたとおりにする（plan の Structure Decision）（ゆう）
 
@@ -139,7 +139,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T022 [P] 目印まわり（`change.*`）の日本語にふりがなを付け、インドネシア語・英語の辞書 `frontend/src/i18n/id.json`・`frontend/src/i18n/en.json` に足す（001-T082・001-T083 の仕組み。Constitution の UI 方針。職員のひとことは対象外）（みさき）
+- [x] T022 [P] 目印まわり（`change.*`）の日本語にふりがなを付け、インドネシア語・英語の辞書 `frontend/src/i18n/id.json`・`frontend/src/i18n/en.json` に足す（001-T082・001-T083 の仕組み。Constitution の UI 方針。職員のひとことは対象外）（みさき。#101 で済み：ja のふりがなは T013 で、id・en の辞書は #101 のレビュー対応で足した）
 - [ ] T023 [P] 問い合わせ AI（spec 004）のツールの返す値に目印が入らないことを、spec 004 のテストに 1 件足す（spec 004 のツールができてから。FR-007・SC-005）（みさき）
 - [ ] T024 quickstart.md の確認をすべて通し、`docs/テスト設計書.md` に変化の検知のテストシナリオと結果を書く（Constitution の課題要件のテスト。001-T093 と一緒に）（みさき）
 

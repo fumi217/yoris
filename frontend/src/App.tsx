@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router'
 import { DevUserSwitcher } from './components/DevUserSwitcher'
 import AdminRoutes from './pages/admin/AdminRoutes'
 import FamilyRoutes from './pages/family/FamilyRoutes'
+import { FuriganaContext } from './i18n/furigana'
 import { useUserLanguage } from './i18n/useUserLanguage'
 import { HomeRedirect } from './pages/HomeRedirect'
 import { LoginPage } from './pages/LoginPage'
@@ -20,9 +21,24 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/login" element={<LoginPage />} />
-        {/* ログインなしの申し込み（spec 002 の T027）。施設がすでにあれば、API が 404 を返す */}
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/signup/complete" element={<SignupComplete />} />
+        {/* ログインなしの申し込み（spec 002 の T027）。施設がすでにあれば、API が 404 を返す。
+            ふりがなは付けない（constitution 3.1.0）。共通のエラーの文言のふりがなも外す */}
+        <Route
+          path="/signup"
+          element={
+            <FuriganaContext.Provider value={false}>
+              <Signup />
+            </FuriganaContext.Provider>
+          }
+        />
+        <Route
+          path="/signup/complete"
+          element={
+            <FuriganaContext.Provider value={false}>
+              <SignupComplete />
+            </FuriganaContext.Provider>
+          }
+        />
         <Route path="/family/*" element={<FamilyRoutes />} />
         <Route path="/staff/*" element={<StaffRoutes />} />
         <Route path="/admin/*" element={<AdminRoutes />} />

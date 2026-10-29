@@ -41,6 +41,11 @@ export function itemOf(ruleCode: string): 'meal' | 'mood' | 'sleep' | undefined 
   return RULE_ITEMS[ruleCode]
 }
 
+/** 画面に出せる目印か（知らない決まりや、もとの記録のない目印は出せない）。 */
+export function isShown(flag: ChangeFlag): boolean {
+  return itemOf(flag.rule_code) !== undefined && flag.evidence.length > 0
+}
+
 /** もとの記録を、日付の古い順に並べる（API の順に頼らない）。 */
 export function sortedEvidence(evidence: Evidence[]): Evidence[] {
   return [...evidence].sort((a, b) => a.date.localeCompare(b.date))

@@ -1,21 +1,24 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { FamilyContext } from '../i18n/audience'
+import { FuriganaContext } from '../i18n/furigana'
 import i18n from '../i18n/index'
 import { Text } from './Text'
 
 describe('Text', () => {
   it('職員・ログイン・申し込みでは、validation_error をそのまま出す', () => {
     expect(renderToStaticMarkup(<Text k="error.validation_error" />)).toContain(
-      '入力した内容を確かめてください',
+      '<rt>にゅうりょく</rt>',
     )
   })
 
   it('家族の画面では、validation_error を「もう一度、やり直してください」にする', () => {
     const html = renderToStaticMarkup(
-      <FamilyContext.Provider value={true}>
-        <Text k="error.validation_error" />
-      </FamilyContext.Provider>,
+      <FuriganaContext.Provider value={false}>
+        <FamilyContext.Provider value={true}>
+          <Text k="error.validation_error" />
+        </FamilyContext.Provider>
+      </FuriganaContext.Provider>,
     )
     expect(html).toContain('もう一度、やり直してください')
     expect(html).not.toContain('確かめてください')
@@ -38,9 +41,11 @@ describe('Text', () => {
 
   it('家族用の言い方がないキーは、家族の画面でもそのまま出す', () => {
     const html = renderToStaticMarkup(
-      <FamilyContext.Provider value={true}>
-        <Text k="error.forbidden" />
-      </FamilyContext.Provider>,
+      <FuriganaContext.Provider value={false}>
+        <FamilyContext.Provider value={true}>
+          <Text k="error.forbidden" />
+        </FamilyContext.Provider>
+      </FuriganaContext.Provider>,
     )
     expect(html).toContain('このページは表示できません')
   })

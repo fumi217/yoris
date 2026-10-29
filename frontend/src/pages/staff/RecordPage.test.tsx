@@ -94,7 +94,7 @@ describe('RecordView', () => {
   })
 
   it('保存できなかったら、理由を出す', () => {
-    expect(render({ errorKey: 'error.not_today' })).toContain('取り消したりできます')
+    expect(render({ errorKey: 'error.not_today' })).toContain('したりできます')
   })
 
   it('保存中は、続けて押せない', () => {

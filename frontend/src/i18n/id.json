@@ -577,7 +577,16 @@
     "send": "Kirim",
     "retry": "Kirim lagi",
     "remove": "Batalkan",
-    "back": "Kembali ke layar catatan"
+    "back": "Kembali ke layar catatan",
+    "posted_title": "Foto yang sudah diunggah",
+    "posted_empty": "Belum ada foto yang diunggah",
+    "family_hidden": "Saat ini tidak ditampilkan kepada keluarga",
+    "delete": "Hapus",
+    "delete_confirm": "Tekan sekali lagi untuk menghapus",
+    "deleting": "Sedang menghapus",
+    "deleted": "Sudah dihapus",
+    "already_deleted": "Foto itu sudah dihapus",
+    "posted_at": "Foto diunggah pada {{day}}/{{month}} pukul {{time}}"
   },
   "album": {
     "title": "Album",
@@ -613,5 +622,33 @@
     "copied": "✓ ID dan kata sandi awal sudah disalin",
     "copy_failed": "Tidak dapat menyalin. Mohon pilih teksnya lalu salin",
     "close": "Tutup layar ini"
+  },
+  "change": {
+    "title": "⚠️ Berbeda dari biasanya",
+    "guide": "Jika ada yang mengkhawatirkan, konsultasikan dengan perawat atau petugas konsultasi hidup. Untuk perubahan mendadak, hubungi lewat telepon",
+    "from_meal": "{{slot}} {{date}}",
+    "rule": {
+      "meal_low": "Porsi makan: sejak {{from}}, {{count}} kali makan berturut-turut sedikit atau kurang",
+      "mood_low": "Suasana hati: sejak {{from}}, {{count}} hari berturut-turut tampak kurang bersemangat",
+      "sleep_poor": "Tidur: sejak {{from}}, {{count}} hari berturut-turut kurang tidur"
+    },
+    "evidence_title": "Catatan yang menjadi dasar",
+    "evidence": "{{date}} {{item}}: {{value}}",
+    "evidence_slot": "{{date}} {{item}} ({{slot}}): {{value}}",
+    "status": {
+      "unconfirmed": "⚠️ Belum diperiksa",
+      "confirmed": "✔ Sudah diperiksa"
+    },
+    "confirmed_by": "Diperiksa oleh: ",
+    "note": "Catatan singkat: ",
+    "note_label": "Catatan singkat (opsional, maksimal 100 karakter)",
+    "note_count": "{{count}} / 100",
+    "confirm": "Sudah saya periksa",
+    "confirming": "Sedang menyimpan",
+    "already_confirmed": "Staf lain sudah memeriksanya",
+    "history_title": "Penanda sebelumnya",
+    "started": "Mulai: {{date}}",
+    "cleared": "Berakhir: {{date}}",
+    "unconfirmed_count": "Penanda yang belum diperiksa: {{count}}"
   }
 }
