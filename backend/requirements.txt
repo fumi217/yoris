@@ -17,5 +17,7 @@ stripe==16.0.0
 openai==3.26.1
 # 自由な文の読み付け（職員の「質問の原文」「AI の要約」のふりがな。spec 004 の FR-028a。技術選定 7 章）。GPL-3.0
 pykakasi==2.3.0
+# 写真のアップロード（multipart/form-data）を FastAPI が受け取るのに要る（spec 005 の 005-T009。技術選定 7 章）。Apache-2.0
+python-multipart==0.0.32
 # ログ：開発は読みやすい形式、本番は JSON（spec 001 の research.md R-18。技術選定 7 章で選定済み）
 structlog==26.1.0

@@ -58,17 +58,17 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 ### Tests for User Story 1（先に書いて、失敗することを確かめる）⚠️
 
 - [x] T006 [P] [US1] 単体テスト `backend/tests/unit/test_album_visibility.py`：`can_family_view_photo`（自分の入居者の写真は見える、ほかの入居者の写真・削除された写真・アルバムを見せない設定は見えない）、`get_visible_album_photos`（新しい順、12 枚で切る、`before` で続きを読む）（さとこ）
-- [ ] T007 [P] [US1] API テスト `backend/tests/api/test_album.py`（載せる）：職員が 1 枚載せられる／**コメントなしで載る**／コメントが **100 文字**までは載り、101 文字は 422 `validation_error`／JPG・PNG 以外（PDF、名前だけ JPG の PDF）と 10MB 超は 422 `invalid_file`／
+- [x] T007 [P] [US1] API テスト `backend/tests/api/test_album.py`（載せる）：職員が 1 枚載せられる／**コメントなしで載る**／コメントが **100 文字**までは載り、101 文字は 422 `validation_error`／JPG・PNG 以外（PDF、名前だけ JPG の PDF）と 10MB 超は 422 `invalid_file`／
   （Exif・向きの確認は、やらない。Session 2026-10-28）／家族のロールで載せる API を呼ぶと 403（FR-001・FR-003・FR-023）（さとこ）
-- [ ] T008 [P] [US1] API テスト `backend/tests/api/test_album.py`（見る）：家族 A が自分の入居者の写真を日ごとに見られる／**家族 B が家族 A の入居者の写真を一覧でも、ファイルの URL（`/api/files/{id}`）でも見られず 404**／ログインなしは 401／写真が 0 枚のときは空の配列（FR-005〜008）（さとこ）
+- [x] T008 [P] [US1] API テスト `backend/tests/api/test_album.py`（見る）：家族 A が自分の入居者の写真を日ごとに見られる／**家族 B が家族 A の入居者の写真を一覧でも、ファイルの URL（`/api/files/{id}`）でも見られず 404**／ログインなしは 401／写真が 0 枚のときは空の配列（FR-005〜008）（さとこ）
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] 職員の API を `backend/app/api/staff/album.py` に作る：`POST /api/staff/residents/{id}/album`（`multipart/form-data`、写真 **1 枚**＋任意の `comment`。T002 の処理を通して保存し、`album_photos` に足す。載せた職員と日時を残す）、
+- [x] T009 [US1] 職員の API を `backend/app/api/staff/album.py` に作る：`POST /api/staff/residents/{id}/album`（`multipart/form-data`、写真 **1 枚**＋任意の `comment`。T002 の処理を通して保存し、`album_photos` に足す。載せた職員と日時を残す）、
   `GET /api/staff/residents/{id}/album`（削除されていない写真の一覧と、`family_visible`）。役割：職員（CW・L・CO・D）。422：`invalid_file`・`validation_error`（FR-001・FR-002）（さとこ）
-- [ ] T010 [US1] 家族の API を `backend/app/api/family/album.py` に作る：`GET /api/family/album?before=&limit=`（`get_visible_album_photos` を通す。載せた日（日本時間）ごとにまとめ、1 回の既定は 12 枚（`limit` の上限は 30）、`next_before` で続きを読む。アルバムを見せない設定のときは 404）、
+- [x] T010 [US1] 家族の API を `backend/app/api/family/album.py` に作る：`GET /api/family/album?before=&limit=`（`get_visible_album_photos` を通す。載せた日（日本時間）ごとにまとめ、1 回の既定は 12 枚（`limit` の上限は 30）、`next_before` で続きを読む。アルバムを見せない設定のときは 404）、
   `GET /api/family/features`（`{ "album": true }`。開示設定の `feature` の状態だけ）。入居者は送らせず、ログイン中の家族から決める（FR-005・FR-006・FR-010）（T004 のあと）（さとこ）
-- [ ] T011 [US1] `GET /api/files/{id}` に、アルバムの写真の条件を `backend/app/api/files.py` に足す（001-T071 のあと）：職員（CW・L・CO・D）は削除されていないものを開ける。事務員は 404。家族は `can_family_view_photo` が真のときだけ開ける。それ以外は 404、ログインなしは 401。`Content-Type` は保存した形式に固定し、`X-Content-Type-Options: nosniff` を付ける（FR-006・FR-007・FR-022）（さとこ）
+- [x] T011 [US1] `GET /api/files/{id}` に、アルバムの写真の条件を `backend/app/api/files.py` に足す（001-T071 のあと）：職員（CW・L・CO・D）は削除されていないものを開ける。事務員は 404。家族は `can_family_view_photo` が真のときだけ開ける。それ以外は 404、ログインなしは 401。`Content-Type` は保存した形式に固定し、`X-Content-Type-Options: nosniff` を付ける（FR-006・FR-007・FR-022）（さとこ）
 - [ ] T012 [US1] 家族のアルバムの画面を `frontend/src/pages/family/Album.tsx` に作る：載せた日ごとに、元の写真を小さく（CSS）並べ、`loading="lazy"` で読み込み、タップで大きく出す（サムネイルは作らない。Session 2026-10-28）。コメントは**文字としてのみ**写真の下に出す（辞書を通さず、HTML として解釈しない）。「もっと見る」で続きを読む（最初は 12 枚）。写真がないときは「まだ写真はありません」。写真の枠の大きさ（`aspect-ratio`、または width・height）を先に決める（`loading="lazy"` が、画面の外の写真までまとめて読み込まないため。12 枚は 2・3・4 列のどれでも割り切れる。Session 2026-10-28）。
   固定の文言は辞書（`frontend/src/i18n/ja.json`）から引き、ふりがなは spec 001 の R-11 の書き方にする（FR-005・FR-008・FR-021・FR-022）（さとこ）
 - [ ] T013 [US1] 家族の画面の枠に、「☰ その他」の中の「アルバム」のリンクと `/family/album` のルートを足す（`frontend/src/pages/family/` の枠。001-T019 のあと）。`GET /api/family/features` が `album: false` のときは出さない。spec 003 の面会の置き方と同じ形にする（FR-010）（さとこ）

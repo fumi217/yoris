@@ -26,7 +26,7 @@
 **Language/Version**: Python 3.13（バックエンド）、TypeScript 6・Node 24（フロントエンド）。spec 001 の plan と同じ
 
 **Primary Dependencies**: spec 001 の plan と同じ（FastAPI、SQLAlchemy 2、Alembic、Pydantic 2、React（Vite）、React Router、TanStack Query、react-i18next、Tailwind CSS）。
-**新しいライブラリは足さない**（Pillow も足さない。Session 2026-10-28）
+**足すライブラリは `python-multipart` だけ**（職員の写真のアップロード＝`multipart/form-data` を FastAPI が受けるのに要る。入れずに定義すると `RuntimeError`。Apache-2.0。技術選定 7 章に理由を書いた。#148）。Pillow は足さない（Session 2026-10-28）
 
 **Storage**:
 - PostgreSQL：アルバムの写真（[data-model.md](./data-model.md)）。ファイルそのものは spec 001 の `uploaded_files` と保存先（開発はボリューム、本番は S3 互換）
@@ -65,7 +65,7 @@
 | II. 職員の入力負担を増やさない | 撮って載せるだけ。一言コメントは任意（自由記述は任意の書き足しに限る）。4 タップ以内・30 秒以内を目標にする（SC-001）。記録 1 項目の 3 タップ・10 秒より長いのは、撮影が入るため | ✅ |
 | III. AI は医療判断をしない | この spec では AI を使わない。AI（F）は写真を参照しない | ✅（対象外） |
 | IV. 開示は施設が選ぶ・家族は自分の入居者だけ | 開示設定にアルバムを加える（施設全体で一括）。見せない設定のとき、メニュー・URL・通知のいずれにも出さない。家族は自分の入居者の写真だけ（R-03） | ✅ |
-| V. 10 日間で動くものを優先 | 全体が作り込み。spec 001 の仕組み（ファイル・開示設定・まとめ）を使い回し、新しいライブラリを足さない | ✅ |
+| V. 10 日間で動くものを優先 | 全体が作り込み。spec 001 の仕組み（ファイル・開示設定・まとめ）を使い回す。足すライブラリは `python-multipart` だけ（写真のアップロードを受けるのに要る。理由は技術選定に書いた） | ✅ |
 | UI 方針 | 固定の文言は辞書から引き、ふりがなは spec 001 の R-11 の書き方。職員のコメントは翻訳・ふりがなの対象外 | ✅ |
 | 利用者と権限 | 載せる・削除は介護職員・リーダー・生活相談員・施設長（事務員は含めない）、開示設定の変更は相談員・施設長、見るのは家族（自分の入居者のみ）。`require_staff(roles)` で確かめる | ✅ |
 | 個人情報 | 写真は要配慮個人情報として扱う。公開 URL を持たず、ログインと役割を確かめて返す。通信は https。架空の写真だけを使う。ログにファイル名・コメントを出さない | ✅ |
@@ -84,7 +84,7 @@
 | 開示設定の「アルバム」は、`target_type = 'feature'` として別に持ち、記録項目の通知の選択肢（`notify_items`）に混ざらない（[data-model.md](./data-model.md#disclosure_settings既存に足す)） | ✅ |
 | 通知の文面・メールに、写真・ファイル名・コメント・入居者名を渡さない（[research.md R-06](./research.md#r-06-新しい写真の通知まとめに足す)） | ✅ |
 | 削除は、家族の画面から外す→保存先のファイルを消す、の順で、消えた写真が URL から開けない（[research.md R-05](./research.md#r-05-写真の削除)） | ✅ |
-| 新しいライブラリは増えていない | ✅ |
+| 増えたライブラリは `python-multipart` だけで、理由を技術選定に書いた | ✅ |
 
 ## Project Structure
 

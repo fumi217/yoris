@@ -156,11 +156,11 @@ def test_unknown_id_is_404(client, make_staff, login_as, upload_dir):
     assert client.get("/api/files/999999999").status_code == 404
 
 
-def test_album_photos_cannot_be_opened_until_the_album_rules_exist(
+def test_album_file_without_a_photo_record_cannot_be_opened(
     client, session, make_staff, login_as, upload_dir
 ):
-    # アルバムの写真の条件（入居者ごと・開示設定）は 005-T011 で足す。
-    # それまでは、条件がないまま見えてしまわないように、開けない
+    # アルバムの写真は、album_photos の記録がないと、職員でも開けない
+    # （条件は services/album.py の can_open_album_file。tests/api/test_album.py で確かめる）
     staff = make_staff()
     saved = save_upload(session, data=JPEG, purpose="album", uploaded_by=staff.id)
     login_as(staff.user_id)

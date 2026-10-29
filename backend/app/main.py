@@ -7,11 +7,13 @@ from app.api.admin import billing as admin_billing
 from app.api.admin import disclosure as admin_disclosure
 from app.api.admin import staff as admin_staff
 from app.api.admin import visits as admin_visits
+from app.api.family import album as family_album
 from app.api.family import contact_book as family_contact_book
 from app.api.family import inquiry as family_inquiry
 from app.api.family import notifications as family_notifications
 from app.api.family import requests as family_requests
 from app.api.family import visits as family_visits
+from app.api.staff import album as staff_album
 from app.api.staff import contact_book as staff_contact_book
 from app.api.staff import memos as staff_memos
 from app.api.staff import messages as staff_messages
@@ -49,10 +51,12 @@ def create_app() -> FastAPI:
     app.include_router(admin_staff.router)
     app.include_router(admin_visits.router)
     app.include_router(family_visits.router)
+    app.include_router(family_album.router)
     app.include_router(family_requests.router)
     app.include_router(family_contact_book.router)
     app.include_router(family_notifications.router)
     app.include_router(family_inquiry.router)
+    app.include_router(staff_album.router)
     app.include_router(staff_contact_book.router)
     app.include_router(staff_memos.router)
     app.include_router(staff_messages.router)

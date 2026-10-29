@@ -17,8 +17,15 @@ from datetime import datetime
 from sqlalchemy import func, select, tuple_
 from sqlalchemy.orm import Session
 
+from app.auth.deps import CurrentUser
 from app.models.album import AlbumPhoto
 from app.services.disclosure import is_feature_disclosed
+
+# 写真を載せる・見る・削除できる職員の役割（介護職員・リーダー・生活相談員・施設長）。
+# 事務員は含めない（Assumptions）
+ALBUM_STAFF_ROLES = ("care_worker", "leader", "counselor", "director")
+# アルバムに載せられる形式（PDF は受け付けない。FR-003）
+ALBUM_FILE_TYPES = ("image/jpeg", "image/png")
 
 # 一覧を 1 回で返す枚数。既定は 12（サムネイルがなく、1 枚 3〜8MB ほどなので、最初の読み込みを
 # 軽くするため。#298 の相談で決定）。上限は 30
@@ -52,6 +59,24 @@ def can_family_view_photo(session: Session, photo: AlbumPhoto, resident_id: int)
         and photo.file_id is not None
         and is_feature_disclosed(session, "album")
     )
+
+
+def can_open_album_file(session: Session, file_id: int, user: CurrentUser) -> bool:
+    """GET /api/files/{id} で、このアルバムの写真のファイルを開いてよいか。
+
+    - 職員（ALBUM_STAFF_ROLES）：削除されていない写真なら、開示設定に関わらず開ける
+      （職員の画面が、載せた写真を表示するため）。事務員は開けない
+    - 家族：can_family_view_photo が真のときだけ（一覧と同じ判定）
+    - 写真の記録がない・削除された写真は、だれも開けない
+    """
+    photo = session.scalar(select(AlbumPhoto).where(AlbumPhoto.file_id == file_id))
+    if photo is None or photo.deleted_at is not None:
+        return False
+    if user.kind == "staff":
+        return user.role in ALBUM_STAFF_ROLES
+    if user.kind == "family" and user.resident_id is not None:
+        return can_family_view_photo(session, photo, user.resident_id)
+    return False
 
 
 def get_visible_album_photos(

@@ -26,7 +26,7 @@
 | 領域 | 採用技術 |
 | --- | --- |
 | フロントエンド | Node 24、React（Vite）・TypeScript、React Router、Tailwind CSS、react-i18next（日本語・インドネシア語・英語）、TanStack Query。テストは Vitest、E2E は Playwright、lint は ESLint、整形は Prettier |
-| バックエンド | Python 3.13 ＋ FastAPI、SQLAlchemy、Pydantic、structlog、pykakasi（職員のメッセージ画面の自由な文に読みを付ける。spec 004 の FR-028a）。テストは pytest、lint と整形は ruff |
+| バックエンド | Python 3.13 ＋ FastAPI、SQLAlchemy、Pydantic、structlog、pykakasi（職員のメッセージ画面の自由な文に読みを付ける。spec 004 の FR-028a）、python-multipart（職員の写真のアップロードを受ける。spec 005）。テストは pytest、lint と整形は ruff |
 | データ・キャッシュ | PostgreSQL、Redis（セッション・開示設定のキャッシュ・AI 問い合わせの回数制限。作り込みでログインの試行回数の制限） |
 | 認証 | バックエンドが発行するセッション（Cookie、Redis に保存）。役割と権限は自前の DB で管理。パスワードは bcrypt（半角の英数字と記号で 8〜64 文字、よく使われるものは不可。spec 001 の research.md R-03） |
 | AI | OpenRouter（学校配布のキー）＋ OpenAI Python SDK のツール呼び出し。モデル名は環境変数 |
