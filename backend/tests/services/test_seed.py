@@ -5,19 +5,30 @@
 """
 
 from datetime import date
+from pathlib import Path
 
 import pytest
 from sqlalchemy import func, select
 
 from app.auth.login_ids import next_login_ids
+from app.models.album import AlbumPhoto
 from app.models.change_flags import ChangeFlag, ChangeRule
 from app.models.core import STAFF_ROLES, Facility, FamilyAccount, Resident, Staff, User
+from app.models.files import UploadedFile
 from app.models.records import CareRecord
 from app.models.visits import VisitReservation
 from app.seed.__main__ import seed
+from app.seed.album import SAMPLE_SCENES, add_sample_photos, landscape_png
 from app.seed.people import RESIDENT_COUNT, STAFF, add_people
+from app.services.uploads import read_upload
 
 TODAY = date(2026, 10, 23)
+
+
+@pytest.fixture(autouse=True)
+def _upload_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """seed はデモの写真のファイルを書くので、保存先は一時フォルダにする（本物を汚さない）。"""
+    monkeypatch.setenv("UPLOAD_DIR", str(tmp_path))
 
 
 def _count(session, model) -> int:
@@ -129,3 +140,44 @@ def test_seed_makes_a_demo_flag(session):
         select(ChangeFlag).where(ChangeFlag.resident_id == first, ChangeFlag.cleared_at.is_(None))
     ).all()
     assert [(f.rule_code, f.status, f.streak) for f in flags] == [("meal_low", "unconfirmed", 2)]
+
+
+def test_album_sample_photos_are_added_once(session, make_family, make_staff):
+    resident_id = make_family().resident_id
+    staff_id = make_staff(role="care_worker").id
+
+    assert add_sample_photos(session, resident_id=resident_id, staff_id=staff_id) == len(
+        SAMPLE_SCENES
+    )
+
+    photos = session.scalars(select(AlbumPhoto).where(AlbumPhoto.resident_id == resident_id)).all()
+    assert len(photos) == len(SAMPLE_SCENES)
+    for photo in photos:
+        uploaded = session.get(UploadedFile, photo.file_id)
+        assert uploaded is not None
+        assert (uploaded.purpose, uploaded.content_type) == ("album", "image/png")
+        # 保存先にファイルがあり、PNG として始まっている
+        assert read_upload(uploaded.storage_key).startswith(b"\x89PNG")
+        assert photo.comment is None or len(photo.comment) <= 100
+    assert any(photo.comment is None for photo in photos)  # コメントなしの写真も 1 枚ある
+    # 2 回目は足さない
+    assert add_sample_photos(session, resident_id=resident_id, staff_id=staff_id) == 0
+    assert _count(session, AlbumPhoto) >= len(SAMPLE_SCENES)
+
+
+def test_landscape_png_is_a_small_real_png():
+    for scene in SAMPLE_SCENES:
+        data = landscape_png(scene)
+
+        assert data.startswith(b"\x89PNG\r\n\x1a\n")
+        assert len(data) < 50_000  # リポジトリにも保存先にも、重くならない
+
+
+def test_seed_adds_album_photos_for_the_first_resident_only(session):
+    # 空の DB（CI）だけ、デモの写真が入る（人がいる手元の DB では、足されない）
+    if not seed(session, today=TODAY):
+        pytest.skip("人がいる DB では、デモの写真は足されない")
+    first = session.scalar(select(Resident.id).order_by(Resident.id))
+    owners = set(session.scalars(select(AlbumPhoto.resident_id)))
+
+    assert owners == {first}

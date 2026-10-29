@@ -149,12 +149,12 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T030 [P] 家族の画面の単体テスト `frontend/tests/unit/Album.test.tsx`（Vitest）：日ごとに並ぶ、写真がないとき「まだ写真はありません」、コメントが文字としてのみ出る（`<script>` を入れても実行されない）（さとこ）
-- [ ] T031 [P] 職員の画面の単体テスト `frontend/tests/unit/AlbumUpload.test.tsx`（Vitest）：10 枚まで選べる、コメントが 100 文字を超えると送れない、失敗した写真だけ「もう一度送る」が出る、10MB を超える写真は送る前に断る（さとこ）
-- [ ] T032 デモ用の架空の写真を `backend/app/seed/album.py` に作り、初期データに足す（顔の写っていない風景や物の画像を数枚。実在の人物の写真は使わない）（さとこ）
+- [x] T030 [P] 家族の画面の単体テスト `frontend/tests/unit/Album.test.tsx`（Vitest）：日ごとに並ぶ、写真がないとき「まだ写真はありません」、コメントが文字としてのみ出る（`<script>` を入れても実行されない）（さとこ）。実際のテストは、ほかの画面と同じく `src` の中に置いた：`frontend/src/pages/family/Album.test.tsx`・`albumView.test.ts`
+- [x] T031 [P] 職員の画面の単体テスト `frontend/tests/unit/AlbumUpload.test.tsx`（Vitest）：10 枚まで選べる、コメントが 100 文字を超えると送れない、失敗した写真だけ「もう一度送る」が出る、10MB を超える写真は送る前に断る（さとこ）。実際のテストは `src` の中に置いた：`frontend/src/pages/staff/AlbumUpload.test.tsx`・`AlbumPosted.test.tsx`・`albumUploadLogic.test.ts`
+- [x] T032 デモ用の架空の写真を `backend/app/seed/album.py` に作り、初期データに足す（顔の写っていない風景や物の画像を数枚。実在の人物の写真は使わない）（さとこ）
 - [ ] T033 E2E テストを `frontend/tests/e2e/album.spec.ts` に Playwright で作る：quickstart.md の 1〜14 の通しの確認（職員が載せる → 家族 A が見る → 家族 B には見えない → 削除する）（ようこの E2E の土台に足す）（さとこ）
 - [ ] T034 quickstart.md の確認をすべて通し、`docs/テスト設計書.md` にアルバムの結合・総合テストのシナリオと結果を書く（Constitution の課題要件のテスト）（さとこ）
-- [ ] T035 [P] ログを確かめる：アルバムの処理が、ファイル名・コメント・入居者名をログに出さず、写真・入居者・職員の id と結果だけを出していることを、コードとテストで確かめる（research.md R-09）（さとこ）
+- [x] T035 [P] ログを確かめる：アルバムの処理が、ファイル名・コメント・入居者名をログに出さず、写真・入居者・職員の id と結果だけを出していることを、コードとテストで確かめる（research.md R-09）（さとこ）
 
 ---
 

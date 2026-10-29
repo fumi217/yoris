@@ -18,6 +18,7 @@ from app.config import get_settings
 from app.db import get_engine
 from app.models.core import Resident
 from app.models.disclosure import Theme
+from app.seed.album import add_sample_photos
 from app.seed.billing import add_subscription
 from app.seed.change_rules import add_change_rules, add_sample_change_flags
 from app.seed.inquiry import add_staff_message_templates
@@ -67,6 +68,8 @@ def seed(session: Session, *, today: date) -> bool:
         add_sample_requests(
             session, resident_ids=resident_ids, theme_ids=theme_ids, staff_id=care_worker_id
         )
+        # アルバムのデモの写真は、最初の入居者（A）にだけ（B の家族には見えないことを確かめるため）
+        add_sample_photos(session, resident_id=resident_ids[0], staff_id=care_worker_id)
     return fresh
 
 

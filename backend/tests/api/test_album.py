@@ -7,6 +7,7 @@
 写真は、テストの中で作った小さな架空の画像だけを使う（実在の人物の写真は使わない）。
 """
 
+import logging
 from collections.abc import Callable, Iterator
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -16,7 +17,7 @@ from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from app.models.album import AlbumPhoto
-from app.models.core import Facility, Staff
+from app.models.core import Facility, Resident, Staff
 from app.models.disclosure import DisclosureSetting
 from app.models.files import UploadedFile
 from app.seed.themes import add_disclosure_settings, add_themes
@@ -701,3 +702,28 @@ def test_photos_come_back_when_the_album_is_shown_again(
     days = client.get("/api/family/album").json()["days"]
     assert [shown["id"] for day in days for shown in day["photos"]] == [photo.id]
     assert _open(client, photo).status_code == 200
+
+
+# --- 005-T035：ログ（research.md R-09） ---
+
+
+def test_album_does_not_log_file_names_comments_or_resident_names(
+    client, session, world, make_family, make_staff, login_as, caplog
+):
+    family = make_family()
+    resident = session.get(Resident, family.resident_id)
+    assert resident is not None
+    login_as(make_staff(role="leader").user_id)
+    # SQL（パラメーターに入力が入る）ではなく、アルバムのコードが出すログだけを見る
+    caplog.set_level(logging.DEBUG, logger="app")
+
+    posted = _post(client, family.resident_id, name="ひみつの名前.png", comment="ひみつのコメント")
+    assert posted.status_code == 201
+    body = posted.json()
+    assert client.get(f"/api/staff/residents/{family.resident_id}/album").status_code == 200
+    assert client.get(body["url"]).status_code == 200
+    assert client.delete(f"/api/staff/album/{body['id']}").status_code == 204
+
+    # 載せる・一覧・開く・削除のどれも、ファイル名・コメント・入居者名を出さない
+    for secret in ("ひみつの名前", "ひみつのコメント", resident.display_name):
+        assert secret not in caplog.text
