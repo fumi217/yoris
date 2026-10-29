@@ -10,6 +10,7 @@ from sqlalchemy import func, select
 from app.clock import today_jst
 from app.inquiry.llm import LLMUnavailable
 from app.memos.prompts import build_rewrite_prompt
+from app.models.core import Facility, Resident
 from app.models.memos import CareMemo, CareMemoRevision
 from tests.fakes.llm import text_response
 
@@ -111,6 +112,25 @@ def test_create_for_an_unknown_resident_is_404(client, writer):
 
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "not_found"
+
+
+def test_create_for_a_resident_of_another_facility_is_404(client, session, writer):
+    # 入居者は、書く職員と同じ施設のときだけ（#326。承認の API と同じ作り）
+    facility = Facility(name="ほかの施設")
+    session.add(facility)
+    session.flush()
+    resident = Resident(
+        facility_id=facility.id, name="架空 遠方", display_name="とおくさんの父", room="9"
+    )
+    session.add(resident)
+    session.flush()
+    before = session.scalar(select(func.count()).select_from(CareMemo))
+
+    response = create(client, resident.id)
+
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "not_found"
+    assert session.scalar(select(func.count()).select_from(CareMemo)) == before
 
 
 # --- 役割 ---

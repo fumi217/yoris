@@ -22,7 +22,7 @@ from app.clock import today_jst
 from app.errors import AppError, ErrorCode
 from app.inquiry.llm import ChatClient
 from app.memos.rewrite import rewrite_memo
-from app.models.core import Resident
+from app.models.core import Resident, Staff
 from app.models.memos import CareMemo, CareMemoRevision
 
 # 直したり「日本語にする」をやり直したりできる状態（data-model.md の「状態の動き」）
@@ -39,9 +39,13 @@ def create_memo(
     """下書きを作る。原文は、AI を呼ぶ前に、ここで保存する（R-09）。
 
     書いた職員は、ログイン中の職員から決める（送らせない）。日付は日本時間の今日。
+    入居者は、書く職員と同じ施設のときだけ。ほかの施設の入居者は、ない入居者と同じ NOT_FOUND
+    にする（承認の API と同じ作り。#326）。
     """
     assert user.staff_id is not None
-    if session.get(Resident, resident_id) is None:
+    resident = session.get(Resident, resident_id)
+    facility_id = session.scalars(select(Staff.facility_id).where(Staff.id == user.staff_id)).one()
+    if resident is None or resident.facility_id != facility_id:
         raise AppError(ErrorCode.NOT_FOUND)
     memo = CareMemo(
         resident_id=resident_id,
