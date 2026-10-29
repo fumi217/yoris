@@ -33,17 +33,17 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 **⚠️ CRITICAL**: spec 001 の 001-T009（共通のテーブル）・001-T010（`CurrentUser` と役割のチェック）・001-T012（エラーの形）・001-T015（初期データの仕組み）・001-T036（開示設定のテーブル）・001-T038（`disclosure.py`）・001-T068（`uploaded_files`）・001-T069（`uploads.py`）のあとに始める
 
-- [ ] T001 アルバムのテーブルを `backend/app/models/album.py` に作り、マイグレーションを足す（data-model.md）。`album_photos`：`resident_id`（→ `residents`）、`file_id`（→ `uploaded_files`、削除したら空にする）、
+- [x] T001 アルバムのテーブルを `backend/app/models/album.py` に作り、マイグレーションを足す（data-model.md）。`album_photos`：`resident_id`（→ `residents`）、`file_id`（→ `uploaded_files`、削除したら空にする）、
   `comment` は **`varchar(100)`、任意（空でよい）、削除したら空にする**、`posted_by`（→ `staff`）、`posted_at`、`deleted_by`・`deleted_at`。索引は `(resident_id, posted_at DESC, id DESC)`。
   `uploaded_files.purpose` に `album` を足す（元の写真は `album`）（FR-023・FR-012）（さとこ）
-- [ ] T002 [P] 写真の処理を `backend/app/services/uploads.py` に足す（001-T069 のあと）：呼び出し側が受け付ける形式を渡せるようにし、アルバムでは **`image/jpeg`・`image/png` だけ**にする（PDF は `invalid_file`）。
+- [x] T002 [P] 写真の処理を `backend/app/services/uploads.py` に足す（001-T069 のあと）：呼び出し側が受け付ける形式を渡せるようにし、アルバムでは **`image/jpeg`・`image/png` だけ**にする（PDF は `invalid_file`）。
   Pillow は使わない（Exif の除去・向きの直し・サムネイルは、やらない。Session 2026-10-28。向きは、ブラウザが写真の向きの情報を見て表示する）。
   1 枚は **10MB まで**。先頭のバイトで JPEG・PNG だけを確かめる（それ以外は `invalid_file`）。極端に大きい画像・アニメーション PNG・壊れた画像を断る確認は、やらない（Session 2026-10-28）（research.md R-02。FR-003）（さとこ）
 - [x] T003 [P] 開示設定に「アルバム」を足す（**ゆうに依頼**。001-T036・001-T038 のあと）：`disclosure_settings.target_type` に `feature` を足し、初期データに `(facility_id, 'feature', 'album', visible = true)` の 1 行を入れる（`backend/app/seed/`）。
   `backend/app/services/disclosure.py` に `is_feature_disclosed(code)` を足す（開示設定のキャッシュを読む。`get_disclosed_records` や通知の項目の選択肢に `feature` の行が混ざらないようにする）（FR-013・research.md R-04）（ゆう）
-- [ ] T004 家族に出す共通の関数を `backend/app/services/album.py` に作る：`get_visible_album_photos(resident_id, before=None, limit=12)`（アルバムが「見せる」のとき、その入居者の削除されていない写真を新しい順に返す。「見せない」のときは呼び出し側が 404 にする）、
+- [x] T004 家族に出す共通の関数を `backend/app/services/album.py` に作る：`get_visible_album_photos(resident_id, before=None, limit=12)`（アルバムが「見せる」のとき、その入居者の削除されていない写真を新しい順に返す。「見せない」のときは呼び出し側が 404 にする）、
   `can_family_view_photo(photo, resident_id)`（自分の入居者の写真・削除されていない・アルバムが「見せる」）、`count_new_photos(resident_id, since, until)`（削除されていない写真の数）。家族に写真を出す道は、これらの関数だけにする（T003 のあと。research.md R-03。FR-006・FR-014）（さとこ）
-- [ ] T005 [P] テスト用の架空の画像を作る補助を `backend/tests/helpers/images.py` に作る：JPG、PNG、名前だけ `.jpg` の PDF、10MB を超える画像を、テストの中で作る（実在の人物の写真は使わない。research.md R-08）（さとこ）
+- [x] T005 [P] テスト用の架空の画像を作る補助を `backend/tests/helpers/images.py` に作る：JPG、PNG、名前だけ `.jpg` の PDF、10MB を超える画像を、テストの中で作る（実在の人物の写真は使わない。research.md R-08）（さとこ）
 
 **Checkpoint**: マイグレーションが通り、写真を保存でき、開示設定の「アルバム」（見せる）が入っている
 
@@ -57,7 +57,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ### Tests for User Story 1（先に書いて、失敗することを確かめる）⚠️
 
-- [ ] T006 [P] [US1] 単体テスト `backend/tests/unit/test_album_visibility.py`：`can_family_view_photo`（自分の入居者の写真は見える、ほかの入居者の写真・削除された写真・アルバムを見せない設定は見えない）、`get_visible_album_photos`（新しい順、12 枚で切る、`before` で続きを読む）（さとこ）
+- [x] T006 [P] [US1] 単体テスト `backend/tests/unit/test_album_visibility.py`：`can_family_view_photo`（自分の入居者の写真は見える、ほかの入居者の写真・削除された写真・アルバムを見せない設定は見えない）、`get_visible_album_photos`（新しい順、12 枚で切る、`before` で続きを読む）（さとこ）
 - [ ] T007 [P] [US1] API テスト `backend/tests/api/test_album.py`（載せる）：職員が 1 枚載せられる／**コメントなしで載る**／コメントが **100 文字**までは載り、101 文字は 422 `validation_error`／JPG・PNG 以外（PDF、名前だけ JPG の PDF）と 10MB 超は 422 `invalid_file`／
   （Exif・向きの確認は、やらない。Session 2026-10-28）／家族のロールで載せる API を呼ぶと 403（FR-001・FR-003・FR-023）（さとこ）
 - [ ] T008 [P] [US1] API テスト `backend/tests/api/test_album.py`（見る）：家族 A が自分の入居者の写真を日ごとに見られる／**家族 B が家族 A の入居者の写真を一覧でも、ファイルの URL（`/api/files/{id}`）でも見られず 404**／ログインなしは 401／写真が 0 枚のときは空の配列（FR-005〜008）（さとこ）
