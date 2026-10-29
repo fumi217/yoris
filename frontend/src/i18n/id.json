@@ -657,12 +657,12 @@
   },
   "change": {
     "title": "⚠️ Berbeda dari biasanya",
-    "guide": "Jika ada yang mengkhawatirkan, konsultasikan dengan perawat atau petugas konsultasi hidup. Untuk perubahan mendadak, hubungi lewat telepon",
-    "from_meal": "{{slot}} {{date}}",
+    "guide": "Jika Anda khawatir, mohon konsultasikan dengan perawat atau konselor. Untuk perubahan mendadak, hubungi lewat telepon",
+    "from_meal": "{{slot}} pada {{date}}",
     "rule": {
-      "meal_low": "Porsi makan: sejak {{from}}, {{count}} kali makan berturut-turut sedikit atau kurang",
-      "mood_low": "Suasana hati: sejak {{from}}, {{count}} hari berturut-turut tampak kurang bersemangat",
-      "sleep_poor": "Tidur: sejak {{from}}, {{count}} hari berturut-turut kurang tidur"
+      "meal_low": "Makan: {{count}} kali berturut-turut, sedikit atau kurang, mulai dari {{from}}",
+      "mood_low": "Suasana hati: {{count}} hari berturut-turut, kurang bersemangat, mulai dari {{from}}",
+      "sleep_poor": "Tidur: {{count}} hari berturut-turut, kurang nyenyak, mulai dari {{from}}"
     },
     "evidence_title": "Catatan yang menjadi dasar",
     "evidence": "{{date}} {{item}}: {{value}}",
@@ -672,15 +672,15 @@
       "confirmed": "✔ Sudah diperiksa"
     },
     "confirmed_by": "Diperiksa oleh: ",
-    "note": "Catatan singkat: ",
-    "note_label": "Catatan singkat (opsional, maksimal 100 karakter)",
+    "note": "Catatan: ",
+    "note_label": "Catatan (boleh dikosongkan, maksimal 100 karakter)",
     "note_count": "{{count}} / 100",
     "confirm": "Sudah saya periksa",
     "confirming": "Sedang menyimpan",
     "already_confirmed": "Staf lain sudah memeriksanya",
-    "history_title": "Penanda sebelumnya",
+    "history_title": "Tanda sebelumnya",
     "started": "Mulai: {{date}}",
     "cleared": "Berakhir: {{date}}",
-    "unconfirmed_count": "Penanda yang belum diperiksa: {{count}}"
+    "unconfirmed_count": "Tanda yang belum diperiksa: {{count}}"
   }
 }

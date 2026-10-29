@@ -657,12 +657,12 @@
   },
   "change": {
     "title": "⚠️ Different from usual",
-    "guide": "If you are concerned, talk to a nurse or a life counselor. For sudden changes, call by phone",
-    "from_meal": "{{date}} {{slot}}",
+    "guide": "If you are concerned, please talk to a nurse or a counselor. For sudden changes, call by phone",
+    "from_meal": "{{slot}} on {{date}}",
     "rule": {
-      "meal_low": "Meal: from {{from}}, {{count}} meals in a row at a small amount or less",
-      "mood_low": "Mood: from {{from}}, {{count}} days in a row of seeming low in spirits",
-      "sleep_poor": "Sleep: from {{from}}, {{count}} days in a row of not sleeping well"
+      "meal_low": "Meals: {{count}} meals in a row, a little or less, starting from {{from}}",
+      "mood_low": "Mood: {{count}} days in a row, not in good spirits, starting from {{from}}",
+      "sleep_poor": "Sleep: {{count}} days in a row, did not sleep well, starting from {{from}}"
     },
     "evidence_title": "Records this is based on",
     "evidence": "{{date}} {{item}}: {{value}}",
@@ -673,9 +673,9 @@
     },
     "confirmed_by": "Checked by: ",
     "note": "Note: ",
-    "note_label": "A short note (optional, up to 100 characters)",
+    "note_label": "Note (optional, up to 100 characters)",
     "note_count": "{{count}} / 100",
-    "confirm": "I have checked",
+    "confirm": "Mark as checked",
     "confirming": "Saving",
     "already_confirmed": "Another staff member has already checked it",
     "history_title": "Past flags",
