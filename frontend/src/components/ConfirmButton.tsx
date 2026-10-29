@@ -12,6 +12,9 @@ type Props = {
   busy?: boolean
   disabled?: boolean
   onConfirm: () => void
+  // 確かめの状態（1 回目を押したあと）に入る・出るときに呼ぶ。理由の入力欄を読み取り専用にするなど、
+  // 確かめた内容と送る内容がずれないようにするために使う（#317）
+  onArmedChange?: (armed: boolean) => void
   // このボタンが何についてのものかを説明する要素の id（読み上げ用）。同じ名前のボタンが並ぶ
   // 一覧で、どの行のボタンかを伝えるときに使う（WCAG 1.3.1・4.1.2）。なくてもよい
   describedBy?: string
@@ -33,6 +36,7 @@ export function ConfirmButton({
   busy = false,
   disabled = false,
   onConfirm,
+  onArmedChange,
   describedBy,
   className = '',
 }: Props) {
@@ -51,7 +55,14 @@ export function ConfirmButton({
     }
   }, [firstAt])
 
-  const reset = () => setFirstAt(null)
+  const arm = () => {
+    setFirstAt(Date.now())
+    onArmedChange?.(true)
+  }
+  const reset = () => {
+    setFirstAt(null)
+    onArmedChange?.(false)
+  }
   const stop = () => {
     stopped.current = true
     reset()
@@ -76,7 +87,7 @@ export function ConfirmButton({
         type="button"
         disabled={disabled}
         aria-describedby={describedBy}
-        onClick={() => setFirstAt(Date.now())}
+        onClick={arm}
         className={`${className} disabled:opacity-60`}
       >
         <Text k={labelKey} />

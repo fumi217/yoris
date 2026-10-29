@@ -521,6 +521,8 @@
     "has_reservations": "Pada hari ini ada {{count}} reservasi. Jika diliburkan, reservasi tersebut akan dibatalkan dan keluarga menerima pemberitahuan dan email",
     "reason": "Alasan pembatalan (ditampilkan kepada keluarga, maksimal 200 karakter)",
     "reason_too_long": "Tulis alasan dalam 200 karakter",
+    "reason_hint": "Tulis alasan, lalu tekan tombol",
+    "reason_locked": "Alasan ini akan dipakai untuk pembatalan. Untuk mengubahnya, tekan \"{{stop}}\"",
     "confirm_close": "Batalkan reservasi dan liburkan",
     "confirm_close_confirm": "Tekan sekali lagi untuk membatalkan reservasi dan meliburkan hari ini",
     "dismiss": "Jangan liburkan",

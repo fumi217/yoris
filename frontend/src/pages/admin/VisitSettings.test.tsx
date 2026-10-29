@@ -145,6 +145,13 @@ describe('ClosedDaysView', () => {
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>.*?取/)
   })
 
+  it('予約を取り消して休みにしている最中は、理由を直せない（読み取り専用。#317）', () => {
+    const pending = { date: '2026-11-03', count: 2 }
+
+    expect(renderDays({ pending, busy: false })).not.toMatch(/readonly/i)
+    expect(renderDays({ pending, busy: true })).toMatch(/<textarea[^>]*readonly=""/i)
+  })
+
   it('休みにしたときは、取り消した件数を知らせる', () => {
     const html = renderDays({
       notice: { key: 'visit_settings.closed_notice_cancelled', count: 3 },

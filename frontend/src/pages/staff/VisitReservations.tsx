@@ -5,6 +5,7 @@ import { Link, useLocation } from 'react-router'
 import { api, messageKeyOf } from '../../api/client'
 import { ConfirmButton } from '../../components/ConfirmButton'
 import { Message } from '../../components/Message'
+import { ReasonField } from '../../components/ReasonField'
 import { Text } from '../../components/Text'
 import { Ruby } from '../../i18n/Ruby'
 import { stripRuby } from '../../i18n/rubyText'
@@ -199,25 +200,18 @@ type CancelFormProps = {
 /** 取り消しの理由の入力（必須・200 文字まで。家族の画面に出る）と、2 回押して取り消すボタン。 */
 export function CancelForm({ busy, disabled, onConfirm, onStop }: CancelFormProps) {
   const [reason, setReason] = useState('')
+  // 2 回押す確かめの状態のあいだは、理由を直せない（確かめた内容と送る内容がずれないように。#317）
+  const [armed, setArmed] = useState(false)
   const problem = reasonProblem(reason)
 
   return (
     <div className="space-y-2 rounded border-2 border-orange-600 bg-orange-50 p-3">
-      <label className="block text-sm">
-        <Text k="visit_settings.reason" />
-        <textarea
-          value={reason}
-          onChange={(event) => setReason(event.target.value)}
-          rows={2}
-          aria-invalid={problem === 'too_long'}
-          className="mt-1 block w-full rounded border-2 border-gray-300 p-2 aria-[invalid=true]:border-red-700"
-        />
-      </label>
-      {problem === 'too_long' && (
-        <p className="text-red-700">
-          <Text k="visit_settings.reason_too_long" />
-        </p>
-      )}
+      <ReasonField
+        value={reason}
+        onChange={setReason}
+        tooLong={problem === 'too_long'}
+        locked={armed || busy}
+      />
       <p className="text-xs text-gray-600">
         <Text k="visit_list.cancel_note" />
       </p>
@@ -229,6 +223,7 @@ export function CancelForm({ busy, disabled, onConfirm, onStop }: CancelFormProp
           busy={busy}
           disabled={problem !== null || disabled}
           onConfirm={() => onConfirm(reason)}
+          onArmedChange={setArmed}
           className="rounded bg-orange-700 px-4 py-2 font-bold text-white disabled:opacity-50"
         />
         <button type="button" onClick={onStop} className="text-sm text-gray-700 underline">

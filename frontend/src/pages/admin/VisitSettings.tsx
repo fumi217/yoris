@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api, messageKeyOf } from '../../api/client'
 import { ConfirmButton } from '../../components/ConfirmButton'
 import { Message } from '../../components/Message'
+import { ReasonField } from '../../components/ReasonField'
 import { Text } from '../../components/Text'
 import { Ruby } from '../../i18n/Ruby'
 import { stripRuby } from '../../i18n/rubyText'
@@ -388,6 +389,8 @@ type WarningProps = {
 function ReservationsWarning({ pending, label, busy, onConfirm, onDismiss }: WarningProps) {
   const { t } = useTranslation()
   const [reason, setReason] = useState('')
+  // 2 回押す確かめの状態のあいだは、理由を直せない（確かめた内容と送る内容がずれないように。#317）
+  const [armed, setArmed] = useState(false)
   const problem = reasonProblem(reason)
 
   return (
@@ -398,21 +401,12 @@ function ReservationsWarning({ pending, label, busy, onConfirm, onDismiss }: War
       <p>
         <Ruby text={t('visit_settings.has_reservations', { count: pending.count })} />
       </p>
-      <label className="block text-sm">
-        <Text k="visit_settings.reason" />
-        <textarea
-          value={reason}
-          onChange={(event) => setReason(event.target.value)}
-          rows={2}
-          aria-invalid={problem === 'too_long'}
-          className="mt-1 block w-full rounded border-2 border-gray-300 p-2 aria-[invalid=true]:border-red-700"
-        />
-      </label>
-      {problem === 'too_long' && (
-        <p className="text-red-700">
-          <Text k="visit_settings.reason_too_long" />
-        </p>
-      )}
+      <ReasonField
+        value={reason}
+        onChange={setReason}
+        tooLong={problem === 'too_long'}
+        locked={armed || busy}
+      />
       <div className="flex flex-wrap gap-3">
         <ConfirmButton
           labelKey="visit_settings.confirm_close"
@@ -421,6 +415,7 @@ function ReservationsWarning({ pending, label, busy, onConfirm, onDismiss }: War
           busy={busy}
           disabled={problem !== null || busy}
           onConfirm={() => onConfirm(reason)}
+          onArmedChange={setArmed}
           className="rounded bg-orange-700 px-4 py-2 font-bold text-white disabled:opacity-50"
         />
         <button type="button" onClick={onDismiss} className="text-sm text-gray-700 underline">

@@ -521,6 +521,8 @@
     "has_reservations": "There are {{count}} reservations on this day. If you close it, they will be cancelled and families will get a notice and an email",
     "reason": "Reason for cancelling (shown to families, up to 200 characters)",
     "reason_too_long": "Please write the reason within 200 characters",
+    "reason_hint": "Write a reason, then press the button",
+    "reason_locked": "This reason will be used for the cancellation. To change it, press \"{{stop}}\"",
     "confirm_close": "Cancel the reservations and close the day",
     "confirm_close_confirm": "Press again to cancel the reservations and close the day",
     "dismiss": "Do not close the day",

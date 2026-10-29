@@ -119,6 +119,16 @@ describe('CancelForm', () => {
     expect(html).toContain('メール')
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>.*?取/)
   })
+
+  it('理由は、押す前は直せて、取り消している最中は直せない（読み取り専用。#317）', () => {
+    const render = (busy: boolean) =>
+      renderToStaticMarkup(
+        <CancelForm busy={busy} disabled={false} onConfirm={() => {}} onStop={() => {}} />,
+      )
+
+    expect(render(false)).not.toMatch(/readonly/i)
+    expect(render(true)).toMatch(/<textarea[^>]*readonly=""/i)
+  })
 })
 
 describe('TodayVisitsView', () => {
