@@ -97,7 +97,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 - [x] T018 [US2] 削除の処理を `backend/app/services/album.py` に足す：1 つのトランザクションで `deleted_by`・`deleted_at` を入れ、`file_id`・`comment` を空にして `uploaded_files` の 1 行を消す。**そのあとで**保存先のファイル 1 つを消す。消せなかったときは、`storage_key` の id をログに出す（ファイル名・コメントは出さない）（research.md R-05）（さとこ）
 - [x] T019 [US2] `DELETE /api/staff/album/{id}` を `backend/app/api/staff/album.py` に足す（役割：職員（CW・L・CO・D）。家族のロール・事務員は 403）（FR-011）（さとこ）
-- [ ] T020 [US2] 載せた写真の一覧と削除のボタンを `frontend/src/pages/staff/AlbumUpload.tsx` に足す（削除の前に確認を出す）。アルバムを家族に見せていないとき（`family_visible = false`）は、「いま家族には見せていません」を出す（FR-011・FR-016）（さとこ）
+- [x] T020 [US2] 載せた写真の一覧と削除のボタンを `frontend/src/pages/staff/AlbumUpload.tsx` に足す（削除の前に確認を出す）。アルバムを家族に見せていないとき（`family_visible = false`）は、「いま家族には見せていません」を出す（FR-011・FR-016）（さとこ）
 
 **Checkpoint**: 削除した写真は、画面からも URL からも見えず、保存先のファイルも消える
 

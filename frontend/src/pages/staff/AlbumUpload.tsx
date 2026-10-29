@@ -1,16 +1,18 @@
-import { useQuery } from '@tanstack/react-query'
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router'
-import { api } from '../../api/client'
+import { api, messageKeyOf } from '../../api/client'
 import { Text } from '../../components/Text'
 import { Ruby } from '../../i18n/Ruby'
+import { AlbumPosted, type StaffAlbum } from './AlbumPosted'
 import {
   ACCEPT,
   MAX_COMMENT,
   MAX_PHOTOS,
   addFiles,
   canSend,
+  deletePhoto,
   errorKeyFor,
   nextToSend,
   progress,
@@ -23,6 +25,8 @@ import {
 import type { StaffContactBook } from './recordValues'
 
 type Resident = StaffContactBook['resident']
+
+const postedKey = (residentId: string) => ['staff', 'album', residentId] as const
 
 const STATUS_MARK: Record<UploadStatus, string> = {
   waiting: '🕒',
@@ -56,6 +60,14 @@ export function AlbumUpload() {
     queryKey: ['staff', 'contact-book', residentId, 'today'],
     queryFn: () => api.get<StaffContactBook>(`/api/staff/residents/${residentId}/contact-book`),
   })
+
+  // 載せた写真の一覧（削除のボタンもここ）
+  const queryClient = useQueryClient()
+  const fetchPosted = () => api.get<StaffAlbum>(`/api/staff/residents/${residentId}/album`)
+  const posted = useQuery({ queryKey: postedKey(residentId), queryFn: fetchPosted })
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [noticeKey, setNoticeKey] = useState<string | null>(null)
+  const [deleteErrorKey, setDeleteErrorKey] = useState<string | null>(null)
 
   const commit = (next: UploadItem[]) => {
     itemsRef.current = next
@@ -103,6 +115,7 @@ export function AlbumUpload() {
   // 1 枚ずつ順に送る。失敗しても、次の写真は送る
   const onSend = async () => {
     setSending(true)
+    setNoticeKey(null)
     for (let item = nextToSend(itemsRef.current); item; item = nextToSend(itemsRef.current)) {
       commit(updateItem(itemsRef.current, item.id, { status: 'sending' }))
       const form = new FormData()
@@ -122,6 +135,34 @@ export function AlbumUpload() {
       }
     }
     setSending(false)
+    // 載せた写真が、すぐ下の一覧に出るように
+    void queryClient.invalidateQueries({ queryKey: postedKey(residentId) })
+  }
+
+  const onDelete = async (id: number) => {
+    setDeletingId(id)
+    setNoticeKey(null)
+    setDeleteErrorKey(null)
+    try {
+      const outcome = await deletePhoto(
+        id,
+        () =>
+          queryClient.fetchQuery({
+            queryKey: postedKey(residentId),
+            queryFn: fetchPosted,
+            staleTime: 0,
+          }),
+        (photoId) => api.delete(`/api/staff/album/${photoId}`),
+      )
+      setNoticeKey(`album_upload.${outcome}`)
+      // 消した写真が、一覧から消えるように
+      void queryClient.invalidateQueries({ queryKey: postedKey(residentId) })
+    } catch (error) {
+      // 写真は一覧に残す。もう一度押せる
+      setDeleteErrorKey(messageKeyOf(error))
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   return (
@@ -137,6 +178,16 @@ export function AlbumUpload() {
       onRemove={onRemove}
       onRetry={(id) => commit(retryItem(itemsRef.current, id))}
       onSend={() => void onSend()}
+      posted={
+        <AlbumPosted
+          album={posted.data}
+          loadErrorKey={posted.isError ? messageKeyOf(posted.error) : null}
+          deletingId={deletingId}
+          noticeKey={noticeKey}
+          deleteErrorKey={deleteErrorKey}
+          onDelete={(id) => void onDelete(id)}
+        />
+      }
     />
   )
 }
@@ -153,6 +204,8 @@ type ViewProps = {
   onRemove: (id: number) => void
   onRetry: (id: number) => void
   onSend: () => void
+  // 載せた写真の一覧（AlbumPosted）。テストでは、載せる部分だけを出すので、なくてもよい
+  posted?: ReactNode
 }
 
 const pickClass =
@@ -171,6 +224,7 @@ export function AlbumUploadView({
   onRemove,
   onRetry,
   onSend,
+  posted,
 }: ViewProps) {
   const { t } = useTranslation()
   const { done, total } = progress(items)
@@ -299,6 +353,8 @@ export function AlbumUploadView({
           </button>
         </>
       )}
+
+      {posted}
 
       <p>
         <Link to={`/staff/residents/${residentId}`} className="text-sky-700 underline">

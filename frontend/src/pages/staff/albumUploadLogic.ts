@@ -123,3 +123,48 @@ export function errorKeyFor(error: unknown): string {
   }
   return 'error.server_error'
 }
+
+export type DeleteOutcome = 'deleted' | 'already_deleted'
+
+/**
+ * 載せた写真を 1 枚削除する（005-T020）。
+ * API は、削除済みの写真をもう一度削除しても 204 を返す（再送しても壊れないように）ので、
+ * 送ってからでは「他の職員が先に消した」と分からない。送る前に、一覧を取り直して確かめる。
+ * 一覧になければ、送らずに already_deleted。送って 404（ほかの施設・存在しない id）でも already_deleted。
+ */
+export async function deletePhoto(
+  id: number,
+  fetchPhotos: () => Promise<{ photos: { id: number }[] }>,
+  remove: (id: number) => Promise<void>,
+): Promise<DeleteOutcome> {
+  const fresh = await fetchPhotos()
+  if (!fresh.photos.some((photo) => photo.id === id)) return 'already_deleted'
+  try {
+    await remove(id)
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return 'already_deleted'
+    throw error
+  }
+  return 'deleted'
+}
+
+/**
+ * 載せた日時（UTC）を、日本時間の月・日・時刻にする。
+ * 「削除する」ボタンが、どの写真のものかを、読み上げに伝える説明に使う（コメントのない写真）。
+ */
+export function postedAtParts(iso: string): { month: number; day: number; time: string } {
+  const parts = new Intl.DateTimeFormat('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date(iso))
+  const pick = (type: string) => parts.find((part) => part.type === type)?.value ?? ''
+  return {
+    month: Number(pick('month')),
+    day: Number(pick('day')),
+    time: `${pick('hour')}:${pick('minute')}`,
+  }
+}

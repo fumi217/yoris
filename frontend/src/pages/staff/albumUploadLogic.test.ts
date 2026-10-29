@@ -6,8 +6,10 @@ import {
   addFiles,
   canSend,
   commentTooLong,
+  deletePhoto,
   errorKeyFor,
   nextToSend,
+  postedAtParts,
   problemOf,
   progress,
   removeItem,
@@ -163,5 +165,79 @@ describe('errorKeyFor', () => {
   it('ほかのエラーは、辞書のキーをそのまま使う。API 以外の失敗は server_error', () => {
     expect(errorKeyFor(new ApiError(403, 'forbidden', 'error.forbidden'))).toBe('error.forbidden')
     expect(errorKeyFor(new Error('x'))).toBe('error.server_error')
+  })
+})
+
+describe('deletePhoto（載せた写真の削除）', () => {
+  const photos =
+    (...ids: number[]) =>
+    async () => ({ photos: ids.map((id) => ({ id })) })
+
+  it('一覧にあれば、削除を送り、deleted', async () => {
+    const sent: number[] = []
+
+    const outcome = await deletePhoto(7, photos(9, 7), async (id) => {
+      sent.push(id)
+    })
+
+    expect(outcome).toBe('deleted')
+    expect(sent).toEqual([7])
+  })
+
+  it('他の職員が先に消していて、一覧になければ、削除は送らず already_deleted', async () => {
+    const sent: number[] = []
+
+    const outcome = await deletePhoto(7, photos(9), async (id) => {
+      sent.push(id)
+    })
+
+    expect(outcome).toBe('already_deleted')
+    expect(sent).toEqual([])
+  })
+
+  it('送って 404（ほかの施設・存在しない id）のときも、already_deleted', async () => {
+    const outcome = await deletePhoto(7, photos(7), async () => {
+      throw new ApiError(404, 'not_found', 'error.not_found')
+    })
+
+    expect(outcome).toBe('already_deleted')
+  })
+
+  it('404 以外の失敗は、そのまま投げる（画面で、写真を残してエラーを出す）', async () => {
+    const failure = new ApiError(500, 'server_error', 'error.server_error')
+
+    await expect(
+      deletePhoto(7, photos(7), async () => {
+        throw failure
+      }),
+    ).rejects.toBe(failure)
+  })
+
+  it('一覧を取り直せなかったときも、削除は送らず、そのまま投げる', async () => {
+    const sent: number[] = []
+    const failure = new ApiError(500, 'server_error', 'error.server_error')
+
+    await expect(
+      deletePhoto(
+        7,
+        async () => {
+          throw failure
+        },
+        async (id) => {
+          sent.push(id)
+        },
+      ),
+    ).rejects.toBe(failure)
+    expect(sent).toEqual([])
+  })
+})
+
+describe('postedAtParts（載せた日時を、日本時間の月・日・時刻にする）', () => {
+  it('UTC の日時を、日本時間（+9 時間）にする', () => {
+    expect(postedAtParts('2026-11-05T03:00:00Z')).toEqual({ month: 11, day: 5, time: '12:00' })
+  })
+
+  it('日本時間で日付が変わる時刻は、次の日になる', () => {
+    expect(postedAtParts('2026-11-05T15:30:00Z')).toEqual({ month: 11, day: 6, time: '00:30' })
   })
 })

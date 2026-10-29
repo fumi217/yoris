@@ -35,6 +35,15 @@ describe('ConfirmButton', () => {
     expect(html).not.toContain('やめる')
   })
 
+  it('describedBy を渡すと、ボタンに aria-describedby が付く（渡さなければ付けない）', () => {
+    expect(render({ describedBy: 'photo-7-desc' })).toContain('aria-describedby="photo-7-desc"')
+    expect(render()).not.toContain('aria-describedby')
+    // 決めている途中のボタンも、同じ説明につなぐ
+    expect(
+      render({ busy: true, busyKey: 'visit.cancelling', describedBy: 'photo-7-desc' }),
+    ).toContain('aria-describedby="photo-7-desc"')
+  })
+
   it('決めている途中は、その文言で押せない', () => {
     const html = render({ busy: true, busyKey: 'visit.cancelling' })
 

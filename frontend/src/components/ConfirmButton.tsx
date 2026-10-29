@@ -12,6 +12,9 @@ type Props = {
   busy?: boolean
   disabled?: boolean
   onConfirm: () => void
+  // このボタンが何についてのものかを説明する要素の id（読み上げ用）。同じ名前のボタンが並ぶ
+  // 一覧で、どの行のボタンかを伝えるときに使う（WCAG 1.3.1・4.1.2）。なくてもよい
+  describedBy?: string
   className?: string
 }
 
@@ -30,6 +33,7 @@ export function ConfirmButton({
   busy = false,
   disabled = false,
   onConfirm,
+  describedBy,
   className = '',
 }: Props) {
   const [firstAt, setFirstAt] = useState<number | null>(null)
@@ -55,7 +59,12 @@ export function ConfirmButton({
 
   if (busy && busyKey) {
     return (
-      <button type="button" disabled className={`${className} opacity-60`}>
+      <button
+        type="button"
+        disabled
+        aria-describedby={describedBy}
+        className={`${className} opacity-60`}
+      >
         <Text k={busyKey} />
       </button>
     )
@@ -66,6 +75,7 @@ export function ConfirmButton({
         ref={startRef}
         type="button"
         disabled={disabled}
+        aria-describedby={describedBy}
         onClick={() => setFirstAt(Date.now())}
         className={`${className} disabled:opacity-60`}
       >
@@ -79,6 +89,7 @@ export function ConfirmButton({
         ref={confirmRef}
         type="button"
         disabled={disabled}
+        aria-describedby={describedBy}
         onClick={() => {
           if (!canConfirm(firstAt, Date.now())) return
           reset()
