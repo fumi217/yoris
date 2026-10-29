@@ -64,6 +64,18 @@ class MemoOut(BaseModel):
     return_reason: str | None
 
 
+def _shown_reason(memo: CareMemo) -> str | None:
+    """書いた職員の画面に出す、戻された理由。
+
+    戻した理由と、公開を取り下げた理由のうち、新しい方（承認の列は消さずに残すため。
+    FR-013・FR-013a・007-T022）。
+    """
+    unpublished_later = memo.unpublished_at is not None and (
+        memo.returned_at is None or memo.unpublished_at > memo.returned_at
+    )
+    return memo.unpublish_reason if unpublished_later else memo.return_reason
+
+
 def _out(memo: CareMemo) -> MemoOut:
     return MemoOut(
         id=memo.id,
@@ -76,7 +88,7 @@ def _out(memo: CareMemo) -> MemoOut:
         back_translation=memo.back_translation,
         warnings=list(memo.warnings or []),
         status=memo.status,
-        return_reason=memo.return_reason,
+        return_reason=_shown_reason(memo),
     )
 
 

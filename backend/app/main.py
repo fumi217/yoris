@@ -16,6 +16,7 @@ from app.api.family import visits as family_visits
 from app.api.staff import album as staff_album
 from app.api.staff import change_flags as staff_change_flags
 from app.api.staff import contact_book as staff_contact_book
+from app.api.staff import memo_approvals as staff_memo_approvals
 from app.api.staff import memos as staff_memos
 from app.api.staff import messages as staff_messages
 from app.api.staff import records as staff_records
@@ -60,6 +61,7 @@ def create_app() -> FastAPI:
     app.include_router(staff_album.router)
     app.include_router(staff_change_flags.router)
     app.include_router(staff_contact_book.router)
+    app.include_router(staff_memo_approvals.router)
     app.include_router(staff_memos.router)
     app.include_router(staff_messages.router)
     app.include_router(staff_records.router)

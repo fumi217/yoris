@@ -18,7 +18,7 @@
 | 409 | `memo_limit` | その入居者について、今日 3 件書いた | FR-001 |
 | 409 | `invalid_state` | その状態ではできない操作（承認済みを直す、ほかの人が先に承認した など） | FR-009〜013a |
 | 409 | `rewrite_limit` | 1 つのメモでやり直しが 5 回を超えた | research.md R-08 |
-| 403 | `self_approval` | 本人が自分のメモを承認・戻そうとした | FR-011a |
+| 403 | `self_approval` | 本人が自分のメモを承認・戻そうとした（リーダーでも。ほかのリーダー・施設長が承認する） | FR-011a |
 | 503 | `ai_unavailable` | AI のサービスに接続できない・30 秒を超えた（原文は残る） | FR-020 |
 | 404 | `not_found` | 本人でない職員が、ほかの人の下書きを id で開いた | — |
 
@@ -38,11 +38,15 @@
 
 | メソッド・パス | 役割 | 時期 | 中身 | spec |
 |---|---|---|---|---|
-| `GET /api/staff/memo-approvals` | L・D | 作 | 承認待ちの一覧：入居者の呼び名・書いた職員・原文・整えた日本語・訳し戻し・印・確かめた日時・経過時間・「1 日以上待っています」 | FR-011・FR-015 |
-| `GET /api/staff/memo-approvals/count` | L・D（それ以外は件数を返さない） | 作 | 承認待ちの件数（施設全体）。ゆうの画面から呼ぶ | FR-015 |
+| `GET /api/staff/memo-approvals?status=` | L・D | 作 | 承認待ちの一覧（`status=pending`。初期値）：入居者の呼び名・書いた職員・`is_own`（ログイン中の職員が書いたか。画面は本人のメモに「承認する」「戻す」を出さない。FR-011a）・原文・整えた日本語・訳し戻し・印・確かめた日時・経過時間（`waiting_minutes`）・「1 日以上待っています」（`overdue`）。確かめてから長く待っているものを上にする。`status=approved` は、公開を取り下げる対象を探すための承認済みの一覧（承認した日時の新しい順。経過時間は付けない）。同じ施設のものだけ。一度も「確かめました」を押していない下書きは返さない | FR-011・FR-013a・FR-015 |
+| `GET /api/staff/memo-approvals/count` | 職員なら誰でも呼べる。件数を返すのは L・D だけ | 作 | 承認待ちの件数（施設全体。本人が書いたものも数える）。L・D 以外は `{"count": null}`（件数を出さない）。ゆうの画面から呼ぶ | FR-015 |
 | `POST /api/staff/memo-approvals/{id}/approve` | L・D（本人以外） | 作 | 承認する。403：`self_approval`、409：`invalid_state` | FR-011・FR-011a・FR-012 |
-| `POST /api/staff/memo-approvals/{id}/return` | L・D（本人以外） | 作 | 戻す（`reason`：1〜200 文字） | FR-013 |
-| `POST /api/staff/memo-approvals/{id}/unpublish` | L・D | 作 | 公開を取り下げる（承認済み → 戻し。`reason`：1〜200 文字） | FR-013a |
+| `POST /api/staff/memo-approvals/{id}/return` | L・D（本人以外） | 作 | 戻す（`reason`：1〜200 文字）。403：`self_approval`、409：`invalid_state` | FR-013 |
+| `POST /api/staff/memo-approvals/{id}/unpublish` | L・D | 作 | 公開を取り下げる（承認済み → 戻し。`reason`：1〜200 文字）。409：`invalid_state` | FR-013a |
+
+- 承認の API は、どれも同じ施設のメモだけを扱う。ほかの施設のメモ・一度も「確かめました」を押していない下書きは、あることも分からないよう 404（`not_found`）にする。
+- approve・return・unpublish は、更新したメモ 1 件（一覧の 1 件と同じ形）を返す。
+- 戻した理由と公開を取り下げた理由は、書いた職員の画面には、新しい方を「戻された理由」として出す（`GET /api/staff/memos/{id}` の `return_reason`）。
 
 - 原文・整えた日本語・訳し戻し・理由は、文字としてのみ表示する（FR-017）。
 - 書く画面と承認の画面には、「急変・事故は、すぐに電話で連絡してください」を出す。承認の画面には「ほかの入居者の名前が入っていないか」「医療・服薬・体調の判断が入っていないか」を出し、印（research.md R-03）があれば目立たせる（FR-016）。

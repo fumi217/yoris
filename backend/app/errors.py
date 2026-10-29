@@ -55,6 +55,8 @@ class ErrorCode(StrEnum):
     BILLING_NOT_CONNECTED = "billing_not_connected"
     # 様子のメモ（spec 007 の contracts。007-T010）。AI が止まったときは ai_unavailable を使う
     INVALID_STATE = "invalid_state"
+    # 書いた職員本人が、自分のメモを承認・戻そうとした（007-T022。FR-011a）
+    SELF_APPROVAL = "self_approval"
 
 
 STATUS_CODES: dict[ErrorCode, int] = {
@@ -86,6 +88,7 @@ STATUS_CODES: dict[ErrorCode, int] = {
     ErrorCode.PAYMENT_SERVICE_UNAVAILABLE: 502,
     ErrorCode.BILLING_NOT_CONNECTED: 409,
     ErrorCode.INVALID_STATE: 409,
+    ErrorCode.SELF_APPROVAL: 403,
 }
 
 
