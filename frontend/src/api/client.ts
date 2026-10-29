@@ -37,14 +37,16 @@ type ErrorBody = {
 async function request<T>(method: Method, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = {}
   if (method !== 'GET') headers['X-Requested-With'] = 'fetch'
-  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  // ファイルを送る FormData は、ブラウザが境界つきの Content-Type を付けるので、ここでは付けない
+  const isForm = body instanceof FormData
+  if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json'
 
   let response: Response
   try {
     response = await fetch(path, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
       credentials: 'same-origin',
     })
   } catch {
@@ -69,6 +71,8 @@ async function request<T>(method: Method, path: string, body?: unknown): Promise
 export const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T = void>(path: string, body?: unknown) => request<T>('POST', path, body),
+  // ファイルを送る（multipart/form-data。写真のアップロード）
+  postForm: <T = void>(path: string, form: FormData) => request<T>('POST', path, form),
   put: <T = void>(path: string, body?: unknown) => request<T>('PUT', path, body),
   patch: <T = void>(path: string, body?: unknown) => request<T>('PATCH', path, body),
   delete: <T = void>(path: string) => request<T>('DELETE', path),

@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router'
 import { AreaGuard } from '../../components/AreaGuard'
+import { AlbumUpload } from './AlbumUpload'
 import { FamilyMessage } from './FamilyMessage'
 import { FamilyMessages } from './FamilyMessages'
 import { MemoEditor } from './MemoEditor'
@@ -21,6 +22,8 @@ export default function StaffRoutes() {
           <Route index element={<ResidentList />} />
           {/* 記録の画面（UI-S02。001-T032 ゆう） */}
           <Route path="residents/:residentId" element={<RecordPage />} />
+          {/* 写真を載せる（UI-S10。005-T014 さとこ。記録の画面の「📷 写真を載せる」から） */}
+          <Route path="residents/:residentId/album" element={<AlbumUpload />} />
           {/* 様子のメモを書く（UI-S05。007-T011 みさき。介護職員・リーダー。守りは API の 403） */}
           <Route path="residents/:residentId/memos/new" element={<MemoEditor />} />
           {/* 連絡帳の見返し（UI-S04。001-T033 ゆう） */}

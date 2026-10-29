@@ -34,6 +34,18 @@ describe('api', () => {
     expect(init.body).toBe('{"user_id":1}')
   })
 
+  it('ファイルを送るときは、X-Requested-With だけを付け、本文は FormData のまま（Content-Type はブラウザに任せる）', async () => {
+    const fetchMock = mockFetch(201, { id: 1 })
+    const form = new FormData()
+    form.append('comment', 'こんにちは')
+
+    await expect(api.postForm('/api/staff/residents/5/album', form)).resolves.toEqual({ id: 1 })
+    const init = fetchMock.mock.calls[0][1]
+    expect(init.method).toBe('POST')
+    expect(init.headers).toEqual({ 'X-Requested-With': 'fetch' })
+    expect(init.body).toBe(form)
+  })
+
   it('エラーは ApiError にして、message_key を渡す', async () => {
     mockFetch(403, { error: { code: 'forbidden', message_key: 'error.forbidden' } })
 
