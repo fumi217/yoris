@@ -11,6 +11,7 @@ from app.api.admin import visits as admin_visits
 from app.api.family import album as family_album
 from app.api.family import contact_book as family_contact_book
 from app.api.family import inquiry as family_inquiry
+from app.api.family import notification_settings as family_notification_settings
 from app.api.family import notifications as family_notifications
 from app.api.family import requests as family_requests
 from app.api.family import visits as family_visits
@@ -59,6 +60,7 @@ def create_app() -> FastAPI:
     app.include_router(family_requests.router)
     app.include_router(family_contact_book.router)
     app.include_router(family_notifications.router)
+    app.include_router(family_notification_settings.router)
     app.include_router(family_inquiry.router)
     app.include_router(staff_album.router)
     app.include_router(staff_change_flags.router)

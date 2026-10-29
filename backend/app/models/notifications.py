@@ -6,11 +6,18 @@ spec 001 の data-model.md「通知（さとこ）」。001-T048。
 
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, Identity, Index, func, text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import ForeignKey, Identity, Index, Text, func, text
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base, check_in
+from app.models.records import ITEMS
+
+# まとめを送る頻度（spec 001 の FR-023）。daily は毎日、weekly は日曜に 1 回、none は送らない
+NOTIFICATION_FREQUENCIES = ("daily", "weekly", "none")
+# 初めの設定（設定の行がない家族は、この値で扱う。FR-023：選ばなかった場合は「1 日 1 回まとめて」）
+DEFAULT_FREQUENCY = "daily"
+DEFAULT_NOTIFY_ITEMS = ITEMS
 
 NOTIFICATION_KINDS = (
     "reply",
@@ -92,3 +99,26 @@ class EmailOutbox(Base):
     # 失敗した回数（5 回まで送り直す）
     attempts: Mapped[int] = mapped_column(server_default="0")
     last_error: Mapped[str | None]
+
+
+class NotificationSetting(Base):
+    """家族の通知設定（家族アカウントに 1 行。spec 001 の FR-023・001-T064）。
+
+    行がない家族は、初めの設定（DEFAULT_*）として扱う。初めて保存したときに行を作る。
+    notify_items は、まとめに入れる記録項目（ITEMS のどれか）。開示されていない項目は、
+    まとめを作るときに除く（ここでは、選んだ項目をそのまま持つ）。
+    """
+
+    __tablename__ = "notification_settings"
+    __table_args__ = (check_in("frequency", NOTIFICATION_FREQUENCIES, name="frequency"),)
+
+    family_account_id: Mapped[int] = mapped_column(
+        ForeignKey("family_accounts.id"), primary_key=True
+    )
+    # 知りたいことへの返事を、すぐ通知するか（頻度の設定に関係なく。FR-023）
+    notify_reply: Mapped[bool] = mapped_column(server_default=text("true"))
+    notify_items: Mapped[list[str]] = mapped_column(
+        ARRAY(Text), server_default=text("'{meal,mood,sleep}'")
+    )
+    frequency: Mapped[str] = mapped_column(server_default=DEFAULT_FREQUENCY)
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
