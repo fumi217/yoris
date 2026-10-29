@@ -1,11 +1,14 @@
 import { Link, Outlet, useLocation } from 'react-router'
 import { StaffHeader } from '../../components/StaffHeader'
 import { Text } from '../../components/Text'
+import { usePageTitle } from '../../components/usePageTitle'
 import { isAdminHome } from './adminMenu'
 
 /** 管理画面の枠。職員の画面も開ける人（生活相談員・施設長）には、職員の画面へのリンクを出す。 */
 export function AdminLayout() {
   const { pathname } = useLocation()
+  // ブラウザのタブの題：「管理画面 ｜ YORIS」（画面ごとの題は、10 章の 2.4.2 で別に付ける。#330）
+  usePageTitle('layout.to_admin')
   return (
     <div className="mx-auto min-h-screen max-w-3xl">
       <StaffHeader

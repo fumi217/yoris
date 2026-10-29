@@ -142,7 +142,7 @@
     "not_allowed": "Your role cannot write observation memos"
   },
   "layout": {
-    "app_name": "Family Contact App",
+    "app_name": "YORIS",
     "loading": "Loading",
     "coming_soon": "This page is not ready yet",
     "login_required": "Please log in",

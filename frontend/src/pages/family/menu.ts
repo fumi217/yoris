@@ -25,6 +25,21 @@ export const familyMoreMenu: FamilyMenuItem[] = [
 ]
 
 /**
+ * 家族の画面の、ブラウザのタブの題に使う名前（辞書のキー）。下のメニューと「☰ その他」の名前から決める
+ * （`/family` は連絡帳、`/family/more` は「その他」。メニューにない画面は null で、アプリの名前だけになる。#330）。
+ */
+export function familyTitleKey(pathname: string): string | null {
+  const path = pathname.replace(/\/+$/, '') || '/'
+  if (path === '/family') return 'layout.family_menu.contact_book'
+  if (path === '/family/more') return 'layout.family_menu.more'
+  // `/family`（連絡帳）は、すべての家族の画面の頭にあたるので、前方一致の対象にしない（上で決めた）
+  const item = [...familyMainMenu, ...familyMoreMenu]
+    .filter((menuItem) => menuItem.to !== '/family')
+    .find((menuItem) => path === menuItem.to || path.startsWith(`${menuItem.to}/`))
+  return item?.labelKey ?? null
+}
+
+/**
  * 「☰ その他」に出す項目。アルバムは、開示設定で「見せる」と分かったときだけ出す
  * （`GET /api/family/features` の答えが来るまでは出さない。出たり消えたりしないように。spec 005 の 005-T013）。
  */

@@ -2,9 +2,11 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router'
 import { api, messageKeyOf } from '../../api/client'
+import { Logo } from '../../components/Logo'
 import { Message } from '../../components/Message'
 import { StepNavigation } from '../../components/StepNavigation'
 import { Text } from '../../components/Text'
+import { usePageTitle } from '../../components/usePageTitle'
 import {
   FIELD_ORDER,
   placeServerError,
@@ -31,6 +33,8 @@ type SignupValues = {
  * 施設がすでにあるときは、API が 404 を返すので「見つかりませんでした」と出す（理由は出さない。FR-016）。
  */
 export function Signup() {
+  // ブラウザのタブの題：「お申し込み ｜ YORIS」（#330）
+  usePageTitle('signup.title')
   const [params] = useSearchParams()
   const canceled = params.get('canceled') === '1'
   const [cancelDone, setCancelDone] = useState(!canceled)
@@ -162,89 +166,95 @@ export function SignupForm({ plan, canceled, submitting, errorKey, onSubmit }: F
   }, [errorKey])
 
   return (
-    <main className="mx-auto max-w-md space-y-6 p-6">
-      <StepNavigation labelKey="steps.label" steps={SIGNUP_STEPS} current={1} />
-      <div>
-        <h1 className="text-2xl font-bold">
-          <Text k="signup.title" />
-        </h1>
-        <p className="mt-1 text-sm text-gray-600">
-          <Text k="signup.lead" />
-        </p>
-        <p className="mt-3 rounded bg-sky-50 p-3">
-          {plan.plan_name}{' '}
-          <span className="font-bold">{plan.amount_jpy.toLocaleString('ja-JP')}</span>{' '}
-          <Text k="signup.per_month" />
-        </p>
-      </div>
+    <>
+      {/* 全画面の左上に、ロゴ（デザインの決めごと 12.3。#330）。ログインの前なので、リンクにしない */}
+      <header className="p-4">
+        <Logo className="h-7" />
+      </header>
+      <main className="mx-auto max-w-md space-y-6 p-6">
+        <StepNavigation labelKey="steps.label" steps={SIGNUP_STEPS} current={1} />
+        <div>
+          <h1 className="text-2xl font-bold">
+            <Text k="signup.title" />
+          </h1>
+          <p className="mt-1 text-sm text-gray-600">
+            <Text k="signup.lead" />
+          </p>
+          <p className="mt-3 rounded bg-sky-50 p-3">
+            {plan.plan_name}{' '}
+            <span className="font-bold">{plan.amount_jpy.toLocaleString('ja-JP')}</span>{' '}
+            <Text k="signup.per_month" />
+          </p>
+        </div>
 
-      {canceled && (
-        <p role="status" className="rounded border border-orange-300 bg-orange-50 p-3">
-          <Text k="signup.canceled" />
-        </p>
-      )}
-
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-        <Field
-          name="facility_name"
-          labelKey="signup.facility_name"
-          value={values.facility_name}
-          onChange={set('facility_name')}
-          autoComplete="organization"
-          errorKey={fieldErrors.facility_name}
-        />
-        <Field
-          name="director_name"
-          labelKey="signup.director_name"
-          hintKey="signup.director_name_hint"
-          value={values.director_name}
-          onChange={set('director_name')}
-          autoComplete="name"
-          errorKey={fieldErrors.director_name}
-        />
-        <Field
-          name="email"
-          type="email"
-          labelKey="signup.email"
-          value={values.email}
-          onChange={set('email')}
-          autoComplete="email"
-          errorKey={fieldErrors.email}
-        />
-        <Field
-          name="email_confirm"
-          type="email"
-          labelKey="signup.email_confirm"
-          value={values.email_confirm}
-          onChange={set('email_confirm')}
-          autoComplete="off"
-          errorKey={fieldErrors.email_confirm}
-        />
-        <Field
-          name="password"
-          type="password"
-          labelKey="signup.password"
-          hintKey="signup.password_hint"
-          value={values.password}
-          onChange={set('password')}
-          autoComplete="new-password"
-          errorKey={fieldErrors.password}
-        />
-
-        {formErrorKey && (
-          <p role="alert" className="text-red-700">
-            <Text k={formErrorKey} />
+        {canceled && (
+          <p role="status" className="rounded border border-orange-300 bg-orange-50 p-3">
+            <Text k="signup.canceled" />
           </p>
         )}
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded bg-sky-700 p-3 text-lg font-bold text-white disabled:opacity-60"
-        >
-          <Text k={submitting ? 'signup.submitting' : 'signup.submit'} />
-        </button>
-      </form>
-    </main>
+
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+          <Field
+            name="facility_name"
+            labelKey="signup.facility_name"
+            value={values.facility_name}
+            onChange={set('facility_name')}
+            autoComplete="organization"
+            errorKey={fieldErrors.facility_name}
+          />
+          <Field
+            name="director_name"
+            labelKey="signup.director_name"
+            hintKey="signup.director_name_hint"
+            value={values.director_name}
+            onChange={set('director_name')}
+            autoComplete="name"
+            errorKey={fieldErrors.director_name}
+          />
+          <Field
+            name="email"
+            type="email"
+            labelKey="signup.email"
+            value={values.email}
+            onChange={set('email')}
+            autoComplete="email"
+            errorKey={fieldErrors.email}
+          />
+          <Field
+            name="email_confirm"
+            type="email"
+            labelKey="signup.email_confirm"
+            value={values.email_confirm}
+            onChange={set('email_confirm')}
+            autoComplete="off"
+            errorKey={fieldErrors.email_confirm}
+          />
+          <Field
+            name="password"
+            type="password"
+            labelKey="signup.password"
+            hintKey="signup.password_hint"
+            value={values.password}
+            onChange={set('password')}
+            autoComplete="new-password"
+            errorKey={fieldErrors.password}
+          />
+
+          {formErrorKey && (
+            <p role="alert" className="text-red-700">
+              <Text k={formErrorKey} />
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="rounded bg-sky-700 p-3 text-lg font-bold text-white disabled:opacity-60"
+          >
+            <Text k={submitting ? 'signup.submitting' : 'signup.submit'} />
+          </button>
+        </form>
+      </main>
+    </>
   )
 }
 

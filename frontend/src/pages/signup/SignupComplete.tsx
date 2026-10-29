@@ -2,9 +2,11 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { api, messageKeyOf } from '../../api/client'
+import { Logo } from '../../components/Logo'
 import { Message } from '../../components/Message'
 import { StepNavigation } from '../../components/StepNavigation'
 import { Text } from '../../components/Text'
+import { usePageTitle } from '../../components/usePageTitle'
 import { SIGNUP_STEPS } from './steps'
 import { clearIdempotencyKey } from './idempotencyKey'
 
@@ -25,6 +27,8 @@ const POLL_LIMIT_MS = 2 * 60 * 1000
  * 3 秒ごとに読み直し（最長 2 分）、できたらログイン用の ID を出す。
  */
 export function SignupComplete() {
+  // ブラウザのタブの題：「お申し込み ｜ YORIS」（#330）
+  usePageTitle('signup.title')
   const [params] = useSearchParams()
   const sessionId = params.get('session_id')
   // 読み直しを始めた時刻。「もう一度確認する」を押すと、ここから数え直す
@@ -147,73 +151,79 @@ export function CompleteView({
   onRetry?: () => void
 }) {
   return (
-    <main className="mx-auto max-w-md space-y-6 p-6">
-      {/* 確認中・確認できなかったときは「お支払い」、できたら「完了」にいる */}
-      <StepNavigation
-        labelKey="steps.label"
-        steps={SIGNUP_STEPS}
-        current={status === 'completed' ? 3 : 2}
-        errorStep={status === 'not_completed' ? 2 : undefined}
-      />
-      {status === 'confirming' && (
-        <>
-          <p role="status" aria-live="polite">
-            <Text k={timedOut ? 'signup_complete.slow' : 'signup_complete.confirming'} />
-          </p>
-          {timedOut && (
-            <button
-              type="button"
-              onClick={onRetry}
-              className="block w-full rounded border p-3 text-center text-lg"
-            >
-              <Text k="signup_complete.recheck" />
-            </button>
-          )}
-        </>
-      )}
-
-      {status === 'completed' && (
-        <>
-          <h1 className="text-2xl font-bold">
-            <Text k="signup_complete.done_title" />
-          </h1>
-          {loginId ? (
-            <div className="space-y-2 rounded border-2 border-sky-700 p-4">
-              <p className="text-sm">
-                <Text k="signup_complete.login_id" />
-              </p>
-              <p className="text-3xl font-bold tracking-wider" data-testid="login-id">
-                {loginId}
-              </p>
-              {canCopy && <CopyButton text={loginId} />}
-              <p className="font-bold text-red-700">
-                <Text k="signup_complete.keep" />
-              </p>
-            </div>
-          ) : (
-            <p>
-              <Text k="signup_complete.id_expired" />
+    <>
+      {/* 全画面の左上に、ロゴ（デザインの決めごと 12.3。#330）。ログインの前なので、リンクにしない */}
+      <header className="p-4">
+        <Logo className="h-7" />
+      </header>
+      <main className="mx-auto max-w-md space-y-6 p-6">
+        {/* 確認中・確認できなかったときは「お支払い」、できたら「完了」にいる */}
+        <StepNavigation
+          labelKey="steps.label"
+          steps={SIGNUP_STEPS}
+          current={status === 'completed' ? 3 : 2}
+          errorStep={status === 'not_completed' ? 2 : undefined}
+        />
+        {status === 'confirming' && (
+          <>
+            <p role="status" aria-live="polite">
+              <Text k={timedOut ? 'signup_complete.slow' : 'signup_complete.confirming'} />
             </p>
-          )}
-          <Link
-            to="/login"
-            className="block rounded bg-sky-700 p-3 text-center text-lg font-bold text-white"
-          >
-            <Text k="signup_complete.to_login" />
-          </Link>
-        </>
-      )}
+            {timedOut && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="block w-full rounded border p-3 text-center text-lg"
+              >
+                <Text k="signup_complete.recheck" />
+              </button>
+            )}
+          </>
+        )}
 
-      {status === 'not_completed' && (
-        <>
-          <p role="alert">
-            <Text k="signup_complete.not_completed" />
-          </p>
-          <Link to="/signup" className="block rounded border p-3 text-center text-lg">
-            <Text k="signup_complete.retry" />
-          </Link>
-        </>
-      )}
-    </main>
+        {status === 'completed' && (
+          <>
+            <h1 className="text-2xl font-bold">
+              <Text k="signup_complete.done_title" />
+            </h1>
+            {loginId ? (
+              <div className="space-y-2 rounded border-2 border-sky-700 p-4">
+                <p className="text-sm">
+                  <Text k="signup_complete.login_id" />
+                </p>
+                <p className="text-3xl font-bold tracking-wider" data-testid="login-id">
+                  {loginId}
+                </p>
+                {canCopy && <CopyButton text={loginId} />}
+                <p className="font-bold text-red-700">
+                  <Text k="signup_complete.keep" />
+                </p>
+              </div>
+            ) : (
+              <p>
+                <Text k="signup_complete.id_expired" />
+              </p>
+            )}
+            <Link
+              to="/login"
+              className="block rounded bg-sky-700 p-3 text-center text-lg font-bold text-white"
+            >
+              <Text k="signup_complete.to_login" />
+            </Link>
+          </>
+        )}
+
+        {status === 'not_completed' && (
+          <>
+            <p role="alert">
+              <Text k="signup_complete.not_completed" />
+            </p>
+            <Link to="/signup" className="block rounded border p-3 text-center text-lg">
+              <Text k="signup_complete.retry" />
+            </Link>
+          </>
+        )}
+      </main>
+    </>
   )
 }

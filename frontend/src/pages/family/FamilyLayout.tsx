@@ -1,23 +1,31 @@
-import { NavLink, Outlet, useLocation } from 'react-router'
+import { Link, NavLink, Outlet, useLocation } from 'react-router'
 import { useMe } from '../../auth/me'
+import { Logo } from '../../components/Logo'
 import { Text } from '../../components/Text'
-import { familyMainMenu, familyMoreMenu } from './menu'
+import { usePageTitle } from '../../components/usePageTitle'
+import { familyMainMenu, familyMoreMenu, familyTitleKey } from './menu'
 
 // 下は 4 つ＋「☰ その他」なので、360px の幅でも名前が折り返さない大きさにする（PR #213 さとこ）
 const tabClass = ({ isActive }: { isActive: boolean }) =>
   `flex flex-1 flex-col items-center py-2 text-xs ${isActive ? 'font-bold text-sky-700' : 'text-gray-600'}`
 
-/** 家族の画面の枠。上に入居者の呼び名、下にメニュー（4 つ＋「☰ その他」）。 */
+/** 家族の画面の枠。上の左にロゴ・右に入居者の呼び名、下にメニュー（4 つ＋「☰ その他」）。 */
 export function FamilyLayout() {
   const me = useMe().data
   const { pathname } = useLocation()
   // 「☰ その他」の中の画面（面会など）を開いているときも、「☰ その他」を選ばれた表示にする
   const inMore = familyMoreMenu.some((item) => pathname.startsWith(item.to))
+  // ブラウザのタブの題：「連絡帳 ｜ YORIS」など（デザインの決めごと 12.3。#330）
+  usePageTitle(familyTitleKey(pathname) ?? undefined)
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col">
-      <header className="border-b p-4">
-        <p className="text-lg font-bold">{me?.display_name}</p>
+      <header className="flex items-center justify-between gap-3 border-b p-4">
+        {/* ロゴを押すと、ホーム（連絡帳）へ。入居者の呼び名は、長いときは省略する（幅 320px でも横にあふれない） */}
+        <Link to="/family">
+          <Logo className="h-7" />
+        </Link>
+        <p className="min-w-0 truncate text-lg font-bold">{me?.display_name}</p>
       </header>
       <main className="flex-1 pb-20">
         <Outlet />
