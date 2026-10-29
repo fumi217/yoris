@@ -150,7 +150,10 @@ describe('ResidentTable の「今日の面会」', () => {
   const render = (todayVisits: number | null) =>
     renderToStaticMarkup(
       <MemoryRouter>
-        <ResidentTable data={{ date: '2026-10-27', residents: [] }} todayVisits={todayVisits} />
+        <ResidentTable
+          data={{ date: '2026-10-27', residents: [], unconfirmed_flag_count: 0 }}
+          todayVisits={todayVisits}
+        />
       </MemoryRouter>,
     )
 

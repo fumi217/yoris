@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router'
 import { api, messageKeyOf } from '../../api/client'
 import { useMe } from '../../auth/me'
 import { ConfirmButton } from '../../components/ConfirmButton'
+import { ChangeFlagPanel } from '../../components/change-flags/ChangeFlagPanel'
 import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
 import { Ruby } from '../../i18n/Ruby'
@@ -66,6 +67,10 @@ export function RecordPage() {
       void queryClient.invalidateQueries({ queryKey: contactBookKey(residentId) })
       // 入居者一覧の未記録の目印も変わる
       void queryClient.invalidateQueries({ queryKey: ['staff', 'residents'] })
+      // 保存で、変化の目印が付く・消えることがある（spec 006 の 006-T008）
+      void queryClient.invalidateQueries({
+        queryKey: ['staff', 'change-flags', Number(residentId)],
+      })
       setNotice('saved')
     },
   })
@@ -83,6 +88,7 @@ export function RecordPage() {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: contactBookKey(residentId) }),
         queryClient.invalidateQueries({ queryKey: ['staff', 'residents'] }),
+        queryClient.invalidateQueries({ queryKey: ['staff', 'change-flags', Number(residentId)] }),
       ]),
   })
   const failed = save.isError ? save.error : cancel.isError ? cancel.error : null
@@ -94,6 +100,7 @@ export function RecordPage() {
       book={book.data}
       waitingRequests={requests.data?.requests.length ?? 0}
       canWriteMemo={isMemoWriter(me?.role)}
+      flagPanel={<ChangeFlagPanel residentId={book.data.resident.id} />}
       saving={save.isPending ? save.variables : null}
       cancelling={cancel.isPending}
       notice={notice}
@@ -115,6 +122,8 @@ type ViewProps = {
   waitingRequests: number
   // 「様子のメモを書く」を出すか（介護職員・リーダーだけ）
   canWriteMemo: boolean
+  // 変化の目印の欄（spec 006 の ChangeFlagPanel。API を読むので、テストでは渡さない）
+  flagPanel?: ReactNode
   // 保存中の値（押したボタンだけ「保存中」にし、続けて押せないようにする）
   saving: Choice | null | undefined
   cancelling: boolean
@@ -129,6 +138,7 @@ export function RecordView({
   book,
   waitingRequests,
   canWriteMemo,
+  flagPanel,
   saving,
   cancelling,
   notice,
@@ -152,6 +162,10 @@ export function RecordView({
           <Ruby text={t('record_page.date', monthDay(book.date))} />
         </span>
       </div>
+
+      {/* 変化の目印の欄（目印があるときだけ）。記録を付ける前に目に入るよう、記録のボタンより上に置く
+          （docs/画面設計.md「5」の 2。spec 006 の 006-T015）。この画面は事務員には開けないので、欄も出ない */}
+      {flagPanel}
 
       {waitingRequests > 0 && (
         // 職員の返事の画面（UI-S03。001-T062）

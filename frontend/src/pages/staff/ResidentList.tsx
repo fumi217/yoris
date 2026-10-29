@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { api, messageKeyOf } from '../../api/client'
+import { UnconfirmedFlagFilter } from '../../components/change-flags/UnconfirmedFlagFilter'
 import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
 import { Ruby } from '../../i18n/Ruby'
@@ -11,6 +13,7 @@ import {
   mealMarks,
   monthDay,
   totalWaitingMessages,
+  visibleRows,
   type RecordMark,
   type ResidentListResponse,
   type ResidentRow,
@@ -20,7 +23,8 @@ import { bookedCount } from './visitReservationRows'
 
 /**
  * 入居者一覧（UI-S01。spec 001 の T031・spec 004 の T030）。
- * 並びは入居の順（API のまま）。今日の未記録・返事待ち・家族からのメッセージの件数が分かる。
+ * 並びは入居の順（API のまま）。ただし、変化の目印の付いた入居者を先に並べる（spec 006 の 006-T015）。
+ * 今日の未記録・返事待ち・家族からのメッセージの件数が分かる。
  * 通知・音は出さない。開いたとき（画面に戻ったとき）に読み直す（docs/画面設計.md「4」）。
  */
 export function ResidentList() {
@@ -53,17 +57,26 @@ export function ResidentTable({
 }) {
   const { t } = useTranslation()
   const messages = totalWaitingMessages(data.residents)
+  // 「確かめていない目印」で絞っているか（spec 006 の FR-003。もう一度押すと全員に戻す）
+  const [onlyUnconfirmed, setOnlyUnconfirmed] = useState(false)
+  const rows = visibleRows(data.residents, onlyUnconfirmed)
 
   return (
     <section>
-      <div className="flex flex-wrap items-baseline justify-between gap-2 p-4">
+      <div className="space-y-3 p-4">
         <h1 className="text-xl font-bold">
           <Text k="resident_list.title" />
           <span className="ml-3 text-base font-normal">
             <Ruby text={t('resident_list.date', monthDay(data.date))} />
           </span>
         </h1>
-        <p className="flex flex-wrap gap-x-4 text-sm">
+        {/* 日付の下に、横 1 列で「確かめていない目印」・メッセージ・面会（docs/画面設計.md「4」） */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+          <UnconfirmedFlagFilter
+            count={data.unconfirmed_flag_count}
+            active={onlyUnconfirmed}
+            onToggle={() => setOnlyUnconfirmed((value) => !value)}
+          />
           {/* 押すと、家族からのメッセージの一覧（UI-S08。spec 004 の T029）へ進む */}
           <Link to="/staff/messages" className="text-sky-700 underline">
             <Ruby text={t('resident_list.messages_total', { count: messages })} />
@@ -74,7 +87,7 @@ export function ResidentTable({
               <Ruby text={t('resident_list.today_visits', { count: todayVisits })} />
             </Link>
           )}
-        </p>
+        </div>
       </div>
       <p className="px-4 pb-2 text-xs text-gray-600">
         <Text k="resident_list.legend" />
@@ -83,7 +96,7 @@ export function ResidentTable({
         <Message k="resident_list.empty" />
       ) : (
         <ul className="divide-y border-t">
-          {data.residents.map((row) => (
+          {rows.map((row) => (
             <ResidentItem key={row.id} row={row} />
           ))}
         </ul>
@@ -103,10 +116,16 @@ function ResidentItem({ row }: { row: ResidentRow }) {
         to={`/staff/residents/${row.id}`}
         className="flex flex-1 flex-wrap items-center justify-between gap-x-4 gap-y-2 p-4"
       >
-        <span className="flex items-baseline gap-3">
+        <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span className="w-10 text-sm text-gray-600">{row.room}</span>
           {/* 入居者の呼び名は、辞書を通さずそのまま出す */}
           <span className="font-bold">{row.display_name}</span>
+          {row.change_flag && (
+            // 右の件数の列に入れると見落としやすいので、呼び名のすぐ横に置く（docs/画面設計.md「4」）
+            <span className="text-sm font-bold text-amber-800">
+              <Text k="change.title" />
+            </span>
+          )}
         </span>
         <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
           <span>

@@ -3,6 +3,13 @@
 export const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner', 'snack'] as const
 export type MealSlot = (typeof MEAL_SLOTS)[number]
 
+/** 入居者ごとの変化の目印（spec 006 の 006-T011。今の目印がなければ、行の change_flag は null）。 */
+export type ChangeFlagMark = {
+  has_flag: boolean
+  // まだ確かめていない目印がある
+  has_unconfirmed: boolean
+}
+
 /** `GET /api/staff/residents?date=` の 1 行（backend/app/api/staff/residents.py の ResidentRow）。 */
 export type ResidentRow = {
   id: number
@@ -13,11 +20,14 @@ export type ResidentRow = {
   sleep: boolean
   waiting_requests: number
   waiting_messages: number
+  change_flag: ChangeFlagMark | null
 }
 
 export type ResidentListResponse = {
   date: string // YYYY-MM-DD（日本時間の日付）
   residents: ResidentRow[]
+  // まだ確かめていない目印がある入居者の人数（spec 006 の FR-003）
+  unconfirmed_flag_count: number
 }
 
 export type RecordMark = {
@@ -53,4 +63,14 @@ export function totalWaitingMessages(rows: ResidentRow[]): number {
 export function monthDay(date: string): { month: number; day: number } {
   const [, month, day] = date.split('-').map(Number)
   return { month, day }
+}
+
+/**
+ * 一覧に並べる行（spec 006 の 006-T015・docs/画面設計.md「4」）。
+ * 目印の付いた入居者を先に、その中も、ほかの入居者も、入居の順（API の順）のまま並べる。
+ * onlyUnconfirmed のときは、まだ確かめていない目印のある入居者だけにする（件数と行数が一致する）。
+ */
+export function visibleRows(rows: ResidentRow[], onlyUnconfirmed: boolean): ResidentRow[] {
+  const shown = onlyUnconfirmed ? rows.filter((row) => row.change_flag?.has_unconfirmed) : rows
+  return [...shown.filter((row) => row.change_flag), ...shown.filter((row) => !row.change_flag)]
 }

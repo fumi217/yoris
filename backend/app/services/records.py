@@ -7,6 +7,8 @@
 - 取り消し（delete_record）も今日の記録だけ。行は消さずに deleted_at・deleted_by を入れ、
   前の値を履歴に残す（new_value は空）。取り消した記録は、家族の連絡帳・職員の画面のどれにも出ない。
   取り消したあとは、同じ欄に新しく付け直せる（一意制約は取り消していないものだけ。research.md R-04）
+- 保存・押し直し・取り消しのあとに、変化の目印を同じセッションで付け直す（spec 006 の 006-T008。
+  記録と目印が同じトランザクションで確定する。spec 006 の research.md R-03）
 - 関数の中では commit しない（呼んだ API が最後に 1 回だけ commit する）
 """
 
@@ -18,6 +20,7 @@ from sqlalchemy.orm import Session
 
 from app.clock import today_jst
 from app.models.records import DAY_SLOT, MEAL_SLOTS, VALUES, CareRecord, CareRecordHistory
+from app.services.change_detection import evaluate_change_flags
 
 # 付け忘れを、何日前の分まで新しく付けられるか
 BACKFILL_DAYS = 3
@@ -92,7 +95,10 @@ def save_record(
         ).one_or_none()
 
         if existing is not None:
-            return _overwrite(session, existing, staff_id=staff_id, value=value, today=today)
+            record = _overwrite(session, existing, staff_id=staff_id, value=value, today=today)
+            # 押し直しで、目印が付く・消えることがある（spec 006 の 006-T008）
+            evaluate_change_flags(session, resident_id)
+            return record
 
         record = CareRecord(
             resident_id=resident_id,
@@ -110,6 +116,8 @@ def save_record(
                 session.flush()
         except IntegrityError:
             continue
+        # 記録と目印が同じトランザクションで確定するよう、同じセッションで調べ直す（006-T008・R-03）
+        evaluate_change_flags(session, resident_id)
         return record
 
     # 入力のまちがいではなく、起きるはずのないこと
@@ -165,4 +173,6 @@ def delete_record(
     record.deleted_at = now or datetime.now(UTC)
     record.deleted_by = staff_id
     session.flush()
+    # 取り消しで当てはまらなくなれば、目印が消える（006-T008）
+    evaluate_change_flags(session, record.resident_id)
     return record

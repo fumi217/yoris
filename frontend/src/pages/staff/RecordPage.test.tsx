@@ -150,3 +150,22 @@ describe('RecordView', () => {
     expect(render({ canWriteMemo: false })).not.toContain('/memos/new')
   })
 })
+
+describe('RecordView の変化の目印の欄（spec 006 の 006-T015）', () => {
+  it('目印の欄を、記録のボタン・写真・様子のメモより上に置く', () => {
+    const html = render({
+      flagPanel: <section data-testid="flag-panel">目印の欄</section>,
+      canWriteMemo: true,
+    })
+
+    const panel = html.indexOf('目印の欄')
+    expect(panel).toBeGreaterThan(-1)
+    expect(panel).toBeLessThan(html.indexOf('/album'))
+    expect(panel).toBeLessThan(html.indexOf('/memos/new'))
+    expect(panel).toBeLessThan(html.indexOf('role="tablist"'))
+  })
+
+  it('目印の欄を渡さなければ、何も出さない', () => {
+    expect(render()).not.toContain('目印の欄')
+  })
+})

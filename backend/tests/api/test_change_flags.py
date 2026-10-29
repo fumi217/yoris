@@ -2,8 +2,8 @@
 
 DB を使う（conftest.py の session・client・make_staff・make_family・login_as。
 なければ手元では飛ばす）。
-記録の保存・取り消しの処理から呼ぶのはゆうの 006-T008 なので、ここでは `evaluate_change_flags` を
-直接呼んで確かめる（記録の保存から目印が付くことは、T008 のテストで確かめる）。
+前半は `evaluate_change_flags` を直接呼んで確かめる。記録の保存・押し直し・取り消しの API から
+実際に呼ばれること（006-T008）と、入居者一覧に返すこと（006-T011）は、後半（006-T005b）で確かめる。
 """
 
 import logging
@@ -30,6 +30,7 @@ from app.services.change_detection import (
     evaluate_change_flags,
     get_flag_summary,
 )
+from app.services.records import save_record
 
 TODAY = today_jst()
 URL = "/api/staff/residents/{}/change-flags"
@@ -1051,3 +1052,116 @@ def _wait_until_someone_waits_for_a_lock(engine, seconds: float = 5.0) -> None:
             return
         time.sleep(0.02)
     raise AssertionError("確かめる側が、ロックの待ちに入らなかった")
+
+
+# --- 記録の保存・押し直し・取り消しから、目印が付く・消える（006-T005b・T008） ---
+
+RECORDS_URL = "/api/staff/residents/{}/records"
+
+
+def _put_record(client, resident_id, slot, value, days_ago=0):
+    date_ = (TODAY - timedelta(days=days_ago)).isoformat()
+    body = {"date": date_, "item": "meal", "slot": slot, "value": value}
+    response = client.put(RECORDS_URL.format(resident_id), json=body)
+    assert response.status_code == 200
+    return response.json()
+
+
+def _current_rules(session, resident_id) -> list[tuple[str, str]]:
+    session.expire_all()
+    return [(f.rule_code, f.status) for f in _flags(session, resident_id) if f.cleared_at is None]
+
+
+def test_saving_a_record_makes_a_flag(client, session, setup, login_as):
+    staff, resident_id = setup
+    login_as(staff.user_id)
+    _put_record(client, resident_id, "dinner", "2", days_ago=1)
+    assert _current_rules(session, resident_id) == []
+
+    # 2 食続けて「少し」以下になったところで、保存の API から目印が付く
+    _put_record(client, resident_id, "breakfast", "0")
+
+    assert _current_rules(session, resident_id) == [("meal_low", "unconfirmed")]
+
+
+def test_pressing_again_clears_the_flag(client, session, setup, login_as):
+    staff, resident_id = setup
+    login_as(staff.user_id)
+    _put_record(client, resident_id, "dinner", "2", days_ago=1)
+    _put_record(client, resident_id, "breakfast", "0")
+
+    # 今日の朝を「ほぼ全部」に押し直すと、当てはまらなくなって消える
+    _put_record(client, resident_id, "breakfast", "8")
+
+    assert _current_rules(session, resident_id) == []
+    [flag] = _flags(session, resident_id)
+    assert flag.status == "cleared"
+
+
+def test_cancelling_a_record_clears_the_flag(client, session, setup, login_as):
+    staff, resident_id = setup
+    login_as(staff.user_id)
+    _put_record(client, resident_id, "dinner", "2", days_ago=1)
+    breakfast = _put_record(client, resident_id, "breakfast", "0")
+    assert _current_rules(session, resident_id) == [("meal_low", "unconfirmed")]
+
+    response = client.delete(f"/api/staff/records/{breakfast['id']}")
+
+    assert response.status_code == 204
+    assert _current_rules(session, resident_id) == []
+
+
+def test_concurrent_new_records_through_save_record_do_not_deadlock(engine):
+    """2 人が同時に、同じ入居者の別の食事区分を、保存の処理（save_record）で新しく記録しても、
+    止まらない。
+
+    保存の処理は、記録の行を `FOR UPDATE` で探し、外部キーで入居者の行に KEY SHARE を
+    付けてから、目印を調べ直す。調べ直しの入居者の行のロックが FOR NO KEY UPDATE であれば、
+    待ち合わない（R-03）。
+    """
+    with _committed_resident(engine, with_low_meals=False) as ids:
+
+        def work(number: int, barrier: threading.Barrier) -> None:
+            with Session(engine) as worker:
+                barrier.wait()
+                save_record(
+                    worker,
+                    resident_id=ids["resident"],
+                    staff_id=ids["staff"],
+                    record_date=today_jst(),
+                    item="meal",
+                    slot=("lunch", "dinner")[number],
+                    value="0",
+                )
+                worker.commit()
+
+        errors = _run_in_two_threads(work)
+        with Session(engine) as check:
+            flags = check.scalars(
+                select(ChangeFlag.rule_code).where(
+                    ChangeFlag.resident_id == ids["resident"], ChangeFlag.cleared_at.is_(None)
+                )
+            ).all()
+
+    assert errors == []
+    # 2 食とも「食べていない」なので、どちらが後でも目印は 1 つ
+    assert flags == ["meal_low"]
+
+
+# --- 入居者一覧に、目印と件数を返す（006-T011） ---
+
+
+def test_resident_list_has_flags_and_count(client, session, setup, make_family, login_as):
+    staff, flagged = setup
+    plain = make_family().resident_id
+    _two_low_meals(session, flagged, staff.id)
+    evaluate_change_flags(session, flagged)
+    login_as(staff.user_id)
+
+    data = client.get("/api/staff/residents").json()
+    rows = {row["id"]: row for row in data["residents"]}
+
+    assert rows[flagged]["change_flag"] == {"has_flag": True, "has_unconfirmed": True}
+    assert rows[plain]["change_flag"] is None
+    assert data["unconfirmed_flag_count"] == get_flag_summary(session).unconfirmed_resident_count
+    assert data["unconfirmed_flag_count"] >= 1

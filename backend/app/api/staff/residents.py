@@ -5,6 +5,9 @@
 並びは入居の順（residents.id の小さい順。docs/画面設計.md の「4」）。
 職員向けなので、非開示の項目も含めて記録を直接読んでよい（spec 001 の research.md R-06）。
 返事待ちのリクエストの件数（001-T053）も返す。
+変化の目印（spec 006 の 006-T011）：入居者ごとの目印と、まだ確かめていない目印がある
+入居者の人数を返す。
+並べ替え（目印のある入居者を先に）と絞り込みは、画面の側で行う（API は入居の順のまま）。
 """
 
 from datetime import date
@@ -23,6 +26,7 @@ from app.inquiry.visibility import count_waiting_staff_messages_by_resident
 from app.models.core import Resident
 from app.models.records import MEAL_SLOTS, CareRecord
 from app.models.requests import Request
+from app.services.change_detection import get_flag_summary
 
 router = APIRouter(prefix="/api/staff", tags=["staff"])
 
@@ -32,6 +36,13 @@ class MealsRecorded(BaseModel):
     lunch: bool
     dinner: bool
     snack: bool
+
+
+class ChangeFlagMark(BaseModel):
+    # 今の目印がある（確かめ済みも含む）
+    has_flag: bool
+    # まだ確かめていない目印がある
+    has_unconfirmed: bool
 
 
 class ResidentRow(BaseModel):
@@ -46,11 +57,15 @@ class ResidentRow(BaseModel):
     waiting_requests: int
     # 家族からのメッセージの対応待ちの件数（苦情は生活相談員・施設長にだけ数える。spec 004）
     waiting_messages: int
+    # 変化の目印（spec 006 の FR-003）。今の目印がなければ null
+    change_flag: ChangeFlagMark | None
 
 
 class ResidentListResponse(BaseModel):
     date: date
     residents: list[ResidentRow]
+    # まだ確かめていない目印がある入居者の人数（spec 006 の FR-003・research.md R-04）
+    unconfirmed_flag_count: int
 
 
 @router.get("/residents")
@@ -79,8 +94,12 @@ def list_residents(
         ).all()
     )
 
+    # 目印も、全員の分を 1 回で読む（spec 006 の 006-T011）
+    flags = get_flag_summary(session)
+
     rows = []
     for resident in residents:
+        flag = flags.residents.get(resident.id)
         meals = {slot: (resident.id, "meal", slot) in recorded for slot in MEAL_SLOTS}
         rows.append(
             ResidentRow(
@@ -92,6 +111,13 @@ def list_residents(
                 sleep=(resident.id, "sleep", "day") in recorded,
                 waiting_requests=waiting_requests.get(resident.id, 0),
                 waiting_messages=waiting.get(resident.id, 0),
+                change_flag=(
+                    ChangeFlagMark(has_flag=flag.has_flag, has_unconfirmed=flag.has_unconfirmed)
+                    if flag
+                    else None
+                ),
             )
         )
-    return ResidentListResponse(date=day, residents=rows)
+    return ResidentListResponse(
+        date=day, residents=rows, unconfirmed_flag_count=flags.unconfirmed_resident_count
+    )

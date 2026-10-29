@@ -3,7 +3,13 @@ import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import '../../i18n'
 import { ResidentTable } from './ResidentList'
-import { mealMarks, monthDay, totalWaitingMessages, type ResidentRow } from './residentRows'
+import {
+  mealMarks,
+  monthDay,
+  totalWaitingMessages,
+  visibleRows,
+  type ResidentRow,
+} from './residentRows'
 
 const row = (overrides: Partial<ResidentRow> = {}): ResidentRow => ({
   id: 1,
@@ -14,13 +20,16 @@ const row = (overrides: Partial<ResidentRow> = {}): ResidentRow => ({
   sleep: false,
   waiting_requests: 0,
   waiting_messages: 0,
+  change_flag: null,
   ...overrides,
 })
 
-const render = (residents: ResidentRow[]) =>
+const render = (residents: ResidentRow[], unconfirmedFlagCount = 0) =>
   renderToStaticMarkup(
     <MemoryRouter>
-      <ResidentTable data={{ date: '2026-10-26', residents }} />
+      <ResidentTable
+        data={{ date: '2026-10-26', residents, unconfirmed_flag_count: unconfirmedFlagCount }}
+      />
     </MemoryRouter>,
   )
 
@@ -99,5 +108,43 @@ describe('ResidentTable', () => {
 
   it('📩 がなければ、メッセージへのリンクは出さない', () => {
     expect(render([row({ waiting_messages: 0 })])).not.toContain('resident_id=')
+  })
+})
+
+describe('変化の目印（spec 006 の 006-T015）', () => {
+  const unconfirmed = { has_flag: true, has_unconfirmed: true }
+  const confirmed = { has_flag: true, has_unconfirmed: false }
+  const rows = [
+    row({ id: 1 }),
+    row({ id: 2, change_flag: confirmed }),
+    row({ id: 3 }),
+    row({ id: 4, change_flag: unconfirmed }),
+  ]
+
+  it('目印の付いた入居者を先に。その中も、ほかの入居者も、入居の順のまま', () => {
+    expect(visibleRows(rows, false).map((r) => r.id)).toEqual([2, 4, 1, 3])
+  })
+
+  it('絞ると、まだ確かめていない目印のある入居者だけ（確かめ済みは出さない）', () => {
+    expect(visibleRows(rows, true).map((r) => r.id)).toEqual([4])
+  })
+
+  it('一覧の上に「確かめていない目印：◯件」を出す', () => {
+    const html = render(rows, 1)
+
+    expect(html).toContain('aria-pressed="false"')
+    expect(html).toMatch(/<button[^>]*aria-pressed[^>]*>[\s\S]*?1[\s\S]*?<\/button>/)
+  })
+
+  it('目印のある行は、呼び名のすぐ横に「⚠️ いつもと違う様子」を出し、上に並べる', () => {
+    const html = render([
+      row({ id: 1, display_name: '目印なしさん' }),
+      row({ id: 2, display_name: '目印ありさん', change_flag: unconfirmed }),
+    ])
+
+    expect(html.indexOf('目印ありさん')).toBeLessThan(html.indexOf('目印なしさん'))
+    const flagged = html.slice(html.indexOf('目印ありさん'), html.indexOf('目印なしさん'))
+    expect(flagged).toContain('⚠️')
+    expect(html.slice(html.indexOf('目印なしさん'))).not.toContain('⚠️')
   })
 })
