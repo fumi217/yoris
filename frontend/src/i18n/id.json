@@ -28,7 +28,83 @@
     "email_mismatch": "Kedua alamat email yang Anda masukkan tidak sama",
     "payment_service_unavailable": "Halaman pembayaran tidak dapat dibuka. Mohon tunggu sebentar lalu coba lagi",
     "billing_not_connected": "Fasilitas ini belum terhubung ke layanan pembayaran, jadi tidak dapat dibuka dari sini",
-    "invalid_state": "Tindakan ini tidak dapat dilakukan pada keadaan saat ini"
+    "invalid_state": "Tindakan ini tidak dapat dilakukan pada keadaan saat ini",
+    "self_approval": "Anda tidak dapat menyetujui catatan yang Anda tulis sendiri. Mohon minta pemimpin lain atau kepala fasilitas"
+  },
+  "theme": {
+    "daily_life": "Keseharian seperti biasa",
+    "enjoying": "Apakah beliau menikmati harinya?",
+    "residents": "Interaksi dengan penghuni lain",
+    "meals": "Keadaan saat makan",
+    "staff": "Interaksi dengan staf",
+    "recreation": "Kegiatan rekreasi",
+    "family_talk": "Apakah beliau membicarakan keluarga?",
+    "supplies": "Apakah ada yang kurang?"
+  },
+  "notifications": {
+    "title": "Pemberitahuan",
+    "empty": "Belum ada pemberitahuan",
+    "unread": "baru",
+    "at": "{{day}}/{{month}} {{time}}",
+    "kind": {
+      "reply": "Balasan atas hal yang ingin Anda ketahui sudah datang",
+      "daily_digest": "Buku harian hari ini sudah siap",
+      "weekly_digest": "Buku harian minggu ini sudah siap",
+      "staff_message_reply": "Balasan pesan dari fasilitas sudah datang",
+      "visit_confirmed": "Reservasi kunjungan sudah dipastikan",
+      "visit_cancelled": "Reservasi kunjungan dibatalkan",
+      "visit_reminder": "Besok ada jadwal kunjungan",
+      "announcement": "Ada pemberitahuan dari fasilitas"
+    }
+  },
+  "requests": {
+    "choose_title": "Pilih hal yang ingin Anda ketahui",
+    "send": "Kirim",
+    "list_title": "Permintaan yang sudah dikirim",
+    "empty": "Belum ada permintaan yang dikirim",
+    "status_waiting": "Sudah sampai ke fasilitas. Mohon tunggu balasan",
+    "status_waiting_short": "Menunggu balasan",
+    "status_answered": "Balasan sudah datang",
+    "status_cancelled": "Dibatalkan",
+    "sent_at": "{{day}}/{{month}} {{time}}",
+    "days_ago_zero": "Hari ini",
+    "days_ago": "{{count}} hari lalu",
+    "overdue": "Jika mendesak, silakan telepon fasilitas",
+    "cancel": "Batalkan",
+    "cancel_after_reply": "Balasan sudah datang, jadi tidak bisa dibatalkan",
+    "see_reply": "Lihat di buku harian"
+  },
+  "inquiry": {
+    "title": "Pertanyaan",
+    "ai_notice": "AI yang menjawab. AI tidak dapat menjawab hal yang tidak ada dalam catatan",
+    "handoff_notice": "Jika AI tidak dapat menjawab, sebagian percakapan ini akan disampaikan kepada staf fasilitas",
+    "source_records": "Catatan yang digunakan",
+    "source_date": "{{day}}/{{month}}",
+    "no_record": "Tidak ada catatan yang dapat dijadikan dasar jawaban",
+    "answer_hidden": "Jawaban ini tidak dapat ditampilkan saat ini",
+    "handed_off": "Staf fasilitas yang akan menjawab. Pertanyaan ini sudah disampaikan kepada mereka",
+    "already_handed_off": "Sudah disampaikan kepada staf fasilitas",
+    "call_if_urgent": "Jika mendesak, silakan telepon fasilitas",
+    "staff_phone_response": "Staf fasilitas menanggapi lewat telepon",
+    "reply_from": "Balasan dari {{name}}",
+    "daily_limit": "Batas pertanyaan hari ini sudah tercapai. Silakan coba lagi besok. Jika mendesak, silakan telepon fasilitas",
+    "unavailable": "Kami belum dapat menjawab sekarang. Mohon tunggu sebentar lalu coba lagi. Jika mendesak, silakan telepon fasilitas",
+    "sender_family": "Anda",
+    "sender_ai": "AI",
+    "input_label": "Pertanyaan (maksimal 500 karakter)",
+    "send": "Kirim",
+    "thinking": "AI sedang memeriksa catatan…",
+    "empty": "Belum ada pertanyaan. Coba tanyakan tentang makan hari ini atau keadaan beliau",
+    "too_long": "Tulis dalam 500 karakter",
+    "load_older": "Lihat percakapan sebelumnya",
+    "category": {
+      "medical": "Medis / kesehatan",
+      "complaint": "Keluhan",
+      "money": "Uang / dokumen",
+      "care_request": "Permintaan perawatan",
+      "urgent": "Darurat",
+      "other": "Lainnya"
+    }
   },
   "layout": {
     "app_name": "Aplikasi Kontak Keluarga",
@@ -64,6 +140,142 @@
     "counselor": "Konselor",
     "clerk": "Staf administrasi",
     "director": "Kepala fasilitas"
+  },
+  "visit": {
+    "title": "Reservasi kunjungan",
+    "hours_note": "Satu kunjungan berlangsung 1 jam 30 menit. Reservasi dan pembatalan dapat dilakukan sampai pukul 17.00 hari sebelumnya",
+    "choose_date": "1. Pilih tanggal",
+    "choose_time": "2. Pilih jam mulai",
+    "party_size": "3. Jumlah pengunjung",
+    "people": "{{count}} orang",
+    "fewer": "Kurangi jumlah orang",
+    "more": "Tambah jumlah orang",
+    "book": "Buat reservasi",
+    "booking": "Sedang memesan",
+    "booked_day": "Sudah dipesan",
+    "no_slot": "Penuh",
+    "no_time": "Tidak ada jam yang dapat dipilih pada hari ini",
+    "date": "{{day}}/{{month}} ({{weekday}})",
+    "time_range": "{{start}}–{{end}}",
+    "weekday": {
+      "0": "Min",
+      "1": "Sen",
+      "2": "Sel",
+      "3": "Rab",
+      "4": "Kam",
+      "5": "Jum",
+      "6": "Sab"
+    },
+    "confirmed": "Reservasi sudah dipastikan",
+    "confirmed_detail": "{{date}} {{time}}　{{people}}",
+    "book_another": "Lihat hari lain",
+    "month": "{{month}}/{{year}}",
+    "previous_month": "◀ Bulan sebelumnya",
+    "next_month": "Bulan berikutnya ▶",
+    "mine_title": "Reservasi mendatang",
+    "mine_empty": "Tidak ada reservasi mendatang",
+    "status": {
+      "booked": "Sudah dipesan",
+      "cancelled_by_family": "Dibatalkan",
+      "cancelled_by_staff": "Dibatalkan oleh fasilitas"
+    },
+    "cancel_reason": "Alasan: ",
+    "cancel": "Batalkan",
+    "cancel_confirm": "Tekan sekali lagi untuk membatalkan",
+    "cancelling": "Sedang membatalkan",
+    "cancelled_notice": "Reservasi dibatalkan",
+    "deadline_passed": "Batas waktu sudah lewat, jadi silakan telepon fasilitas",
+    "mine_error": "Reservasi tidak dapat dimuat"
+  },
+  "template": {
+    "daily_life": {
+      "usual": "Beliau menjalani hari seperti biasa",
+      "calm": "Beliau tampak tenang",
+      "smile": "Beliau banyak tersenyum",
+      "tired": "Beliau tampak sedikit lelah"
+    },
+    "enjoying": {
+      "yes": "Beliau tampak senang",
+      "sometimes": "Kadang beliau tampak senang, kadang pendiam",
+      "quiet": "Beliau sering lebih pendiam"
+    },
+    "residents": {
+      "friends": "Beliau sering mengobrol dengan teman dekat",
+      "together": "Beliau menghabiskan waktu bersama yang lain",
+      "own_pace": "Beliau tampaknya suka menghabiskan waktu dengan tenang sendirian"
+    },
+    "meals": {
+      "well": "Beliau makan dengan baik",
+      "slowly": "Beliau makan dengan perlahan",
+      "favorite": "Beliau makan dengan lahap makanan kesukaannya",
+      "less": "Ada hari ketika beliau makan sedikit"
+    },
+    "staff": {
+      "talks": "Beliau sering mengobrol dengan staf",
+      "asks": "Beliau memanggil staf saat membutuhkan bantuan",
+      "reserved": "Beliau tampak agak sungkan, jadi kami yang menyapa lebih dulu"
+    },
+    "recreation": {
+      "joins": "Beliau sering ikut serta",
+      "watches": "Beliau senang menonton",
+      "mood": "Beliau ikut serta pada hari ketika suasana hatinya baik"
+    },
+    "family_talk": {
+      "often": "Beliau sering membicarakan keluarga",
+      "sometimes": "Beliau kadang membicarakan keluarga",
+      "photo": "Beliau sering memandangi foto keluarga"
+    },
+    "supplies": {
+      "none": "Saat ini tidak ada yang kurang",
+      "clothes": "Pakaian mulai berkurang",
+      "daily": "Perlengkapan sehari-hari (seperti pasta gigi) mulai berkurang"
+    }
+  },
+  "record": {
+    "item": {
+      "meal": "Makan",
+      "mood": "Suasana hati",
+      "sleep": "Tidur"
+    },
+    "slot": {
+      "breakfast": "Pagi",
+      "lunch": "Siang",
+      "dinner": "Malam",
+      "snack": "Camilan"
+    },
+    "value": {
+      "meal": {
+        "0": "Tidak makan",
+        "2": "Sedikit",
+        "5": "Separuh",
+        "8": "Hampir habis",
+        "10": "Habis",
+        "none": "Tidak ada makan (menginap di luar, dirawat di rumah sakit, dll.)"
+      },
+      "mood": {
+        "smile": "Banyak tersenyum",
+        "normal": "Seperti biasa",
+        "low": "Kurang bersemangat"
+      },
+      "sleep": {
+        "good": "Tidur nyenyak",
+        "normal": "Seperti biasa",
+        "poor": "Kurang tidur"
+      }
+    }
+  },
+  "contact_book": {
+    "title": "Buku harian {{day}}/{{month}}",
+    "unread_reply": "baru",
+    "reply_from": "membalas",
+    "reply_date": "Balasan yang masuk ke buku harian {{day}}/{{month}}",
+    "edited": "(sudah diubah)",
+    "not_recorded": "Belum dicatat",
+    "emergency": "Dalam keadaan darurat, fasilitas akan menelepon Anda",
+    "prev_day": "Hari sebelumnya",
+    "next_day": "Hari berikutnya",
+    "go_today": "Ke hari ini",
+    "pick_date": "Pilih tanggal"
   },
   "occupation": {
     "care_worker": "Petugas perawatan",

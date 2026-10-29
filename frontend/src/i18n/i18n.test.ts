@@ -57,9 +57,34 @@ describe('表示言語の辞書（spec 001 の T082・T084・T085）', () => {
     }
   })
 
-  it('値に入れる {{occupation}} は、訳でも残す', () => {
-    for (const dictionary of [id, en]) {
-      expect(dictionary.occupation.paren).toContain('{{occupation}}')
+  it('訳したグループは、日本語と同じキーがそろっている（一部だけ訳して止めない）', () => {
+    for (const [name, dictionary] of [
+      ['id', id],
+      ['en', en],
+    ] as const) {
+      const translated = flatten(dictionary)
+      const groups = new Set(Object.keys(dictionary))
+      const missing = Object.keys(jaKeys).filter(
+        (key) => groups.has(key.split('.')[0]) && !(key in translated),
+      )
+      expect(missing, `${name}.json に足りないキー`).toEqual([])
+    }
+  })
+
+  it('値に入れる {{month}} などは、訳でも日本語と同じものを残す', () => {
+    const placeholders = (text: string) => (text.match(/\{\{\w+\}\}/g) ?? []).sort()
+    for (const [name, dictionary] of [
+      ['id', id],
+      ['en', en],
+    ] as const) {
+      const different = Object.entries(flatten(dictionary)).filter(
+        ([key, text]) =>
+          JSON.stringify(placeholders(text)) !== JSON.stringify(placeholders(jaKeys[key])),
+      )
+      expect(
+        different.map(([key]) => key),
+        `${name}.json で {{ }} が違うキー`,
+      ).toEqual([])
     }
   })
 })

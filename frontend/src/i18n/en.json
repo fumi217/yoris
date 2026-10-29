@@ -28,7 +28,83 @@
     "email_mismatch": "The two email addresses you entered do not match",
     "payment_service_unavailable": "We could not open the payment page. Please wait a moment and try again",
     "billing_not_connected": "This facility is not connected to the payment service yet, so you cannot open this from here",
-    "invalid_state": "This action cannot be done in the current state"
+    "invalid_state": "This action cannot be done in the current state",
+    "self_approval": "You cannot approve a note you wrote yourself. Please ask another leader or the facility director"
+  },
+  "theme": {
+    "daily_life": "How they usually are",
+    "enjoying": "Are they enjoying their days?",
+    "residents": "Time with other residents",
+    "meals": "Mealtimes",
+    "staff": "Time with staff",
+    "recreation": "Recreation activities",
+    "family_talk": "Do they talk about family?",
+    "supplies": "Anything they are running out of?"
+  },
+  "notifications": {
+    "title": "Notices",
+    "empty": "There are no notices yet",
+    "unread": "new",
+    "at": "{{month}}/{{day}} {{time}}",
+    "kind": {
+      "reply": "A reply to what you wanted to know has arrived",
+      "daily_digest": "Today's daily notes are ready",
+      "weekly_digest": "This week's daily notes are ready",
+      "staff_message_reply": "A reply to your message from the facility has arrived",
+      "visit_confirmed": "Your visit reservation is confirmed",
+      "visit_cancelled": "Your visit reservation was cancelled",
+      "visit_reminder": "You have a visit scheduled tomorrow",
+      "announcement": "A notice from the facility has arrived"
+    }
+  },
+  "requests": {
+    "choose_title": "Choose what you would like to know",
+    "send": "Send",
+    "list_title": "Requests you sent",
+    "empty": "You have not sent any requests yet",
+    "status_waiting": "Delivered to the facility. Please wait for a reply",
+    "status_waiting_short": "Waiting for reply",
+    "status_answered": "A reply has arrived",
+    "status_cancelled": "Cancelled",
+    "sent_at": "{{month}}/{{day}} {{time}}",
+    "days_ago_zero": "Today",
+    "days_ago": "{{count}} days ago",
+    "overdue": "If it is urgent, please call the facility",
+    "cancel": "Cancel",
+    "cancel_after_reply": "A reply has arrived, so this cannot be cancelled",
+    "see_reply": "See it in the daily notes"
+  },
+  "inquiry": {
+    "title": "Questions",
+    "ai_notice": "An AI is answering. It cannot answer anything that is not in the records",
+    "handoff_notice": "If the AI cannot answer, part of this conversation will be passed to the facility staff",
+    "source_records": "Records used",
+    "source_date": "{{month}}/{{day}}",
+    "no_record": "There are no records to answer from",
+    "answer_hidden": "This answer cannot be shown right now",
+    "handed_off": "Facility staff will answer this. We have passed it to them",
+    "already_handed_off": "We have already passed this to the facility staff",
+    "call_if_urgent": "If it is urgent, please call the facility",
+    "staff_phone_response": "Facility staff responded by phone",
+    "reply_from": "Reply from {{name}}",
+    "daily_limit": "You have reached today's limit for questions. Please try again tomorrow. If it is urgent, please call the facility",
+    "unavailable": "We cannot answer right now. Please wait a moment and try again. If it is urgent, please call the facility",
+    "sender_family": "You",
+    "sender_ai": "AI",
+    "input_label": "Your question (up to 500 characters)",
+    "send": "Send",
+    "thinking": "The AI is checking the records…",
+    "empty": "No questions yet. Try asking about today's meals or how they are doing",
+    "too_long": "Please keep it within 500 characters",
+    "load_older": "Show earlier messages",
+    "category": {
+      "medical": "Medical / health",
+      "complaint": "Complaint",
+      "money": "Money / documents",
+      "care_request": "Care request",
+      "urgent": "Urgent",
+      "other": "Other"
+    }
   },
   "layout": {
     "app_name": "Family Contact App",
@@ -64,6 +140,142 @@
     "counselor": "Counselor",
     "clerk": "Office clerk",
     "director": "Facility director"
+  },
+  "visit": {
+    "title": "Reserve a visit",
+    "hours_note": "A visit lasts 1 hour 30 minutes. You can book or cancel until 5 PM the day before",
+    "choose_date": "1. Choose a date",
+    "choose_time": "2. Choose a start time",
+    "party_size": "3. Number of visitors",
+    "people": "{{count}} people",
+    "fewer": "Fewer people",
+    "more": "More people",
+    "book": "Reserve",
+    "booking": "Reserving",
+    "booked_day": "Reserved",
+    "no_slot": "Full",
+    "no_time": "No times are available on this day",
+    "date": "{{month}}/{{day}} ({{weekday}})",
+    "time_range": "{{start}}–{{end}}",
+    "weekday": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    },
+    "confirmed": "Your reservation is confirmed",
+    "confirmed_detail": "{{date}} {{time}}　{{people}}",
+    "book_another": "See other days",
+    "month": "{{month}}/{{year}}",
+    "previous_month": "◀ Previous month",
+    "next_month": "Next month ▶",
+    "mine_title": "Upcoming reservations",
+    "mine_empty": "You have no upcoming reservations",
+    "status": {
+      "booked": "Reserved",
+      "cancelled_by_family": "Cancelled",
+      "cancelled_by_staff": "Cancelled by the facility"
+    },
+    "cancel_reason": "Reason: ",
+    "cancel": "Cancel",
+    "cancel_confirm": "Press again to cancel",
+    "cancelling": "Cancelling",
+    "cancelled_notice": "Your reservation was cancelled",
+    "deadline_passed": "The deadline has passed, so please call the facility",
+    "mine_error": "We could not load your reservations"
+  },
+  "template": {
+    "daily_life": {
+      "usual": "They are spending their days as usual",
+      "calm": "They are calm and settled",
+      "smile": "They are smiling a lot",
+      "tired": "They seem a little tired"
+    },
+    "enjoying": {
+      "yes": "They seem to be enjoying themselves",
+      "sometimes": "Sometimes they seem happy, and sometimes quiet",
+      "quiet": "They are often quiet"
+    },
+    "residents": {
+      "friends": "They often chat with close friends",
+      "together": "They spend time together with everyone",
+      "own_pace": "They seem to like spending quiet time on their own"
+    },
+    "meals": {
+      "well": "They are eating well",
+      "slowly": "They are taking their time eating",
+      "favorite": "They eat their favorite foods well",
+      "less": "They eat a little less on some days"
+    },
+    "staff": {
+      "talks": "They often chat with staff",
+      "asks": "They let staff know when they need help",
+      "reserved": "They seem a little hesitant to ask for help, so we are the ones reaching out"
+    },
+    "recreation": {
+      "joins": "They often take part",
+      "watches": "They enjoy watching",
+      "mood": "They take part on days when they feel up to it"
+    },
+    "family_talk": {
+      "often": "They often talk about their family",
+      "sometimes": "They sometimes talk about their family",
+      "photo": "They often look at photos of their family"
+    },
+    "supplies": {
+      "none": "Nothing is running low right now",
+      "clothes": "They are running low on clothes",
+      "daily": "They are running low on daily items (such as toothpaste)"
+    }
+  },
+  "record": {
+    "item": {
+      "meal": "Meal",
+      "mood": "Mood",
+      "sleep": "Sleep"
+    },
+    "slot": {
+      "breakfast": "Breakfast",
+      "lunch": "Lunch",
+      "dinner": "Dinner",
+      "snack": "Snack"
+    },
+    "value": {
+      "meal": {
+        "0": "Did not eat",
+        "2": "A little",
+        "5": "Half",
+        "8": "Almost all",
+        "10": "All",
+        "none": "No meal (out overnight, in hospital, etc.)"
+      },
+      "mood": {
+        "smile": "Smiling a lot",
+        "normal": "As usual",
+        "low": "Low spirits"
+      },
+      "sleep": {
+        "good": "Slept well",
+        "normal": "As usual",
+        "poor": "Did not sleep well"
+      }
+    }
+  },
+  "contact_book": {
+    "title": "Daily notes for {{month}}/{{day}}",
+    "unread_reply": "new",
+    "reply_from": "replied",
+    "reply_date": "Reply added to the daily notes for {{month}}/{{day}}",
+    "edited": "(edited)",
+    "not_recorded": "Not recorded yet",
+    "emergency": "In an emergency, the facility will call you",
+    "prev_day": "Previous day",
+    "next_day": "Next day",
+    "go_today": "Go to today",
+    "pick_date": "Pick a date"
   },
   "occupation": {
     "care_worker": "Care worker",
