@@ -3,6 +3,7 @@ import { AreaGuard } from '../../components/AreaGuard'
 import { ComingSoon } from '../../components/ComingSoon'
 import { FamilyContext } from '../../i18n/audience'
 import { FuriganaContext } from '../../i18n/furigana'
+import { Album } from './Album'
 import { ContactBook } from './ContactBook'
 import { FamilyLayout } from './FamilyLayout'
 import { FamilyMorePage } from './FamilyMorePage'
@@ -33,8 +34,8 @@ export default function FamilyRoutes() {
               <Route path="visits" element={<VisitBooking />} />
               {/* お問い合わせ（AI に質問する。004-T020 みさき） */}
               <Route path="inquiry" element={<Inquiry />} />
-              {/* アルバム（spec 005） */}
-              <Route path="album" element={<ComingSoon />} />
+              {/* アルバム（UI-F06。spec 005 の 005-T012 さとこ） */}
+              <Route path="album" element={<Album />} />
               {/* 設定（通知・言語） */}
               <Route path="settings" element={<ComingSoon />} />
               <Route path="*" element={<Navigate to="/family" replace />} />

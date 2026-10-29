@@ -1,6 +1,8 @@
 // 家族の画面のメニュー（spec 001 の Clarifications・T019）。
 // 下に 4 つ、そのほかは「☰ その他」にまとめる。項目を足すときは、ここに 1 行と、FamilyRoutes.tsx に画面を 1 行足す。
 
+import type { FamilyFeatures } from './albumView'
+
 export type FamilyMenuItem = {
   to: string
   labelKey: string
@@ -21,3 +23,11 @@ export const familyMoreMenu: FamilyMenuItem[] = [
   { to: '/family/album', labelKey: 'layout.family_menu.album', icon: '🖼️' },
   { to: '/family/settings', labelKey: 'layout.family_menu.settings', icon: '⚙️' },
 ]
+
+/**
+ * 「☰ その他」に出す項目。アルバムは、開示設定で「見せる」と分かったときだけ出す
+ * （`GET /api/family/features` の答えが来るまでは出さない。出たり消えたりしないように。spec 005 の 005-T013）。
+ */
+export function visibleMoreMenu(features: FamilyFeatures | undefined): FamilyMenuItem[] {
+  return familyMoreMenu.filter((item) => item.to !== '/family/album' || features?.album === true)
+}
