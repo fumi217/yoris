@@ -146,6 +146,7 @@
   },
   "layout": {
     "app_name": "YORIS",
+    "mascot_link": "Contact us (ask the AI)",
     "loading": "Loading",
     "coming_soon": "This page is not ready yet",
     "login_required": "Please log in",

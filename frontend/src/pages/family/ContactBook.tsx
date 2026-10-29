@@ -21,6 +21,7 @@ import {
   type ContactReply,
   type ContactSection,
 } from './contactBookView'
+import { Mascot } from './Mascot'
 import { useOnVisible } from './useOnVisible'
 
 const CONTACT_BOOK_KEY = ['family', 'contact-book'] as const
@@ -65,9 +66,21 @@ export function ContactBook() {
     [markRead],
   )
 
-  if (book.isPending) return <Message k="layout.loading" />
-  if (book.isError) return <Message k={messageKeyOf(book.error)} />
-  return <ContactBookView book={book.data} onRead={onRead} today={today} onMove={move} />
+  return (
+    <>
+      {book.isPending ? (
+        <Message k="layout.loading" />
+      ) : book.isError ? (
+        <Message k={messageKeyOf(book.error)} />
+      ) : (
+        // 右下に固定したキャラクターの分、下をあける（幅 320px 以下では、キャラクターは末尾に置く）
+        <div className="pb-[4.5rem] [@media(max-width:320px)]:pb-0 [@media(max-height:400px)]:pb-0">
+          <ContactBookView book={book.data} onRead={onRead} today={today} onMove={move} />
+        </div>
+      )}
+      <Mascot />
+    </>
+  )
 }
 
 type ViewProps = {

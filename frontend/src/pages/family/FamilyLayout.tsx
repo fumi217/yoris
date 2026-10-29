@@ -1,3 +1,4 @@
+import { useEffect, useRef, type RefObject } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 import { useMe } from '../../auth/me'
 import { Logo } from '../../components/Logo'
@@ -17,6 +18,8 @@ export function FamilyLayout() {
   const inMore = familyMoreMenu.some((item) => pathname.startsWith(item.to))
   // ブラウザのタブの題：「連絡帳 ｜ YORIS」など（デザインの決めごと 12.3。#330）
   usePageTitle(familyTitleKey(pathname) ?? undefined)
+  const menuRef = useRef<HTMLElement>(null)
+  useMenuHeight(menuRef)
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col">
@@ -30,7 +33,10 @@ export function FamilyLayout() {
       <main className="flex-1 pb-20">
         <Outlet />
       </main>
-      <nav className="fixed inset-x-0 bottom-0 mx-auto flex max-w-xl border-t bg-white">
+      <nav
+        ref={menuRef}
+        className="fixed inset-x-0 bottom-0 mx-auto flex max-w-xl border-t bg-white"
+      >
         {familyMainMenu.map((item) => (
           // 連絡帳（/family）は、ほかの画面を開いているときに選ばれた表示にしない
           <NavLink key={item.to} to={item.to} end={item.to === '/family'} className={tabClass}>
@@ -53,4 +59,24 @@ export function FamilyLayout() {
       </nav>
     </div>
   )
+}
+
+/**
+ * 下のメニューの高さを測って、CSS の変数 `--family-menu-height` に入れる（キャラクターを、メニューの上に置くため。#339）。
+ * 幅が狭い・文字を大きくしたときは、メニューの名前が折り返して高くなるので、決まった値にしない。
+ */
+function useMenuHeight(ref: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const menu = ref.current
+    if (!menu || typeof ResizeObserver === 'undefined') return
+    const root = document.documentElement
+    const observer = new ResizeObserver(() => {
+      root.style.setProperty('--family-menu-height', `${menu.offsetHeight}px`)
+    })
+    observer.observe(menu)
+    return () => {
+      observer.disconnect()
+      root.style.removeProperty('--family-menu-height')
+    }
+  }, [ref])
 }

@@ -9,7 +9,8 @@ import { Text } from './Text'
 
 /**
  * 開発用のユーザー切り替え（spec 001 の T013・T019・research.md R-02）。開発のときだけ App.tsx が出す。
- * 画面の右下（家族の下のメニューの上）に出す（上の部分のリンクにかぶらないように）。
+ * 画面の右下に出す（上の部分のリンクにかぶらないように）。家族の下のメニューと、ホームの右下の
+ * キャラクター（#339）の、さらに上に置く（デモで、キャラクターが隠れないように）。
  * 初期データ（`python -m app.seed`）の人の一覧から選ぶ。
  */
 const DEV_USERS_QUERY_KEY = ['dev', 'users'] as const
@@ -51,7 +52,7 @@ export function DevUserSwitcher() {
   return (
     <form
       onSubmit={switchUser}
-      className="fixed right-2 bottom-20 z-50 max-w-[calc(100vw-1rem)] rounded border border-amber-400 bg-amber-50 p-2 text-xs shadow"
+      className="fixed right-2 bottom-[calc(var(--family-menu-height)+5.5rem)] z-50 max-w-[calc(100vw-1rem)] rounded border border-amber-400 bg-amber-50 p-2 text-xs shadow"
     >
       <p className="font-bold">
         <Text k="dev.switch_user" />

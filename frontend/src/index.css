@@ -1,1 +1,36 @@
 @import 'tailwindcss';
+
+/* 家族の画面の下のメニューの高さ（キャラクターを、メニューの上に置くため。#339） */
+:root {
+  --family-menu-height: 3.75rem;
+}
+
+/*
+ * キャラクターのふわふわ（デザインの決めごと 12.4）。上下に ±6px・2.4 秒で 1 往復を、2 回だけ（4.8 秒で止まる。
+ * 5 秒を超えて動くものは止められなければならない：2.2.2）。「動きを減らす」設定のときは動かさない。
+ */
+@keyframes mascot-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(-6px);
+  }
+  75% {
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mascot-float {
+    animation: mascot-float 2.4s ease-in-out 2;
+  }
+}
+
+/*
+ * キャラクターがあるページは、フォーカスした部品が、キャラクターとメニューの後ろに隠れないようにする（2.4.11）。
+ * メニューの高さ（測った値）＋ キャラクター（約 61px）＋ 余白。文字を大きくしてメニューが高くなっても足りるように
+ */
+html:has([data-mascot]) {
+  scroll-padding-bottom: calc(var(--family-menu-height) + 5.5rem);
+}
