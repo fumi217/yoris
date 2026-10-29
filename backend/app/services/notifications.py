@@ -5,7 +5,8 @@
 - 関数の中では commit しない（呼んだ API が最後に 1 回だけ commit する）
 - 作った email_outbox の id を返す。呼んだ側は、コミットのあとに send_email_now(outbox_id) で
   その場でも送ってみる
-- メールの文面に渡すのは、種類とリンクだけ。返事の中身・職員の名前・入居者の名前は渡さない（SC-010）
+- メールの文面に渡すのは、種類とリンクと家族の言語（lang）だけ。
+  返事の中身・職員の名前・入居者の名前は渡さない（SC-010）
 - 返事のお知らせは、家族の通知設定にかかわらず作る
 """
 
@@ -25,8 +26,8 @@ from app.models.visits import VisitReservation
 
 def create_reply_notice(session: Session, reply_id: int) -> int:
     """返事のお知らせ（アプリ内）とメールの送る予定を作り、email_outbox の id を返す。"""
-    family_account_id, email = session.execute(
-        select(FamilyAccount.id, User.email)
+    family_account_id, email, language = session.execute(
+        select(FamilyAccount.id, User.email, User.language)
         .join(User, User.id == FamilyAccount.user_id)
         .join(Request, Request.resident_id == FamilyAccount.resident_id)
         .join(Reply, Reply.request_id == Request.id)
@@ -37,7 +38,9 @@ def create_reply_notice(session: Session, reply_id: int) -> int:
 
     # アプリの URL が決まっていないときは、リンクを入れない（文面の側が、アプリの URL に戻る）
     base_url = get_settings().app_base_url
-    params = {"link": f"{base_url}/family"} if base_url else {}
+    params = {"lang": language}
+    if base_url:
+        params["link"] = f"{base_url}/family"
     outbox = EmailOutbox(to_email=email, template="reply", params=params)
     session.add(outbox)
     session.flush()
@@ -51,8 +54,8 @@ def create_staff_message_reply_notice(session: Session, staff_message_id: int) -
     create_reply_notice と同じ形：commit しない（みさきの返事の API が、同じトランザクションで呼び、
     commit のあとに send_email_now を呼ぶ）。返事の中身は渡さない。通知設定にかかわらず作る。
     """
-    family_account_id, email = session.execute(
-        select(FamilyAccount.id, User.email)
+    family_account_id, email, language = session.execute(
+        select(FamilyAccount.id, User.email, User.language)
         .join(User, User.id == FamilyAccount.user_id)
         .join(StaffMessage, StaffMessage.resident_id == FamilyAccount.resident_id)
         .where(StaffMessage.id == staff_message_id)
@@ -68,7 +71,9 @@ def create_staff_message_reply_notice(session: Session, staff_message_id: int) -
 
     base_url = get_settings().app_base_url
     # 返事は「お問い合わせ」の画面（UI-F05）で見るので、そこへのリンクにする（#85。PR #212）
-    params = {"link": f"{base_url}/family/inquiry"} if base_url else {}
+    params = {"lang": language}
+    if base_url:
+        params["link"] = f"{base_url}/family/inquiry"
     outbox = EmailOutbox(to_email=email, template="staff_message_reply", params=params)
     session.add(outbox)
     session.flush()
@@ -77,13 +82,29 @@ def create_staff_message_reply_notice(session: Session, staff_message_id: int) -
 
 # 面会予約のお知らせの種類（spec 003 の 003-T030。research.md R-07）
 VISIT_KINDS = ("visit_confirmed", "visit_cancelled", "visit_reminder")
-_WEEKDAYS = "月火水木金土日"
+_WEEKDAYS = {
+    "ja": "月火水木金土日",
+    "id": ("Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"),
+    "en": ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
+}
+_MONTHS = {
+    "id": ("Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"),
+    "en": ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
+}
 
 
-def _visit_at_text(visit_date: date, start_time: time) -> str:
-    """面会の日時を、メールに書く形にする（例：10月26日（月）13:00。日本時間）。"""
-    weekday = _WEEKDAYS[visit_date.weekday()]
+def _visit_at_text(visit_date: date, start_time: time, language: str = "ja") -> str:
+    """面会の日時を、家族の言語でメールに書く形にする（日本時間）。
+
+    ja：10月26日（月）13:00／id：Sen, 26 Okt 13:00／en：Mon, Oct 26 13:00
+    """
     clock = f"{start_time.hour}:{start_time.minute:02d}"
+    weekday = _WEEKDAYS.get(language, _WEEKDAYS["ja"])[visit_date.weekday()]
+    if language in _MONTHS:
+        month = _MONTHS[language][visit_date.month - 1]
+        if language == "id":
+            return f"{weekday}, {visit_date.day} {month} {clock}"
+        return f"{weekday}, {month} {visit_date.day} {clock}"
     return f"{visit_date.month}月{visit_date.day}日（{weekday}）{clock}"
 
 
@@ -99,9 +120,13 @@ def create_visit_notice(session: Session, reservation_id: int, kind: str) -> int
     """
     if kind not in VISIT_KINDS:
         raise ValueError(f"kind: {kind}")
-    family_account_id, email, visit_date, start_time = session.execute(
+    family_account_id, email, language, visit_date, start_time = session.execute(
         select(
-            FamilyAccount.id, User.email, VisitReservation.visit_date, VisitReservation.start_time
+            FamilyAccount.id,
+            User.email,
+            User.language,
+            VisitReservation.visit_date,
+            VisitReservation.start_time,
         )
         .join(User, User.id == FamilyAccount.user_id)
         .join(VisitReservation, VisitReservation.resident_id == FamilyAccount.resident_id)
@@ -114,7 +139,7 @@ def create_visit_notice(session: Session, reservation_id: int, kind: str) -> int
         )
     )
 
-    params = {"visit_at": _visit_at_text(visit_date, start_time)}
+    params = {"lang": language, "visit_at": _visit_at_text(visit_date, start_time, language)}
     base_url = get_settings().app_base_url
     if base_url:
         params["link"] = f"{base_url}/family/visits"

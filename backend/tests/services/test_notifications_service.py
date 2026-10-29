@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.models.core import FamilyAccount, User
 from app.models.disclosure import ReplyTemplate, Theme
 from app.models.inquiry import InquiryConversation, InquiryMessage, StaffMessage
 from app.models.notifications import EmailOutbox, Notification
@@ -86,7 +87,7 @@ def test_outbox_params_have_only_the_link(session, world, monkeypatch):
     outbox_id = create_reply_notice(session, world["reply"].id)
 
     params = session.get(EmailOutbox, outbox_id).params
-    assert params == {"link": "http://app.test/family"}
+    assert params == {"lang": "ja", "link": "http://app.test/family"}
     # 返事の中身・職員の名前・入居者の名前は、メールの材料に入らない（SC-010）
     text = json.dumps(params, ensure_ascii=False)
     for secret in (NOTE, "ひみつの職員名", "ひみつの入居者名"):
@@ -98,7 +99,41 @@ def test_no_link_when_the_app_url_is_not_set(session, world, monkeypatch):
     _app_url(monkeypatch, None)
     outbox_id = create_reply_notice(session, world["reply"].id)
 
-    assert session.get(EmailOutbox, outbox_id).params == {}
+    assert session.get(EmailOutbox, outbox_id).params == {"lang": "ja"}
+
+
+def _set_language(session, family_id, language):
+    family = session.get(FamilyAccount, family_id)
+    session.get(User, family.user_id).language = language
+    session.flush()
+
+
+@pytest.mark.parametrize("language", ["id", "en"])
+def test_reply_notice_carries_the_family_language(session, world, monkeypatch, language):
+    # メールは家族の表示言語で送る（001-T084）。言語は params に入れる
+    _app_url(monkeypatch, "http://app.test")
+    _set_language(session, world["family"].id, language)
+
+    outbox_id = create_reply_notice(session, world["reply"].id)
+
+    assert session.get(EmailOutbox, outbox_id).params["lang"] == language
+
+
+@pytest.mark.parametrize(
+    ("language", "expected"),
+    [("id", "Sen, 26 Okt 13:00"), ("en", "Mon, Oct 26 13:00")],
+)
+def test_visit_notice_writes_the_date_in_the_family_language(
+    session, visit_world, monkeypatch, language, expected
+):
+    _app_url(monkeypatch, "http://app.test")
+    _set_language(session, visit_world["family"].id, language)
+
+    outbox_id = create_visit_notice(session, visit_world["reservation"].id, "visit_confirmed")
+
+    params = session.get(EmailOutbox, outbox_id).params
+    assert params["lang"] == language
+    assert params["visit_at"] == expected
 
 
 def test_other_family_gets_nothing(session, world):
@@ -165,8 +200,8 @@ def test_staff_message_reply_notice_for_the_family(session, message_world, monke
     assert outbox.template == "staff_message_reply"
     assert outbox.sent_at is None
     assert outbox.to_email.endswith("@example.test")
-    # 渡すのはリンクだけ（「お問い合わせ」の画面へ）。質問・要約・入居者名は入らない（SC-010）
-    assert outbox.params == {"link": "http://app.test/family/inquiry"}
+    # 渡すのはリンクと言語だけ（「お問い合わせ」の画面へ）。質問・要約・入居者名は入らない（SC-010）
+    assert outbox.params == {"lang": "ja", "link": "http://app.test/family/inquiry"}
     text = json.dumps(outbox.params, ensure_ascii=False)
     for secret in ("ひみつの質問の文", "ひみつの要約", "ひみつの入居者名"):
         assert secret not in text
@@ -179,7 +214,7 @@ def test_staff_message_reply_notice_has_no_link_without_the_app_url(
 
     outbox_id = create_staff_message_reply_notice(session, message_world["message"].id)
 
-    assert session.get(EmailOutbox, outbox_id).params == {}
+    assert session.get(EmailOutbox, outbox_id).params == {"lang": "ja"}
 
 
 def test_staff_message_reply_notice_goes_only_to_that_family(session, message_world):
@@ -240,8 +275,9 @@ def test_visit_notice_for_the_family(session, visit_world, kind, monkeypatch):
     assert outbox.template == kind
     assert outbox.sent_at is None
     assert outbox.to_email.endswith("@example.test")
-    # 渡すのは、面会の日時とリンクだけ（FR-014）
+    # 渡すのは、面会の日時とリンクと言語だけ（FR-014）
     assert outbox.params == {
+        "lang": "ja",
         "visit_at": "10月26日（月）13:00",
         "link": "http://app.test/family/visits",
     }
@@ -262,7 +298,10 @@ def test_visit_notice_has_no_link_without_the_app_url(session, visit_world, monk
 
     outbox_id = create_visit_notice(session, visit_world["reservation"].id, "visit_confirmed")
 
-    assert session.get(EmailOutbox, outbox_id).params == {"visit_at": "10月26日（月）13:00"}
+    assert session.get(EmailOutbox, outbox_id).params == {
+        "lang": "ja",
+        "visit_at": "10月26日（月）13:00",
+    }
 
 
 def test_confirmed_then_cancelled_are_both_allowed(session, visit_world):

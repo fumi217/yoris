@@ -307,7 +307,7 @@ CurrentUser:
 | id | bigint | |
 | to_email | text | |
 | template | text | `reply`／`daily_digest`／`weekly_digest`／`announcement`／`invitation`／`owner_account`（spec 002：施設長のログイン用の ID を知らせる。作り込み）／`staff_message_reply`（spec 004）／`visit_confirmed`・`visit_cancelled`・`visit_reminder`（spec 003） |
-| params | jsonb | **種類・お知らせのタイトル・リンクだけ**。記録・返事・本文は入れない（SC-010）。例外：`owner_account` だけは `login_id` を入れる（spec 002 の research.md R-08） |
+| params | jsonb | **種類・お知らせのタイトル・リンク・家族の言語（`lang`）だけ**。記録・返事・本文は入れない（SC-010）。`lang` は、お知らせを作る処理が家族の `users.language` を入れる（入れないと日本語で送る。001-T084）。例外：`owner_account` だけは `login_id` を入れる（spec 002 の research.md R-08） |
 | created_at | timestamptz | |
 | sent_at | timestamptz | 送れたら入れる |
 | attempts | int | 失敗した回数（5 回まで） |

@@ -1,8 +1,10 @@
 """メールの文面（001-T057）のテスト。DB は使わない。"""
 
+import re
+
 import pytest
 
-from app.templates.email import UnknownTemplate, render
+from app.templates.email import _TEXTS, UnknownTemplate, render
 
 
 def test_reply_mail_has_only_kind_and_link():
@@ -73,3 +75,54 @@ def test_staff_message_reply_mail_has_only_the_link():
     assert subject == "施設からメッセージの返事が届きました"
     assert "http://app.test/family" in body
     assert "ひみつの返事の中身" not in body
+
+
+# 家族の言語のメール（001-T084・FR-021）
+
+
+def test_every_template_has_ja_id_en():
+    for template, texts in _TEXTS.items():
+        assert set(texts) == {"ja", "id", "en"}, template
+
+
+@pytest.mark.parametrize("template", list(_TEXTS))
+def test_japanese_mail_has_kanji_only_and_no_furigana(template):
+    # 日本語のメールは漢字だけ。ふりがなの書き方 {漢字|かんじ} も、かっこの読みも入れない
+    subject, body = render(
+        template, {"lang": "ja", "visit_at": "10月26日（月）13:00"}, "http://b.test"
+    )
+    assert "{" not in subject + body
+    assert not re.search(r"[一-龠]（[ぁ-ん]+）", subject + body)
+
+
+@pytest.mark.parametrize("lang", ["id", "en"])
+@pytest.mark.parametrize("template", list(_TEXTS))
+def test_other_language_mail_has_no_japanese(template, lang):
+    params = {"lang": lang, "visit_at": "Mon, Oct 26 13:00", "title": "Notice"}
+    subject, body = render(template, params, "http://b.test")
+    assert not re.search(r"[ぁ-んァ-ヶ一-龠]", subject + body)
+    assert "http://b.test" in body
+
+
+@pytest.mark.parametrize("lang", ["id", "en"])
+def test_visit_mail_in_other_language_has_the_date_and_the_link(lang):
+    params = {
+        "lang": lang,
+        "visit_at": "Mon, Oct 26 13:00",
+        "link": "http://app.test/family/visits",
+    }
+    _, body = render("visit_confirmed", params, "http://base.test")
+    assert "Mon, Oct 26 13:00" in body
+    assert "http://app.test/family/visits" in body
+
+
+@pytest.mark.parametrize("lang", [None, "", "fr"])
+def test_missing_or_unknown_language_falls_back_to_japanese(lang):
+    params = {} if lang is None else {"lang": lang}
+    subject, _ = render("reply", params, "http://base.test")
+    assert subject == "知りたいことへの返事が届きました"
+
+
+def test_curly_braces_in_the_title_do_not_break_the_mail():
+    _, body = render("announcement", {"title": "{link} {visit_at} {x}"}, "http://base.test")
+    assert "{link} {visit_at} {x}" in body

@@ -147,7 +147,7 @@ def test_the_email_has_only_the_date_and_link(session, add_reservation, monkeypa
     assert notice.family_account_id == family.id
     assert outbox is not None
     # 渡すのは日時とリンクだけ（入居者名・理由は入らない。FR-014）
-    assert set(outbox.params) == {"visit_at", "link"}
+    assert set(outbox.params) == {"lang", "visit_at", "link"}
     assert outbox.params["visit_at"].endswith("9:00")
     assert outbox.params["link"] == "http://app.test/family/visits"
 

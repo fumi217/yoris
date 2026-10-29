@@ -71,7 +71,7 @@ def test_booking_creates_a_confirmed_notice_and_mail(client, session, world, log
     [mail] = _outbox(session, sent)
     assert mail.template == "visit_confirmed"
     # メールに渡すのは日時（とリンク）だけ。入居者名は入れない（FR-014）
-    assert set(mail.params) <= {"visit_at", "link"}
+    assert set(mail.params) <= {"lang", "visit_at", "link"}
     assert "佐藤" not in str(mail.params)
 
 

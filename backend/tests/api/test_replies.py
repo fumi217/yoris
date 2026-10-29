@@ -172,7 +172,7 @@ def test_reply_creates_notice_and_mail(client, session, world, sent):
     [outbox] = session.scalars(select(EmailOutbox).where(EmailOutbox.id.in_(sent))).all()
     assert outbox.template == "reply"
     # メールには返事の中身を渡さない（SC-010）。APP_BASE_URL がないときは link も入らない（#198）
-    assert set(outbox.params) <= {"link"}
+    assert set(outbox.params) <= {"lang", "link"}
     assert "秘密" not in str(outbox.params)
 
 
