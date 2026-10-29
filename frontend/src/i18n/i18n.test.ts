@@ -71,6 +71,20 @@ describe('表示言語の辞書（spec 001 の T082・T084・T085）', () => {
     }
   })
 
+  it('訳さないグループは、申し込みの画面と開発用だけ（新しいグループの訳し忘れを止める）', () => {
+    // 申し込みの画面はログイン前、dev は開発のときだけで、言語を選べない
+    const notTranslated = ['signup', 'signup_complete', 'steps', 'dev']
+    for (const [name, dictionary] of [
+      ['id', id],
+      ['en', en],
+    ] as const) {
+      const missing = Object.keys(ja).filter(
+        (group) => !(group in dictionary) && !notTranslated.includes(group),
+      )
+      expect(missing, `${name}.json にないグループ`).toEqual([])
+    }
+  })
+
   it('値に入れる {{month}} などは、訳でも日本語と同じものを残す', () => {
     const placeholders = (text: string) => (text.match(/\{\{\w+\}\}/g) ?? []).sort()
     for (const [name, dictionary] of [
