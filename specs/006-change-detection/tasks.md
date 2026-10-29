@@ -109,7 +109,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 - [x] T017 [US2] 確かめる処理を `backend/app/services/change_detection.py` に足し、`POST /api/staff/residents/{id}/change-flags/confirm` を `backend/app/api/staff/change_flags.py` に作る（役割：介護職員・リーダー・生活相談員・施設長）：本文 `{note}`（**100 文字まで・任意**）。
   `residents` のその入居者の行を `FOR NO KEY UPDATE`、続いてその入居者の今の目印を `FOR UPDATE` で押さえ（T007 と同じ順番・同じ強さ）、`unconfirmed` のものを `confirmed` にして、それぞれに `change_flag_confirmations`（`confirmed_by`・`confirmed_at`・`note`・`streak_at_confirmation` ＝そのときの `streak`）を足す。1 つもなければ 409 `already_confirmed`（research.md R-04、contracts/api.md）（ようこ）
-- [ ] T018 [US2] `ChangeFlagPanel.tsx` に足す：「確かめた」ボタンとひとことの入力（100 文字まで・任意。文字としてだけ表示）、確かめ済みの目印を色を変えて区別し、確かめた職員・日時・ひとことを出す（FR-009・FR-010）。
+- [x] T018 [US2] `ChangeFlagPanel.tsx` に足す：「確かめた」ボタンとひとことの入力（100 文字まで・任意。文字としてだけ表示）、確かめ済みの目印を色を変えて区別し、確かめた職員・日時・ひとことを出す（FR-009・FR-010）。
   `history` を「過去の目印」として、付いた日・消えた日・当てはまった決まり・確かめた職員・ひとことを新しい順に並べる（FR-008）。409 のときは「ほかの職員が確かめました」と出して読み直す。文言を `ja.json` の `change.*` に足す（みさき。**#101（#321）で、ボタンから API を呼ぶ・409 のときの表示まで、パネルと一緒に作る**。T017 のあと、実物の API と通しで動くことを確かめて、チェックを付ける（ようこ）。2026-10-29 に、T016・T017 をようこ、T018 を #101 のみさきに分け直した。#102 のコメント）
 
 **Checkpoint**: 確かめた記録が引き継げ、続いたら戻り、過去の目印を見返せる
