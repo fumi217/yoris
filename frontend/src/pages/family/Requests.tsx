@@ -100,7 +100,7 @@ export function Requests() {
           type="button"
           disabled={selected === null || send.isPending}
           onClick={() => selected !== null && send.mutate(selected)}
-          className="mt-3 w-full rounded bg-sky-700 p-3 font-bold text-white disabled:bg-gray-300"
+          className="mt-3 w-full rounded bg-sky-700 p-3 font-bold text-white disabled:opacity-60"
         >
           <Text k="requests.send" />
         </button>

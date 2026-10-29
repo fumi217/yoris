@@ -28,4 +28,10 @@ void i18n.use(initReactI18next).init({
   returnNull: false,
 })
 
+// 表示言語を切り替えたら、ページの言語（<html lang>）も変える。読み上げが正しい言語で読むように
+// （デザインの決めごと 6 章・WCAG 3.1.1。#346）
+i18n.on('languageChanged', (language) => {
+  if (typeof document !== 'undefined') document.documentElement.lang = language
+})
+
 export default i18n

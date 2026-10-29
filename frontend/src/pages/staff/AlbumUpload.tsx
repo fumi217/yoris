@@ -345,7 +345,7 @@ export function AlbumUploadView({
           </p>
           <button
             type="button"
-            className="min-h-12 w-full rounded bg-sky-700 px-4 font-bold text-white disabled:bg-gray-300"
+            className="min-h-12 w-full rounded bg-sky-700 px-4 font-bold text-white disabled:opacity-60"
             disabled={!canSend(items) || sending}
             onClick={onSend}
           >

@@ -189,7 +189,7 @@ export function InquiryView({
         <button
           type="submit"
           disabled={!canSend}
-          className="rounded bg-sky-700 p-3 font-bold text-white disabled:bg-gray-300"
+          className="rounded bg-sky-700 p-3 font-bold text-white disabled:opacity-60"
         >
           <Text k="inquiry.send" />
         </button>
