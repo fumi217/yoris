@@ -111,14 +111,14 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T021 [P] [US3] API テスト `backend/tests/api/test_album.py`（開示）：「見せない」にすると家族の一覧・ファイルが 404 になり、`GET /api/family/features` が `album: false`／職員は載せられ、`family_visible = false`／「見せる」に戻すと前に載せた写真が見られる／介護職員のロールで開示設定の API を呼ぶと 403／変更が `disclosure_setting_histories` に残る（FR-013〜016）（さとこ）
+- [x] T021 [P] [US3] API テスト `backend/tests/api/test_album.py`（開示）：「見せない」にすると家族の一覧・ファイルが 404 になり、`GET /api/family/features` が `album: false`／職員は載せられ、`family_visible = false`／「見せる」に戻すと前に載せた写真が見られる／介護職員のロールで開示設定の API を呼ぶと 403／変更が `disclosure_setting_histories` に残る（FR-013〜016）（さとこ）
 
 ### Implementation for User Story 3
 
 - [x] T022 [US3] 開示設定の API が `feature` の行（アルバム）を扱えるようにする（**ゆうに依頼**。001-T039 のあと）：`GET /api/admin/disclosure` の返り値に `feature` の行を足し、`PUT /api/admin/disclosure` で変えられるようにする。保存したら開示設定のキャッシュを必ず消す。
   変更は `disclosure_setting_histories`（誰が・いつ・何を）に残る。役割：生活相談員・施設長（FR-013・FR-015）（ゆう）
 - [x] T023 [US3] 開示設定の画面に「アルバム」の行（見せる／見せない）を足す（**ゆうに依頼**。001-T040 のあと）：`frontend/src/pages/admin/DisclosureSettings.tsx`。履歴の画面にも出る（FR-013・FR-015）（ゆう）
-- [ ] T024 [US3] 「見せない」設定のときの動きを確かめる・直す：メニュー（T013）、アルバムの API（T010）、ファイル（T011）、通知の選択肢（T028）のどれにも出ない。開示設定を保存した直後に、古いキャッシュで出ないことをテストで確かめる（FR-014）（さとこ）
+- [x] T024 [US3] 「見せない」設定のときの動きを確かめる・直す：メニュー（T013）、アルバムの API（T010）、ファイル（T011）のどれにも出ない（通知の選択肢・通知は T028 で確かめる）。開示設定を保存した直後に、古いキャッシュで出ないことをテストで確かめる（FR-014）（さとこ）
 
 **Checkpoint**: 「見せない」にすると、家族の画面・URL・通知のどこにもアルバムが出ない
 
@@ -140,7 +140,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [ ] T026 [US4] `notifications` に `has_album`（boolean、初期値 `false`）を、`notification_settings` に `notify_album`（boolean、初期値 `true`）を足し、マイグレーションを足す（`backend/app/models/notifications.py`。001-T048・001-T064 のあと。data-model.md）（さとこ）
 - [ ] T027 [US4] まとめにアルバムを足す（`backend/app/jobs/digest.py`。001-T065 のあと）：記録のまとめを作るとき、`count_new_photos(resident_id, 前回のまとめのあと, 今回の 20:00)` が 1 以上で、`notify_album` が真で、アルバムが「見せる」なら、`has_album = true` にする。
   記録も写真も 0 件なら送らない。同じまとめを 2 回送らない仕組み（`digest_runs`）はそのまま使う。文面は辞書から引く：記録だけ・写真だけ・両方の 3 通り。テンプレートに渡すのは `has_album` とリンクだけ（research.md R-06。FR-018・FR-019）（さとこ）
-- [ ] T028 [US4] 通知設定の API と画面に「アルバムの新しい写真」を足す（`GET/PUT /api/family/notification-settings` の `notify_album`、`frontend/src/pages/family/` の通知設定の画面。アルバムを見せない設定のときは項目を出さない）（FR-017）（さとこ）
+- [ ] T028 [US4] 通知設定の API と画面に「アルバムの新しい写真」を足す（`GET/PUT /api/family/notification-settings` の `notify_album`、`frontend/src/pages/family/` の通知設定の画面。アルバムを見せない設定のときは項目を出さない。T024 から引き継いだ確認：見せない設定のとき、項目を出さず、まとめの通知にもアルバムを出さないことを、テストで確かめる）（FR-017）（さとこ）
 - [ ] T029 [US4] お知らせ一覧の画面で、まとめの `has_album` を文言に反映する（`frontend/src/pages/family/` のお知らせ一覧。辞書から引く）（FR-018）（さとこ）
 
 **Checkpoint**: 写真を載せると、次のまとめに 1 回だけ入り、メールに中身が入らない

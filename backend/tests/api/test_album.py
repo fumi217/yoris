@@ -638,3 +638,66 @@ def test_a_photo_is_gone_even_if_the_stored_file_cannot_be_removed(
     # 後で片づけられるよう、保存先の名前だけをログに出す。コメントは出さない
     assert key in caplog.text
     assert "ひみつのコメント" not in caplog.text
+
+
+# --- 005-T021・T024：開示設定（アルバムを家族に見せる・見せない。FR-013〜016） ---
+
+
+def _set_album(client, visible: bool):
+    """開示設定の画面と同じ API で、アルバムの見せる・見せないを変える。"""
+    return client.put("/api/admin/disclosure", json={"features": {"album": visible}})
+
+
+def test_staff_can_post_while_the_album_is_hidden(
+    client, session, world, make_family, make_staff, login_as
+):
+    resident_id = make_family().resident_id
+    _hide_album(session, world)
+    login_as(make_staff(role="leader").user_id)
+
+    assert _post(client, resident_id).status_code == 201
+
+    body = client.get(f"/api/staff/residents/{resident_id}/album").json()
+    assert body["family_visible"] is False  # 画面に「いま家族には見せていません」を出す
+    assert len(body["photos"]) == 1
+
+
+def test_saving_the_setting_hides_the_album_from_families_at_once(
+    client, world, add_photo, make_family, make_staff, login_as
+):
+    family = make_family()
+    photo = add_photo(family.resident_id)
+    login_as(family.user_id)
+    # 一度開いて、開示設定が「見せる」でキャッシュに入った状態にする
+    assert client.get("/api/family/album").status_code == 200
+    assert _open(client, photo).status_code == 200
+
+    login_as(make_staff(role="counselor").user_id)
+    assert _set_album(client, False).status_code == 200
+
+    # 保存したらキャッシュが消えるので、次に家族が開いたときには、もう出ない（FR-014・FR-015）
+    login_as(family.user_id)
+    assert client.get("/api/family/album").status_code == 404
+    assert _open(client, photo).status_code == 404
+    assert client.get("/api/family/features").json() == {"album": False}
+
+
+def test_photos_come_back_when_the_album_is_shown_again(
+    client, world, add_photo, make_family, make_staff, login_as
+):
+    family = make_family()
+    photo = add_photo(family.resident_id)
+    counselor = make_staff(role="counselor")
+    login_as(counselor.user_id)
+    assert _set_album(client, False).status_code == 200
+    login_as(family.user_id)
+    assert client.get("/api/family/album").status_code == 404
+
+    login_as(counselor.user_id)
+    assert _set_album(client, True).status_code == 200
+
+    # 見せない間も写真は削除されないので、戻すと前に載せた写真が、そのまま見られる（FR-014）
+    login_as(family.user_id)
+    days = client.get("/api/family/album").json()["days"]
+    assert [shown["id"] for day in days for shown in day["photos"]] == [photo.id]
+    assert _open(client, photo).status_code == 200
