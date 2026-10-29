@@ -32,6 +32,8 @@ class ErrorCode(StrEnum):
     # 職員の「家族からのメッセージ」（spec 004 の contracts）
     ALREADY_ASSIGNED = "already_assigned"
     ALREADY_ANSWERED = "already_answered"
+    # 変化の目印を確かめようとしたが、確かめていない目印がない（先に確かめた人がいる。006-T017）
+    ALREADY_CONFIRMED = "already_confirmed"
     REQUEST_CANCELLED = "request_cancelled"
     NOT_TODAY = "not_today"
     INVALID_FILE = "invalid_file"
@@ -73,6 +75,7 @@ STATUS_CODES: dict[ErrorCode, int] = {
     ErrorCode.ALREADY_REPLIED: 409,
     ErrorCode.ALREADY_ASSIGNED: 409,
     ErrorCode.ALREADY_ANSWERED: 409,
+    ErrorCode.ALREADY_CONFIRMED: 409,
     ErrorCode.REQUEST_CANCELLED: 409,
     ErrorCode.NOT_TODAY: 409,
     ErrorCode.INVALID_FILE: 422,

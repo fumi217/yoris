@@ -16,6 +16,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.orm import Session
 
+from app.errors import AppError, ErrorCode
 from app.models.change_flags import (
     ChangeFlag,
     ChangeFlagConfirmation,
@@ -246,3 +247,63 @@ def recheck_all_residents(session: Session) -> None:
             logger.warning(
                 "目印の付け直しに失敗: resident=%s error=%s", resident_id, type(error).__name__
             )
+
+
+def confirm_change_flags(
+    session: Session, resident_id: int, staff_id: int, note: str | None
+) -> int:
+    """その入居者の、まだ確かめていない目印を、まとめて確かめ済みにする。確かめた目印の数を返す。
+
+    目印ごとに `change_flag_confirmations` を 1 行足す（確かめた職員・日時・ひとこと・そのときの
+    続いた数）。確かめ直したら行が増え、前の記録も残る。まだ確かめていない目印がなければ
+    `ALREADY_CONFIRMED`（ほかの職員が先に確かめた、2 人がほぼ同時に押した後の人も）。
+    決まりがオフで消えた目印・当てはまらなくなって消えた目印は、触らない。commit は呼んだ側が行う。
+
+    押さえる順番と強さは、`evaluate_change_flags` と同じ
+    （入居者の行 `FOR NO KEY UPDATE` → 目印の行）。決まりの行は押さえない。入居者がいなければ
+    `NOT_FOUND`（API は先に確かめるが、この関数だけで呼ばれても 500 にしない）。
+    ひとこと（note）は、ログに出さない（FR-014）。前後の空白は取り、空・空白だけは「なし」にする。
+    """
+    note = note.strip() if note is not None and note.strip() else None
+    locked = session.scalars(
+        select(Resident.id).where(Resident.id == resident_id).with_for_update(key_share=True)
+    ).one_or_none()
+    if locked is None:
+        raise AppError(ErrorCode.NOT_FOUND)
+    flags = list(
+        session.scalars(
+            select(ChangeFlag)
+            .where(
+                ChangeFlag.resident_id == resident_id,
+                ChangeFlag.cleared_at.is_(None),
+                ChangeFlag.status == "unconfirmed",
+            )
+            .order_by(ChangeFlag.id)
+            .with_for_update()
+        )
+    )
+    if not flags:
+        raise AppError(ErrorCode.ALREADY_CONFIRMED)
+
+    now = datetime.now(UTC)
+    for flag in flags:
+        flag.status = "confirmed"
+        flag.updated_at = now
+        session.add(
+            ChangeFlagConfirmation(
+                change_flag_id=flag.id,
+                confirmed_by=staff_id,
+                confirmed_at=now,
+                note=note,
+                streak_at_confirmation=flag.streak,
+            )
+        )
+    session.flush()
+    logger.info(
+        "目印を確かめた: resident=%s flags=%s rules=%s staff=%s",
+        resident_id,
+        [flag.id for flag in flags],
+        [flag.rule_code for flag in flags],
+        staff_id,
+    )
+    return len(flags)

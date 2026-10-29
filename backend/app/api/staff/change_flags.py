@@ -2,6 +2,9 @@
 
 `GET /api/staff/residents/{id}/change-flags`：その入居者の今の目印と、過去の目印（新しい順）。
 見られるのは、介護職員・リーダー・生活相談員・施設長（事務員と家族は 403。FR-006）。
+`POST /api/staff/residents/{id}/change-flags/confirm`（006-T017）：まだ確かめていない目印を、
+まとめて確かめ済みにする。同じ役割が押せる。ない入居者・ほかの施設の入居者は 404、
+確かめていない目印がなければ 409 `already_confirmed`。
 文言は返さず、決まりのコード・記録のコード・続いた数だけを返す（research.md R-06）。
 確かめた職員は表示名だけ返す。ひとこと（note）は職員が書いたまま返す（画面は文字としてだけ出す。FR-013）。
 """
@@ -10,15 +13,16 @@ from datetime import date, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth.deps import CurrentUser, require_staff
 from app.db import get_session
 from app.errors import AppError, ErrorCode
-from app.models.change_flags import ChangeFlag, ChangeFlagConfirmation
+from app.models.change_flags import NOTE_MAX_LENGTH, ChangeFlag, ChangeFlagConfirmation
 from app.models.core import Resident, Staff
+from app.services.change_detection import confirm_change_flags
 
 router = APIRouter(prefix="/api/staff", tags=["staff"])
 
@@ -58,15 +62,26 @@ class ChangeFlagsResponse(BaseModel):
     history: list[ClearedFlagItem]
 
 
+def _check_resident(session: Session, user: CurrentUser, resident_id: int) -> None:
+    """入居者は、見る・確かめる職員と同じ施設のときだけ。ない入居者・ほかの施設の入居者は 404。
+
+    様子のメモの API と同じ作り（#326・#327）。今は施設が 1 つだけなので、防御の層。
+    """
+    assert user.staff_id is not None
+    resident = session.get(Resident, resident_id)
+    facility_id = session.scalars(select(Staff.facility_id).where(Staff.id == user.staff_id)).one()
+    if resident is None or resident.facility_id != facility_id:
+        raise AppError(ErrorCode.NOT_FOUND)
+
+
 @router.get("/residents/{resident_id}/change-flags")
 def get_change_flags(
     resident_id: int,
     user: Annotated[CurrentUser, Depends(FLAG_VIEWERS)],
     session: Annotated[Session, Depends(get_session)],
 ) -> ChangeFlagsResponse:
-    """今の目印と、過去の目印。決まりがオフでも、過去の目印は出す。ない入居者は 404。"""
-    if session.get(Resident, resident_id) is None:
-        raise AppError(ErrorCode.NOT_FOUND)
+    """今の目印と、過去の目印。決まりがオフでも、過去の目印は出す。ない入居者・ほかの施設は 404。"""
+    _check_resident(session, user, resident_id)
     flags = session.scalars(
         select(ChangeFlag).where(ChangeFlag.resident_id == resident_id).order_by(ChangeFlag.id)
     ).all()
@@ -110,3 +125,33 @@ def get_change_flags(
             for flag in cleared
         ],
     )
+
+
+class ConfirmRequest(BaseModel):
+    # ひとこと（任意）。100 文字を超えたら 422（FR-009）。文字としてだけ扱う（FR-013）
+    note: str | None = Field(default=None, max_length=NOTE_MAX_LENGTH)
+
+    @field_validator("note", mode="before")
+    @classmethod
+    def _strip(cls, value: object) -> object:
+        # 前後の空白を取ってから、100 文字の検査をする（空白だけは、あとで「なし」になる）
+        return value.strip() if isinstance(value, str) else value
+
+
+class ConfirmResponse(BaseModel):
+    confirmed: int
+
+
+@router.post("/residents/{resident_id}/change-flags/confirm")
+def confirm_flags(
+    resident_id: int,
+    body: ConfirmRequest,
+    user: Annotated[CurrentUser, Depends(FLAG_VIEWERS)],
+    session: Annotated[Session, Depends(get_session)],
+) -> ConfirmResponse:
+    """まだ確かめていない目印を、まとめて確かめ済みにする。確かめた職員は、ログイン中の職員から決める。"""
+    _check_resident(session, user, resident_id)
+    assert user.staff_id is not None
+    confirmed = confirm_change_flags(session, resident_id, user.staff_id, body.note)
+    session.commit()
+    return ConfirmResponse(confirmed=confirmed)

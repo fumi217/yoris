@@ -10,6 +10,7 @@
     "already_replied": "Staf lain sudah membalas",
     "already_assigned": "Staf lain sedang menanganinya",
     "already_answered": "Staf lain sudah membalas",
+    "already_confirmed": "Staf lain sudah mengonfirmasi",
     "request_cancelled": "Permintaan ini telah dibatalkan",
     "not_today": "Hanya catatan dan balasan hari ini yang dapat diubah atau dibatalkan",
     "invalid_file": "Pilih file PDF, JPG, atau PNG dengan ukuran maksimal 10 MB",

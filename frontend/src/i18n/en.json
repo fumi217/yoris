@@ -10,6 +10,7 @@
     "already_replied": "Another staff member has already replied",
     "already_assigned": "Another staff member is already handling this",
     "already_answered": "Another staff member has already replied",
+    "already_confirmed": "Another staff member has already confirmed",
     "request_cancelled": "This request was cancelled",
     "not_today": "You can only edit or cancel today's records and replies",
     "invalid_file": "Please choose a PDF, JPG or PNG file up to 10 MB",

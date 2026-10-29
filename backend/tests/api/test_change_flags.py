@@ -8,22 +8,28 @@ DB を使う（conftest.py の session・client・make_staff・make_family・log
 
 import logging
 import threading
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, text
 from sqlalchemy.orm import Session
 
 from app.auth.login_ids import next_login_ids
 from app.clock import today_jst
+from app.errors import AppError, ErrorCode
 from app.models.change_flags import ChangeFlag, ChangeFlagConfirmation, ChangeRule
 from app.models.core import Facility, Resident, Staff, User
 from app.models.notifications import EmailOutbox, Notification
 from app.models.records import CareRecord
 from app.seed.change_rules import add_change_rules
-from app.services.change_detection import evaluate_change_flags, get_flag_summary
+from app.services.change_detection import (
+    confirm_change_flags,
+    evaluate_change_flags,
+    get_flag_summary,
+)
 
 TODAY = today_jst()
 URL = "/api/staff/residents/{}/change-flags"
@@ -386,6 +392,13 @@ def _committed_resident(engine, *, with_low_meals: bool) -> Iterator[dict[str, i
         yield ids
     finally:
         with Session(engine) as cleanup:
+            cleanup.execute(
+                delete(ChangeFlagConfirmation).where(
+                    ChangeFlagConfirmation.change_flag_id.in_(
+                        select(ChangeFlag.id).where(ChangeFlag.resident_id == ids["resident"])
+                    )
+                )
+            )
             cleanup.execute(delete(ChangeFlag).where(ChangeFlag.resident_id == ids["resident"]))
             cleanup.execute(delete(CareRecord).where(CareRecord.resident_id == ids["resident"]))
             cleanup.execute(delete(Staff).where(Staff.id == ids["staff"]))
@@ -633,3 +646,408 @@ def test_family_screens_do_not_show_flags(
     assert response.status_code == 200
     assert "change" not in response.text
     assert "flag" not in response.text
+
+
+# --- 確かめる（T016。FR-009・FR-010。POST …/change-flags/confirm） ---
+
+CONFIRM_URL = "/api/staff/residents/{}/change-flags/confirm"
+
+
+def _two_flags(session, resident_id, staff_id) -> list[ChangeFlag]:
+    """食事量と眠り、2 つの決まりに当てはまる記録を入れて、まだ確かめていない目印を 2 つ作る。"""
+    _two_low_meals(session, resident_id, staff_id)
+    _record(session, resident_id, staff_id, 1, "sleep", "day", "poor")
+    _record(session, resident_id, staff_id, 0, "sleep", "day", "poor")
+    evaluate_change_flags(session, resident_id)
+    flags = _flags(session, resident_id)
+    assert {flag.rule_code for flag in flags} == {"meal_low", "sleep_poor"}
+    return flags
+
+
+def _confirmations(session, flag_id) -> list[ChangeFlagConfirmation]:
+    return list(
+        session.scalars(
+            select(ChangeFlagConfirmation)
+            .where(ChangeFlagConfirmation.change_flag_id == flag_id)
+            .order_by(ChangeFlagConfirmation.id)
+        )
+    )
+
+
+def test_confirm_makes_every_unconfirmed_flag_confirmed(
+    client, session, make_staff, login_as, setup
+):
+    staff, resident_id = setup
+    flags = _two_flags(session, resident_id, staff.id)
+    confirmer = make_staff(display_name="確かめる人")
+    login_as(confirmer.user_id)
+
+    response = client.post(CONFIRM_URL.format(resident_id), json={"note": "本人は元気"})
+
+    assert response.status_code == 200
+    assert response.json() == {"confirmed": 2}
+    session.expire_all()
+    for flag in flags:
+        assert flag.status == "confirmed"
+        [confirmation] = _confirmations(session, flag.id)
+        assert confirmation.confirmed_by == confirmer.id
+        assert confirmation.note == "本人は元気"
+        assert confirmation.streak_at_confirmation == flag.streak
+
+
+@pytest.mark.parametrize("body", [{}, {"note": None}, {"note": ""}, {"note": "   "}])
+def test_note_is_optional_and_blank_means_none(client, session, make_staff, login_as, setup, body):
+    staff, resident_id = setup
+    [flag] = _flags_after_two_low_meals(session, resident_id, staff.id)
+    login_as(make_staff().user_id)
+
+    assert client.post(CONFIRM_URL.format(resident_id), json=body).status_code == 200
+
+    session.expire_all()
+    [confirmation] = _confirmations(session, flag.id)
+    assert confirmation.note is None
+
+
+def _flags_after_two_low_meals(session, resident_id, staff_id) -> list[ChangeFlag]:
+    _two_low_meals(session, resident_id, staff_id)
+    evaluate_change_flags(session, resident_id)
+    return _flags(session, resident_id)
+
+
+def test_note_keeps_text_but_drops_surrounding_spaces(client, session, make_staff, login_as, setup):
+    staff, resident_id = setup
+    [flag] = _flags_after_two_low_meals(session, resident_id, staff.id)
+    login_as(make_staff().user_id)
+
+    client.post(CONFIRM_URL.format(resident_id), json={"note": "  本人は 元気  "})
+
+    session.expire_all()
+    assert [c.note for c in _confirmations(session, flag.id)] == ["本人は 元気"]
+
+
+def test_note_length_is_counted_after_dropping_spaces(client, session, make_staff, login_as, setup):
+    staff, resident_id = setup
+    [flag] = _flags_after_two_low_meals(session, resident_id, staff.id)
+    login_as(make_staff().user_id)
+
+    # 前後に空白があっても、取れば 101 文字なら 422。100 文字なら通る
+    over = client.post(CONFIRM_URL.format(resident_id), json={"note": " " + "あ" * 101 + " "})
+    assert over.status_code == 422
+    ok = client.post(CONFIRM_URL.format(resident_id), json={"note": "  " + "あ" * 100 + "  "})
+    assert ok.status_code == 200
+    session.expire_all()
+    assert [c.note for c in _confirmations(session, flag.id)] == ["あ" * 100]
+
+
+def test_note_up_to_100_characters_and_over_that_is_422(
+    client, session, make_staff, login_as, setup
+):
+    staff, resident_id = setup
+    [flag] = _flags_after_two_low_meals(session, resident_id, staff.id)
+    login_as(make_staff().user_id)
+
+    too_long = client.post(CONFIRM_URL.format(resident_id), json={"note": "あ" * 101})
+    assert too_long.status_code == 422
+    assert too_long.json()["error"]["code"] == "validation_error"
+    session.expire_all()
+    assert flag.status == "unconfirmed"
+    assert _confirmations(session, flag.id) == []
+
+    exactly = client.post(CONFIRM_URL.format(resident_id), json={"note": "あ" * 100})
+    assert exactly.status_code == 200
+
+
+def test_nothing_to_confirm_is_409_already_confirmed(client, session, make_staff, login_as, setup):
+    staff, resident_id = setup
+    login_as(make_staff().user_id)
+
+    # 目印が 1 つもない
+    response = client.post(CONFIRM_URL.format(resident_id), json={})
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "already_confirmed"
+
+    # 確かめ済みしかない（2 人がほぼ同時に押したときの、後の人も同じ）。確かめた記録は増えない
+    [flag] = _flags_after_two_low_meals(session, resident_id, staff.id)
+    assert client.post(CONFIRM_URL.format(resident_id), json={"note": "1 人目"}).status_code == 200
+    again = client.post(CONFIRM_URL.format(resident_id), json={"note": "2 人目"})
+    assert again.status_code == 409
+    assert again.json()["error"]["code"] == "already_confirmed"
+    session.expire_all()
+    assert [c.note for c in _confirmations(session, flag.id)] == ["1 人目"]
+
+
+def test_cleared_flags_are_not_confirmed(client, session, make_staff, login_as, setup):
+    staff, resident_id = setup
+    [current] = _flags_after_two_low_meals(session, resident_id, staff.id)
+    old = ChangeFlag(
+        resident_id=resident_id,
+        rule_code="mood_low",
+        streak=2,
+        evidence=[],
+        status="cleared",
+        cleared_at=datetime.now(UTC),
+        cleared_reason="not_matching",
+    )
+    session.add(old)
+    session.flush()
+    login_as(make_staff().user_id)
+
+    assert client.post(CONFIRM_URL.format(resident_id), json={}).json() == {"confirmed": 1}
+
+    session.expire_all()
+    assert current.status == "confirmed"
+    assert old.status == "cleared"
+    assert _confirmations(session, old.id) == []
+
+
+def test_confirmed_goes_back_when_it_continues_and_old_confirmation_stays(
+    client, session, make_staff, login_as, setup
+):
+    staff, resident_id = setup
+    [flag] = _flags_after_two_low_meals(session, resident_id, staff.id)
+    login_as(make_staff(display_name="前の勤務の人").user_id)
+    client.post(CONFIRM_URL.format(resident_id), json={"note": "夕食を様子見"})
+
+    # さらに続いた（FR-010）：まだ確かめていないに戻り、前の確かめた記録は残る
+    _record(session, resident_id, staff.id, 0, "meal", "lunch", "2")
+    evaluate_change_flags(session, resident_id)
+    session.expire_all()
+    assert (flag.status, flag.streak) == ("unconfirmed", 3)
+    assert len(_confirmations(session, flag.id)) == 1
+
+    # 確かめ直すと、行が増える（前に確かめた人の記録も残る）
+    login_as(make_staff(display_name="次の勤務の人").user_id)
+    assert (
+        client.post(CONFIRM_URL.format(resident_id), json={"note": "食欲が戻った"}).status_code
+        == 200
+    )
+    session.expire_all()
+    assert flag.status == "confirmed"
+    assert [(c.note, c.streak_at_confirmation) for c in _confirmations(session, flag.id)] == [
+        ("夕食を様子見", 2),
+        ("食欲が戻った", 3),
+    ]
+
+
+@pytest.mark.parametrize("role", ["care_worker", "leader", "counselor", "director"])
+def test_recording_staff_can_confirm(client, session, make_staff, login_as, setup, role):
+    staff, resident_id = setup
+    _flags_after_two_low_meals(session, resident_id, staff.id)
+    login_as(make_staff(role=role).user_id)
+
+    assert client.post(CONFIRM_URL.format(resident_id), json={}).status_code == 200
+
+
+def test_clerk_and_family_cannot_confirm(client, session, make_staff, make_family, login_as, setup):
+    staff, resident_id = setup
+    [flag] = _flags_after_two_low_meals(session, resident_id, staff.id)
+    login_as(make_staff(role="clerk").user_id)
+    assert client.post(CONFIRM_URL.format(resident_id), json={}).status_code == 403
+
+    family = make_family()
+    login_as(family.user_id)
+    assert client.post(CONFIRM_URL.format(resident_id), json={}).status_code == 403
+    session.expire_all()
+    assert flag.status == "unconfirmed"
+
+
+def test_confirm_service_with_unknown_resident_is_not_found(session, setup):
+    """API を通さずにサービスだけを呼んでも、入居者がいなければ 500 でなく NOT_FOUND。"""
+    staff, _ = setup
+
+    with pytest.raises(AppError) as error:
+        confirm_change_flags(session, 2**40, staff.id, None)
+
+    assert error.value.code == ErrorCode.NOT_FOUND
+
+
+def test_confirm_not_logged_in_is_401(client, setup):
+    _, resident_id = setup
+    assert client.post(CONFIRM_URL.format(resident_id), json={}).status_code == 401
+
+
+def test_confirm_unknown_resident_is_404(client, make_staff, login_as):
+    login_as(make_staff().user_id)
+    assert client.post(CONFIRM_URL.format(2**40), json={}).status_code == 404
+
+
+def _other_facility_resident(session) -> Resident:
+    other = Facility(name="ほかの施設")
+    session.add(other)
+    session.flush()
+    resident = Resident(
+        facility_id=other.id, name="架空 他施設", display_name="他さんの母", room="1"
+    )
+    session.add(resident)
+    session.flush()
+    return resident
+
+
+def test_confirm_other_facility_resident_is_404(client, session, make_staff, login_as, setup):
+    """ほかの施設の入居者は、ない入居者と同じ 404（様子のメモの API と同じ。#326・#327）。"""
+    staff, _ = setup
+    resident = _other_facility_resident(session)
+    [flag] = _flags_after_two_low_meals(session, resident.id, staff.id)
+    login_as(make_staff().user_id)
+
+    response = client.post(CONFIRM_URL.format(resident.id), json={})
+
+    assert response.status_code == 404
+    session.expire_all()
+    assert flag.status == "unconfirmed"
+
+
+def test_get_other_facility_resident_is_404(client, session, make_staff, login_as, setup):
+    """見る API も同じ（目印の中身に、記録の値・確かめた職員の名前が入るため）。"""
+    staff, _ = setup
+    resident = _other_facility_resident(session)
+    _flags_after_two_low_meals(session, resident.id, staff.id)
+    login_as(make_staff().user_id)
+
+    assert client.get(URL.format(resident.id)).status_code == 404
+
+
+def test_note_is_returned_as_plain_text(client, session, make_staff, login_as, setup):
+    """`<script>` などは、そのまま文字として返す（実行・加工しない。FR-013）。"""
+    staff, resident_id = setup
+    _flags_after_two_low_meals(session, resident_id, staff.id)
+    login_as(make_staff().user_id)
+    note = "<script>alert(1)</script> {太郎|たろう}"
+    client.post(CONFIRM_URL.format(resident_id), json={"note": note})
+
+    data = client.get(URL.format(resident_id)).json()
+
+    assert [c["note"] for c in data["current"][0]["confirmations"]] == [note]
+
+
+def test_confirm_log_has_no_note(client, session, make_staff, login_as, setup, caplog):
+    """ログに、ひとこと・入居者の氏名を出さない（FR-014）。"""
+    staff, resident_id = setup
+    _flags_after_two_low_meals(session, resident_id, staff.id)
+    login_as(make_staff(display_name="ひみつの職員名").user_id)
+
+    with caplog.at_level(logging.DEBUG):
+        client.post(CONFIRM_URL.format(resident_id), json={"note": "ひみつのひとこと"})
+
+    assert "ひみつのひとこと" not in caplog.text
+    assert "ひみつの職員名" not in caplog.text
+    assert "確かめた" in caplog.text
+
+
+def test_confirm_makes_no_notification_or_email(client, session, make_staff, login_as, setup):
+    staff, resident_id = setup
+    _flags_after_two_low_meals(session, resident_id, staff.id)
+    before = (
+        session.scalar(select(func.count()).select_from(Notification)),
+        session.scalar(select(func.count()).select_from(EmailOutbox)),
+    )
+    login_as(make_staff().user_id)
+
+    client.post(CONFIRM_URL.format(resident_id), json={})
+
+    assert (
+        session.scalar(select(func.count()).select_from(Notification)),
+        session.scalar(select(func.count()).select_from(EmailOutbox)),
+    ) == before
+
+
+def test_two_confirms_at_the_same_time_only_one_wins(engine):
+    """2 人がほぼ同時に「確かめた」を押したら、先の人だけが残り、後の人は already_confirmed。
+
+    入居者の行を順番待ちにしているので、後の人は先の人の確かめを見て、何もせずに断られる。
+    """
+    with _committed_resident(engine, with_low_meals=True) as ids:
+        with Session(engine) as prepare:
+            evaluate_change_flags(prepare, ids["resident"])
+            prepare.commit()
+        results: list[object] = []
+
+        def work(number: int, barrier: threading.Barrier) -> None:
+            with Session(engine) as worker:
+                barrier.wait()
+                try:
+                    results.append(
+                        confirm_change_flags(worker, ids["resident"], ids["staff"], f"{number}")
+                    )
+                    worker.commit()
+                except AppError as error:
+                    worker.rollback()
+                    results.append(error.code)
+
+        errors = _run_in_two_threads(work)
+        with Session(engine) as check:
+            rows = check.scalar(
+                select(func.count())
+                .select_from(ChangeFlagConfirmation)
+                .where(
+                    ChangeFlagConfirmation.change_flag_id.in_(
+                        select(ChangeFlag.id).where(ChangeFlag.resident_id == ids["resident"])
+                    )
+                )
+            )
+
+    assert errors == []
+    assert sorted(results, key=str) == [1, ErrorCode.ALREADY_CONFIRMED]
+    assert rows == 1
+
+
+def test_confirm_takes_locks_in_the_same_order_as_a_record_save(engine):
+    """確かめる処理は、記録の保存から呼ばれる調べ直しと、同じ順番で行を押さえる（入居者 → 目印）。
+
+    時間に頼らず、保存の側を手で再現する：保存が入居者の行を押さえたまま、確かめる側が待ちに入る
+    のを待ち、そのあと保存が目印の行を押さえて終わる。確かめる側が目印の行を先に押さえる順番だと、
+    互いに相手の行を待って止まり（deadlock detected）、どちらかが失敗する。
+    """
+    with _committed_resident(engine, with_low_meals=True) as ids:
+        with Session(engine) as prepare:
+            evaluate_change_flags(prepare, ids["resident"])
+            prepare.commit()
+
+        errors: list[BaseException] = []
+
+        def confirm() -> None:
+            try:
+                with Session(engine) as worker:
+                    confirm_change_flags(worker, ids["resident"], ids["staff"], None)
+                    worker.commit()
+            except BaseException as error:
+                # 失敗はあとでまとめて確かめる
+                errors.append(error)
+
+        saver = Session(engine)
+        thread = threading.Thread(target=confirm)
+        try:
+            # 保存（evaluate_change_flags と同じ順番）：まず入居者の行を押さえる
+            saver.scalars(
+                select(Resident.id)
+                .where(Resident.id == ids["resident"])
+                .with_for_update(key_share=True)
+            ).one()
+            thread.start()
+            _wait_until_someone_waits_for_a_lock(engine)
+            # 保存は、そのあと目印の行を押さえて終わる
+            saver.scalars(
+                select(ChangeFlag)
+                .where(ChangeFlag.resident_id == ids["resident"], ChangeFlag.cleared_at.is_(None))
+                .with_for_update()
+            ).all()
+            saver.commit()
+            thread.join(timeout=10)
+        finally:
+            saver.rollback()
+            saver.close()
+
+        assert not thread.is_alive()
+        assert errors == []
+
+
+def _wait_until_someone_waits_for_a_lock(engine, seconds: float = 5.0) -> None:
+    """どこかの接続が、ロックの待ちに入るまで待つ（最大 seconds 秒）。"""
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        with Session(engine) as probe:
+            waiting = probe.scalar(text("SELECT count(*) FROM pg_locks WHERE NOT granted"))
+        if waiting:
+            return
+        time.sleep(0.02)
+    raise AssertionError("確かめる側が、ロックの待ちに入らなかった")
