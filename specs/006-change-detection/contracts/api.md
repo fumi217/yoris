@@ -72,8 +72,8 @@ spec 001 の表にあるもの（`forbidden`・`not_found`・`validation_error`�
 | メソッド・パス | 役割 | 中身 | spec |
 |---|---|---|---|
 | `GET /api/admin/change-rules` | CO・D | 決まりの一覧 `[{code, enabled}]` | FR-011・US3 シナリオ 1 |
-| `PUT /api/admin/change-rules/{code}` | CO・D | 本文 `{enabled}`。オフにしたらその決まりの今の目印を消し、オンにしたら全員を調べ直す（R-07） | FR-011 |
-| `GET /api/admin/change-rules/history` | CO・D | 変更履歴（いつ・誰が・どの決まりを・どう変えたか。新しい順） | FR-011・US3 シナリオ 3 |
+| `PUT /api/admin/change-rules/{code}` | CO・D | 本文 `{enabled}`（真偽値だけ。ほかは 422）。応答は `{code, enabled}`。オフにしたらその決まりの今の目印を消し、オンにしたら全員を調べ直す。**いまと同じ値なら何もしない**（履歴も増えない）。ない決まりのコードは 404（R-07） | FR-011 |
+| `GET /api/admin/change-rules/history` | CO・D | 変更履歴（いつ・誰が・どの決まりを・どう変えたか。新しい順）。`[{id, rule_code, enabled_before, enabled_after, changed_by_name, changed_at}]`（多くても 100 件） | FR-011・US3 シナリオ 3 |
 
 ## 家族・通知・問い合わせ AI
 

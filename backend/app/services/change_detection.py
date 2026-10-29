@@ -1,4 +1,4 @@
-"""変化の目印を付け直す・入居者一覧に返す（spec 006 の 006-T007・T010）。
+"""変化の目印を付け直す・入居者一覧に返す・決まりのオン／オフ（spec 006 の 006-T007・T010・T020）。
 
 `evaluate_change_flags` は、記録の保存・押し直し・取り消し（services/records.py）と
 同じセッションで呼ぶ。
@@ -13,10 +13,15 @@ import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.orm import Session
 
-from app.models.change_flags import ChangeFlag, ChangeFlagConfirmation, ChangeRule
+from app.models.change_flags import (
+    ChangeFlag,
+    ChangeFlagConfirmation,
+    ChangeRule,
+    ChangeRuleHistory,
+)
 from app.models.core import Resident
 from app.models.records import CareRecord
 from app.services.change_rules import LOOKBACK_DAYS, RULES, RuleRecord, evaluate_rule
@@ -36,6 +41,21 @@ def evaluate_change_flags(session: Session, resident_id: int) -> None:
     非開示の項目も含めて記録を直接読む（職員向けの機能。spec 001 の R-06）。
     読むのは、項目ごとのいちばん新しい記録の日から 6 日前まで（今日からではない。R-02）。
     """
+    # 決まりの行を、オンかオフかにかかわらず共有ロックで読む。順番は、決まりの行 → 入居者の行 →
+    # 目印の行。オン／オフの保存は、決まりの行を `FOR UPDATE` で持つあいだ、入居者の行を取りに
+    # 行かない（オンにしたあとの全員の調べ直しは、commit してから。`recheck_all_residents`）。
+    # 記録の保存は、外部キーで入居者の行を先に押さえるので、保存が決まりの行を待ち、
+    # オン／オフの保存が入居者の行を待つ形になると、待ち合って止まる。
+    # オフにする処理が先に押さえているあいだは、ここで待ち、オフになった決まりの目印を付けない
+    # （R-07）
+    enabled_codes = {
+        code
+        for code, enabled in session.execute(
+            select(ChangeRule.code, ChangeRule.enabled).with_for_update(read=True)
+        )
+        if enabled
+    }
+
     # 同じ入居者の調べ直しを順番にする。目印がまだなくても効くよう、目印ではなく入居者の行を押さえる
     # （2 人が同時に記録して、同じ目印を 2 つ作って一意制約に当たらないように。R-03）
     # FOR NO KEY UPDATE（key_share=True）にする。記録を新しく足すと、外部キーの確認で入居者の行に
@@ -45,7 +65,6 @@ def evaluate_change_flags(session: Session, resident_id: int) -> None:
         select(Resident.id).where(Resident.id == resident_id).with_for_update(key_share=True)
     ).one()
 
-    enabled_codes = set(session.scalars(select(ChangeRule.code).where(ChangeRule.enabled)))
     # 項目ごとに、いちばん新しい記録の日から 6 日前までを読む（決まりの関数も同じ範囲に絞る）
     newest = session.execute(
         select(CareRecord.item, func.max(CareRecord.date))
@@ -160,3 +179,70 @@ def get_flag_summary(session: Session) -> FlagSummary:
         },
         unconfirmed_resident_count=len(unconfirmed),
     )
+
+
+def set_change_rule_enabled(
+    session: Session, code: str, enabled: bool, *, staff_id: int
+) -> tuple[ChangeRule, bool] | None:
+    """決まりをオン／オフする。ない決まりのコードなら None。commit は呼んだ側が行う。
+    戻り値は (決まり, 値を変えたか)。
+
+    - いまと同じ値なら何もしない（履歴の行も足さない。R-07）
+    - オフにしたら、その決まりの今の目印を、消えた理由「決まりをオフにした」で消す
+    - 変更者・日時・前後の値を `change_rule_histories` に残す（FR-011）
+
+    オンにしたあとの全員の調べ直しは、ここではしない。commit してから
+    `recheck_all_residents` を呼ぶ（決まりの行の `FOR UPDATE` を持ったまま入居者の行を取りに
+    行くと、記録の保存から呼ばれる調べ直しと待ち合って止まるため。R-07）。
+    """
+    rule = session.scalars(
+        select(ChangeRule).where(ChangeRule.code == code).with_for_update()
+    ).one_or_none()
+    if rule is None or rule.enabled == enabled:
+        return None if rule is None else (rule, False)
+
+    now = datetime.now(UTC)
+    session.add(
+        ChangeRuleHistory(
+            rule_code=code,
+            enabled_before=rule.enabled,
+            enabled_after=enabled,
+            changed_by=staff_id,
+            changed_at=now,
+        )
+    )
+    rule.enabled = enabled
+    rule.updated_by = staff_id
+    rule.updated_at = now
+    session.flush()
+
+    if not enabled:
+        cleared = session.execute(
+            update(ChangeFlag)
+            .where(ChangeFlag.rule_code == code, ChangeFlag.cleared_at.is_(None))
+            .values(
+                status="cleared", cleared_at=now, cleared_reason="rule_disabled", updated_at=now
+            )
+            .returning(ChangeFlag.id)
+        ).all()
+        logger.info("決まりをオフにした: rule=%s 消した目印=%s件", code, len(cleared))
+    logger.info("決まりを変えた: rule=%s enabled=%s staff=%s", code, enabled, staff_id)
+    return rule, True
+
+
+def recheck_all_residents(session: Session) -> None:
+    """入居者全員の目印を付け直す。決まりをオンにして commit したあとに呼ぶ（オフのあいだに入った
+    記録も反映する。R-07）。
+
+    入居者ごとに commit する（決まりの行も、ほかの入居者の行も、持ったまま待たない）。
+    1 人の失敗で残りを止めない。失敗した入居者は、その人の次の記録の保存で付け直される。
+    """
+    for resident_id in list(session.scalars(select(Resident.id).order_by(Resident.id))):
+        try:
+            evaluate_change_flags(session, resident_id)
+            session.commit()
+        except Exception as error:
+            session.rollback()
+            logger.warning(
+                "目印の付け直しに失敗: resident=%s error=%s", resident_id, type(error).__name__
+            )

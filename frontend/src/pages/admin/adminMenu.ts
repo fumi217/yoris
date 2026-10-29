@@ -20,6 +20,13 @@ export const adminMenu: AdminMenuItem[] = [
     icon: '👁️',
     roles: ['counselor', 'director'],
   },
+  // 変化の目印の設定（spec 006 の T021。生活相談員・施設長。守りは API の 403）
+  {
+    to: '/admin/change-rules',
+    labelKey: 'admin.menu.change_rules',
+    icon: '⚠️',
+    roles: ['counselor', 'director'],
+  },
   // 家族からのメッセージ（UI-S08。spec 004 の T029。事務員の入り口。職員の画面と同じ画面を開く）
   {
     to: '/admin/messages',

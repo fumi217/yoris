@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.api import billing, dev, files
 from app.api.admin import billing as admin_billing
+from app.api.admin import change_rules as admin_change_rules
 from app.api.admin import disclosure as admin_disclosure
 from app.api.admin import staff as admin_staff
 from app.api.admin import visits as admin_visits
@@ -49,6 +50,7 @@ def create_app() -> FastAPI:
     app.include_router(billing.router)
     app.include_router(files.router)
     app.include_router(admin_billing.router)
+    app.include_router(admin_change_rules.router)
     app.include_router(admin_disclosure.router)
     app.include_router(admin_staff.router)
     app.include_router(admin_visits.router)

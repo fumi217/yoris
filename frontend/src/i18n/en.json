@@ -360,7 +360,33 @@
       "billing": "Payment of fees",
       "visit_settings": "Visit settings",
       "visits": "Visit reservations",
+      "change_rules": "Change marker settings",
       "staff_accounts": "Create a staff account"
+    },
+    "change_rules": {
+      "title": "Change marker settings",
+      "note": "Choose, for the whole facility, the rules that mark a \"different from usual\" condition based on record values. Changes take effect immediately.",
+      "note_off": "Turning a rule off removes its current markers (including confirmed ones). Turning it back on re-checks all residents and adds markers.",
+      "rule": {
+        "meal_low": "🍚 Meal amount (2 meals in a row at \"a little\" or less)",
+        "mood_low": "😊 Mood and condition (2 days in a row \"not energetic\")",
+        "sleep_poor": "😴 Sleep (2 days in a row \"did not sleep well\")"
+      },
+      "rule_short": {
+        "meal_low": "Meal amount",
+        "mood_low": "Mood and condition",
+        "sleep_poor": "Sleep"
+      },
+      "on": "On",
+      "off": "Off",
+      "saving": "Saving",
+      "saved_on": "{{rule}} turned on",
+      "saved_off": "{{rule}} turned off",
+      "off_confirm": "Press again to turn off (current markers will be removed)",
+      "history_title": "Change history",
+      "history_empty": "There are no changes yet",
+      "history_change": "Set {{rule}} to \"{{value}}\"",
+      "history_when": "{{month}}/{{day}} {{time}}"
     },
     "waiting_messages": "{{count}} to handle",
     "no_menu": "There are no admin pages available for your role yet"

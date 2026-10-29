@@ -124,14 +124,15 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ### Tests for User Story 3
 
-- [ ] T019 [P] [US3] テスト `backend/tests/api/test_change_rules_admin.py` を書く：`GET /api/admin/change-rules` は生活相談員・施設長だけで、**介護職員・リーダー・事務員・家族は 403**（FR-011）／オフにすると、その決まりの今の目印が消え（`status = cleared`・`cleared_reason = rule_disabled`）、記録が続いても付かない／
-  オンに戻すと全員が調べ直されて目印が付く（research.md R-07）／変更ごとに `change_rule_histories` が 1 行でき、`GET /api/admin/change-rules/history` に新しい順で出る／ない決まりのコードは 404（みさき）
+- [x] T019 [P] [US3] テスト `backend/tests/api/test_change_rules_admin.py` を書く：`GET /api/admin/change-rules` は生活相談員・施設長だけで、**介護職員・リーダー・事務員・家族は 403**（FR-011）／オフにすると、その決まりの今の目印が消え（`status = cleared`・`cleared_reason = rule_disabled`）、記録が続いても付かない／
+  オンに戻すと全員が調べ直されて目印が付く（research.md R-07）／変更ごとに `change_rule_histories` が 1 行でき、`GET /api/admin/change-rules/history` に新しい順で出る／
+  **いまと同じ値を送っても、履歴の行は増えず、全員の調べ直しもしない**（R-07）／オフにする処理が先に決まりの行を押さえているあいだ、記録の保存から呼ばれる調べ直しは待ち、オフになった決まりの目印を付けない／ない決まりのコードは 404（みさき）
 
 ### Implementation for User Story 3
 
-- [ ] T020 [US3] 決まりのオン／オフを `backend/app/services/change_detection.py` に足し、`GET /api/admin/change-rules`・`PUT /api/admin/change-rules/{code}`・`GET /api/admin/change-rules/history` を `backend/app/api/admin/change_rules.py` に作る（役割：生活相談員・施設長）：
-  オフにしたら、その決まりの今の目印に `status = cleared`・`cleared_at`・`cleared_reason = rule_disabled` をまとめて入れる。オンにしたら、同じトランザクションで入居者全員について `evaluate_change_flags` を呼ぶ。変更者・日時・前後の値を `change_rule_histories` に残す。ルーターを `backend/app/main.py` に登録する（research.md R-07、contracts/api.md）（みさき）
-- [ ] T021 [US3] 設定の画面 `frontend/src/pages/admin/ChangeRules.tsx` を作り、001-T019 の管理画面の枠（生活相談員・施設長だけ）に `/admin/change-rules` として足す：決まり 3 つとオン／オフの切り替え、変更履歴（いつ・誰が・どの決まりを・どう変えたか）。文言を `ja.json` の `change.*` に足す（みさき）
+- [x] T020 [US3] 決まりのオン／オフを `backend/app/services/change_detection.py` に足し、`GET /api/admin/change-rules`・`PUT /api/admin/change-rules/{code}`・`GET /api/admin/change-rules/history` を `backend/app/api/admin/change_rules.py` に作る（役割：生活相談員・施設長）：
+  オフにしたら、その決まりの今の目印に `status = cleared`・`cleared_at`・`cleared_reason = rule_disabled` をまとめて入れる。オンにしたら、変更を commit してから、入居者ごとに commit しながら全員について `evaluate_change_flags` を呼ぶ（記録の保存と待ち合って止まらないように。R-07）。変更者・日時・前後の値を `change_rule_histories` に残す。**いまと同じ値なら何もしない**（履歴も調べ直しもなし）。`evaluate_change_flags` が決まりの行を読むところを `FOR SHARE` にし、オフにする処理と同時に走っても目印が付かないようにする。ルーターを `backend/app/main.py` に登録する（research.md R-07、contracts/api.md）（みさき）
+- [x] T021 [US3] 設定の画面 `frontend/src/pages/admin/ChangeRules.tsx` を作り、001-T019 の管理画面の枠（生活相談員・施設長だけ）に `/admin/change-rules` として足す：決まり 3 つとオン／オフの切り替え、変更履歴（いつ・誰が・どの決まりを・どう変えたか）。文言を `ja.json` の `change.*` に足す（みさき）
 
 **Checkpoint**: 決まりをオン／オフでき、履歴が残る
 

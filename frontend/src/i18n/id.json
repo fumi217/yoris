@@ -360,7 +360,33 @@
       "billing": "Pembayaran biaya layanan",
       "visit_settings": "Pengaturan kunjungan",
       "visits": "Daftar reservasi kunjungan",
+      "change_rules": "Pengaturan penanda perubahan",
       "staff_accounts": "Buat akun staf"
+    },
+    "change_rules": {
+      "title": "Pengaturan penanda perubahan",
+      "note": "Pilih untuk seluruh fasilitas aturan yang memberi penanda \"kondisi berbeda dari biasanya\" berdasarkan nilai catatan. Perubahan langsung berlaku.",
+      "note_off": "Jika dimatikan, penanda saat ini dari aturan itu (termasuk yang sudah dikonfirmasi) akan hilang. Jika dinyalakan kembali, semua penghuni diperiksa ulang dan penanda diberikan.",
+      "rule": {
+        "meal_low": "🍚 Jumlah makan (2 kali makan berturut-turut \"sedikit\" atau kurang)",
+        "mood_low": "😊 Suasana hati dan kondisi (2 hari berturut-turut \"tidak bersemangat\")",
+        "sleep_poor": "😴 Tidur (2 hari berturut-turut \"kurang tidur\")"
+      },
+      "rule_short": {
+        "meal_low": "Jumlah makan",
+        "mood_low": "Suasana hati dan kondisi",
+        "sleep_poor": "Tidur"
+      },
+      "on": "Nyala",
+      "off": "Mati",
+      "saving": "Sedang menyimpan",
+      "saved_on": "{{rule}} dinyalakan",
+      "saved_off": "{{rule}} dimatikan",
+      "off_confirm": "Tekan sekali lagi untuk mematikan (penanda saat ini akan hilang)",
+      "history_title": "Riwayat perubahan",
+      "history_empty": "Belum ada perubahan",
+      "history_change": "{{rule}} diubah menjadi \"{{value}}\"",
+      "history_when": "{{day}}/{{month}} {{time}}"
     },
     "waiting_messages": "{{count}} perlu ditangani",
     "no_menu": "Belum ada halaman admin yang dapat dibuka dengan peran ini"
