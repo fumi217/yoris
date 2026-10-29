@@ -57,6 +57,14 @@ def read_upload(storage_key: str) -> bytes:
     return (_upload_dir() / storage_key).read_bytes()
 
 
+def delete_stored(storage_key: str) -> None:
+    """保存先のファイルを消す。すでにないときは何もしない（消せなければ OSError）。
+
+    本番の保存先に替えるときは、_write・read_upload と一緒に、ここも替える。
+    """
+    (_upload_dir() / storage_key).unlink(missing_ok=True)
+
+
 def save_upload(
     session: Session,
     *,

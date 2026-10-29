@@ -471,3 +471,170 @@ def test_staff_album_is_for_album_staff_and_known_residents(
 
     login_as(make_staff(role="leader").user_id)
     assert client.get("/api/staff/residents/999999999/album").status_code == 404
+
+
+# --- 005-T017・T019：写真の削除（DELETE /api/staff/album/{id}） ---
+
+
+def _delete(client, photo: AlbumPhoto):
+    return client.delete(f"/api/staff/album/{photo.id}")
+
+
+def _storage_key(session: Session, photo: AlbumPhoto) -> str:
+    saved = session.get(UploadedFile, photo.file_id)
+    assert saved is not None
+    return saved.storage_key
+
+
+@pytest.mark.parametrize("role", ["care_worker", "leader", "counselor", "director"])
+def test_album_staff_can_delete_a_photo(
+    client, world, add_photo, make_family, make_staff, login_as, role
+):
+    photo = add_photo(make_family().resident_id)
+    login_as(make_staff(role=role).user_id)
+
+    assert _delete(client, photo).status_code == 204
+
+
+def test_deleting_leaves_only_who_and_when(
+    client, session, world, tmp_path, add_photo, make_family, make_staff, login_as
+):
+    photo = add_photo(make_family().resident_id, comment="運動会")
+    file_id = photo.file_id
+    key = _storage_key(session, photo)
+    assert (tmp_path / key).exists()
+    staff = make_staff(role="leader")
+    login_as(staff.user_id)
+
+    response = _delete(client, photo)
+
+    assert response.status_code == 204
+    session.expire_all()
+    assert photo.deleted_by == staff.id
+    assert photo.deleted_at is not None
+    # 写真もコメントも残さない（FR-012）
+    assert (photo.file_id, photo.comment) == (None, None)
+    assert session.get(UploadedFile, file_id) is None
+    assert not (tmp_path / key).exists()  # 保存先のファイルも消えている
+
+
+def test_a_deleted_photo_disappears_from_the_family_and_its_url(
+    client, world, add_photo, make_family, make_staff, login_as
+):
+    family = make_family()
+    photo = add_photo(family.resident_id)
+    file_id = photo.file_id
+    login_as(family.user_id)
+    assert client.get(f"/api/files/{file_id}").status_code == 200
+    login_as(make_staff(role="leader").user_id)
+
+    _delete(client, photo)
+
+    login_as(family.user_id)
+    assert client.get("/api/family/album").json() == {"days": [], "next_before": None}
+    assert client.get(f"/api/files/{file_id}").status_code == 404
+    login_as(make_staff(role="leader").user_id)
+    assert client.get(f"/api/files/{file_id}").status_code == 404  # 職員も開けない
+
+
+def test_clerk_and_family_cannot_delete_a_photo(
+    client, session, world, add_photo, make_family, make_staff, login_as
+):
+    family = make_family()
+    photo = add_photo(family.resident_id)
+    assert _delete(client, photo).status_code == 401
+
+    for user_id in (make_staff(role="clerk").user_id, family.user_id):
+        login_as(user_id)
+        assert _delete(client, photo).status_code == 403
+
+    session.expire_all()
+    assert photo.deleted_at is None
+    assert photo.file_id is not None
+
+
+def test_deleting_twice_is_fine_and_keeps_the_first_record(
+    client, session, world, add_photo, make_family, make_staff, login_as
+):
+    photo = add_photo(make_family().resident_id)
+    first = make_staff(role="leader")
+    login_as(first.user_id)
+    assert _delete(client, photo).status_code == 204
+    session.expire_all()
+    deleted_at = photo.deleted_at
+
+    login_as(make_staff(role="counselor").user_id)
+    response = _delete(client, photo)
+
+    assert response.status_code == 204
+    session.expire_all()
+    assert (photo.deleted_by, photo.deleted_at) == (first.id, deleted_at)
+
+
+def test_deleting_an_unknown_or_other_facilitys_photo_is_404(
+    client, session, world, add_photo, make_family, make_staff, login_as
+):
+    photo = add_photo(make_family().resident_id)
+    staff = make_staff(role="leader")
+    login_as(staff.user_id)
+    assert client.delete("/api/staff/album/999999999").status_code == 404
+
+    other = Facility(name="別の施設")
+    session.add(other)
+    session.flush()
+    staff.facility_id = other.id
+    session.flush()
+
+    assert _delete(client, photo).status_code == 404
+    session.expire_all()
+    assert photo.deleted_at is None
+
+
+def test_deleting_one_photo_does_not_touch_the_others(
+    client, session, world, tmp_path, add_photo, make_family, make_staff, login_as
+):
+    resident_id = make_family().resident_id
+    target = add_photo(resident_id)
+    kept = add_photo(resident_id, comment="残す")
+    kept_key = _storage_key(session, kept)
+    login_as(make_staff(role="leader").user_id)
+
+    _delete(client, target)
+
+    session.expire_all()
+    assert (kept.deleted_at, kept.comment) == (None, "残す")
+    assert (tmp_path / kept_key).exists()
+
+
+def test_a_photo_is_gone_even_if_the_stored_file_cannot_be_removed(
+    client,
+    session,
+    world,
+    tmp_path,
+    add_photo,
+    make_family,
+    make_staff,
+    login_as,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    photo = add_photo(make_family().resident_id, comment="ひみつのコメント")
+    key = _storage_key(session, photo)
+
+    def fail(storage_key: str) -> None:
+        raise OSError("消せない")
+
+    monkeypatch.setattr("app.services.album.delete_stored", fail)
+    login_as(make_staff(role="leader").user_id)
+
+    with caplog.at_level("WARNING"):
+        response = _delete(client, photo)
+
+    # 先に家族から見えなくしてあるので、ファイルが残っても削除は成功にする
+    assert response.status_code == 204
+    session.expire_all()
+    assert photo.deleted_at is not None
+    assert photo.file_id is None
+    # 後で片づけられるよう、保存先の名前だけをログに出す。コメントは出さない
+    assert key in caplog.text
+    assert "ひみつのコメント" not in caplog.text

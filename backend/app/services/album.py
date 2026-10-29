@@ -8,9 +8,11 @@ GET /api/files/{id} も、同じ条件を通る（片方だけ抜けて、URL �
 - 見せない設定のときは、get_visible_album_photos は空を返す（呼ぶ API が、先に 404 にする）
 - 返すのは、写真の id・file_id・コメント・載せた日時だけ（削除した職員などは出さない）
 - コメントは職員が自由に書いた文。そのまま返し、画面で文字としてだけ出す
-- 関数の中では commit しない（読むだけ）
+- 関数の中では commit しない（読むだけ）。ただし delete_album_photo だけは、保存先のファイルを
+  消す前に、記録の変更を確定する必要があるので、中で commit する
 """
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -19,7 +21,17 @@ from sqlalchemy.orm import Session
 
 from app.auth.deps import CurrentUser
 from app.models.album import AlbumPhoto
+from app.models.files import UploadedFile
 from app.services.disclosure import is_feature_disclosed
+from app.services.uploads import delete_stored
+
+logger = logging.getLogger(__name__)
+
+# 写真を載せる・見る・削除できる職員の役割（介護職員・リーダー・生活相談員・施設長）。
+# 事務員は含めない（Assumptions）
+ALBUM_STAFF_ROLES = ("care_worker", "leader", "counselor", "director")
+# アルバムに載せられる形式（PDF は受け付けない。FR-003）
+ALBUM_FILE_TYPES = ("image/jpeg", "image/png")
 
 # 写真を載せる・見る・削除できる職員の役割（介護職員・リーダー・生活相談員・施設長）。
 # 事務員は含めない（Assumptions）
@@ -152,3 +164,39 @@ def count_new_photos(session: Session, resident_id: int, since: datetime, until:
         )
         or 0
     )
+
+
+def delete_album_photo(session: Session, photo: AlbumPhoto, staff_id: int) -> None:
+    """写真を削除する（research.md R-05。FR-011・FR-012）。
+
+    ① 1 つのトランザクションで、誰がいつ削除したかを残し、写真とコメントを消す
+       （ここで、家族の一覧からも、ファイルの URL からも見えなくなる）
+    ② そのあとで、保存先のファイルを消す。消せなくても、削除は成功にする
+       （残ったファイルは、URL から開けないので、誰にも配られない）
+
+    すでに削除されていれば何もしない（2 回目で、最初の記録を上書きしない）。
+    ファイル名・コメントはログに出さない（保存先の名前だけ）。
+    """
+    # 2 人が同時に消すとき、あとの人は鍵が外れるまで待ち、読み直して「削除済み」で戻る
+    # （待たずに進むと、すでに消えた行をもう一度消そうとして 500 になる）
+    session.refresh(photo, with_for_update=True)
+    if photo.deleted_at is not None or photo.file_id is None:
+        return
+    uploaded = session.get(UploadedFile, photo.file_id)
+    storage_key = uploaded.storage_key if uploaded is not None else None
+
+    photo.deleted_by = staff_id
+    photo.deleted_at = func.now()
+    photo.file_id = None
+    photo.comment = None
+    # 先に album_photos の参照を外してから、uploaded_files の行を消す
+    session.flush()
+    if uploaded is not None:
+        session.delete(uploaded)
+    session.commit()
+
+    if storage_key is not None:
+        try:
+            delete_stored(storage_key)
+        except OSError:
+            logger.warning("アルバムの保存先のファイルを消せませんでした: %s", storage_key)

@@ -4,6 +4,8 @@
   任意で `comment`（100 文字まで））。入居者は URL で指定する。画面は最大 10 枚を 1 枚ずつ順に送る
 - `GET /api/staff/residents/{id}/album`：その入居者の、削除されていない写真の一覧と、
   `family_visible`（いまアルバムが家族に見えているか）
+- `DELETE /api/staff/album/{id}`：写真を削除する（005-T019。FR-011）。削除済みの写真を
+  もう一度削除しても、エラーにせず 204 を返す。写真は施設で絞る（ほかの施設の写真は 404）
 
 役割は、介護職員・リーダー・生活相談員・施設長（事務員・家族は 403）。
 入居者は、ログイン中の職員の施設のものだけ（ほかの施設・存在しない id は 404）。
@@ -17,7 +19,7 @@
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Response, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -29,7 +31,7 @@ from app.errors import AppError, ErrorCode
 from app.models.album import COMMENT_MAX_LENGTH, AlbumPhoto
 from app.models.core import Resident
 from app.models.files import MAX_UPLOAD_BYTES
-from app.services.album import ALBUM_FILE_TYPES, ALBUM_STAFF_ROLES
+from app.services.album import ALBUM_FILE_TYPES, ALBUM_STAFF_ROLES, delete_album_photo
 from app.services.disclosure import is_feature_disclosed
 from app.services.uploads import save_upload
 
@@ -133,3 +135,19 @@ def list_photos(
         family_visible=is_feature_disclosed(session, "album"),
         photos=[_photo_out(row) for row in rows],
     )
+
+
+@router.delete("/album/{photo_id}", status_code=204)
+def delete_photo(
+    photo_id: int,
+    user: Annotated[CurrentUser, Depends(ALBUM_STAFF)],
+    session: Annotated[Session, Depends(get_session)],
+) -> Response:
+    staff_id = _staff_id(user)
+    photo = session.get(AlbumPhoto, photo_id)
+    if photo is None:
+        raise AppError(ErrorCode.NOT_FOUND)
+    # ほかの施設の写真は、あるかどうかも知らせない
+    _check_resident(session, user, photo.resident_id)
+    delete_album_photo(session, photo, staff_id)
+    return Response(status_code=204)
