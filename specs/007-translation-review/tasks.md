@@ -93,7 +93,7 @@ spec 004 の 004-T003（`LLMClient`）・004-T004（テスト用の LLM（モッ
 ### Tests for User Story 3
 
 - [x] T020 [P] [US3] テスト `backend/tests/api/test_memo_approvals.py`：本人は承認・戻すができない（403 `self_approval`）、リーダー・施設長以外は承認できない、ほぼ同時の承認と戻すは先の 1 つだけ（409 `invalid_state`）、戻す・公開を取り下げるは理由が必須、件数はリーダー・施設長だけに返る（FR-011・FR-011a・FR-013・FR-013a・FR-015）（みさき・作）
-- [ ] T021 [P] [US3] テスト `backend/tests/unit/test_disclosed_memos.py`：`get_disclosed_memos` は承認済みだけを返し、開示設定で見せない設定なら何も返さない、原文・訳し戻し・印を返さない、書いた時刻の順（FR-012・FR-012a・SC-004・SC-005）（みさき・作）
+- [x] T021 [P] [US3] テスト `backend/tests/unit/test_disclosure.py`（ほかの `get_disclosed_*` のテストと同じファイルに置く。#287 で書いた）：`get_disclosed_memos` は承認済みだけを返し、開示設定で見せない設定なら何も返さない、原文・訳し戻し・印を返さない、書いた時刻の順（FR-012・FR-012a・SC-004・SC-005）（みさき・作）
 
 ### Implementation for User Story 3
 
