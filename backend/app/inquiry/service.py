@@ -17,6 +17,7 @@
 サービスの関数は commit しない（API の最後で 1 回だけ commit する。app/db.py）。
 """
 
+import logging
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Any
@@ -40,6 +41,8 @@ from app.models.records import CareRecord
 from app.models.replies import Reply
 from app.models.requests import Request
 from app.services.disclosure import get_active_replies, get_disclosed_records
+
+logger = logging.getLogger(__name__)
 
 # AI に渡すときの、答えなかった AI の発言の書き方（本文が空のため）
 _AI_RESULT_TEXT = {
@@ -266,6 +269,21 @@ def send_message(
     session.flush()
     session.refresh(family_message)
     session.refresh(ai_message)
+    # 1 回のやり取りの記録。出すのは id・種類・結果・ツールの回数・時間・モデル名だけ。
+    # 発言の文・答え・要約・記録の値・氏名は出さない（FR-029・research.md R-15）。
+    # 値は %s で埋める（名前つきの引数は、標準の logging では使えない）
+    logger.info(
+        "問い合わせの AI が答えを決めた conversation_id=%s family_message_id=%s"
+        " ai_message_id=%s result=%s category=%s tool_calls=%s latency_ms=%s model=%s",
+        conversation.id,
+        family_message.id,
+        ai_message.id,
+        result.kind,
+        result.hand_off.category if result.hand_off else None,
+        result.tool_calls,
+        result.latency_ms,
+        result.model,
+    )
     return family_message, ai_message
 
 

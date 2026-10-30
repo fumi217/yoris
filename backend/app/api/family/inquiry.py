@@ -5,6 +5,7 @@
 返す値に、AI への指示の文・ツールの中身は入れない（FR-021）。
 """
 
+import logging
 from datetime import date, datetime
 from typing import Annotated
 
@@ -26,6 +27,8 @@ from app.inquiry.service import (
     to_views,
 )
 from app.models.inquiry import FAMILY_BODY_MAX
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/family/inquiry", tags=["family"])
 
@@ -147,6 +150,8 @@ def send(
         # AI を呼ぶ前には何も書いていないので、取り消すデータはない
         release(ticket)
         if isinstance(error, LLMUnavailable):
+            # 出すのは、つながらなかった理由の種類だけ（timeout・status_429 など。本文は出さない）
+            logger.warning("問い合わせの AI につながらなかった reason=%s", error.reason)
             raise AppError(ErrorCode.AI_UNAVAILABLE) from error
         raise
     return SendOut(family=_out(family_view), ai=_out(ai_view))
