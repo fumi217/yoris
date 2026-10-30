@@ -15,6 +15,8 @@ from app.models.records import ITEMS
 
 # まとめを送る頻度（spec 001 の FR-023）。daily は毎日、weekly は日曜に 1 回、none は送らない
 NOTIFICATION_FREQUENCIES = ("daily", "weekly", "none")
+# まとめの種類（digest_runs の kind。通知設定の頻度のうち、送るもの）
+DIGEST_KINDS = ("daily", "weekly")
 # 初めの設定（設定の行がない家族は、この値で扱う。FR-023：選ばなかった場合は「1 日 1 回まとめて」）
 DEFAULT_FREQUENCY = "daily"
 DEFAULT_NOTIFY_ITEMS = ITEMS
@@ -122,3 +124,31 @@ class NotificationSetting(Base):
     )
     frequency: Mapped[str] = mapped_column(server_default=DEFAULT_FREQUENCY)
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+
+
+class DigestRun(Base):
+    """どの家族のどのまとめを作ったかの記録（spec 001 の 001-T065。research.md R-13）。
+
+    同じまとめを 2 回送らないための表。(家族, 種類, まとめの終わりの時刻) が一意で、
+    呼び出しが重なったり、遅れたりしても、DB が 2 つ目を断る（SC-010）。
+    送る記録がなかった日も残す（その日の分は確かめ済みにして、毎分探し直さない）。
+    """
+
+    __tablename__ = "digest_runs"
+    __table_args__ = (
+        check_in("kind", DIGEST_KINDS, name="kind"),
+        Index(
+            "uq_digest_runs_family_kind_period",
+            "family_account_id",
+            "kind",
+            "period_end",
+            unique=True,
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Identity(), primary_key=True)
+    family_account_id: Mapped[int] = mapped_column(ForeignKey("family_accounts.id"))
+    kind: Mapped[str]
+    # まとめの終わりの時刻（その日の 20:00）
+    period_end: Mapped[datetime]
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())

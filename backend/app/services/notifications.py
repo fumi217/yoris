@@ -11,7 +11,7 @@
   「知りたいことへの返事」を外している家族だけ（設定の行がなければ、初めの設定で作る）
 """
 
-from datetime import date, time
+from datetime import date, datetime, time
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.models.core import FamilyAccount, User
 from app.models.inquiry import StaffMessage
-from app.models.notifications import EmailOutbox, Notification, NotificationSetting
+from app.models.notifications import DIGEST_KINDS, EmailOutbox, Notification, NotificationSetting
 from app.models.replies import Reply
 from app.models.requests import Request
 from app.models.visits import VisitReservation
@@ -154,6 +154,45 @@ def create_visit_notice(session: Session, reservation_id: int, kind: str) -> int
     if base_url:
         params["link"] = f"{base_url}/family/visits"
     outbox = EmailOutbox(to_email=email, template=kind, params=params)
+    session.add(outbox)
+    session.flush()
+    return outbox.id
+
+
+def create_digest_notice(
+    session: Session,
+    family_account_id: int,
+    kind: str,
+    period_start: datetime,
+    period_end: datetime,
+) -> int:
+    """まとめのお知らせ（アプリ内）とメールの送る予定を作り、email_outbox の id を返す。
+
+    kind は daily（今日の連絡帳）／weekly（今週の連絡帳）。期間（period_start〜period_end）も残す。
+    commit しない（まとめの job が、同じトランザクションで呼ぶ。送るのは、あとの deliver_pending）。
+    メールに渡すのは、種類・リンク・家族の言語だけで、記録の中身は渡さない（SC-010）。
+    """
+    if kind not in DIGEST_KINDS:
+        raise ValueError(f"kind: {kind}")
+    email, language = session.execute(
+        select(User.email, User.language)
+        .join(FamilyAccount, FamilyAccount.user_id == User.id)
+        .where(FamilyAccount.id == family_account_id)
+    ).one()
+    template = f"{kind}_digest"
+    session.add(
+        Notification(
+            family_account_id=family_account_id,
+            kind=template,
+            period_start=period_start,
+            period_end=period_end,
+        )
+    )
+    params = {"lang": language}
+    base_url = get_settings().app_base_url
+    if base_url:
+        params["link"] = f"{base_url}/family"
+    outbox = EmailOutbox(to_email=email, template=template, params=params)
     session.add(outbox)
     session.flush()
     return outbox.id

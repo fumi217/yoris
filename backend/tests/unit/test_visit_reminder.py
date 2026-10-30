@@ -229,6 +229,7 @@ def test_run_jobs_makes_the_reminders_and_then_sends_mail(monkeypatch):
     monkeypatch.setattr(
         run_module, "create_visit_reminders", lambda db, at: recorder.calls.append("reminders")
     )
+    monkeypatch.setattr(run_module, "create_digests", lambda db, at: None)
     monkeypatch.setattr(run_module, "deliver_pending", lambda db: recorder.calls.append("mail"))
 
     run_module.run_jobs()
@@ -245,6 +246,7 @@ def test_run_jobs_still_sends_mail_when_making_reminders_fails(monkeypatch):
         raise RuntimeError("boom")
 
     monkeypatch.setattr(run_module, "create_visit_reminders", broken)
+    monkeypatch.setattr(run_module, "create_digests", lambda db, at: None)
     monkeypatch.setattr(run_module, "deliver_pending", lambda db: recorder.calls.append("mail"))
 
     run_module.run_jobs()
