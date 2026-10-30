@@ -207,6 +207,7 @@
     "choose_time": "2. Choose a start time",
     "party_size": "3. Number of visitors",
     "people": "{{count}} people",
+    "visitors": "Visitors: {{count}}",
     "fewer": "Fewer people",
     "more": "More people",
     "book": "Reserve",
@@ -243,7 +244,7 @@
     "cancel_confirm": "Press again to cancel",
     "cancelling": "Cancelling",
     "cancelled_notice": "Your reservation was cancelled",
-    "deadline_passed": "The deadline has passed, so please call the facility",
+    "deadline_passed": "It is past 17:00 on the day before, so you cannot cancel in the app. To cancel, please call the facility",
     "mine_error": "We could not load your reservations"
   },
   "staff_template": {

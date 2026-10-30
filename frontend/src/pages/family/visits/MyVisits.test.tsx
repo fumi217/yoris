@@ -44,6 +44,9 @@ describe('MyVisitsView', () => {
     const html = render({ rows: [row({ can_cancel: false })] })
     expect(html).not.toContain('<button')
     expect(html).toContain('お<ruby>電話')
+    // 何の締め切りか分かるよう、時刻と「取り消し」の案内だと書く（#311）
+    expect(html).toContain('17')
+    expect(html).toMatch(/取.*り.*消.*すときは/)
   })
 
   it('施設が取り消した理由は、HTML として解釈しない', () => {

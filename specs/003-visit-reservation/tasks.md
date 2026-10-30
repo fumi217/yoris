@@ -98,7 +98,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 - [x] T016 [US2] 家族の取り消し `cancel_by_family(session, current_user, reservation_id)` を `backend/app/services/visits.py` に作る：自分の入居者の `booked` でなければ 404、締め切りは T008 の関数で判定、`status = 'cancelled_by_family'`・`cancelled_at` を入れる。家族が自分で取り消したときは、お知らせを作らない（research.md R-07）（ゆう・作）
 - [x] T017 [US2] `GET /api/family/visits`・`DELETE /api/family/visits/{id}` を `backend/app/api/family/visits.py` に足す。職員が取り消した予約は、理由もいっしょに返す（contracts/api.md）（ゆう・作）
-- [x] T018 [P] [US2] 自分の予約の画面を `frontend/src/pages/family/visits/MyVisits.tsx` に作る：これからの予約（日時・人数・状態）と「取り消す」ボタン。締め切りを過ぎたら「締め切りを過ぎたため、施設にお電話ください」。職員が取り消した予約は理由を文字として出す（HTML として埋め込まない。FR-016）（ゆう・作）
+- [x] T018 [P] [US2] 自分の予約の画面を `frontend/src/pages/family/visits/MyVisits.tsx` に作る：これからの予約（日時・人数・状態）と「取り消す」ボタン。締め切りを過ぎたら「前の日の 17 時を過ぎたので、アプリでは取り消せません。取り消すときは、施設にお電話ください」（#311 で言い方を直した）。職員が取り消した予約は理由を文字として出す（HTML として埋め込まない。FR-016）（ゆう・作）
 
 **Checkpoint**: quickstart.md の 11・12 が通る
 

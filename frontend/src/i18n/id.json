@@ -207,6 +207,7 @@
     "choose_time": "2. Pilih jam mulai",
     "party_size": "3. Jumlah pengunjung",
     "people": "{{count}} orang",
+    "visitors": "Pengunjung: {{count}} orang",
     "fewer": "Kurangi jumlah orang",
     "more": "Tambah jumlah orang",
     "book": "Buat reservasi",
@@ -243,7 +244,7 @@
     "cancel_confirm": "Tekan sekali lagi untuk membatalkan",
     "cancelling": "Sedang membatalkan",
     "cancelled_notice": "Reservasi dibatalkan",
-    "deadline_passed": "Batas waktu sudah lewat, jadi silakan telepon fasilitas",
+    "deadline_passed": "Sudah lewat pukul 17.00 sehari sebelumnya, jadi tidak dapat dibatalkan di aplikasi. Untuk membatalkan, silakan telepon fasilitas",
     "mine_error": "Reservasi tidak dapat dimuat"
   },
   "staff_template": {

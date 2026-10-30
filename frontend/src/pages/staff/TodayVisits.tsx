@@ -56,7 +56,8 @@ export function TodayVisitsView({ rows }: { rows: StaffReservation[] }) {
             <span className="mr-2 text-gray-600">{row.room}</span>
             {/* 入居者の呼び名は、辞書を通さずそのまま出す */}
             <span className="mr-3">{row.resident_name}</span>
-            <Ruby text={t('visit.people', { count: row.party_size })} />
+            {/* 来館する人の数（入居者の人数に見えないよう「来館者」と付ける。#311） */}
+            <Ruby text={t('visit.visitors', { count: row.party_size })} />
           </li>
         )
       })}

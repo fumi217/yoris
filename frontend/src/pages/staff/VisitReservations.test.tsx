@@ -85,6 +85,8 @@ describe('VisitListView', () => {
     expect(html).toContain('佐藤さんの母')
     // 予約した日時は日本時間（01:05Z → 10:05）
     expect(html).toContain('10/26 10:05')
+    // 人数は、入居者の人数に見えないよう「来館者」と付ける（#311）
+    expect(html).toMatch(/来館者.*2/)
   })
 
   it('予約済みにだけ「取り消す」を出す。施設が取り消した理由は文字としてだけ出す', () => {
@@ -143,6 +145,7 @@ describe('TodayVisitsView', () => {
 
     expect(html).toContain('13:30〜15:00')
     expect(html).toContain('佐藤さんの母')
+    expect(html).toMatch(/来館者.*2/)
   })
 })
 
