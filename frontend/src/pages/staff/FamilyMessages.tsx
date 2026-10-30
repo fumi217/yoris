@@ -41,11 +41,11 @@ export function FamilyMessages() {
         <Text k="family_messages.title" />
       </h1>
       {residentId !== null && (
-        <p className="flex flex-wrap items-center gap-x-3 rounded bg-sky-50 p-3 text-sm">
+        <p className="flex flex-wrap items-center gap-x-3 rounded-lg border border-card-line bg-card p-3 text-sm">
           <span>
             <Text k="family_messages.filtered" />
           </span>
-          <Link to={base} className="text-sky-700 underline">
+          <Link to={base} className="text-primary underline">
             <Text k="family_messages.show_all" />
           </Link>
         </p>
@@ -75,7 +75,7 @@ export function FamilyMessages() {
 export function BackToResidents({ base }: { base: string }) {
   if (base !== '/staff/messages') return null
   return (
-    <Link to="/staff" className="inline-block text-sky-700 underline">
+    <Link to="/staff" className="inline-block text-primary underline">
       <Text k="family_messages.back_to_residents" />
     </Link>
   )
@@ -92,7 +92,7 @@ function MessageTabs({ status, onChange }: { status: Status; onChange: (next: St
           aria-selected={status === tab}
           onClick={() => onChange(tab)}
           className={`min-h-12 flex-1 rounded border-2 p-2 ${
-            status === tab ? 'border-sky-700 bg-sky-700 text-white' : 'border-gray-300 bg-white'
+            status === tab ? 'border-primary bg-primary text-white' : 'border-field-line bg-white'
           }`}
         >
           <Text k={`family_messages.tab_${tab}`} />
@@ -125,7 +125,7 @@ export function MessageListView({
       <p className="text-xs text-gray-600">
         <Text k="family_messages.furigana_auto" />
       </p>
-      <ul className="divide-y rounded border">
+      <ul className="divide-y rounded border border-card-line">
         {messages.map((message) => (
           <li key={message.id}>
             <MessageItem base={base} message={message} search={search} />

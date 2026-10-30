@@ -126,7 +126,7 @@ export function ReplyView({
         ))
       )}
 
-      <Link to={`/staff/residents/${residentId}`} className="inline-block text-sky-700 underline">
+      <Link to={`/staff/residents/${residentId}`} className="inline-block text-primary underline">
         <Text k="reply_page.back" />
       </Link>
     </section>
@@ -149,7 +149,7 @@ function RequestCard({ request, sending, disabled, onSend }: CardProps) {
 
   return (
     <form
-      className="space-y-3 rounded border-2 border-gray-300 p-4"
+      className="space-y-3 rounded border-2 border-field-line p-4"
       onSubmit={(event) => {
         event.preventDefault()
         onSend({ requestId: request.id, templateIds: selected, note })
@@ -192,7 +192,7 @@ function RequestCard({ request, sending, disabled, onSend }: CardProps) {
                 aria-pressed={on}
                 onClick={() => setSelected((current) => toggleTemplate(current, template.id))}
                 className={`min-h-12 rounded border-2 p-2 text-left ${
-                  on ? 'border-sky-700 bg-sky-700 text-white' : 'border-gray-300 bg-white'
+                  on ? 'border-primary bg-primary text-white' : 'border-field-line bg-white'
                 }`}
               >
                 <Text k={template.code} />
@@ -209,7 +209,7 @@ function RequestCard({ request, sending, disabled, onSend }: CardProps) {
           onChange={(event) => setNote(event.target.value)}
           rows={2}
           aria-invalid={tooLong}
-          className="mt-1 block w-full rounded border-2 border-gray-300 p-2 aria-[invalid=true]:border-red-700"
+          className="mt-1 block w-full rounded border-2 border-field-line p-2 aria-[invalid=true]:border-red-700"
         />
         <span
           className={`block text-right ${tooLong ? 'font-bold text-red-700' : 'text-gray-600'}`}
@@ -221,7 +221,7 @@ function RequestCard({ request, sending, disabled, onSend }: CardProps) {
       <button
         type="submit"
         disabled={selected.length === 0 || tooLong || disabled}
-        className="w-full rounded bg-sky-700 p-3 text-lg font-bold text-white disabled:opacity-50"
+        className="w-full rounded bg-primary p-3 text-lg font-bold text-white disabled:opacity-50"
       >
         <Text k={sending ? 'reply_page.sending' : 'reply_page.send'} />
       </button>

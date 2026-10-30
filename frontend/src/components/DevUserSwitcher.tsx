@@ -68,7 +68,7 @@ export function DevUserSwitcher() {
               required
               value={userId}
               onChange={(event) => setUserId(event.target.value)}
-              className="ml-1 w-16 rounded border px-1"
+              className="ml-1 w-16 rounded border border-field-line px-1"
             />
           </label>
         ) : (
@@ -77,7 +77,7 @@ export function DevUserSwitcher() {
             value={userId}
             onChange={(event) => setUserId(event.target.value)}
             aria-label={stripRuby(t('dev.switch_user'))}
-            className="max-w-48 rounded border px-1"
+            className="max-w-48 rounded border border-field-line px-1"
           >
             <option value="">
               {stripRuby(t(users.isPending ? 'layout.loading' : 'dev.choose'))}

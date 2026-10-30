@@ -35,7 +35,7 @@ export function BackToAdmin({ pathname }: { pathname: string }) {
   if (isAdminHome(pathname)) return null
   return (
     <nav className="px-4 pt-3 text-sm">
-      <Link to="/admin" className="text-sky-700 underline">
+      <Link to="/admin" className="text-primary underline">
         <span aria-hidden="true">◀ </span>
         <Text k="layout.back_to_admin" />
       </Link>

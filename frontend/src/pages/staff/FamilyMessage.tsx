@@ -149,7 +149,7 @@ export function MessageDetailView({
       </Block>
       <Block titleKey="family_messages.summary_title">
         {/* AI の要約は、辞書を通さず、文字としてだけ出す（FR-028）。読みは自動で付けたもの（FR-028a） */}
-        <p className="whitespace-pre-wrap rounded bg-gray-50 p-3">
+        <p className="whitespace-pre-wrap rounded-lg border border-card-line bg-card p-3">
           <Ruby text={message.summary_ruby} />
         </p>
       </Block>
@@ -169,7 +169,7 @@ export function MessageDetailView({
           type="button"
           disabled={assigning}
           onClick={onAssign}
-          className="w-full rounded border-2 border-sky-700 p-3 text-lg font-bold text-sky-700 disabled:opacity-50"
+          className="w-full rounded border-2 border-primary p-3 text-lg font-bold text-primary disabled:opacity-50"
         >
           <Text k={assigning ? 'family_messages.assigning' : 'family_messages.assign'} />
         </button>
@@ -178,12 +178,12 @@ export function MessageDetailView({
       {canReply(message) ? (
         <ReplyForm templates={message.templates} sending={sending} onSend={onReply} />
       ) : (
-        <p className="rounded bg-gray-50 p-3 text-center">
+        <p className="rounded-lg border border-card-line bg-card p-3 text-center">
           <Text k="family_messages.answered_done" />
         </p>
       )}
 
-      <Link to={backTo} className="inline-block text-sky-700 underline">
+      <Link to={backTo} className="inline-block text-primary underline">
         <Text k="family_messages.back" />
       </Link>
     </section>
@@ -219,7 +219,7 @@ function Conversation({ messages }: { messages: ConversationMessage[] }) {
  */
 function Bubble({ message, bodyRuby }: { message: ConversationMessage; bodyRuby?: string }) {
   return (
-    <div className="space-y-1 rounded border p-3">
+    <div className="space-y-1 rounded border border-card-line p-3">
       <p className="text-xs text-gray-600">
         <Text k={senderKey(message.sender)} />
       </p>
@@ -253,14 +253,14 @@ function ReplyForm({ templates, sending, onSend }: ReplyFormProps) {
   // 苦情には定型文がない。電話で対応する（FR-014）
   if (!hasTemplates(templates)) {
     return (
-      <p className="rounded border p-3">
+      <p className="rounded border border-card-line p-3">
         <Text k="family_messages.no_templates" />
       </p>
     )
   }
   return (
     <form
-      className="space-y-3 rounded border-2 border-gray-300 p-4"
+      className="space-y-3 rounded border-2 border-field-line p-4"
       onSubmit={(event) => {
         event.preventDefault()
         onSend({ templateIds: selected, note })
@@ -283,7 +283,7 @@ function ReplyForm({ templates, sending, onSend }: ReplyFormProps) {
                 aria-pressed={on}
                 onClick={() => setSelected((current) => toggleTemplate(current, template.id))}
                 className={`min-h-12 rounded border-2 p-2 text-left ${
-                  on ? 'border-sky-700 bg-sky-700 text-white' : 'border-gray-300 bg-white'
+                  on ? 'border-primary bg-primary text-white' : 'border-field-line bg-white'
                 }`}
               >
                 <Text k={template.code} />
@@ -299,7 +299,7 @@ function ReplyForm({ templates, sending, onSend }: ReplyFormProps) {
           onChange={(event) => setNote(event.target.value)}
           rows={2}
           aria-invalid={tooLong}
-          className="mt-1 block w-full rounded border-2 border-gray-300 p-2 aria-[invalid=true]:border-red-700"
+          className="mt-1 block w-full rounded border-2 border-field-line p-2 aria-[invalid=true]:border-red-700"
         />
         <span
           className={`block text-right ${tooLong ? 'font-bold text-red-700' : 'text-gray-600'}`}
@@ -310,7 +310,7 @@ function ReplyForm({ templates, sending, onSend }: ReplyFormProps) {
       <button
         type="submit"
         disabled={selected.length === 0 || tooLong || sending}
-        className="w-full rounded bg-sky-700 p-3 text-lg font-bold text-white disabled:opacity-50"
+        className="w-full rounded bg-primary p-3 text-lg font-bold text-white disabled:opacity-50"
       >
         <Text k={sending ? 'family_messages.sending' : 'family_messages.send'} />
       </button>

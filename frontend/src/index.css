@@ -17,24 +17,11 @@
   --color-danger: #c81e1e;
 
   /*
-   * 色を指定していない線（border・divide-y など）は、Tailwind の初期値のまま文字の色（ink）にする。
-   * 飾りの薄い色（card-line）にすると、色を指定していない入力欄の枠（ログイン・お問い合わせなど）まで薄くなり、
-   * 3:1 に足りなくなる（1.4.11）。線を薄くしたいときは、先にそれらの入力欄に border-field-line を書く（PR #347 ようこさん）
-   */
-
-  /*
-   * 今の画面のクラス名は書き換えず、値だけを YORIS の色に差し替える（レビュー中の PR と衝突しないように。
-   * 意味のある名前への書き換えは、10/30 のアプリレビューのあとに少しずつ）。
-   * - sky-700（主の青）→ primary。sky-800・sky-600 も同じ青の濃い・薄い色にそろえる
-   * - gray-300（入力欄・選ぶボタンの枠。白の上で 1.47 しかなく 3:1 に足りない。1.4.11）→ field-line（3.98）
-   * - gray-400・gray-500（薄い文字。2.54・4.39 で 4.5 に足りない。1.4.3）→ ink-sub（5.97）
+   * 使っているクラス名は意味のある名前に書き換えた（#353）。以下は、少しだけ残るクラス名のための差し替え
+   * （border-sky-600・text-gray-300・bg-gray-300。デザインの決めごと 2.3）
    */
   --color-sky-600: #2f74d6;
-  --color-sky-700: #1d64c8;
-  --color-sky-800: #174f9e;
   --color-gray-300: #748097;
-  --color-gray-400: #5b6474;
-  --color-gray-500: #5b6474;
 }
 
 /* 画面の背景は薄い青（page）、本文は ink（白の上で 16.36・page の上で 14.9） */
@@ -48,6 +35,20 @@ body {
  * 画面ごとの指定（focus-visible:outline-*）より弱いので、個別に決めた所はそのまま
  */
 @layer base {
+  /*
+   * 色を指定していない線（border・divide-y など）は、飾りの薄い色（card-line）にする（#353）。
+   * Tailwind v4 の線の初期値は、文字の色（currentColor）。@theme の変数では変えられないので、ここで指定する。
+   * 入力欄・選ぶボタンの枠は、3:1 に足りなくならないように、border-field-line を明示してある（1.4.11）。
+   * 新しく入力欄・ボタンに border を書くときは、必ず border-field-line を付ける
+   */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-card-line);
+  }
+
   :focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;

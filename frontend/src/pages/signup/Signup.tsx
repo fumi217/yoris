@@ -180,7 +180,7 @@ export function SignupForm({ plan, canceled, submitting, errorKey, onSubmit }: F
           <p className="mt-1 text-sm text-gray-600">
             <Text k="signup.lead" />
           </p>
-          <p className="mt-3 rounded bg-sky-50 p-3">
+          <p className="mt-3 rounded-lg border border-card-line bg-card p-3">
             {plan.plan_name}{' '}
             <span className="font-bold">{plan.amount_jpy.toLocaleString('ja-JP')}</span>{' '}
             <Text k="signup.per_month" />
@@ -248,7 +248,7 @@ export function SignupForm({ plan, canceled, submitting, errorKey, onSubmit }: F
           <button
             type="submit"
             disabled={submitting}
-            className="rounded bg-sky-700 p-3 text-lg font-bold text-white disabled:opacity-60"
+            className="rounded bg-primary p-3 text-lg font-bold text-white disabled:opacity-60"
           >
             <Text k={submitting ? 'signup.submitting' : 'signup.submit'} />
           </button>
@@ -310,7 +310,7 @@ function Field({
         }
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className={`rounded p-3 text-lg ${errorKey ? 'border-2 border-red-700 bg-red-50' : 'border'}`}
+        className={`rounded p-3 text-lg ${errorKey ? 'border-2 border-red-700 bg-red-50' : 'border border-field-line'}`}
         {...rest}
       />
       {errorKey && (

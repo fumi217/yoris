@@ -90,7 +90,7 @@ export function ContactBookView({
         <nav className="flex items-center gap-3 text-sm">
           <Link
             to={`${base}/contact-book?date=${shiftDate(book.date, -1)}`}
-            className="text-sky-700 underline"
+            className="text-primary underline"
           >
             <Text k="staff_contact_book.previous" />
           </Link>
@@ -99,7 +99,7 @@ export function ContactBookView({
           </span>
           <Link
             to={`${base}/contact-book?date=${shiftDate(book.date, 1)}`}
-            className="text-sky-700 underline"
+            className="text-primary underline"
           >
             <Text k="staff_contact_book.next" />
           </Link>
@@ -173,7 +173,7 @@ export function ContactBookView({
         </ol>
       )}
 
-      <Link to={base} className="inline-block text-sky-700 underline">
+      <Link to={base} className="inline-block text-primary underline">
         <Text k="staff_contact_book.back" />
       </Link>
     </section>
@@ -200,7 +200,7 @@ function EditReply({ reply, saving, errorKey, onEditReply, onStartEdit }: EditRe
           onStartEdit?.()
           setOpen(true)
         }}
-        className="text-sm text-sky-700 underline"
+        className="text-sm text-primary underline"
       >
         <Text k="staff_contact_book.edit" />
       </button>

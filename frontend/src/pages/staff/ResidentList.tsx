@@ -78,12 +78,12 @@ export function ResidentTable({
             onToggle={() => setOnlyUnconfirmed((value) => !value)}
           />
           {/* 押すと、家族からのメッセージの一覧（UI-S08。spec 004 の T029）へ進む */}
-          <Link to="/staff/messages" className="text-sky-700 underline">
+          <Link to="/staff/messages" className="text-primary underline">
             <Ruby text={t('resident_list.messages_total', { count: messages })} />
           </Link>
           {todayVisits !== null && (
             // 押すと、今日の面会予定（UI-S12。spec 003 の T027）へ進む。0 組でも出す
-            <Link to="/staff/visits/today" className="text-sky-700 underline">
+            <Link to="/staff/visits/today" className="text-primary underline">
               <Ruby text={t('resident_list.today_visits', { count: todayVisits })} />
             </Link>
           )}
@@ -145,7 +145,7 @@ function ResidentItem({ row }: { row: ResidentRow }) {
       {row.waiting_messages > 0 && (
         <Link
           to={`/staff/messages?resident_id=${row.id}`}
-          className="flex items-center px-4 text-sm text-sky-700"
+          className="flex items-center px-4 text-sm text-primary"
         >
           <Count
             icon="📩"

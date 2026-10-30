@@ -78,8 +78,10 @@ export function Requests() {
                   aria-pressed={selected === theme.id}
                   onClick={() => setSelected(theme.id)}
                   className={`flex w-full flex-col items-center gap-1 rounded border p-3 text-sm ${
-                    selected === theme.id ? 'border-sky-600 bg-sky-50 font-bold' : ''
-                  } ${isWaiting ? 'bg-gray-100 text-gray-400' : ''}`}
+                    selected === theme.id
+                      ? 'border-sky-600 bg-sky-50 font-bold'
+                      : 'border-field-line'
+                  } ${isWaiting ? 'bg-gray-100 text-ink-sub' : ''}`}
                 >
                   <span aria-hidden="true">{theme.emoji}</span>
                   {/* 縦に並べる枠の中で、ふりがなと文字が別々の行にならないよう、1 つにまとめる */}
@@ -100,7 +102,7 @@ export function Requests() {
           type="button"
           disabled={selected === null || send.isPending}
           onClick={() => selected !== null && send.mutate(selected)}
-          className="mt-3 w-full rounded bg-sky-700 p-3 font-bold text-white disabled:opacity-60"
+          className="mt-3 w-full rounded bg-primary p-3 font-bold text-white disabled:opacity-60"
         >
           <Text k="requests.send" />
         </button>
@@ -122,7 +124,7 @@ export function Requests() {
         ) : (
           <ul className="space-y-2">
             {requests.data.map((request) => (
-              <li key={request.id} className="rounded border p-3">
+              <li key={request.id} className="rounded border border-card-line p-3">
                 <div className="flex items-center gap-2">
                   <span aria-hidden="true">{request.emoji}</span>
                   <span className="font-bold">
@@ -153,13 +155,13 @@ export function Requests() {
                     type="button"
                     disabled={cancel.isPending}
                     onClick={() => cancel.mutate(request.id)}
-                    className="mt-2 rounded border px-3 py-1 text-sm"
+                    className="mt-2 rounded border border-field-line px-3 py-1 text-sm"
                   >
                     <Text k="requests.cancel" />
                   </button>
                 )}
                 {request.status === 'answered' && (
-                  <Link to="/family" className="mt-2 inline-block text-sm text-sky-700 underline">
+                  <Link to="/family" className="mt-2 inline-block text-sm text-primary underline">
                     <Text k="requests.see_reply" />
                   </Link>
                 )}

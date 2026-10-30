@@ -8,7 +8,7 @@ import { familyMainMenu, familyMoreMenu, familyTitleKey } from './menu'
 
 // 下は 4 つ＋「☰ その他」なので、360px の幅でも名前が折り返さない大きさにする（PR #213 さとこ）
 const tabClass = ({ isActive }: { isActive: boolean }) =>
-  `flex flex-1 flex-col items-center py-2 text-xs ${isActive ? 'font-bold text-sky-700' : 'text-gray-600'}`
+  `flex flex-1 flex-col items-center py-2 text-xs ${isActive ? 'font-bold text-primary' : 'text-gray-600'}`
 
 /** 家族の画面の枠。上の左にロゴ・右に入居者の呼び名、下にメニュー（4 つ＋「☰ その他」）。 */
 export function FamilyLayout() {

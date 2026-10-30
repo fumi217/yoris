@@ -168,7 +168,7 @@ export function InquiryView({
       </p>
 
       {hasOlder && (
-        <button type="button" onClick={onLoadOlder} className="text-sm text-sky-700 underline">
+        <button type="button" onClick={onLoadOlder} className="text-sm text-primary underline">
           <Text k="inquiry.load_older" />
         </button>
       )}
@@ -213,7 +213,7 @@ export function InquiryView({
             type="button"
             onClick={() => onChoose(value)}
             className={`min-h-11 rounded-full border-2 bg-white px-4 py-2 text-left ${
-              choice === value ? 'border-sky-700 font-bold' : 'border-gray-300'
+              choice === value ? 'border-primary font-bold' : 'border-field-line'
             }`}
           >
             {choice === value && <span aria-hidden="true">✔ </span>}
@@ -225,8 +225,8 @@ export function InquiryView({
       {/* 押した選択肢の「アプリの案内」。AI の答えと見た目を分ける（キャラクターなし・枠のあるカード。13.3） */}
       <div ref={guideRef} role="status">
         {guide && (
-          <div className="rounded-lg border-2 border-sky-700 bg-white p-3">
-            <p className="text-xs font-bold text-sky-700">
+          <div className="rounded-lg border-2 border-primary bg-white p-3">
+            <p className="text-xs font-bold text-primary">
               <span aria-hidden="true">ℹ️ </span>
               <Text k="inquiry.guide_label" />
             </p>
@@ -236,7 +236,7 @@ export function InquiryView({
             {guide.link && (
               <Link
                 to={guide.link.to}
-                className="mt-2 inline-block font-bold text-sky-700 underline"
+                className="mt-2 inline-block font-bold text-primary underline"
               >
                 <Text k={guide.link.labelKey} />
                 <span aria-hidden="true"> ＞</span>
@@ -270,14 +270,14 @@ export function InquiryView({
             rows={3}
             aria-invalid={tooLong}
             aria-describedby={`inquiry-count${guide?.inputHintKey ? ' inquiry-hint' : ''}`}
-            className="min-w-0 flex-1 rounded-2xl border-2 bg-white p-3"
+            className="min-w-0 flex-1 rounded-2xl border-2 border-field-line bg-white p-3"
           />
           {/* 丸い送るボタン。絵だけにせず、読み上げの名前「送る」を付ける（2.5.3・4.1.2。13.3） */}
           <button
             type="submit"
             disabled={!canSend}
             aria-label={stripRuby(t('inquiry.send'))}
-            className="flex size-12 shrink-0 items-center justify-center rounded-full bg-sky-700 text-xl text-white disabled:opacity-60"
+            className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-xl text-white disabled:opacity-60"
           >
             <span aria-hidden="true">➤</span>
           </button>
@@ -327,7 +327,7 @@ function MessageItem({
 
 function FamilyBubble({ body }: { body: string }) {
   return (
-    <li className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm bg-primary-soft p-3">
+    <li className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm border border-card-line bg-primary-soft p-3">
       <p className="text-xs font-bold text-ink-sub">
         <Text k="inquiry.sender_family" />
       </p>

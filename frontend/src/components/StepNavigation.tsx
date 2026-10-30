@@ -91,7 +91,7 @@ function stateOf(number: number, current: number, errorStep?: number): State {
 
 const circleClass: Record<State, string> = {
   completed: 'border-gray-600 bg-gray-600 text-white',
-  current: 'border-sky-700 bg-sky-700 text-white',
-  upcoming: 'border-gray-400 bg-white text-gray-600',
+  current: 'border-primary bg-primary text-white',
+  upcoming: 'border-ink-sub bg-white text-gray-600',
   error: 'border-red-700 bg-red-700 text-white',
 }

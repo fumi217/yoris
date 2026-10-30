@@ -27,7 +27,7 @@ export function TodayVisits() {
       ) : (
         <TodayVisitsView rows={today.data} />
       )}
-      <div className="flex flex-wrap gap-4 text-sky-700 underline">
+      <div className="flex flex-wrap gap-4 text-primary underline">
         <Link to="/staff/visits">
           <Text k="visit_list.to_list" />
         </Link>
@@ -45,7 +45,7 @@ export function TodayVisitsView({ rows }: { rows: StaffReservation[] }) {
   if (rows.length === 0) return <Message k="visit_list.today_empty" />
 
   return (
-    <ul className="divide-y rounded border">
+    <ul className="divide-y rounded border border-card-line">
       {rows.map((row) => {
         const start = hhmm(row.start_time)
         return (

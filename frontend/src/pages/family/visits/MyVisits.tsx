@@ -100,7 +100,7 @@ export function MyVisitsView({ rows, cancellingId, notice, errorKey, onCancel }:
           <Text k="visit.mine_empty" />
         </p>
       ) : (
-        <ul className="divide-y rounded border">
+        <ul className="divide-y rounded border border-card-line">
           {rows.map((row) => (
             <ReservationRow
               key={row.id}
@@ -129,7 +129,7 @@ function ReservationRow({ row, cancelling, disabled, onCancel }: RowProps) {
   const active = row.status === 'booked'
 
   return (
-    <li className={`space-y-1 p-3 ${active ? '' : 'text-gray-500'}`}>
+    <li className={`space-y-1 p-3 ${active ? '' : 'text-ink-sub'}`}>
       <p className="font-bold">
         <Ruby
           text={t('visit.date', {
@@ -159,7 +159,7 @@ function ReservationRow({ row, cancelling, disabled, onCancel }: RowProps) {
             busy={cancelling}
             disabled={disabled}
             onConfirm={() => onCancel(row.id)}
-            className="rounded border-2 border-gray-300 px-3 py-1 text-sm"
+            className="rounded border-2 border-field-line px-3 py-1 text-sm"
           />
         ) : (
           <p className="text-sm text-orange-700">

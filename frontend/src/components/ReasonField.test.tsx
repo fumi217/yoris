@@ -46,9 +46,9 @@ describe('ReasonField', () => {
     expect(render({ locked: true })).toMatch(/<textarea[^>]*class="[^"]*read-only:bg-gray-100/)
   })
 
-  it('入力欄の枠は、3:1 以上の濃さにする（border-gray-500。白との比 4.83。1.4.11）', () => {
-    expect(render()).toMatch(/<textarea[^>]*class="[^"]*border-gray-500/)
-    expect(render()).not.toMatch(/<textarea[^>]*class="[^"]*border-gray-300/)
+  it('入力欄の枠は、3:1 以上の濃さにする（border-ink-sub。白との比 4.83。1.4.11）', () => {
+    expect(render()).toMatch(/<textarea[^>]*class="[^"]*border-ink-sub/)
+    expect(render()).not.toMatch(/<textarea[^>]*class="[^"]*border-field-line/)
   })
 
   it.each([

@@ -150,7 +150,7 @@ function FlagItem({ flag, showStatus }: { flag: ChangeFlag; showStatus: boolean 
   return (
     <li
       className={`rounded border-2 p-3 ${
-        unconfirmed || !showStatus ? 'border-amber-700 bg-white' : 'border-gray-400 bg-gray-100'
+        unconfirmed || !showStatus ? 'border-amber-700 bg-white' : 'border-ink-sub bg-gray-100'
       }`}
     >
       <p className="font-bold">
@@ -243,7 +243,7 @@ function ConfirmForm({
           rows={2}
           aria-invalid={tooLong}
           aria-describedby="change-note-count"
-          className="mt-1 block w-full rounded border-2 border-gray-500 bg-white p-2 aria-[invalid=true]:border-red-700"
+          className="mt-1 block w-full rounded border-2 border-ink-sub bg-white p-2 aria-[invalid=true]:border-red-700"
         />
         <span
           id="change-note-count"
@@ -260,7 +260,7 @@ function ConfirmForm({
       <button
         type="submit"
         disabled={tooLong || saving}
-        className="min-h-11 rounded bg-sky-700 px-4 py-2 font-bold text-white disabled:opacity-60"
+        className="min-h-11 rounded bg-primary px-4 py-2 font-bold text-white disabled:opacity-60"
       >
         <Text k={saving ? 'change.confirming' : 'change.confirm'} />
       </button>

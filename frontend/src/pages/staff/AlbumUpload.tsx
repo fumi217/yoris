@@ -209,7 +209,7 @@ type ViewProps = {
 }
 
 const pickClass =
-  'flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded border-2 border-sky-700 px-4 font-bold text-sky-800'
+  'flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded border-2 border-primary px-4 font-bold text-primary-dark'
 
 /** 画面の中身（テストではこれを直接出す）。 */
 export function AlbumUploadView({
@@ -274,7 +274,7 @@ export function AlbumUploadView({
         <>
           <ul className="space-y-3">
             {items.map((item) => (
-              <li key={item.id} className="flex gap-3 rounded border p-3">
+              <li key={item.id} className="flex gap-3 rounded border border-card-line p-3">
                 {item.file.type.startsWith('image/') ? (
                   <img
                     src={previews[item.id]}
@@ -311,7 +311,7 @@ export function AlbumUploadView({
                         maxLength={MAX_COMMENT}
                         value={item.comment}
                         disabled={item.status === 'sending'}
-                        className="mt-1 block w-full rounded border-2 border-gray-300 p-2"
+                        className="mt-1 block w-full rounded border-2 border-field-line p-2"
                         onChange={(event) => onComment(item.id, event.target.value)}
                       />
                     </label>
@@ -320,7 +320,7 @@ export function AlbumUploadView({
                     {item.status === 'failed' && item.retryable && (
                       <button
                         type="button"
-                        className="min-h-12 rounded border-2 border-sky-700 px-4 font-bold text-sky-800"
+                        className="min-h-12 rounded border-2 border-primary px-4 font-bold text-primary-dark"
                         onClick={() => onRetry(item.id)}
                       >
                         <Text k="album_upload.retry" />
@@ -329,7 +329,7 @@ export function AlbumUploadView({
                     {(item.status === 'waiting' || item.status === 'failed') && (
                       <button
                         type="button"
-                        className="min-h-12 rounded border-2 border-gray-300 px-4"
+                        className="min-h-12 rounded border-2 border-field-line px-4"
                         onClick={() => onRemove(item.id)}
                       >
                         <Text k="album_upload.remove" />
@@ -345,7 +345,7 @@ export function AlbumUploadView({
           </p>
           <button
             type="button"
-            className="min-h-12 w-full rounded bg-sky-700 px-4 font-bold text-white disabled:opacity-60"
+            className="min-h-12 w-full rounded bg-primary px-4 font-bold text-white disabled:opacity-60"
             disabled={!canSend(items) || sending}
             onClick={onSend}
           >
@@ -357,7 +357,7 @@ export function AlbumUploadView({
       {posted}
 
       <p>
-        <Link to={`/staff/residents/${residentId}`} className="text-sky-700 underline">
+        <Link to={`/staff/residents/${residentId}`} className="text-primary underline">
           <Text k="album_upload.back" />
         </Link>
       </p>

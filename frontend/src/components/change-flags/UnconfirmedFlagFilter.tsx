@@ -25,7 +25,7 @@ export function UnconfirmedFlagFilter({ count, active, onToggle }: Props) {
       disabled={count === 0 && !active}
       onClick={onToggle}
       className={`min-h-11 rounded border-2 px-3 py-2 text-left disabled:opacity-60 ${
-        active ? 'border-amber-700 bg-amber-100 font-bold' : 'border-gray-500 bg-white'
+        active ? 'border-amber-700 bg-amber-100 font-bold' : 'border-ink-sub bg-white'
       }`}
     >
       {active ? '✔ ' : '⚠️ '}

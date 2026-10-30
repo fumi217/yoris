@@ -79,7 +79,7 @@ export function Mascot() {
         aria-label={stripRuby(t('layout.mascot_link'))}
         onClick={onClick}
         onKeyDown={onKeyDown}
-        className="pointer-events-auto block w-[72px] rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
+        className="pointer-events-auto block w-[72px] rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         <span className="mascot-float grid">
           <img

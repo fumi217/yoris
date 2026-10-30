@@ -123,7 +123,7 @@ export function ChangeRulesView({
                     onConfirm={() => select(false)}
                     // 保存中は押せない（確かめたのに、何も起きずに元に戻る、ということがないように）
                     disabled={saving}
-                    className={`${CHOICE_BASE} border-gray-500`}
+                    className={`${CHOICE_BASE} border-ink-sub`}
                   />
                 ) : (
                   <RuleChoice rule={rule} value={false} saving={saving} onSelect={select} />
@@ -207,7 +207,7 @@ function RuleName({ prefix, code }: { prefix: string; code: string }) {
 
 // 押す部品は 44px 以上（デザインの決めごと 4 章）。オンとオフは同じ幅にして、行ごとに位置がずれないようにする。フォーカスの枠は、白の上で 3:1 以上の濃さにする
 const CHOICE_BASE =
-  'inline-flex min-h-11 min-w-20 items-center justify-center rounded border-2 px-4 py-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700'
+  'inline-flex min-h-11 min-w-20 items-center justify-center rounded border-2 px-4 py-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
 
 /** オン／オフの選び方の 1 つ。選ばれている側は、色だけでなく、太字でも示す（デザインの決めごと 5 章）。 */
 function RuleChoice({
@@ -224,10 +224,10 @@ function RuleChoice({
   const selected = rule.enabled === value
   return (
     <label
-      className={`${CHOICE_BASE} cursor-pointer focus-within:ring-2 focus-within:ring-sky-700 focus-within:ring-offset-2 ${
+      className={`${CHOICE_BASE} cursor-pointer focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 ${
         selected
-          ? `font-bold text-white ${value ? 'border-sky-700 bg-sky-700' : 'border-gray-700 bg-gray-700'}`
-          : 'border-gray-500'
+          ? `font-bold text-white ${value ? 'border-primary bg-primary' : 'border-gray-700 bg-gray-700'}`
+          : 'border-ink-sub'
       } ${saving ? 'cursor-wait opacity-60' : ''}`}
     >
       <input

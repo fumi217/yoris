@@ -28,13 +28,13 @@ export function StaffHeader({ homeTo, titleKey, otherArea, otherTo, otherKey }: 
       </Link>
       <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-sm">
         {me && canOpen(me, otherArea) && (
-          <Link to={otherTo} className="text-sky-700 underline">
+          <Link to={otherTo} className="text-primary underline">
             <Text k={otherKey} />
           </Link>
         )}
         <span>{me?.display_name}</span>
-        <LanguageSwitcher className="rounded border px-1" />
-        <LogoutButton className="text-sky-700 underline" />
+        <LanguageSwitcher className="rounded border border-field-line px-1" />
+        <LogoutButton className="text-primary underline" />
       </div>
     </header>
   )

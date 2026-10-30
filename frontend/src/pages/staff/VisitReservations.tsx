@@ -77,7 +77,7 @@ export function VisitReservations() {
       )}
       {base === '/staff/visits' && (
         // 管理画面で開いたときは、枠の「管理画面のトップへ」で戻る
-        <Link to="/staff" className="inline-block text-sky-700 underline">
+        <Link to="/staff" className="inline-block text-primary underline">
           <Text k="visit_list.back_to_residents" />
         </Link>
       )}
@@ -104,7 +104,7 @@ export function VisitListView({ rows, cancellingId, onCancel }: ListProps) {
           <h2 className="mb-1 font-bold">
             <Ruby text={dateLabel(t, group.date)} />
           </h2>
-          <ul className="divide-y rounded border">
+          <ul className="divide-y rounded border border-card-line">
             {group.rows.map((row) => (
               <ReservationItem
                 key={row.id}
@@ -145,7 +145,7 @@ function ReservationItem({ row, cancelling, disabled, onCancel }: ItemProps) {
   const active = row.status === 'booked'
 
   return (
-    <li className={`space-y-1 p-3 ${active ? '' : 'text-gray-500'}`}>
+    <li className={`space-y-1 p-3 ${active ? '' : 'text-ink-sub'}`}>
       <p>
         <span className="mr-3 font-bold">
           {t('visit.time_range', { start, end: endOf(start) })}
@@ -182,7 +182,7 @@ function ReservationItem({ row, cancelling, disabled, onCancel }: ItemProps) {
             type="button"
             disabled={disabled}
             onClick={() => setOpen(true)}
-            className="rounded border-2 border-gray-300 px-3 py-1 text-sm disabled:opacity-50"
+            className="rounded border-2 border-field-line px-3 py-1 text-sm disabled:opacity-50"
           >
             <Text k="visit_list.cancel" />
           </button>

@@ -138,7 +138,7 @@ export function BookingView({
             setTime(null)
             onReset()
           }}
-          className="text-sky-700 underline"
+          className="text-primary underline"
         >
           <Text k="visit.book_another" />
         </button>
@@ -180,7 +180,7 @@ export function BookingView({
             type="button"
             disabled={monthIndex === 0}
             onClick={() => setMonthIndex((index) => index - 1)}
-            className="rounded px-2 py-1 text-sky-700 underline disabled:text-gray-300 disabled:no-underline"
+            className="rounded px-2 py-1 text-primary underline disabled:text-gray-300 disabled:no-underline"
           >
             <Text k="visit.previous_month" />
           </button>
@@ -191,7 +191,7 @@ export function BookingView({
             type="button"
             disabled={monthIndex >= months.length - 1}
             onClick={() => setMonthIndex((index) => index + 1)}
-            className="rounded px-2 py-1 text-sky-700 underline disabled:text-gray-300 disabled:no-underline"
+            className="rounded px-2 py-1 text-primary underline disabled:text-gray-300 disabled:no-underline"
           >
             <Text k="visit.next_month" />
           </button>
@@ -226,8 +226,8 @@ export function BookingView({
                   setDate(day.date)
                   setTime(null)
                 }}
-                className={`min-h-12 rounded border-2 p-1 disabled:bg-gray-100 disabled:text-gray-500 ${
-                  selected ? 'border-sky-700 bg-sky-700 text-white' : 'border-gray-300'
+                className={`min-h-12 rounded border-2 p-1 disabled:bg-gray-100 disabled:text-ink-sub ${
+                  selected ? 'border-primary bg-primary text-white' : 'border-field-line'
                 }`}
               >
                 {monthDay(day.date).day}
@@ -259,8 +259,8 @@ export function BookingView({
                     aria-pressed={selected}
                     disabled={!slot.selectable}
                     onClick={() => setTime(slot.start_time)}
-                    className={`min-h-12 rounded border-2 p-2 disabled:bg-gray-100 disabled:text-gray-400 disabled:line-through ${
-                      selected ? 'border-sky-700 bg-sky-700 text-white' : 'border-gray-300'
+                    className={`min-h-12 rounded border-2 p-2 disabled:bg-gray-100 disabled:text-ink-sub disabled:line-through ${
+                      selected ? 'border-primary bg-primary text-white' : 'border-field-line'
                     }`}
                   >
                     {t('visit.time_range', { start, end: endOf(start) })}
@@ -285,7 +285,7 @@ export function BookingView({
               aria-label={stripRuby(t('visit.fewer'))}
               disabled={partySize <= 1}
               onClick={() => setPartySize((size) => Math.max(1, size - 1))}
-              className="h-12 w-12 rounded border-2 border-gray-300 text-xl disabled:opacity-40"
+              className="h-12 w-12 rounded border-2 border-field-line text-xl disabled:opacity-40"
             >
               −
             </button>
@@ -296,7 +296,7 @@ export function BookingView({
               type="button"
               aria-label={stripRuby(t('visit.more'))}
               onClick={() => setPartySize((size) => size + 1)}
-              className="h-12 w-12 rounded border-2 border-gray-300 text-xl"
+              className="h-12 w-12 rounded border-2 border-field-line text-xl"
             >
               ＋
             </button>
@@ -313,7 +313,7 @@ export function BookingView({
               setTime(null),
             )
           }
-          className="w-full rounded bg-sky-700 p-4 text-lg font-bold text-white disabled:opacity-60"
+          className="w-full rounded bg-primary p-4 text-lg font-bold text-white disabled:opacity-60"
         >
           <Text k={booking ? 'visit.booking' : 'visit.book'} />
         </button>

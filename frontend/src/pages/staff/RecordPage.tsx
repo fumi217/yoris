@@ -172,7 +172,7 @@ export function RecordView({
         // 職員の返事の画面（UI-S03。001-T062）
         <Link
           to={`/staff/residents/${resident.id}/requests`}
-          className="block rounded border border-sky-700 p-3 text-sky-800"
+          className="block rounded border border-primary p-3 text-primary-dark"
         >
           <Ruby text={t('record_page.waiting_requests', { count: waitingRequests })} />
         </Link>
@@ -183,7 +183,7 @@ export function RecordView({
         {/* 写真を載せる（spec 005 の T015。職員の 4 つの役割すべて。画面はさとこ） */}
         <Link
           to={`/staff/residents/${resident.id}/album`}
-          className="rounded border border-gray-300 px-3 py-2"
+          className="rounded border border-field-line px-3 py-2"
         >
           <span aria-hidden="true">📷 </span>
           <Text k="record_page.album" />
@@ -192,7 +192,7 @@ export function RecordView({
           // 様子のメモを書く（UI-S05。spec 007 の T012。介護職員・リーダーだけ。画面はみさき）
           <Link
             to={`/staff/residents/${resident.id}/memos/new`}
-            className="rounded border border-gray-300 px-3 py-2"
+            className="rounded border border-field-line px-3 py-2"
           >
             <span aria-hidden="true">✏️ </span>
             <Text k="memo.write" />
@@ -223,7 +223,7 @@ export function RecordView({
               aria-selected={slot === mealSlot}
               onClick={() => setMealSlot(slot)}
               className={`rounded-t border-b-4 px-3 py-2 ${
-                slot === mealSlot ? 'border-sky-700 font-bold' : 'border-transparent'
+                slot === mealSlot ? 'border-primary font-bold' : 'border-transparent'
               }`}
             >
               <Text k={`record_page.slot.${slot}`} />
@@ -276,7 +276,7 @@ export function RecordView({
         />
       </fieldset>
 
-      <div className="flex flex-wrap gap-4 border-t pt-4 text-sky-700 underline">
+      <div className="flex flex-wrap gap-4 border-t pt-4 text-primary underline">
         {/* 職員の連絡帳の見返し（UI-S04。001-T033） */}
         <Link to={`/staff/residents/${resident.id}/contact-book`}>
           <Text k="record_page.to_contact_book" />
@@ -321,7 +321,7 @@ function Choices({ item, slot, records, saving, cancelling, onChoose, onCancel }
               disabled={busy}
               onClick={() => onChoose({ item, slot, value })}
               className={`min-h-14 rounded border-2 px-3 py-2 text-lg disabled:opacity-60 ${
-                selected ? 'border-sky-700 bg-sky-700 text-white' : 'border-gray-300 bg-white'
+                selected ? 'border-primary bg-primary text-white' : 'border-field-line bg-white'
               }`}
             >
               <Text k={`record.value.${item}.${value}`} />

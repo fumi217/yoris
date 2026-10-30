@@ -106,7 +106,7 @@ export function SettingsFormView({ initial, saving, saved, errorKey, onSave }: S
           {CANDIDATE_TIMES.map((time) => (
             <label
               key={time}
-              className="flex items-center gap-2 rounded border-2 border-gray-300 p-2 has-[:checked]:border-sky-700"
+              className="flex items-center gap-2 rounded border-2 border-field-line p-2 has-[:checked]:border-primary"
             >
               <input
                 type="checkbox"
@@ -134,7 +134,7 @@ export function SettingsFormView({ initial, saving, saved, errorKey, onSave }: S
             aria-label={stripRuby(t('visit_settings.fewer'))}
             disabled={limit <= DAILY_LIMIT_MIN}
             onClick={() => setLimit((value) => clampDailyLimit(value - 1))}
-            className="h-12 w-12 rounded border-2 border-gray-300 text-xl disabled:opacity-40"
+            className="h-12 w-12 rounded border-2 border-field-line text-xl disabled:opacity-40"
           >
             −
           </button>
@@ -146,7 +146,7 @@ export function SettingsFormView({ initial, saving, saved, errorKey, onSave }: S
             aria-label={stripRuby(t('visit_settings.more'))}
             disabled={limit >= DAILY_LIMIT_MAX}
             onClick={() => setLimit((value) => clampDailyLimit(value + 1))}
-            className="h-12 w-12 rounded border-2 border-gray-300 text-xl disabled:opacity-40"
+            className="h-12 w-12 rounded border-2 border-field-line text-xl disabled:opacity-40"
           >
             ＋
           </button>
@@ -168,7 +168,7 @@ export function SettingsFormView({ initial, saving, saved, errorKey, onSave }: S
       <button
         type="submit"
         disabled={noTime || saving}
-        className="w-full rounded bg-sky-700 p-3 font-bold text-white disabled:opacity-50 sm:w-auto sm:px-8"
+        className="w-full rounded bg-primary p-3 font-bold text-white disabled:opacity-50 sm:w-auto sm:px-8"
       >
         <Text k={saving ? 'visit_settings.saving' : 'visit_settings.save'} />
       </button>
@@ -310,13 +310,13 @@ export function ClosedDaysView({
             value={date}
             min={today}
             onChange={(event) => setDate(event.target.value)}
-            className="mt-1 block rounded border-2 border-gray-300 p-2"
+            className="mt-1 block rounded border-2 border-field-line p-2"
           />
         </label>
         <button
           type="submit"
           disabled={!date || busy}
-          className="rounded bg-sky-700 px-4 py-2 font-bold text-white disabled:opacity-50"
+          className="rounded bg-primary px-4 py-2 font-bold text-white disabled:opacity-50"
         >
           <Text k="visit_settings.close" />
         </button>
@@ -352,7 +352,7 @@ export function ClosedDaysView({
           <Text k="visit_settings.closed_empty" />
         </p>
       ) : (
-        <ul className="divide-y rounded border">
+        <ul className="divide-y rounded border border-card-line">
           {days.map((day) => (
             <li key={day.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
               <span className="font-bold">
@@ -363,7 +363,7 @@ export function ClosedDaysView({
                 confirmKey="visit_settings.open_confirm"
                 disabled={busy}
                 onConfirm={() => onOpen(day.id)}
-                className="rounded border-2 border-gray-300 px-3 py-1 text-sm"
+                className="rounded border-2 border-field-line px-3 py-1 text-sm"
               />
             </li>
           ))}

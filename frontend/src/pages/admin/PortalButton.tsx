@@ -59,7 +59,7 @@ export function PortalButtonView({
         type="button"
         disabled={opening}
         onClick={onOpen}
-        className="w-full rounded bg-sky-700 p-3 text-balance text-center font-bold text-white disabled:opacity-60 sm:w-auto"
+        className="w-full rounded bg-primary p-3 text-balance text-center font-bold text-white disabled:opacity-60 sm:w-auto"
       >
         <Text k={opening ? 'billing.portal_opening' : 'billing.portal_button'} />
       </button>

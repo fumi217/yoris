@@ -113,7 +113,7 @@ function CopyButton({ text }: { text: string }) {
         className={`rounded border-2 px-3 py-2 font-bold transition active:scale-95 ${
           state === 'copied'
             ? 'border-green-700 bg-green-50 text-green-800'
-            : 'border-sky-700 text-sky-700 hover:bg-sky-50 active:bg-sky-100'
+            : 'border-primary text-primary hover:bg-sky-50 active:bg-sky-100'
         }`}
       >
         <Text k={state === 'copied' ? 'signup_complete.copied' : 'signup_complete.copy'} />
@@ -173,7 +173,7 @@ export function CompleteView({
               <button
                 type="button"
                 onClick={onRetry}
-                className="block w-full rounded border p-3 text-center text-lg"
+                className="block w-full rounded border border-field-line p-3 text-center text-lg"
               >
                 <Text k="signup_complete.recheck" />
               </button>
@@ -187,7 +187,7 @@ export function CompleteView({
               <Text k="signup_complete.done_title" />
             </h1>
             {loginId ? (
-              <div className="space-y-2 rounded border-2 border-sky-700 p-4">
+              <div className="space-y-2 rounded border-2 border-primary p-4">
                 <p className="text-sm">
                   <Text k="signup_complete.login_id" />
                 </p>
@@ -206,7 +206,7 @@ export function CompleteView({
             )}
             <Link
               to="/login"
-              className="block rounded bg-sky-700 p-3 text-center text-lg font-bold text-white"
+              className="block rounded bg-primary p-3 text-center text-lg font-bold text-white"
             >
               <Text k="signup_complete.to_login" />
             </Link>
@@ -218,7 +218,10 @@ export function CompleteView({
             <p role="alert">
               <Text k="signup_complete.not_completed" />
             </p>
-            <Link to="/signup" className="block rounded border p-3 text-center text-lg">
+            <Link
+              to="/signup"
+              className="block rounded border border-field-line p-3 text-center text-lg"
+            >
               <Text k="signup_complete.retry" />
             </Link>
           </>

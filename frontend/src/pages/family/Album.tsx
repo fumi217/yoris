@@ -117,7 +117,7 @@ export function AlbumView({ days, hasMore, loadingMore, onMore }: ViewProps) {
       {hasMore && (
         <button
           type="button"
-          className="min-h-12 w-full rounded border-2 border-gray-300 px-3 disabled:opacity-40"
+          className="min-h-12 w-full rounded border-2 border-field-line px-3 disabled:opacity-40"
           disabled={loadingMore}
           onClick={onMore}
         >

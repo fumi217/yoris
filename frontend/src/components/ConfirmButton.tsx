@@ -110,7 +110,7 @@ export function ConfirmButton({
       >
         <Text k={confirmKey} />
       </button>
-      <button type="button" onClick={stop} className="text-sm text-sky-700 underline">
+      <button type="button" onClick={stop} className="text-sm text-primary underline">
         <Text k="layout.confirm_stop" />
       </button>
     </span>

@@ -41,7 +41,7 @@ export function ReasonField({ value, onChange, tooLong, locked }: Props) {
           rows={2}
           aria-invalid={tooLong}
           aria-describedby={guideId}
-          className="mt-1 block w-full rounded border-2 border-gray-500 p-2 read-only:bg-gray-100 read-only:text-gray-700 aria-[invalid=true]:border-red-700"
+          className="mt-1 block w-full rounded border-2 border-ink-sub p-2 read-only:bg-gray-100 read-only:text-gray-700 aria-[invalid=true]:border-red-700"
         />
       </label>
       <p id={guideId} aria-live="polite" className="text-sm text-gray-700">

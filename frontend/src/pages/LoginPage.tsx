@@ -72,7 +72,7 @@ export function LoginPage() {
               autoCapitalize="none"
               value={login}
               onChange={(event) => setLogin(event.target.value)}
-              className="rounded border p-3 text-lg"
+              className="rounded border border-field-line p-3 text-lg"
             />
           </label>
           <label className="flex flex-col gap-1">
@@ -87,7 +87,7 @@ export function LoginPage() {
               autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="rounded border p-3 text-lg"
+              className="rounded border border-field-line p-3 text-lg"
             />
           </label>
           {errorKey && (
@@ -98,7 +98,7 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="rounded bg-sky-700 p-3 text-lg font-bold text-white disabled:opacity-60"
+            className="rounded bg-primary p-3 text-lg font-bold text-white disabled:opacity-60"
           >
             <Text k={submitting ? 'auth.submitting' : 'auth.submit'} />
           </button>

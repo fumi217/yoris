@@ -152,7 +152,7 @@ export function MemoEditorView({
             value={lang}
             disabled={saved}
             onChange={(event) => onLang(event.target.value as SourceLang)}
-            className="mt-1 block w-full rounded border-2 border-gray-300 p-2"
+            className="mt-1 block w-full rounded border-2 border-field-line p-2"
           >
             {SOURCE_LANGS.map((code) => (
               <option key={code} value={code}>
@@ -171,7 +171,10 @@ export function MemoEditorView({
                 <Text k="memo.original_saved" />
               </span>
             </p>
-            <p lang={memo.source_lang} className="whitespace-pre-wrap rounded bg-gray-50 p-3">
+            <p
+              lang={memo.source_lang}
+              className="whitespace-pre-wrap rounded-lg border border-card-line bg-card p-3"
+            >
               {memo.original_text}
             </p>
           </div>
@@ -184,7 +187,7 @@ export function MemoEditorView({
               onChange={(event) => onText(event.target.value)}
               rows={5}
               aria-invalid={problem === 'too_long'}
-              className="mt-1 block w-full rounded border-2 border-gray-300 p-2 aria-[invalid=true]:border-red-700"
+              className="mt-1 block w-full rounded border-2 border-field-line p-2 aria-[invalid=true]:border-red-700"
             />
             <span
               className={`block text-right ${
@@ -205,7 +208,7 @@ export function MemoEditorView({
         <button
           type="submit"
           disabled={(!saved && problem !== null) || pending}
-          className="w-full rounded bg-sky-700 p-3 text-lg font-bold text-white disabled:opacity-50"
+          className="w-full rounded bg-primary p-3 text-lg font-bold text-white disabled:opacity-50"
         >
           {pending ? (
             <Text k="memo.thinking" />
@@ -232,7 +235,7 @@ export function MemoEditorView({
             <Text k="memo.rewritten" />
           </p>
           {/* 整えた日本語は、辞書を通さず、文字としてだけ出す（FR-017） */}
-          <p className="whitespace-pre-wrap rounded border-2 border-sky-700 p-3">{rewritten}</p>
+          <p className="whitespace-pre-wrap rounded border-2 border-primary p-3">{rewritten}</p>
           <p className="text-xs text-gray-600">
             <Text k="memo.ai_notice" />
           </p>
@@ -242,7 +245,7 @@ export function MemoEditorView({
         </section>
       )}
 
-      <Link to={`/staff/residents/${residentId}`} className="inline-block text-sky-700 underline">
+      <Link to={`/staff/residents/${residentId}`} className="inline-block text-primary underline">
         <Text k="memo.back_to_record" />
       </Link>
     </section>

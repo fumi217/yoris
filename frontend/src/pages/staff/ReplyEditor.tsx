@@ -25,7 +25,7 @@ export function ReplyEditor({ reply, saving, errorKey, onSave, onClose }: Props)
 
   return (
     <form
-      className="mt-2 space-y-3 rounded border-2 border-sky-700 p-3"
+      className="mt-2 space-y-3 rounded border-2 border-primary p-3"
       onSubmit={(event) => {
         event.preventDefault()
         onSave(selected, note)
@@ -48,7 +48,7 @@ export function ReplyEditor({ reply, saving, errorKey, onSave, onClose }: Props)
                 aria-pressed={on}
                 onClick={() => setSelected((current) => toggleTemplate(current, template.id))}
                 className={`min-h-12 rounded border-2 p-2 text-left ${
-                  on ? 'border-sky-700 bg-sky-700 text-white' : 'border-gray-300 bg-white'
+                  on ? 'border-primary bg-primary text-white' : 'border-field-line bg-white'
                 }`}
               >
                 <Text k={template.code} />
@@ -64,7 +64,7 @@ export function ReplyEditor({ reply, saving, errorKey, onSave, onClose }: Props)
           onChange={(event) => setNote(event.target.value)}
           rows={2}
           aria-invalid={tooLong}
-          className="mt-1 block w-full rounded border-2 border-gray-300 p-2 aria-[invalid=true]:border-red-700"
+          className="mt-1 block w-full rounded border-2 border-field-line p-2 aria-[invalid=true]:border-red-700"
         />
         <span
           className={`block text-right ${tooLong ? 'font-bold text-red-700' : 'text-gray-600'}`}
@@ -81,11 +81,11 @@ export function ReplyEditor({ reply, saving, errorKey, onSave, onClose }: Props)
         <button
           type="submit"
           disabled={selected.length === 0 || tooLong || saving}
-          className="rounded bg-sky-700 px-4 py-2 font-bold text-white disabled:opacity-50"
+          className="rounded bg-primary px-4 py-2 font-bold text-white disabled:opacity-50"
         >
           <Text k={saving ? 'staff_contact_book.saving_edit' : 'staff_contact_book.save_edit'} />
         </button>
-        <button type="button" onClick={onClose} className="text-sky-700 underline">
+        <button type="button" onClick={onClose} className="text-primary underline">
           <Text k="staff_contact_book.cancel_edit" />
         </button>
       </div>

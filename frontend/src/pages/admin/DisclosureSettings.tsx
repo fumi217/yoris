@@ -186,7 +186,7 @@ export function DisclosureForm({ disclosure, saving, saved, errorKey, onSave }: 
         <button
           type="submit"
           disabled={!dirty || saving}
-          className="w-full rounded bg-sky-700 p-3 text-lg font-bold text-white disabled:opacity-50"
+          className="w-full rounded bg-primary p-3 text-lg font-bold text-white disabled:opacity-50"
         >
           <Text k={saving ? 'disclosure.saving' : 'disclosure.save'} />
         </button>
@@ -229,9 +229,9 @@ function Row({ name, labelKey, icon, visible, onChange }: RowProps) {
             className={`cursor-pointer rounded border-2 px-3 py-1 ${
               visible === value
                 ? value
-                  ? 'border-sky-700 bg-sky-700 text-white'
+                  ? 'border-primary bg-primary text-white'
                   : 'border-gray-700 bg-gray-700 text-white'
-                : 'border-gray-300'
+                : 'border-field-line'
             }`}
           >
             <input

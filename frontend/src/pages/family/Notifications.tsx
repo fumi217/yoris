@@ -64,7 +64,7 @@ export function NotificationsView({ notifications }: { notifications: FamilyNoti
               <>
                 <span className={`block ${notification.read ? '' : 'font-bold'}`}>
                   {!notification.read && (
-                    <span className="mr-2 rounded bg-sky-700 px-2 py-0.5 text-xs font-normal text-white">
+                    <span className="mr-2 rounded bg-primary px-2 py-0.5 text-xs font-normal text-white">
                       <Text k="notifications.unread" />
                     </span>
                   )}

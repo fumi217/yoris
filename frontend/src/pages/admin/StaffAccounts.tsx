@@ -104,7 +104,7 @@ export function StaffFormView({ saving, errorKey, onSubmit }: FormProps) {
           aria-required="true"
           aria-invalid={tried && problem !== null}
           onChange={(event) => setName(event.target.value)}
-          className="w-full rounded border-2 border-gray-300 p-3"
+          className="w-full rounded border-2 border-field-line p-3"
         />
         {tried && problem !== null && (
           <p role="alert" className="text-red-700">
@@ -126,7 +126,7 @@ export function StaffFormView({ saving, errorKey, onSubmit }: FormProps) {
           <a
             href="#"
             onClick={(event) => event.preventDefault()}
-            className="text-sky-700 underline"
+            className="text-primary underline"
           >
             <Text k="staff_accounts.role_hint_link" />
           </a>
@@ -138,7 +138,7 @@ export function StaffFormView({ saving, errorKey, onSubmit }: FormProps) {
           aria-describedby="staff-role-hint"
           aria-required="true"
           onChange={(event) => setRole(event.target.value as StaffRoleCode)}
-          className="w-full rounded border-2 border-gray-300 bg-white p-3"
+          className="w-full rounded border-2 border-field-line bg-white p-3"
         >
           {/* 役割の名前は、職種の辞書（occupation.*）と同じ（役割の 5 つは職種の候補にも入っている） */}
           {ROLES.map((code) => (
@@ -166,7 +166,7 @@ export function StaffFormView({ saving, errorKey, onSubmit }: FormProps) {
           value={occupation}
           aria-describedby="staff-occupation-hint"
           onChange={(event) => setOccupation(event.target.value)}
-          className="w-full rounded border-2 border-gray-300 bg-white p-3"
+          className="w-full rounded border-2 border-field-line bg-white p-3"
         >
           <option value="">{stripRuby(t('staff_accounts.occupation_none'))}</option>
           {OCCUPATIONS.map((code) => (
@@ -187,7 +187,7 @@ export function StaffFormView({ saving, errorKey, onSubmit }: FormProps) {
       <button
         type="submit"
         disabled={saving}
-        className="w-full rounded bg-sky-700 p-3 font-bold text-white disabled:opacity-50 sm:w-auto sm:px-8"
+        className="w-full rounded bg-primary p-3 font-bold text-white disabled:opacity-50 sm:w-auto sm:px-8"
       >
         <Text k={saving ? 'staff_accounts.submitting' : 'staff_accounts.submit'} />
       </button>
@@ -222,7 +222,7 @@ export function CreatedView({ created, onClose }: CreatedProps) {
       <p role="status" className="font-bold text-green-800">
         <Text k="staff_accounts.created_title" />
       </p>
-      <dl className="space-y-3 rounded border-2 border-gray-300 p-4">
+      <dl className="space-y-3 rounded border-2 border-field-line p-4">
         <div>
           <dt className="text-sm text-gray-600">
             <Text k="staff_accounts.display_name" />
@@ -266,7 +266,7 @@ export function CreatedView({ created, onClose }: CreatedProps) {
           className={`rounded border-2 p-3 font-bold transition active:scale-95 ${
             copyState === 'done'
               ? 'border-green-700 bg-green-50 text-green-800'
-              : 'border-sky-700 text-sky-700 hover:bg-sky-50 active:bg-sky-100'
+              : 'border-primary text-primary hover:bg-sky-50 active:bg-sky-100'
           }`}
         >
           <Text k={copyState === 'done' ? 'staff_accounts.copied' : 'staff_accounts.copy'} />
@@ -274,7 +274,7 @@ export function CreatedView({ created, onClose }: CreatedProps) {
         <button
           type="button"
           onClick={onClose}
-          className="rounded bg-sky-700 p-3 font-bold text-white"
+          className="rounded bg-primary p-3 font-bold text-white"
         >
           <Text k="staff_accounts.close" />
         </button>

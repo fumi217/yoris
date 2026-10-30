@@ -24,8 +24,8 @@ export function FamilyMorePage() {
         </li>
       ))}
       <li className="flex flex-wrap items-center gap-3 p-4">
-        <LanguageSwitcher className="rounded border p-1" />
-        <LogoutButton className="text-sky-700 underline" />
+        <LanguageSwitcher className="rounded border border-field-line p-1" />
+        <LogoutButton className="text-primary underline" />
       </li>
     </ul>
   )

@@ -136,7 +136,7 @@ function DayNav({
   onMove: (date: string) => void
 }) {
   const isToday = date === today
-  const button = 'min-h-12 rounded border-2 border-gray-300 px-3 disabled:opacity-40'
+  const button = 'min-h-12 rounded border-2 border-field-line px-3 disabled:opacity-40'
   return (
     <div className="space-y-2">
       <div className="flex gap-2">
@@ -169,7 +169,7 @@ function DayNav({
             const picked = pickDate(event.target.value, today)
             if (picked !== date) onMove(picked)
           }}
-          className="ml-2 min-h-10 rounded border-2 border-gray-300 px-2"
+          className="ml-2 min-h-10 rounded border-2 border-field-line px-2"
         />
       </label>
     </div>
@@ -194,7 +194,7 @@ function ReplyCard({
     <article
       ref={ref}
       className={`space-y-2 rounded border-2 p-4 ${
-        unread ? 'border-sky-700 bg-sky-50' : 'border-gray-300'
+        unread ? 'border-primary bg-sky-50' : 'border-field-line'
       }`}
     >
       <p className="text-lg font-bold">
@@ -210,7 +210,7 @@ function ReplyCard({
         <Text k="contact_book.reply_from" />
         <span className="ml-2 text-gray-600">{timeInJapan(reply.replied_at)}</span>
         {unread && (
-          <span className="ml-2 rounded bg-sky-700 px-2 py-0.5 text-xs text-white">
+          <span className="ml-2 rounded bg-primary px-2 py-0.5 text-xs text-white">
             <Text k="contact_book.unread_reply" />
           </span>
         )}
@@ -258,7 +258,7 @@ function RecordSection({ section }: { section: ContactSection }) {
                 {slot.record ? (
                   <Text k={valueKey(section.item, slot.record.value)} />
                 ) : (
-                  <span className="text-gray-500">
+                  <span className="text-ink-sub">
                     <Text k={slot.message_key ?? 'contact_book.not_recorded'} />
                   </span>
                 )}
