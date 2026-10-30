@@ -137,6 +137,14 @@ def test_warnings_come_in_a_fixed_order():
     assert warnings == ["medical_in_original", "other_name", "urgent_words"]
 
 
+def test_without_a_rewrite_only_the_original_is_checked():
+    # 原文を直して整えた日本語を消したあと。整えた日本語・訳し戻しから付く印は付けない
+    warnings = check("きょうは薬のあとにころんだ", None, names=["さくらさんの母"])
+
+    assert warnings == ["medical_in_original", "urgent_words"]
+    assert check("今日は元気でした。", None) == []
+
+
 # --- 1 日 3 件・やり直しの上限（DB） ---
 
 
@@ -183,7 +191,10 @@ def test_withdrawn_memos_are_not_counted(client, session, writer):
 
 def test_rewrite_checks_warnings_against_other_residents(client, session, fake_llm, writer):
     memo_id = create(client, writer["resident_id"]).json()["id"]
-    fake_llm.add(text_response("今日はひまわりさんと一緒に過ごしました。"))
+    # 整える → 訳し戻す（職員の表示言語がインドネシア語）の 2 回
+    fake_llm.add(
+        text_response("今日はひまわりさんと一緒に過ごしました。"), text_response("訳し戻し")
+    )
 
     response = client.post(f"/api/staff/memos/{memo_id}/rewrite")
 
@@ -194,7 +205,8 @@ def test_rewrite_checks_warnings_against_other_residents(client, session, fake_l
 
 def test_sixth_rewrite_is_refused_without_calling_the_ai(client, session, fake_llm, writer):
     memo_id = create(client, writer["resident_id"]).json()["id"]
-    fake_llm.add(*[text_response("今日は元気でした。") for _ in range(5)])
+    # 1 回に、整える → 訳し戻す の 2 回呼ぶ
+    fake_llm.add(*[text_response("今日は元気でした。") for _ in range(10)])
     for _ in range(5):
         assert client.post(f"/api/staff/memos/{memo_id}/rewrite").status_code == 200
     calls = len(fake_llm.calls)

@@ -8,7 +8,7 @@ import pytest
 from app.config import get_settings
 from app.inquiry.llm import LLMClient, LLMUnavailable
 from app.memos.prompts import build_back_translation_prompt, build_rewrite_prompt
-from app.memos.rewrite import get_rewrite_client, rewrite_memo
+from app.memos.rewrite import back_translate_memo, get_rewrite_client, rewrite_memo
 from tests.fakes.llm import FakeLLM, text_response
 
 ORIGINAL = "Hari ini Ibu kurang tersenyum dibanding biasanya, tapi makan siangnya habis."
@@ -47,6 +47,27 @@ def test_back_translation_gets_only_rewritten_text():
     ]
     assert all(ORIGINAL not in message["content"] for message in second.messages)
     assert second.tools is None
+
+
+def test_back_translate_only_sends_only_the_rewritten_text():
+    fake = FakeLLM([text_response(BACK)])
+
+    result = back_translate_memo(REWRITTEN, "id", llm=fake)
+
+    # 整え直さず、訳し戻しを 1 回だけ呼ぶ。渡すのは固定の指示と整えた日本語だけ（R-02）
+    [call] = fake.calls
+    assert call.messages == [
+        {"role": "system", "content": build_back_translation_prompt("id")},
+        {"role": "user", "content": REWRITTEN},
+    ]
+    assert call.tools is None
+    assert (result.rewritten_text, result.back_translation) == (REWRITTEN, BACK)
+    assert result.model == "fake"
+
+
+def test_back_translate_only_passes_llm_unavailable_through():
+    with pytest.raises(LLMUnavailable):
+        back_translate_memo(REWRITTEN, "id", llm=FakeLLM([LLMUnavailable("timeout")]))
 
 
 def test_staff_language_ja_does_not_back_translate():

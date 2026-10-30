@@ -70,11 +70,14 @@ def check_memo(
     *,
     original_text: str,
     source_lang: str,
-    rewritten_text: str,
+    rewritten_text: str | None,
     back_translation: str | None,
     other_resident_names: list[str],
 ) -> list[str]:
     """原文・整えた日本語・訳し戻しから、注意の印を返す（WARNINGS の順）。
+
+    整えた日本語がまだないとき（原文を直して消したあと）は、原文だけで付く印
+    （`medical_in_original`・`urgent_words`）だけを返す。
 
     - `medical_added`：整えた日本語に医療・服薬・体調の言葉があり、原文には対応する言葉がない。
       原文が日本語なら言葉ごとに、ほかの言語なら原文に医療の言葉が 1 つもないときに付ける
@@ -86,6 +89,11 @@ def check_memo(
     """
     lang = source_lang if source_lang in _MEDICAL_WORDS else "ja"
     medical_in_original = _found(_MEDICAL_WORDS[lang], original_text)
+    if rewritten_text is None:
+        found = {warning: False for warning in WARNINGS}
+        found["medical_in_original"] = bool(medical_in_original)
+        found["urgent_words"] = bool(_found(_URGENT_WORDS[lang], original_text))
+        return [warning for warning in WARNINGS if found[warning]]
     medical_in_rewritten = _found(_MEDICAL_WORDS["ja"], rewritten_text)
     if lang == "ja":
         medical_added = bool(medical_in_rewritten - medical_in_original)

@@ -9,13 +9,15 @@ from sqlalchemy import func, select
 
 from app.clock import today_jst
 from app.inquiry.llm import LLMUnavailable
-from app.memos.prompts import build_rewrite_prompt
+from app.memos.prompts import build_back_translation_prompt, build_rewrite_prompt
 from app.models.core import Facility, Resident
 from app.models.memos import CareMemo, CareMemoRevision
 from tests.fakes.llm import text_response
 
 ORIGINAL = "Hari ini Ibu kurang tersenyum dibanding biasanya, tapi makan siangnya habis."
 REWRITTEN = "今日はいつもより笑顔が少なめでしたが、お昼ごはんは全部召し上がりました。"
+# 職員（表示言語：インドネシア語）の画面に出す訳し戻し
+BACK = "Hari ini senyumnya lebih sedikit dari biasanya, tetapi makan siangnya habis semua."
 
 
 @pytest.fixture
@@ -168,7 +170,7 @@ def test_family_is_forbidden_and_logged_out_is_401(client, make_family, login_as
 
 def test_rewrite_saves_the_japanese_text_and_a_revision(client, session, fake_llm, writer):
     memo_id = create(client, writer["resident_id"]).json()["id"]
-    fake_llm.add(text_response(REWRITTEN))
+    fake_llm.add(text_response(REWRITTEN), text_response(BACK))
 
     response = client.post(f"/api/staff/memos/{memo_id}/rewrite")
 
@@ -178,10 +180,11 @@ def test_rewrite_saves_the_japanese_text_and_a_revision(client, session, fake_ll
     assert data["rewritten_text"] == REWRITTEN
     assert data["original_text"] == ORIGINAL
     assert data["status"] == "draft"
-    # 訳し戻しは、ミニマム版ではしない（作り込みの 007-T017 で足す）
-    assert data["back_translation"] is None
+    # 表示言語がインドネシア語の職員には、訳し戻しも付く（FR-007）
+    assert data["back_translation"] == BACK
     [revision] = revisions(session, memo_id)
     assert (revision.original_text, revision.rewritten_text) == (ORIGINAL, REWRITTEN)
+    assert revision.back_translation == BACK
     assert revision.model == "fake"
     assert revision.latency_ms is not None
 
@@ -190,26 +193,36 @@ def test_rewrite_sends_only_the_fixed_instructions_and_the_original(
     client, session, fake_llm, writer
 ):
     memo_id = create(client, writer["resident_id"]).json()["id"]
-    fake_llm.add(text_response(REWRITTEN))
+    fake_llm.add(text_response(REWRITTEN), text_response(BACK))
 
     client.post(f"/api/staff/memos/{memo_id}/rewrite")
 
-    [call] = fake_llm.calls
-    # 固定の指示（system）と原文（user）だけ。ツールは渡さない（FR-005）
-    assert call.messages == [
+    first, second = fake_llm.calls
+    # 整える：固定の指示（system）と原文（user）だけ。ツールは渡さない（FR-005）
+    assert first.messages == [
         {"role": "system", "content": build_rewrite_prompt("id")},
         {"role": "user", "content": ORIGINAL},
     ]
-    assert call.tools is None
+    # 訳し戻す：固定の指示と、整えた日本語だけ（原文は渡さない。R-02）
+    assert second.messages == [
+        {"role": "system", "content": build_back_translation_prompt("id")},
+        {"role": "user", "content": REWRITTEN},
+    ]
+    assert first.tools is None and second.tools is None
     # 入居者の呼び名・氏名・職員の名前は、AI に渡さない
-    sent = " ".join(message["content"] for message in call.messages)
+    sent = " ".join(message["content"] for call in (first, second) for message in call.messages)
     for private in ("さくらさんの母", "シティ"):
         assert private not in sent
 
 
 def test_rewrite_again_adds_a_second_revision(client, session, fake_llm, writer):
     memo_id = create(client, writer["resident_id"]).json()["id"]
-    fake_llm.add(text_response(REWRITTEN), text_response("今日は笑顔が少なめでした。"))
+    fake_llm.add(
+        text_response(REWRITTEN),
+        text_response(BACK),
+        text_response("今日は笑顔が少なめでした。"),
+        text_response(BACK),
+    )
 
     client.post(f"/api/staff/memos/{memo_id}/rewrite")
     data = client.post(f"/api/staff/memos/{memo_id}/rewrite").json()
@@ -237,7 +250,7 @@ def test_when_the_ai_is_down_the_original_stays_and_nothing_is_counted(
     assert memo["rewritten_text"] is None
     assert revisions(session, memo_id) == []
     # 時間をおいて、もう一度押せる
-    fake_llm.add(text_response(REWRITTEN))
+    fake_llm.add(text_response(REWRITTEN), text_response(BACK))
     assert client.post(f"/api/staff/memos/{memo_id}/rewrite").status_code == 200
     assert len(revisions(session, memo_id)) == 1
 
@@ -269,7 +282,7 @@ def test_returned_memo_can_be_rewritten_again(client, fake_llm, session, writer)
     memo_id = create(client, writer["resident_id"]).json()["id"]
     session.get(CareMemo, memo_id).status = "returned"
     session.flush()
-    fake_llm.add(text_response(REWRITTEN))
+    fake_llm.add(text_response(REWRITTEN), text_response(BACK))
 
     assert client.post(f"/api/staff/memos/{memo_id}/rewrite").status_code == 200
 
@@ -279,12 +292,13 @@ def test_text_is_returned_as_plain_text(client, session, fake_llm, writer):
     memo_id = create(
         client, writer["resident_id"], original_text="<script>alert(1)</script>"
     ).json()["id"]
-    fake_llm.add(text_response("<b>整えた</b>"))
+    fake_llm.add(text_response("<b>整えた</b>"), text_response("<i>訳し戻し</i>"))
 
     data = client.post(f"/api/staff/memos/{memo_id}/rewrite").json()
 
     assert data["original_text"] == "<script>alert(1)</script>"
     assert data["rewritten_text"] == "<b>整えた</b>"
+    assert data["back_translation"] == "<i>訳し戻し</i>"
 
 
 # --- 一覧・1 つ ---

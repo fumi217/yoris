@@ -28,11 +28,13 @@
 |---|---|---|---|---|
 | `POST /api/staff/residents/{id}/memos` | CW・L | ミ | 下書きを作る（`original_text`：1〜500 文字、`source_lang`）。409：`memo_limit`（作。1 日 3 件は 007-T013 で足す） | FR-001 |
 | `GET /api/staff/memos?resident_id=&date=` | CW・L | ミ | 自分のメモの一覧（状態・戻した理由つき） | FR-013 |
-| `GET /api/staff/memos/{id}` | 本人（承認待ち以降はリーダー・施設長も） | ミ | 原文・整えた日本語・訳し戻し・印・状態 | FR-004・FR-007 |
-| `PATCH /api/staff/memos/{id}` | 本人 | 作 | 原文か整えた日本語を直す（`draft`・`returned` のときだけ） | FR-008 |
-| `POST /api/staff/memos/{id}/rewrite` | 本人 | ミ（整えるだけ）／作（訳し戻しも） | 「日本語にする」：整える → 訳し戻す。整えた日本語を自分で直したあとは訳し戻しだけ作る（`back_translate_only`）。503：`ai_unavailable`、409：`rewrite_limit`（作。やり直し 5 回の上限は 007-T014 で足す）。直せない状態では 409：`invalid_state` | FR-003・FR-007・FR-020 |
-| `POST /api/staff/memos/{id}/confirm` | 本人 | 作 | 「確かめました」→ `pending` | FR-009 |
-| `POST /api/staff/memos/{id}/withdraw` | 本人 | 作 | 取り下げる（`draft`・`pending`・`returned` のときだけ） | FR-010 |
+| `GET /api/staff/memos/{id}` | 本人 | ミ | 原文・整えた日本語・訳し戻し・印・状態。本人でなければ、リーダーでも 404（リーダー・施設長が承認待ちを見るのは、下の `GET /api/staff/memo-approvals`） | FR-004・FR-007 |
+| `PATCH /api/staff/memos/{id}` | 本人 | 作 | 原文か整えた日本語を直す（`original_text`・`rewritten_text` のどちらか、または両方。`draft`・`returned` のときだけ）。原文を直すと、整えた日本語と訳し戻しは消える（その原文から作ったものではなくなるため。直した整えた日本語を同時に送れば、それを使う）。整えた日本語を直すと、訳し戻しは消える（直した文で作り直す）。印は直した内容で付け直す。まだ整えていないメモの整えた日本語は直せない。整えた日本語は 1,000 文字まで。409：`invalid_state` | FR-008 |
+| `POST /api/staff/memos/{id}/rewrite` | 本人 | ミ（整えるだけ）／作（訳し戻しも） | 「日本語にする」：整える → 訳し戻す（職員の表示言語が日本語のときは、訳し戻さない）。本文は任意で `{"back_translate_only": true}`：整えた日本語を自分で直したあと、直した文を表示言語に訳し戻すだけにする（整え直さない。表示言語が日本語・整えた日本語がないときは 409：`invalid_state`）。どちらも履歴を 1 件足し、やり直しの 5 回に数える。503：`ai_unavailable`（途中で止まったら何も保存しない）、409：`rewrite_limit`（作。やり直し 5 回の上限は 007-T014 で足す）。直せない状態では 409：`invalid_state` | FR-003・FR-007・FR-020 |
+| `POST /api/staff/memos/{id}/confirm` | 本人 | 作 | 「確かめました」→ `pending`（`draft`・`returned` のときだけ。確かめた日時を残す）。整えた日本語がないとき、表示言語が日本語でないのに訳し戻しがないときは、確かめられない（409：`invalid_state`）。更新したメモを返す | FR-009 |
+| `POST /api/staff/memos/{id}/withdraw` | 本人 | 作 | 取り下げる（`draft`・`pending`・`returned` のときだけ → `withdrawn`）。更新したメモを返す | FR-010 |
+
+- 本人でない職員（リーダーを含む）が `{id}` を指定したときは、どの操作も 404（`not_found`）。直す・整える・確かめる・取り下げるは、どれも条件つきの 1 回の更新で進める（research.md R-05）。
 
 ## 承認（リーダー・施設長）
 

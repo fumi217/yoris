@@ -75,9 +75,9 @@ spec 004 の 004-T003（`LLMClient`）・004-T004（テスト用の LLM（モッ
 
 **Independent Test**: 整えた日本語にインドネシア語の訳し戻しが付き、本人が「確かめました」を押すと承認待ちになる
 
-- [ ] T016 [P] [US2] テスト `backend/tests/api/test_memos_confirm.py`：訳し戻しが付く、原文や整えた日本語を直してやり直せる（`draft`・`returned` のときだけ）、「確かめました」で `pending`、取り下げで `withdrawn`、承認待ちのものは本人以外のリーダー・施設長だけが見られる（FR-007〜010）（みさき・作）
-- [ ] T017 [US2] 訳し戻しを `POST /api/staff/memos/{id}/rewrite` に足し、整えた日本語を自分で直したあとは訳し戻しだけを作る（`back_translate_only`）（research.md R-02、FR-007・FR-008）（みさき・作）
-- [ ] T018 [US2] `PATCH /api/staff/memos/{id}`・`POST /api/staff/memos/{id}/confirm`・`POST /api/staff/memos/{id}/withdraw` を作る：どれも本人だけ、条件つきの 1 回の更新で状態を進める（409 `invalid_state`）（research.md R-05、FR-008〜010）（みさき・作）
+- [x] T016 [P] [US2] テスト `backend/tests/api/test_memos_confirm.py`：訳し戻しが付く、原文や整えた日本語を直してやり直せる（`draft`・`returned` のときだけ）、「確かめました」で `pending`、取り下げで `withdrawn`、本人以外は id を指定しても 404（承認待ちをリーダー・施設長が見るのは承認の一覧。T020 のテスト）（FR-007〜010）（みさき・作）
+- [x] T017 [US2] 訳し戻しを `POST /api/staff/memos/{id}/rewrite` に足し、整えた日本語を自分で直したあとは訳し戻しだけを作る（`back_translate_only`）（research.md R-02、FR-007・FR-008）（みさき・作）
+- [x] T018 [US2] `PATCH /api/staff/memos/{id}`・`POST /api/staff/memos/{id}/confirm`・`POST /api/staff/memos/{id}/withdraw` を作る：どれも本人だけ、条件つきの 1 回の更新で状態を進める（409 `invalid_state`）（research.md R-05、FR-008〜010）（みさき・作）
 - [ ] T019 [US2] 書く画面に、訳し戻し・印・直す・「確かめました」・取り下げる・戻された理由を足す（FR-007〜010・FR-013・FR-016）（みさき・作）
 
 **Checkpoint**: 本人が母国語で確かめて、承認に回せる（quickstart の 4・5）

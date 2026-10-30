@@ -22,6 +22,8 @@ WARNINGS = ("medical_added", "medical_in_original", "length_changed", "other_nam
 # 原文の文字数の上限（FR-001）と、戻す・公開を取り下げる理由の上限（FR-013・FR-013a）
 ORIGINAL_MAX = 500
 REASON_MAX = 200
+# 職員が直した整えた日本語の上限（API で確かめる。AI の返事は、原文の 2 倍までを目安にしている）
+REWRITTEN_MAX = 1000
 
 
 def _max_length(column: str, limit: int) -> CheckConstraint:

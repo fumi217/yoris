@@ -62,8 +62,7 @@ def rewrite_memo(
 ) -> RewriteResult:
     """原文を整えた日本語にし、職員の表示言語が日本語でなければ訳し戻す（FR-003・FR-007）。
 
-    back_translate を False にすると、整えるだけで訳し戻さない（ミニマム版の「日本語にする」。
-    訳し戻しは、作り込みの 007-T017 で、呼ぶ側が True にして足す）。
+    back_translate を False にすると、整えるだけで訳し戻さない。
     """
     _check_lang(source_lang)
     _check_lang(staff_lang)
@@ -75,6 +74,25 @@ def rewrite_memo(
         back_translation, model = _ask(llm, build_back_translation_prompt(staff_lang), rewritten)
     return RewriteResult(
         rewritten_text=rewritten,
+        back_translation=back_translation,
+        model=model,
+        latency_ms=int((time.monotonic() - started) * 1000),
+    )
+
+
+def back_translate_memo(
+    rewritten_text: str, staff_lang: str, *, llm: ChatClient | None = None
+) -> RewriteResult:
+    """職員が直した整えた日本語を、訳し戻すだけ（整え直さない。007-T017・R-02）。
+
+    渡すのは整えた日本語だけ。職員の表示言語が日本語のときは、訳し戻すものがないので呼ばない。
+    """
+    _check_lang(staff_lang)
+    llm = llm or get_rewrite_client()
+    started = time.monotonic()
+    back_translation, model = _ask(llm, build_back_translation_prompt(staff_lang), rewritten_text)
+    return RewriteResult(
+        rewritten_text=rewritten_text,
         back_translation=back_translation,
         model=model,
         latency_ms=int((time.monotonic() - started) * 1000),
