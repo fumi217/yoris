@@ -10,6 +10,7 @@
 サービスの関数は commit しない（API の最後で 1 回 commit する。app/db.py）。
 """
 
+import logging
 from dataclasses import dataclass
 from datetime import timedelta
 
@@ -21,6 +22,8 @@ from app.auth.deps import CurrentUser
 from app.errors import AppError, ErrorCode
 from app.models.core import Resident, Staff
 from app.models.memos import CareMemo
+
+logger = logging.getLogger(__name__)
 
 # 承認する・戻す・公開を取り下げられる役割（FR-011）
 APPROVER_ROLES = ("leader", "director")
@@ -130,6 +133,14 @@ def _move(
         raise AppError(ErrorCode.INVALID_STATE)
 
     session.refresh(row.memo)
+    # 理由の文（return_reason・unpublish_reason）は出さず、状態の動きと職員の id だけ出す（FR-018）
+    logger.info(
+        "様子のメモの状態を変えた: memo=%s %s->%s staff=%s",
+        memo_id,
+        from_status,
+        values["status"],
+        user.staff_id,
+    )
     return row
 
 

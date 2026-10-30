@@ -14,6 +14,7 @@
 サービスの関数は commit しない（API の最後で 1 回 commit する。app/db.py）。
 """
 
+import logging
 from datetime import date
 
 from sqlalchemy import func, select, update
@@ -24,11 +25,15 @@ from app.auth.deps import CurrentUser
 from app.clock import today_jst
 from app.config import get_settings
 from app.errors import AppError, ErrorCode
-from app.inquiry.llm import ChatClient
+from app.inquiry.llm import ChatClient, LLMUnavailable
 from app.memos.checks import check_memo
 from app.memos.rewrite import back_translate_memo, rewrite_memo
 from app.models.core import Resident, Staff
 from app.models.memos import CareMemo, CareMemoRevision
+
+# ログに出すのは、メモの id・状態・操作・印の名前・かかった時間・モデル名だけ。
+# 原文・整えた日本語・訳し戻し・氏名・理由の文は出さない（FR-018・research.md R-11）
+logger = logging.getLogger(__name__)
 
 # 直したり「日本語にする」をやり直したりできる状態（data-model.md の「状態の動き」）
 EDITABLE_STATUSES = ("draft", "returned")
@@ -77,6 +82,7 @@ def create_memo(
     )
     session.add(memo)
     session.flush()
+    logger.info("様子のメモの下書きを作った: memo=%s resident=%s", memo.id, resident_id)
     return memo
 
 
@@ -158,10 +164,17 @@ def rewrite(
     )
     if revisions >= get_settings().memo_rewrite_limit:
         raise AppError(ErrorCode.REWRITE_LIMIT)
-    if back_translate_only:
-        result = back_translate_memo(memo.rewritten_text, user.language, llm=llm)
-    else:
-        result = rewrite_memo(memo.original_text, memo.source_lang, user.language, llm=llm)
+    try:
+        if back_translate_only:
+            result = back_translate_memo(memo.rewritten_text, user.language, llm=llm)
+        else:
+            result = rewrite_memo(memo.original_text, memo.source_lang, user.language, llm=llm)
+    except LLMUnavailable as error:
+        # 理由の文（error の中身）は出さず、種類だけ出す
+        logger.warning(
+            "様子のメモを日本語にできなかった: memo=%s error=%s", memo.id, type(error).__name__
+        )
+        raise
     memo.rewritten_text = result.rewritten_text
     memo.back_translation = result.back_translation
     memo.warnings = _warnings_of(session, memo)
@@ -176,6 +189,13 @@ def rewrite(
         )
     )
     session.flush()
+    logger.info(
+        "様子のメモを日本語にした: memo=%s warnings=%s model=%s latency_ms=%s",
+        memo.id,
+        memo.warnings,
+        result.model,
+        result.latency_ms,
+    )
     return memo
 
 
