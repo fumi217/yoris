@@ -141,7 +141,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
 - [x] T022 [P] 目印まわり（`change.*`）の日本語にふりがなを付け、インドネシア語・英語の辞書 `frontend/src/i18n/id.json`・`frontend/src/i18n/en.json` に足す（001-T082・001-T083 の仕組み。Constitution の UI 方針。職員のひとことは対象外）（みさき。#101 で済み：ja のふりがなは T013 で、id・en の辞書は #101 のレビュー対応で足した）
-- [ ] T023 [P] 問い合わせ AI（spec 004）のツールの返す値に目印が入らないことを、spec 004 のテストに 1 件足す（spec 004 のツールができてから。FR-007・SC-005）（みさき）
+- [x] T023 [P] 問い合わせ AI（spec 004）のツールの返す値に目印が入らないことを、spec 004 のテスト（`backend/tests/api/test_inquiry_injection.py`）に 1 件足す（spec 004 のツールができてから。FR-007・SC-005）（みさき）
 - [ ] T024 quickstart.md の確認をすべて通し、`docs/テスト設計書.md` に変化の検知のテストシナリオと結果を書く（Constitution の課題要件のテスト。001-T093 と一緒に）（みさき）
   - 進め方：`docs/テスト設計書.md` に spec 006 の節を書いた（24 シナリオ。自動テストの pytest 126 件・Vitest 44 件は、使い捨ての DB で通した）。残り：画面での手動の確認（「未」の行）と、問い合わせ AI の確認（PR #361 のマージ後）。すべて通したら `[x]` にする
 
