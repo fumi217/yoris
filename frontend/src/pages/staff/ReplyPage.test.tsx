@@ -56,7 +56,9 @@ describe('ReplyView', () => {
   it('テーマ・送られた日時・日数と、そのテーマの定型文のボタンを出す', () => {
     const html = render()
 
-    expect(html).toContain('🍚')
+    // テーマのアイコン（絵文字は出さない）
+    expect(html).toContain('data-icon="utensils"')
+    expect(html).not.toContain('🍚')
     expect(html).toContain('10:00')
     expect(html).toContain('24<ruby>日')
     expect(html).toContain('2<ruby>日')

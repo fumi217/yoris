@@ -56,7 +56,9 @@ describe('DisclosureForm', () => {
 
     expect(html).toContain('食事')
     expect(html).toContain('name="theme-theme.meals"')
-    expect(html).toContain('🍚')
+    // テーマのアイコン（絵文字ではなく、Font Awesome）
+    expect(html).toContain('data-icon="utensils"')
+    expect(html).not.toContain('🍚')
     // 見せる：食事・眠り・テーマ・アルバム、見せない：機嫌（行ごとに 1 つ選ばれている）
     expect(html.match(/type="radio"[^>]*checked=""/g)).toHaveLength(5)
   })
@@ -95,11 +97,11 @@ describe('DisclosureForm の注意書き', () => {
       disclosure: { ...disclosure, items: [{ code: 'meal', visible: false }] },
     })
 
-    expect(html).toContain('⚠️')
+    expect(html).toContain('data-icon="triangle-exclamation"')
     expect(html).toContain('このままでも')
   })
 
   it('当てはまる組がなければ、出さない', () => {
-    expect(render()).not.toContain('⚠️')
+    expect(render()).not.toContain('data-icon="triangle-exclamation"')
   })
 })

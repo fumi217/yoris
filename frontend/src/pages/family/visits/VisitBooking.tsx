@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Icon } from '../../../components/Icon'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError, api, messageKeyOf } from '../../../api/client'
@@ -182,6 +183,7 @@ export function BookingView({
             onClick={() => setMonthIndex((index) => index - 1)}
             className="rounded px-2 py-1 text-primary underline disabled:text-gray-300 disabled:no-underline"
           >
+            <Icon name="prev" className="mr-1" />
             <Text k="visit.previous_month" />
           </button>
           <span className="font-bold">
@@ -194,6 +196,7 @@ export function BookingView({
             className="rounded px-2 py-1 text-primary underline disabled:text-gray-300 disabled:no-underline"
           >
             <Text k="visit.next_month" />
+            <Icon name="next" className="ml-1" />
           </button>
         </div>
         <div className="grid grid-cols-7 gap-1 text-center">

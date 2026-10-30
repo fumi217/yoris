@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Icon, type IconName } from '../../components/Icon'
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router'
@@ -28,11 +29,11 @@ type Resident = StaffContactBook['resident']
 
 const postedKey = (residentId: string) => ['staff', 'album', residentId] as const
 
-const STATUS_MARK: Record<UploadStatus, string> = {
-  waiting: '🕒',
-  sending: '📤',
-  done: '✔',
-  failed: '⚠',
+const STATUS_MARK: Record<UploadStatus, IconName> = {
+  waiting: 'upload-waiting',
+  sending: 'uploading',
+  done: 'check',
+  failed: 'warning',
 }
 
 /**
@@ -209,7 +210,7 @@ type ViewProps = {
 }
 
 const pickClass =
-  'flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded border-2 border-primary px-4 font-bold text-primary-dark'
+  'flex min-h-12 cursor-pointer items-center justify-center rounded border-2 border-primary px-4 font-bold text-primary-dark'
 
 /** 画面の中身（テストではこれを直接出す）。 */
 export function AlbumUploadView({
@@ -245,8 +246,12 @@ export function AlbumUploadView({
       <div className="grid grid-cols-2 gap-3">
         {/* 端末のカメラを開く（capture）。複数枚は選べないので、「選ぶ」と分ける（R-01） */}
         <label className={pickClass}>
-          <span aria-hidden="true">📷</span>
-          <Text k="album_upload.take" />
+          {/* アイコンと文字は、1 つの行（インライン）に入れる。横に並べる枠（flex）に分けると、
+              ふりがな付きの文字の高さの真ん中にアイコンが置かれ、文字より上に見える（PR #390 ようこさん） */}
+          <span>
+            <Icon name="camera" className="mr-2" />
+            <Text k="album_upload.take" />
+          </span>
           <input
             type="file"
             accept={ACCEPT}
@@ -256,8 +261,10 @@ export function AlbumUploadView({
           />
         </label>
         <label className={pickClass}>
-          <span aria-hidden="true">🖼</span>
-          <Text k="album_upload.choose" />
+          <span>
+            <Icon name="album" className="mr-2" />
+            <Text k="album_upload.choose" />
+          </span>
           <input type="file" accept={ACCEPT} multiple className="sr-only" onChange={onPick} />
         </label>
       </div>
@@ -266,7 +273,8 @@ export function AlbumUploadView({
       </p>
       {skipped > 0 && (
         <p role="alert" className="font-bold text-red-800">
-          ⚠ <Ruby text={t('album_upload.over_limit', { max: MAX_PHOTOS, skipped })} />
+          <Icon name="warning" className="mr-1" />
+          <Ruby text={t('album_upload.over_limit', { max: MAX_PHOTOS, skipped })} />
         </p>
       )}
 
@@ -287,15 +295,13 @@ export function AlbumUploadView({
                     aria-hidden="true"
                     className="flex h-24 w-24 shrink-0 items-center justify-center rounded bg-gray-100 text-3xl"
                   >
-                    📄
+                    <Icon name="file" />
                   </div>
                 )}
                 <div className="min-w-0 flex-1 space-y-2">
                   {/* 状態は、印と文字で出す（色だけに頼らない） */}
                   <p className="font-bold">
-                    <span aria-hidden="true" className="mr-1">
-                      {STATUS_MARK[item.status]}
-                    </span>
+                    <Icon name={STATUS_MARK[item.status]} className="mr-1" />
                     <Text k={`album_upload.status.${item.status}`} />
                   </p>
                   {item.errorKey && (

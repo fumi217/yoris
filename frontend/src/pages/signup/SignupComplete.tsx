@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Icon } from '../../components/Icon'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { api, messageKeyOf } from '../../api/client'
@@ -116,6 +117,7 @@ function CopyButton({ text }: { text: string }) {
             : 'border-primary text-primary hover:bg-sky-50 active:bg-sky-100'
         }`}
       >
+        {state === 'copied' && <Icon name="check" className="mr-1" />}
         <Text k={state === 'copied' ? 'signup_complete.copied' : 'signup_complete.copy'} />
       </button>
       <span role="status" aria-live="polite" className="text-sm">

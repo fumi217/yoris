@@ -72,9 +72,11 @@ describe('AlbumUploadView', () => {
     )
     const html = render(mixed)
 
-    expect(text(html)).toContain('✔載せました')
+    expect(text(html)).toContain('載せました')
+    expect(html).toContain('data-icon="check"')
     expect(text(html)).toContain('送っています')
-    expect(text(html)).toContain('⚠載せられませんでした')
+    expect(text(html)).toContain('載せられませんでした')
+    expect(html).toContain('data-icon="triangle-exclamation"')
     expect(text(html)).toContain('1 / 3 枚を載せました')
   })
 
@@ -96,12 +98,12 @@ describe('AlbumUploadView', () => {
     expect(html).not.toContain('maxLength')
   })
 
-  it('画像でないファイル（PDF）は、壊れた画像ではなく、📄 を出す', () => {
+  it('画像でないファイル（PDF）は、壊れた画像ではなく、ファイルのアイコンを出す', () => {
     const { items } = addFiles([], [file('application/pdf')], 1)
     const html = render(items)
 
     expect(html).not.toContain('<img')
-    expect(html).toContain('📄')
+    expect(html).toContain('data-icon="file"')
     expect(text(html)).toContain('JPG か PNG の写真だけ載せられます')
   })
 

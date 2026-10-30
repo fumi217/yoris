@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { themeIconName } from '../../components/themeIcon'
+import { Icon } from '../../components/Icon'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams } from 'react-router'
@@ -157,7 +159,7 @@ function RequestCard({ request, sending, disabled, onSend }: CardProps) {
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-lg font-bold">
-          <span aria-hidden="true">{request.theme_emoji} </span>
+          <Icon name={themeIconName(request.theme_code)} className="mr-2 text-primary" />
           <Text k={request.theme_code} />
         </h2>
         <span className="text-sm text-gray-600">

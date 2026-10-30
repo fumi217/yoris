@@ -1,4 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router'
+import { Icon } from '../../components/Icon'
 import { StaffHeader } from '../../components/StaffHeader'
 import { Text } from '../../components/Text'
 import { usePageTitle } from '../../components/usePageTitle'
@@ -36,7 +37,7 @@ export function BackToAdmin({ pathname }: { pathname: string }) {
   return (
     <nav className="px-4 pt-3 text-sm">
       <Link to="/admin" className="text-primary underline">
-        <span aria-hidden="true">◀ </span>
+        <Icon name="prev" className="mr-1" />
         <Text k="layout.back_to_admin" />
       </Link>
     </nav>

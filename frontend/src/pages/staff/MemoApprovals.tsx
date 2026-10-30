@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Icon } from '../../components/Icon'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, messageKeyOf } from '../../api/client'
@@ -215,7 +216,7 @@ function MemoCard({
         </p>
         {hours !== null && (
           <p className={item.overdue ? 'font-bold text-amber-900' : 'text-sm'}>
-            {item.overdue && <span aria-hidden="true">⚠️ </span>}
+            {item.overdue && <Icon name="warning" className="mr-1" />}
             <Ruby
               text={
                 hours === 0
@@ -242,7 +243,7 @@ function MemoCard({
       {warnings.length > 0 && (
         <div className="rounded border-2 border-amber-700 bg-amber-50 p-2">
           <h3 className="font-bold">
-            <span aria-hidden="true">⚠️ </span>
+            <Icon name="warning" className="mr-1" />
             <Text k="memo_approval.warnings_title" />
           </h3>
           <ul className="list-disc pl-5 text-sm">

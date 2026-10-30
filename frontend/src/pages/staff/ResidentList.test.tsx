@@ -80,7 +80,7 @@ describe('ResidentTable', () => {
   })
 
   it('返事待ち・家族からのメッセージは、あるときだけ件数を出す', () => {
-    expect(render([row()])).not.toContain('💬')
+    expect(render([row()])).not.toContain('data-icon="comment-dots"')
 
     const html = render([row({ waiting_requests: 2, waiting_messages: 1 })])
     expect(html).toContain('返事待ちのリクエスト：2件')
@@ -98,7 +98,7 @@ describe('ResidentTable', () => {
     expect(render([])).toContain('いません')
   })
 
-  it('📩 の件数から、その入居者の家族からのメッセージの一覧へ進む', () => {
+  it('メッセージのアイコンの件数から、その入居者の家族からのメッセージの一覧へ進む', () => {
     const html = render([row({ id: 7, waiting_messages: 2 })])
 
     expect(html).toContain('href="/staff/messages?resident_id=7"')
@@ -106,7 +106,7 @@ describe('ResidentTable', () => {
     expect(html).not.toMatch(/<a[^>]*>(?:(?!<\/a>).)*<a /)
   })
 
-  it('📩 がなければ、メッセージへのリンクは出さない', () => {
+  it('メッセージがなければ、メッセージへのリンクは出さない', () => {
     expect(render([row({ waiting_messages: 0 })])).not.toContain('resident_id=')
   })
 })
@@ -136,7 +136,7 @@ describe('変化の目印（spec 006 の 006-T015）', () => {
     expect(html).toMatch(/<button[^>]*aria-pressed[^>]*>[\s\S]*?1[\s\S]*?<\/button>/)
   })
 
-  it('目印のある行は、呼び名のすぐ横に「⚠️ いつもと違う様子」を出し、上に並べる', () => {
+  it('目印のある行は、呼び名のすぐ横に「いつもと違う様子」（注意のアイコン付き）を出し、上に並べる', () => {
     const html = render([
       row({ id: 1, display_name: '目印なしさん' }),
       row({ id: 2, display_name: '目印ありさん', change_flag: unconfirmed }),
@@ -144,7 +144,9 @@ describe('変化の目印（spec 006 の 006-T015）', () => {
 
     expect(html.indexOf('目印ありさん')).toBeLessThan(html.indexOf('目印なしさん'))
     const flagged = html.slice(html.indexOf('目印ありさん'), html.indexOf('目印なしさん'))
-    expect(flagged).toContain('⚠️')
-    expect(html.slice(html.indexOf('目印なしさん'))).not.toContain('⚠️')
+    expect(flagged).toContain('data-icon="triangle-exclamation"')
+    expect(html.slice(html.indexOf('目印なしさん'))).not.toContain(
+      'data-icon="triangle-exclamation"',
+    )
   })
 })

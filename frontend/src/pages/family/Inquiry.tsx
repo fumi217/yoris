@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Icon } from '../../components/Icon'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
@@ -216,7 +217,7 @@ export function InquiryView({
               choice === value ? 'border-primary font-bold' : 'border-field-line'
             }`}
           >
-            {choice === value && <span aria-hidden="true">✔ </span>}
+            {choice === value && <Icon name="check" className="mr-1" />}
             <Text k={`inquiry.choice.${value}`} />
           </button>
         ))}
@@ -227,7 +228,7 @@ export function InquiryView({
         {guide && (
           <div className="rounded-lg border-2 border-primary bg-white p-3">
             <p className="text-xs font-bold text-primary">
-              <span aria-hidden="true">ℹ️ </span>
+              <Icon name="info" className="mr-1" />
               <Text k="inquiry.guide_label" />
             </p>
             <p className="mt-1">
@@ -279,7 +280,8 @@ export function InquiryView({
             aria-label={stripRuby(t('inquiry.send'))}
             className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-xl text-white disabled:opacity-60"
           >
-            <span aria-hidden="true">➤</span>
+            {/* 紙飛行機は左右が非対称で、真ん中に置くと、目には中央に見えない。1px 左下にずらす（PR #390 ようこさん） */}
+            <Icon name="send" className="-translate-x-px translate-y-px" />
           </button>
         </div>
         <p

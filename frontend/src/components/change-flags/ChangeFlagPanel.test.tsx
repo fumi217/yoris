@@ -58,7 +58,7 @@ describe('目印の欄（spec 006 の T006・T013）', () => {
   it('当てはまった決まりを、もとの記録から辞書で組み立てて出す（食事）', () => {
     const shown = text(render({ current: [mealFlag()], history: [] }))
 
-    expect(shown).toContain('⚠️ いつもと違う様子')
+    expect(shown).toContain('いつもと違う様子')
     expect(shown).toContain('食事量：10月20日の夜ごはんから 2 食続けて、少し以下')
     // もとになった記録（日付・項目・区分・値）
     expect(shown).toContain('10月20日 食事（夜）：少し')
@@ -135,7 +135,7 @@ describe('目印の欄（spec 006 の T006・T013）', () => {
     })
     const shown = text(html)
 
-    expect(shown).toContain('✔ 確かめ済み')
+    expect(shown).toContain('確かめ済み')
     expect(shown).toContain('確かめた人：田中（10月21日）')
     expect(shown).toContain('ひとこと：本人は元気。様子見')
     expect(shown).not.toContain('まだ確かめていません')
@@ -214,7 +214,7 @@ describe('目印の欄（spec 006 の T006・T013）', () => {
     expect(shown).toContain('確かめた人：田中（10月22日）')
     // 今の目印がないので、「確かめた」の欄と案内は出さない
     expect(shown).not.toContain('急変は電話で')
-    expect(shown).not.toContain('⚠️ いつもと違う様子')
+    expect(shown).not.toContain('いつもと違う様子')
   })
 
   it('今も過去も目印がなければ、欄ごと出さない', () => {

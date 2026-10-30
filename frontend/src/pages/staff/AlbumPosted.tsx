@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Icon } from '../../components/Icon'
 import { ConfirmButton } from '../../components/ConfirmButton'
 import { Text } from '../../components/Text'
 import { Ruby } from '../../i18n/Ruby'
@@ -41,7 +42,8 @@ export function AlbumPosted({
       </h2>
       {album && !album.family_visible && (
         <p className="rounded border-2 border-amber-600 bg-amber-50 p-2 font-bold">
-          ⚠ <Text k="album_upload.family_hidden" />
+          <Icon name="warning" className="mr-1" />
+          <Text k="album_upload.family_hidden" />
         </p>
       )}
       {/* 知らせは、読み上げにも伝わるように、先に場所を用意しておく */}

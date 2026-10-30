@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Icon } from '../../components/Icon'
 import { api, messageKeyOf } from '../../api/client'
 import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
@@ -61,7 +62,7 @@ export function BillingView({ billing }: { billing: BillingInfo }) {
       </h1>
       {billing.status === 'payment_failed' && (
         <p role="alert" className="rounded border border-orange-700 bg-orange-50 p-3 text-sm">
-          <span aria-hidden="true">⚠️ </span>
+          <Icon name="warning" className="mr-1" />
           <Text k="billing.payment_failed_note" />
         </p>
       )}

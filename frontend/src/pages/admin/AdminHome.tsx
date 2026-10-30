@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Icon } from '../../components/Icon'
 import { Link } from 'react-router'
 import { useMe } from '../../auth/me'
 import { Message } from '../../components/Message'
@@ -19,7 +20,7 @@ export function AdminHome() {
       {items.map((item) => (
         <li key={item.to}>
           <Link to={item.to} className="flex items-center gap-3 p-4">
-            <span aria-hidden="true">{item.icon}</span>
+            <Icon name={item.icon} className="text-lg text-primary" />
             {/* ふりがなの部品は漢字ごとに分かれるので、包んで 1 つにする（flex の gap でばらけないように） */}
             <span>
               <Text k={item.labelKey} />

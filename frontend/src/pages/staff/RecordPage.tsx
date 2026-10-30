@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Icon } from '../../components/Icon'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router'
@@ -174,6 +175,7 @@ export function RecordView({
           to={`/staff/residents/${resident.id}/requests`}
           className="block rounded border border-primary p-3 text-primary-dark"
         >
+          <Icon name="request-waiting" className="mr-1" />
           <Ruby text={t('record_page.waiting_requests', { count: waitingRequests })} />
         </Link>
       )}
@@ -185,7 +187,7 @@ export function RecordView({
           to={`/staff/residents/${resident.id}/album`}
           className="rounded border border-field-line px-3 py-2"
         >
-          <span aria-hidden="true">📷 </span>
+          <Icon name="camera" className="mr-1" />
           <Text k="record_page.album" />
         </Link>
         {canWriteMemo && (
@@ -194,7 +196,7 @@ export function RecordView({
             to={`/staff/residents/${resident.id}/memos/new`}
             className="rounded border border-field-line px-3 py-2"
           >
-            <span aria-hidden="true">✏️ </span>
+            <Icon name="memo" className="mr-1" />
             <Text k="memo.write" />
           </Link>
         )}
@@ -212,6 +214,7 @@ export function RecordView({
 
       <fieldset>
         <legend className="mb-2 font-bold">
+          <Icon name="meal" className="mr-1 text-primary" />
           <Text k="record_page.meal" />
         </legend>
         <div role="tablist" className="mb-3 flex gap-2">
@@ -228,7 +231,7 @@ export function RecordView({
             >
               <Text k={`record_page.slot.${slot}`} />
               {currentRecord(book.records, 'meal', slot) !== null && (
-                <span aria-hidden="true"> ✔</span>
+                <Icon name="check" className="ml-1" />
               )}
             </button>
           ))}
@@ -248,6 +251,7 @@ export function RecordView({
 
       <fieldset>
         <legend className="mb-2 font-bold">
+          <Icon name="mood" className="mr-1 text-primary" />
           <Text k="record_page.mood" />
         </legend>
         <Choices
@@ -263,6 +267,7 @@ export function RecordView({
 
       <fieldset>
         <legend className="mb-2 font-bold">
+          <Icon name="sleep" className="mr-1 text-primary" />
           <Text k="record_page.sleep" />
         </legend>
         <Choices

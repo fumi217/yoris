@@ -268,8 +268,8 @@
     "confirmed_detail": "{{date}} {{time}}　{{people}}",
     "book_another": "See other days",
     "month": "{{month}}/{{year}}",
-    "previous_month": "◀ Previous month",
-    "next_month": "Next month ▶",
+    "previous_month": "Previous month",
+    "next_month": "Next month",
     "mine_title": "Upcoming reservations",
     "mine_empty": "You have no upcoming reservations",
     "status": {
@@ -425,7 +425,7 @@
     "title": "Residents",
     "date": "{{month}}/{{day}}",
     "messages_total": "Messages from families: {{count}}",
-    "legend": "✔ = recorded, ・ = not recorded yet",
+    "legend": "= recorded, ・ = not recorded yet",
     "waiting_requests": "Requests waiting for a reply: {{count}}",
     "waiting_messages": "Messages from families: {{count}}",
     "recorded": "Recorded",
@@ -448,9 +448,9 @@
       "note": "Choose, for the whole facility, the rules that mark a \"different from usual\" condition based on record values. Changes take effect immediately.",
       "note_off": "Turning a rule off removes its current markers (including confirmed ones). Turning it back on re-checks all residents and adds markers.",
       "rule": {
-        "meal_low": "🍚 Meal amount (2 meals in a row at \"a little\" or less)",
-        "mood_low": "😊 Mood and condition (2 days in a row \"not energetic\")",
-        "sleep_poor": "😴 Sleep (2 days in a row \"did not sleep well\")"
+        "meal_low": "Meal amount (2 meals in a row at \"a little\" or less)",
+        "mood_low": "Mood and condition (2 days in a row \"not energetic\")",
+        "sleep_poor": "Sleep (2 days in a row \"did not sleep well\")"
       },
       "rule_short": {
         "meal_low": "Meal amount",
@@ -477,10 +477,10 @@
     "items": "Record items",
     "themes": "Topics for \"what you want to know\"",
     "item": {
-      "meal": "🍚 Meal",
-      "mood": "😊 Mood / how they seem",
-      "sleep": "😴 Sleep",
-      "memo": "📝 Observation memo"
+      "meal": "Meal",
+      "mood": "Mood / how they seem",
+      "sleep": "Sleep",
+      "memo": "Observation memo"
     },
     "visible": "Show",
     "hidden": "Hide",
@@ -495,15 +495,15 @@
     "warning": "{{item}} is set to \"Hide\", but the topic \"{{theme}}\" is still \"Show\". A staff reply may mention {{item}} (you can still save like this)",
     "features": "Features shown to families",
     "feature": {
-      "album": "📷 Album"
+      "album": "Album"
     }
   },
   "record_page": {
     "date": "{{month}}/{{day}}",
-    "waiting_requests": "💬 Waiting for a reply: {{count}}",
-    "meal": "🍚 Meal",
-    "mood": "😊 Mood / how they seem",
-    "sleep": "😴 Sleep (last night)",
+    "waiting_requests": "Waiting for a reply: {{count}}",
+    "meal": "Meal",
+    "mood": "Mood / how they seem",
+    "sleep": "Sleep (last night)",
     "slot": {
       "breakfast": "Breakfast",
       "lunch": "Lunch",
@@ -521,8 +521,8 @@
   "staff_contact_book": {
     "title": "Daily notes review",
     "date": "{{month}}/{{day}}",
-    "previous": "◀ Previous day",
-    "next": "Next day ▶",
+    "previous": "Previous day",
+    "next": "Next day",
     "note": "You can use this as a first memo when writing care records in the office. Items hidden from families are also shown",
     "empty": "There are no records or replies for this day",
     "reply": "Reply: {{theme}}",
@@ -727,12 +727,12 @@
     "login_id": "ID",
     "initial_password": "Initial password",
     "copy": "Copy the ID and initial password",
-    "copied": "✓ Copied the ID and initial password",
+    "copied": "Copied the ID and initial password",
     "copy_failed": "Could not copy. Please select the text and copy it",
     "close": "Close this screen"
   },
   "change": {
-    "title": "⚠️ Different from usual",
+    "title": "Different from usual",
     "guide": "If you are concerned, please talk to a nurse or a counselor. For sudden changes, call by phone",
     "from_meal": "{{slot}} on {{date}}",
     "rule": {
@@ -744,8 +744,8 @@
     "evidence": "{{date}} {{item}}: {{value}}",
     "evidence_slot": "{{date}} {{item}} ({{slot}}): {{value}}",
     "status": {
-      "unconfirmed": "⚠️ Not checked yet",
-      "confirmed": "✔ Checked"
+      "unconfirmed": "Not checked yet",
+      "confirmed": "Checked"
     },
     "confirmed_by": "Checked by: ",
     "note": "Note: ",

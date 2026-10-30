@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { themeIconName } from '../../components/themeIcon'
 import { useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router'
@@ -195,7 +196,7 @@ function ReplyCard({
       {/* テーマは、小さなラベルに。主役は、職員が書いた文（note）。テンプレートの文は、補足にする */}
       <p className="flex flex-wrap items-center gap-x-2 text-sm text-ink-sub">
         <span>
-          <span aria-hidden="true">{reply.theme_emoji} </span>
+          <Icon name={themeIconName(reply.theme_code)} className="mr-1 text-primary" />
           <Text k={reply.theme_code} />
         </span>
         {unread && (

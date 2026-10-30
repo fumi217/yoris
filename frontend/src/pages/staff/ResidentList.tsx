@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Icon, type IconName } from '../../components/Icon'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
@@ -90,6 +91,7 @@ export function ResidentTable({
         </div>
       </div>
       <p className="px-4 pb-2 text-xs text-gray-600">
+        <Icon name="check" className="mr-1" />
         <Text k="resident_list.legend" />
       </p>
       {data.residents.length === 0 ? (
@@ -123,23 +125,27 @@ function ResidentItem({ row }: { row: ResidentRow }) {
           {row.change_flag && (
             // 右の件数の列に入れると見落としやすいので、呼び名のすぐ横に置く（docs/画面設計.md「4」）
             <span className="text-sm font-bold text-amber-800">
+              <Icon name="warning" className="mr-1" />
               <Text k="change.title" />
             </span>
           )}
         </span>
         <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
           <span>
-            <span aria-hidden="true">🍚 </span>
+            <Icon name="meal" className="mr-1" />
             <Marks marks={mealMarks(row)} />
           </span>
           <Marks marks={dayMarks(row)} />
-          {row.waiting_requests > 0 && (
-            <Count
-              icon="💬"
-              count={row.waiting_requests}
-              label={t('resident_list.waiting_requests', { count: row.waiting_requests })}
-            />
-          )}
+          {/* 返事待ちの欄は、ないときも幅を取る（印の列が、行によって右にずれないように） */}
+          <span className="inline-block min-w-12">
+            {row.waiting_requests > 0 && (
+              <Count
+                icon="request-waiting"
+                count={row.waiting_requests}
+                label={t('resident_list.waiting_requests', { count: row.waiting_requests })}
+              />
+            )}
+          </span>
         </span>
       </Link>
       {row.waiting_messages > 0 && (
@@ -148,7 +154,7 @@ function ResidentItem({ row }: { row: ResidentRow }) {
           className="flex items-center px-4 text-sm text-primary"
         >
           <Count
-            icon="📩"
+            icon="family-message"
             count={row.waiting_messages}
             label={t('resident_list.waiting_messages', { count: row.waiting_messages })}
           />
@@ -163,14 +169,18 @@ function Marks({ marks }: { marks: RecordMark[] }) {
   const { t } = useTranslation()
 
   return (
-    <span className="inline-flex gap-2">
+    // 文字のふりがなの有無（「おやつ」は読みが付かない）で、行の高さが違っても、文字の基準線をそろえる
+    <span className="inline-flex items-baseline gap-2">
       {marks.map((mark) => (
         <span
           key={mark.labelKey}
           className={mark.recorded || mark.optional ? '' : 'font-bold text-orange-700'}
         >
           <Text k={mark.labelKey} />
-          <span aria-hidden="true"> {mark.recorded ? '✔' : '・'}</span>
+          {/* ✔ と ・ で幅が違うので、同じ幅の枠に入れて、中央にそろえる */}
+          <span aria-hidden="true" className="ml-1 inline-block w-4 text-center">
+            {mark.recorded ? <Icon name="check" /> : '・'}
+          </span>
           <span className="sr-only">
             {stripRuby(t(mark.recorded ? 'resident_list.recorded' : 'resident_list.not_recorded'))}
           </span>
@@ -180,11 +190,12 @@ function Marks({ marks }: { marks: RecordMark[] }) {
   )
 }
 
-function Count({ icon, count, label }: { icon: string; count: number; label: string }) {
+function Count({ icon, count, label }: { icon: IconName; count: number; label: string }) {
   return (
     <span title={stripRuby(label)}>
       <span aria-hidden="true">
-        {icon} {count}
+        <Icon name={icon} className="mr-1" />
+        {count}
       </span>
       <span className="sr-only">{stripRuby(label)}</span>
     </span>

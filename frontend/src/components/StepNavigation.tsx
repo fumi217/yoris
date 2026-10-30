@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Icon } from './Icon'
 import { Ruby } from '../i18n/Ruby'
 
 export type Step = {
@@ -57,7 +58,7 @@ export function StepNavigation({ labelKey, steps, current, errorStep }: Props) {
               <span
                 className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 font-bold ${circleClass[state]}`}
               >
-                {state === 'completed' ? '✓' : state === 'error' ? '!' : number}
+                {state === 'completed' ? <Icon name="check" /> : state === 'error' ? '!' : number}
                 {state === 'completed' && (
                   <span className="sr-only">
                     <Ruby text={t('steps.completed')} />

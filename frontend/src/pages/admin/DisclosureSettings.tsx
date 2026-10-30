@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { themeIconName } from '../../components/themeIcon'
+import { Icon, type IconName } from '../../components/Icon'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, messageKeyOf } from '../../api/client'
@@ -85,8 +87,6 @@ export function DisclosureForm({ disclosure, saving, saved, errorKey, onSave }: 
   const isVisible = (kind: 'items' | 'themes', code: string) =>
     changes[kind][code] ?? disclosure[kind].find((row) => row.code === code)?.visible ?? false
   const warnings = warningsFor(disclosure.related, isVisible)
-  const themeEmoji = (code: string) =>
-    disclosure.themes.find((theme) => theme.code === code)?.emoji ?? ''
   const dirty = Object.values(changes).some((changed) => Object.keys(changed).length > 0)
 
   const toggle = (kind: Kind, code: string, original: boolean, visible: boolean) =>
@@ -120,6 +120,7 @@ export function DisclosureForm({ disclosure, saving, saved, errorKey, onSave }: 
           <Row
             key={item.code}
             name={`item-${item.code}`}
+            icon={ITEM_ICONS[item.code]}
             labelKey={`disclosure.item.${item.code}`}
             visible={changes.items[item.code] ?? item.visible}
             onChange={(visible) => toggle('items', item.code, item.visible, visible)}
@@ -132,7 +133,7 @@ export function DisclosureForm({ disclosure, saving, saved, errorKey, onSave }: 
           <Row
             key={theme.code}
             name={`theme-${theme.code}`}
-            icon={theme.emoji}
+            icon={themeIconName(theme.code)}
             labelKey={theme.code}
             visible={changes.themes[theme.code] ?? theme.visible}
             onChange={(visible) => toggle('themes', theme.code, theme.visible, visible)}
@@ -145,6 +146,7 @@ export function DisclosureForm({ disclosure, saving, saved, errorKey, onSave }: 
           <Row
             key={feature.code}
             name={`feature-${feature.code}`}
+            icon={FEATURE_ICONS[feature.code]}
             labelKey={`disclosure.feature.${feature.code}`}
             visible={changes.features[feature.code] ?? feature.visible}
             onChange={(visible) => toggle('features', feature.code, feature.visible, visible)}
@@ -157,11 +159,11 @@ export function DisclosureForm({ disclosure, saving, saved, errorKey, onSave }: 
         <ul className="space-y-1 rounded border border-orange-700 bg-orange-50 p-3 text-sm">
           {warnings.map((pair) => (
             <li key={`${pair.item}-${pair.theme}`}>
-              <span aria-hidden="true">⚠️ </span>
+              <Icon name="warning" className="mr-1" />
               <Ruby
                 text={t('disclosure.warning', {
                   item: t(`disclosure.item.${pair.item}`),
-                  theme: `${themeEmoji(pair.theme)} ${t(pair.theme)}`,
+                  theme: t(pair.theme),
                 })}
               />
             </li>
@@ -206,10 +208,19 @@ function Section({ titleKey, children }: { titleKey: string; children: ReactNode
   )
 }
 
+// 記録の項目・機能ごとのアイコン（辞書の文字に付いていた絵文字の代わり。#388）
+const ITEM_ICONS: Record<string, IconName> = {
+  meal: 'meal',
+  mood: 'mood',
+  sleep: 'sleep',
+  memo: 'memo',
+}
+const FEATURE_ICONS: Record<string, IconName> = { album: 'album' }
+
 type RowProps = {
   name: string
   labelKey: string
-  icon?: string
+  icon?: IconName
   visible: boolean
   onChange: (visible: boolean) => void
 }
@@ -219,7 +230,7 @@ function Row({ name, labelKey, icon, visible, onChange }: RowProps) {
   return (
     <li className="flex flex-wrap items-center justify-between gap-2 py-2">
       <span>
-        {icon && <span aria-hidden="true">{icon} </span>}
+        {icon && <Icon name={icon} className="mr-2 text-primary" />}
         <Text k={labelKey} />
       </span>
       <span className="flex gap-2">

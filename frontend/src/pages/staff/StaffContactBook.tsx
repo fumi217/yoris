@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { themeIconName } from '../../components/themeIcon'
+import { Icon } from '../../components/Icon'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams, useSearchParams } from 'react-router'
@@ -92,6 +94,7 @@ export function ContactBookView({
             to={`${base}/contact-book?date=${shiftDate(book.date, -1)}`}
             className="text-primary underline"
           >
+            <Icon name="prev" className="mr-1" />
             <Text k="staff_contact_book.previous" />
           </Link>
           <span className="font-bold">
@@ -102,6 +105,7 @@ export function ContactBookView({
             className="text-primary underline"
           >
             <Text k="staff_contact_book.next" />
+            <Icon name="next" className="ml-1" />
           </Link>
         </nav>
       </div>
@@ -135,7 +139,10 @@ export function ContactBookView({
                 <div className="flex-1 space-y-1">
                   <div className="flex flex-wrap justify-between gap-2">
                     <span className="font-bold">
-                      <span aria-hidden="true">{entry.reply.theme_emoji} </span>
+                      <Icon
+                        name={themeIconName(entry.reply.theme_code)}
+                        className="mr-2 text-primary"
+                      />
                       <Ruby
                         text={t('staff_contact_book.reply', { theme: t(entry.reply.theme_code) })}
                       />

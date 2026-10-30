@@ -1,6 +1,5 @@
 // 「知りたいこと」の画面（Requests.tsx）の、表示を決める部分。画面と分けて、単体でテストできるようにしている。
 import { ApiError, messageKeyOf } from '../../api/client'
-import type { IconName } from '../../components/Icon'
 
 // emoji は API が返すが、画面には出さない（アイコンを使う。#385）
 export type FamilyTheme = { id: number; code: string; emoji: string }
@@ -62,21 +61,8 @@ export function toggleTheme(selected: number[], themeId: number, remaining: numb
   return selected.length < remaining ? [...selected, themeId] : selected
 }
 
-// テーマのコード → アイコン（絵文字はやめた。デザインの決めごと 14.2。#385）
-const THEME_ICONS: Record<string, IconName> = {
-  'theme.daily_life': 'theme-daily-life',
-  'theme.enjoying': 'theme-enjoying',
-  'theme.residents': 'theme-residents',
-  'theme.meals': 'theme-meals',
-  'theme.staff': 'theme-staff',
-  'theme.recreation': 'theme-recreation',
-  'theme.family_talk': 'theme-family-talk',
-  'theme.supplies': 'theme-supplies',
-}
-
-export function themeIconName(code: string): IconName {
-  return THEME_ICONS[code] ?? 'requests'
-}
+// テーマのアイコンは、家族・職員・管理画面で共通（components/themeIcon.ts）
+export { themeIconName } from '../../components/themeIcon'
 
 /** テーマの説明の辞書のキー（`theme.daily_life` → `theme_desc.daily_life`）。 */
 export function themeDescKey(code: string): string {

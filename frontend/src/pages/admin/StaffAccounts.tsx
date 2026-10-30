@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
+import { Icon } from '../../components/Icon'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, messageKeyOf } from '../../api/client'
@@ -269,6 +270,7 @@ export function CreatedView({ created, onClose }: CreatedProps) {
               : 'border-primary text-primary hover:bg-sky-50 active:bg-sky-100'
           }`}
         >
+          {copyState === 'done' && <Icon name="check" className="mr-1" />}
           <Text k={copyState === 'done' ? 'staff_accounts.copied' : 'staff_accounts.copy'} />
         </button>
         <button

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Icon } from '../Icon'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, messageKeyOf } from '../../api/client'
@@ -89,6 +90,7 @@ export function ChangeFlagPanelView({ data, saving, conflict, errorKey, onConfir
       {current.length > 0 && (
         <>
           <h2 id="change-flags-title" className="text-lg font-bold">
+            <Icon name="warning" className="mr-2 text-amber-800" />
             <Text k="change.title" />
           </h2>
           <ul className="space-y-3">
@@ -158,6 +160,7 @@ function FlagItem({ flag, showStatus }: { flag: ChangeFlag; showStatus: boolean 
       </p>
       {showStatus && (
         <p className="text-sm font-bold">
+          <Icon name={flag.status === 'unconfirmed' ? 'warning' : 'check'} className="mr-1" />
           <Text k={`change.status.${flag.status}`} />
         </p>
       )}

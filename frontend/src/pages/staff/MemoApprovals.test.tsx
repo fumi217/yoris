@@ -99,7 +99,8 @@ describe('様子のメモの承認の画面（spec 007 の T023）', () => {
   it('24 時間を過ぎたものは「1 日以上待っています」と目立たせる（FR-015）', () => {
     const html = render([item({ waiting_minutes: 26 * 60, overdue: true })])
 
-    expect(text(html)).toContain('⚠️ 確かめてから 26 時間')
+    expect(text(html)).toContain('確かめてから 26 時間')
+    expect(html).toContain('data-icon="triangle-exclamation"')
     expect(text(html)).toContain('1 日以上待っています')
     expect(text(render([item()]))).not.toContain('1 日以上待っています')
   })
@@ -248,13 +249,14 @@ describe('様子のメモの承認の画面（spec 007 の T023）', () => {
     expect(html.split('<article')[0]).toContain('role="alert"')
   })
 
-  it('⚠️ は、読み上げに入れない（意味は文に書いてある）', () => {
+  it('注意のアイコンは、読み上げに入れない（意味は文に書いてある）', () => {
     const html = render([
       item({ overdue: true, waiting_minutes: 26 * 60, warnings: ['other_name'] }),
     ])
 
-    expect(html).not.toMatch(/(?<!aria-hidden="true">)⚠️/)
-    expect(html.match(/<span aria-hidden="true">⚠️ <\/span>/g)).toHaveLength(2)
+    const icons = html.match(/<svg[^>]*data-icon="triangle-exclamation"[^>]*>/g) ?? []
+    expect(icons).toHaveLength(2)
+    for (const icon of icons) expect(icon).toContain('aria-hidden="true"')
   })
 
   it('操作している最中のメモのボタンは押せない', () => {

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Icon, type IconName } from '../../components/Icon'
 import { useTranslation } from 'react-i18next'
 import { api, messageKeyOf } from '../../api/client'
 import { ConfirmButton } from '../../components/ConfirmButton'
@@ -202,7 +203,20 @@ function ChangeRuleHistory({ rows }: { rows: ChangeRuleHistoryRow[] }) {
 function RuleName({ prefix, code }: { prefix: string; code: string }) {
   const { i18n } = useTranslation()
   const key = `${prefix}.${code}`
-  return i18n.exists(key) ? <Text k={key} /> : <span>{code}</span>
+  const icon = RULE_ICONS[code]
+  return (
+    <>
+      {icon && <Icon name={icon} className="mr-2 text-primary" />}
+      {i18n.exists(key) ? <Text k={key} /> : <span>{code}</span>}
+    </>
+  )
+}
+
+// 決まりごとのアイコン（辞書の名前に付いていた絵文字の代わり。#388）
+const RULE_ICONS: Record<string, IconName> = {
+  meal_low: 'meal',
+  mood_low: 'mood',
+  sleep_poor: 'sleep',
 }
 
 // 押す部品は 44px 以上（デザインの決めごと 4 章）。オンとオフは同じ幅にして、行ごとに位置がずれないようにする。フォーカスの枠は、白の上で 3:1 以上の濃さにする

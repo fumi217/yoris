@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Icon } from '../../components/Icon'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router'
@@ -136,7 +137,8 @@ export function MemoEditorView({
 
       {/* 急変・事故は、このメモでは伝えられない。いつも出す（FR-016） */}
       <p role="note" className="rounded border border-red-700 bg-red-50 p-3 font-bold text-red-800">
-        🚨 <Text k="memo.call_if_urgent" />
+        <Icon name="urgent-call" className="mr-2" />
+        <Text k="memo.call_if_urgent" />
       </p>
 
       <form

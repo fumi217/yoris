@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Icon } from '../Icon'
 import { Ruby } from '../../i18n/Ruby'
 
 type Props = {
@@ -28,7 +29,7 @@ export function UnconfirmedFlagFilter({ count, active, onToggle }: Props) {
         active ? 'border-amber-700 bg-amber-100 font-bold' : 'border-ink-sub bg-white'
       }`}
     >
-      {active ? '✔ ' : '⚠️ '}
+      <Icon name={active ? 'check' : 'warning'} className="mr-1" />
       <Ruby text={t('change.unconfirmed_count', { count })} />
     </button>
   )

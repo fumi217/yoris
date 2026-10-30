@@ -45,7 +45,8 @@ describe('StepNavigation', () => {
     expect(html.match(/data-state="completed"/g)).toHaveLength(2)
     expect(html.match(/data-state="current"/g)).toHaveLength(1)
     expect(render(1).match(/data-state="upcoming"/g)).toHaveLength(2)
-    expect(html).toContain('✓')
+    // 完了のしるしは、チェックのアイコン（絵文字ではない）
+    expect(html).toContain('data-icon="check"')
   })
 
   it('うまくいかなかったステップには ! を付け、エラーと伝える', () => {

@@ -268,8 +268,8 @@
     "confirmed_detail": "{{date}} {{time}}　{{people}}",
     "book_another": "Lihat hari lain",
     "month": "{{month}}/{{year}}",
-    "previous_month": "◀ Bulan sebelumnya",
-    "next_month": "Bulan berikutnya ▶",
+    "previous_month": "Bulan sebelumnya",
+    "next_month": "Bulan berikutnya",
     "mine_title": "Reservasi mendatang",
     "mine_empty": "Tidak ada reservasi mendatang",
     "status": {
@@ -425,7 +425,7 @@
     "title": "Daftar penghuni",
     "date": "{{day}}/{{month}}",
     "messages_total": "Pesan dari keluarga: {{count}}",
-    "legend": "✔ = sudah dicatat, ・ = belum dicatat",
+    "legend": "= sudah dicatat, ・ = belum dicatat",
     "waiting_requests": "Permintaan yang menunggu balasan: {{count}}",
     "waiting_messages": "Pesan dari keluarga: {{count}}",
     "recorded": "Sudah dicatat",
@@ -448,9 +448,9 @@
       "note": "Pilih untuk seluruh fasilitas aturan yang memberi penanda \"kondisi berbeda dari biasanya\" berdasarkan nilai catatan. Perubahan langsung berlaku.",
       "note_off": "Jika dimatikan, penanda saat ini dari aturan itu (termasuk yang sudah dikonfirmasi) akan hilang. Jika dinyalakan kembali, semua penghuni diperiksa ulang dan penanda diberikan.",
       "rule": {
-        "meal_low": "🍚 Jumlah makan (2 kali makan berturut-turut \"sedikit\" atau kurang)",
-        "mood_low": "😊 Suasana hati dan kondisi (2 hari berturut-turut \"tidak bersemangat\")",
-        "sleep_poor": "😴 Tidur (2 hari berturut-turut \"kurang tidur\")"
+        "meal_low": "Jumlah makan (2 kali makan berturut-turut \"sedikit\" atau kurang)",
+        "mood_low": "Suasana hati dan kondisi (2 hari berturut-turut \"tidak bersemangat\")",
+        "sleep_poor": "Tidur (2 hari berturut-turut \"kurang tidur\")"
       },
       "rule_short": {
         "meal_low": "Jumlah makan",
@@ -477,10 +477,10 @@
     "items": "Butir catatan",
     "themes": "Topik \"hal yang ingin diketahui\"",
     "item": {
-      "meal": "🍚 Makan",
-      "mood": "😊 Suasana hati / keadaan",
-      "sleep": "😴 Tidur",
-      "memo": "📝 Catatan keadaan"
+      "meal": "Makan",
+      "mood": "Suasana hati / keadaan",
+      "sleep": "Tidur",
+      "memo": "Catatan keadaan"
     },
     "visible": "Tampilkan",
     "hidden": "Sembunyikan",
@@ -495,15 +495,15 @@
     "warning": "{{item}} diatur \"Sembunyikan\", tetapi topik \"{{theme}}\" masih \"Tampilkan\". Balasan staf mungkin menyebut {{item}} (tetap dapat disimpan seperti ini)",
     "features": "Fitur yang ditampilkan kepada keluarga",
     "feature": {
-      "album": "📷 Album"
+      "album": "Album"
     }
   },
   "record_page": {
     "date": "{{day}}/{{month}}",
-    "waiting_requests": "💬 Menunggu balasan: {{count}}",
-    "meal": "🍚 Makan",
-    "mood": "😊 Suasana hati / keadaan",
-    "sleep": "😴 Tidur (tadi malam)",
+    "waiting_requests": "Menunggu balasan: {{count}}",
+    "meal": "Makan",
+    "mood": "Suasana hati / keadaan",
+    "sleep": "Tidur (tadi malam)",
     "slot": {
       "breakfast": "Sarapan",
       "lunch": "Makan siang",
@@ -521,8 +521,8 @@
   "staff_contact_book": {
     "title": "Tinjauan buku harian",
     "date": "{{day}}/{{month}}",
-    "previous": "◀ Hari sebelumnya",
-    "next": "Hari berikutnya ▶",
+    "previous": "Hari sebelumnya",
+    "next": "Hari berikutnya",
     "note": "Dapat dipakai sebagai catatan awal saat menulis catatan perawatan di kantor. Hal yang tidak ditampilkan kepada keluarga juga muncul",
     "empty": "Tidak ada catatan atau balasan pada hari ini",
     "reply": "Balasan: {{theme}}",
@@ -727,12 +727,12 @@
     "login_id": "ID",
     "initial_password": "Kata sandi awal",
     "copy": "Salin ID dan kata sandi awal",
-    "copied": "✓ ID dan kata sandi awal sudah disalin",
+    "copied": "ID dan kata sandi awal sudah disalin",
     "copy_failed": "Tidak dapat menyalin. Mohon pilih teksnya lalu salin",
     "close": "Tutup layar ini"
   },
   "change": {
-    "title": "⚠️ Berbeda dari biasanya",
+    "title": "Berbeda dari biasanya",
     "guide": "Jika Anda khawatir, mohon konsultasikan dengan perawat atau konselor. Untuk perubahan mendadak, hubungi lewat telepon",
     "from_meal": "{{slot}} pada {{date}}",
     "rule": {
@@ -744,8 +744,8 @@
     "evidence": "{{date}} {{item}}: {{value}}",
     "evidence_slot": "{{date}} {{item}} ({{slot}}): {{value}}",
     "status": {
-      "unconfirmed": "⚠️ Belum diperiksa",
-      "confirmed": "✔ Sudah diperiksa"
+      "unconfirmed": "Belum diperiksa",
+      "confirmed": "Sudah diperiksa"
     },
     "confirmed_by": "Diperiksa oleh: ",
     "note": "Catatan: ",
