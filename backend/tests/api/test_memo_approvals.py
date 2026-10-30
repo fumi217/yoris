@@ -405,6 +405,25 @@ def test_list_of_approved_memos_is_for_finding_what_to_unpublish(client, session
     assert data[0]["approved_at"] is not None
 
 
+def test_list_of_approved_memos_shows_only_the_newest_50(client, session, world):
+    memos = [
+        add_memo(session, world, status="approved", approved_at=NOW - timedelta(minutes=minutes))
+        for minutes in range(52)
+    ]
+
+    data = client.get(BASE, params={"status": "approved"}).json()
+
+    # 承認した日時の新しい方から 50 件（いちばん古い 2 件は出ない）
+    assert [item["id"] for item in data] == [memo.id for memo in memos[:50]]
+
+
+def test_list_of_pending_memos_is_not_limited(client, session, world):
+    memos = [add_memo(session, world, confirmed_ago=timedelta(minutes=m + 1)) for m in range(52)]
+
+    # 承認待ちは、全部出す（見落とすと、家族に届くのが遅れるため）
+    assert len(client.get(BASE).json()) == len(memos)
+
+
 def test_list_tells_which_memos_the_logged_in_staff_wrote(client, session, world, login_as):
     # 本人かどうかは、表示名ではなく職員の id で決めてサーバーが返す
     mine = add_memo(session, world, author=world["leader"])

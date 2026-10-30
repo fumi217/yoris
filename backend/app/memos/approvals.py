@@ -29,6 +29,8 @@ OVERDUE_AFTER = timedelta(hours=24)
 
 # 一覧で選べる状態：承認待ち、公開を取り下げる対象を探すための承認済み
 LIST_STATUSES = ("pending", "approved")
+# 承認済みの一覧は、承認した日時の新しいものから、これだけ（承認待ちは、全部出す）
+APPROVED_LIST_LIMIT = 50
 
 
 @dataclass(frozen=True)
@@ -72,7 +74,9 @@ def list_approvals(session: Session, user: CurrentUser, status: str) -> list[App
     if status == "pending":
         query = query.order_by(CareMemo.confirmed_at, CareMemo.id)
     else:
-        query = query.order_by(CareMemo.approved_at.desc(), CareMemo.id.desc())
+        query = query.order_by(CareMemo.approved_at.desc(), CareMemo.id.desc()).limit(
+            APPROVED_LIST_LIMIT
+        )
     return [
         ApprovalRow(memo, resident, author) for memo, resident, author in session.execute(query)
     ]

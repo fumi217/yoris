@@ -40,7 +40,7 @@
 
 | メソッド・パス | 役割 | 時期 | 中身 | spec |
 |---|---|---|---|---|
-| `GET /api/staff/memo-approvals?status=` | L・D | 作 | 承認待ちの一覧（`status=pending`。初期値）：入居者の呼び名・書いた職員・`is_own`（ログイン中の職員が書いたか。画面は本人のメモに「承認する」「戻す」を出さない。FR-011a）・原文・整えた日本語・訳し戻し・印・確かめた日時・経過時間（`waiting_minutes`）・「1 日以上待っています」（`overdue`）。確かめてから長く待っているものを上にする。`status=approved` は、公開を取り下げる対象を探すための承認済みの一覧（承認した日時の新しい順。経過時間は付けない）。同じ施設のものだけ。一度も「確かめました」を押していない下書きは返さない | FR-011・FR-013a・FR-015 |
+| `GET /api/staff/memo-approvals?status=` | L・D | 作 | 承認待ちの一覧（`status=pending`。初期値）：入居者の呼び名・書いた職員・`is_own`（ログイン中の職員が書いたか。画面は本人のメモに「承認する」「戻す」を出さない。FR-011a）・原文・整えた日本語・訳し戻し・印・確かめた日時・経過時間（`waiting_minutes`）・「1 日以上待っています」（`overdue`）。確かめてから長く待っているものを上にする。`status=approved` は、公開を取り下げる対象を探すための承認済みの一覧（承認した日時の新しい順に、多くても 50 件。経過時間は付けない）。同じ施設のものだけ。一度も「確かめました」を押していない下書きは返さない | FR-011・FR-013a・FR-015 |
 | `GET /api/staff/memo-approvals/count` | 職員なら誰でも呼べる。件数を返すのは L・D だけ | 作 | 承認待ちの件数（施設全体。本人が書いたものも数える）。L・D 以外は `{"count": null}`（件数を出さない）。ゆうの画面から呼ぶ | FR-015 |
 | `POST /api/staff/memo-approvals/{id}/approve` | L・D（本人以外） | 作 | 承認する。403：`self_approval`、409：`invalid_state` | FR-011・FR-011a・FR-012 |
 | `POST /api/staff/memo-approvals/{id}/return` | L・D（本人以外） | 作 | 戻す（`reason`：1〜200 文字）。403：`self_approval`、409：`invalid_state` | FR-013 |

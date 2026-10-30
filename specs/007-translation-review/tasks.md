@@ -98,7 +98,7 @@ spec 004 の 004-T003（`LLMClient`）・004-T004（テスト用の LLM（モッ
 ### Implementation for User Story 3
 
 - [x] T022 [US3] 承認の API を `backend/app/api/staff/memo_approvals.py` に作る：`GET /api/staff/memo-approvals`（経過時間と「1 日以上待っています」）・`GET /api/staff/memo-approvals/count`（`count_pending_memos(user)`、リーダー・施設長だけ）・`POST .../approve`・`POST .../return`・`POST .../unpublish`。本人以外、条件つきの 1 回の更新、理由は 1〜200 文字。承認・戻す・取り下げた職員・日時・理由を残す（contracts/api.md、FR-011〜015）（みさき・作）
-- [ ] T023 [US3] 承認待ちの一覧と詳細の画面を `frontend/src/pages/staff/MemoApprovals.tsx` に作る：原文・整えた日本語・訳し戻し・印・経過時間、承認する・戻す（理由）・公開を取り下げる（理由）、「ほかの入居者の名前が入っていないか」「医療・服薬・体調の判断が入っていないか」の案内（FR-011・FR-016）（みさき・作）
+- [x] T023 [US3] 承認待ちの一覧と詳細の画面を `frontend/src/pages/staff/MemoApprovals.tsx` に作る：原文・整えた日本語・訳し戻し・印・経過時間、承認する・戻す（理由）・公開を取り下げる（理由）、「ほかの入居者の名前が入っていないか」「医療・服薬・体調の判断が入っていないか」の案内（FR-011・FR-016）（みさき・作）
 - [x] T024 [US3] 共通の関数 `get_disclosed_memos(resident_id, date_from, date_to, *, approved_from, approved_to)`（連絡帳は書いた日、通知のまとめ T027 は承認日時で絞る。書いた職員の職種と承認日時も返す）を `backend/app/services/disclosure.py` に足す：`status = 'approved'` で、開示設定の `memo` が見せる設定のものだけ。開示の判断は、ゆうが 001-T038 で作る `is_item_disclosed("memo")`（開示設定のキャッシュを読む）を呼ぶ（research.md R-07・data-model.md）（みさき・作。**ゆう**が確かめる）
 - [x] T025 [US3] 開示設定の記録項目に `memo`（様子のメモ）を足す：`disclosure_settings` に `target_code = 'memo'`（初期値は見せる）の初期データ、開示設定の画面（001-T040）に出す（FR-012a）（**ゆう**・作）
 - [ ] T026 [US3] 家族の連絡帳に「様子のメモ」を出す：`GET /api/family/contact-book`（001-T055）で `get_disclosed_memos()` を呼び、連絡帳の画面（001-T059）に、書いた職員の名前と「職員が書いた内容を、AI で読みやすい日本語に整えています」を添えて、書いた時刻の順に出す（FR-012）（**さとこ**・作）

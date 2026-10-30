@@ -3,6 +3,7 @@ import { AreaGuard } from '../../components/AreaGuard'
 import { AlbumUpload } from './AlbumUpload'
 import { FamilyMessage } from './FamilyMessage'
 import { FamilyMessages } from './FamilyMessages'
+import { MemoApprovals } from './MemoApprovals'
 import { MemoEditor } from './MemoEditor'
 import { RecordPage } from './RecordPage'
 import { ReplyPage } from './ReplyPage'
@@ -26,6 +27,8 @@ export default function StaffRoutes() {
           <Route path="residents/:residentId/album" element={<AlbumUpload />} />
           {/* 様子のメモを書く（UI-S05。007-T011 みさき。介護職員・リーダー。守りは API の 403） */}
           <Route path="residents/:residentId/memos/new" element={<MemoEditor />} />
+          {/* 様子のメモの承認（UI-S07。007-T023 みさき。リーダー・施設長。守りは API の 403） */}
+          <Route path="memo-approvals" element={<MemoApprovals />} />
           {/* 連絡帳の見返し（UI-S04。001-T033 ゆう） */}
           <Route path="residents/:residentId/contact-book" element={<StaffContactBook />} />
           {/* 職員の返事（UI-S03。001-T062 ゆう） */}
