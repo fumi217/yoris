@@ -6,6 +6,7 @@
 
     docker compose exec backend python -m evals.inquiry.run --model openai/gpt-oss-120b
     # 1 つだけ流す：--only record-lunch（複数なら --only を繰り返す）
+    # 合格した例の答えも出す（モデルの見比べ）：--show-answers
 
 流し方は、家族が質問を送ったときと同じ：言葉による決まり（guard.py）で種類を決め、
 自前のループ（agent.py）に本物のモデルを渡す。評価用の入居者と記録は、
@@ -454,6 +455,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--model", help="使うモデル（未設定なら OPENROUTER_MODEL）")
     parser.add_argument("--cases", type=Path, default=CASES_PATH, help="質問の例のファイル")
     parser.add_argument("--only", action="append", default=[], help="流す例の id（繰り返せる）")
+    parser.add_argument(
+        "--show-answers",
+        action="store_true",
+        help="合格した例の答えも出す（モデルどうしの、日本語の読みやすさを見比べるため）",
+    )
     args = parser.parse_args(argv)
 
     settings = get_settings()
@@ -494,8 +500,10 @@ def main(argv: list[str] | None = None) -> int:
                 print(_line(outcome))
                 for problem in outcome.problems:
                     print(f"    - {problem}")
-                if outcome.problems and outcome.text:
-                    # 判定がきびしすぎるのか、モデルの間違いなのかを見分けるため、答えも出す
+                if outcome.text and (outcome.problems or args.show_answers):
+                    # 判定が厳しすぎるのか、モデルの間違いなのかを見分けるため、
+                    # 不合格の例は答えも出す。--show-answers なら、合格した例も出す
+                    # （日本語の読みやすさの見比べ）
                     print(f"    答え：{outcome.text}")
         finally:
             # 評価用の入居者・記録は、何があっても残さない
