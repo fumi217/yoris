@@ -1,6 +1,8 @@
 // 「知りたいこと」の画面（Requests.tsx）の、表示を決める部分。画面と分けて、単体でテストできるようにしている。
 import { ApiError, messageKeyOf } from '../../api/client'
+import type { IconName } from '../../components/Icon'
 
+// emoji は API が返すが、画面には出さない（アイコンを使う。#385）
 export type FamilyTheme = { id: number; code: string; emoji: string }
 
 export type FamilyRequest = {
@@ -40,6 +42,77 @@ export function cancelErrorKey(error: unknown): string {
     return 'requests.cancel_after_reply'
   }
   return messageKeyOf(error)
+}
+
+// 返事待ちにできる件数（spec 001 の FR-014。backend の MAX_WAITING_REQUESTS と同じ）
+export const MAX_WAITING = 3
+
+/** あと何件、選んで送れるか（3 件から、いま返事待ちの件数を引いた数）。 */
+export function remainingSlots(requests: FamilyRequest[]): number {
+  const waiting = requests.filter((request) => request.status === 'waiting').length
+  return Math.max(0, MAX_WAITING - waiting)
+}
+
+/**
+ * テーマを選ぶ・外す。選んでいれば外し、選んでいなければ足す。ただし、空き（remaining）の数までしか選べない
+ * （足りないときは、そのまま。spec 001 の FR-014・Session 2026-10-30）。
+ */
+export function toggleTheme(selected: number[], themeId: number, remaining: number): number[] {
+  if (selected.includes(themeId)) return selected.filter((id) => id !== themeId)
+  return selected.length < remaining ? [...selected, themeId] : selected
+}
+
+// テーマのコード → アイコン（絵文字はやめた。デザインの決めごと 14.2。#385）
+const THEME_ICONS: Record<string, IconName> = {
+  'theme.daily_life': 'theme-daily-life',
+  'theme.enjoying': 'theme-enjoying',
+  'theme.residents': 'theme-residents',
+  'theme.meals': 'theme-meals',
+  'theme.staff': 'theme-staff',
+  'theme.recreation': 'theme-recreation',
+  'theme.family_talk': 'theme-family-talk',
+  'theme.supplies': 'theme-supplies',
+}
+
+export function themeIconName(code: string): IconName {
+  return THEME_ICONS[code] ?? 'requests'
+}
+
+/** テーマの説明の辞書のキー（`theme.daily_life` → `theme_desc.daily_life`）。 */
+export function themeDescKey(code: string): string {
+  return code.replace(/^theme\./, 'theme_desc.')
+}
+
+/**
+ * 選んだテーマを、1 つずつ順に送る途中で止まったときのエラー。何件送れたか（sent）と、止めた理由（cause）を持つ。
+ * 止まったら、残りは送らない（上限・同じテーマなど。spec 001 の Session 2026-10-30）。
+ */
+export class SendStopped extends Error {
+  sent: number
+  cause: unknown
+  // 送れたテーマの id（送った順。「『普段の様子』は送れましたが…」と、名前で案内するため）
+  sentThemeIds: number[]
+  constructor(sent: number, cause: unknown, sentThemeIds: number[] = []) {
+    super('send stopped')
+    this.sent = sent
+    this.cause = cause
+    this.sentThemeIds = sentThemeIds
+  }
+}
+
+/** 順に送る途中で止まったときの、送れたテーマの id（止まったのでなければ空）。 */
+export function sentThemeIdsBeforeStop(error: unknown): number[] {
+  return error instanceof SendStopped ? error.sentThemeIds : []
+}
+
+/** 返事待ちが上限のとき・同じテーマのときなどの、エラーの文言のキー（止めた理由から）。 */
+export function sendErrorKey(error: unknown): string {
+  return messageKeyOf(error instanceof SendStopped ? error.cause : error)
+}
+
+/** 順に送る途中で止まったときの、送れた件数（止まったのでなければ 0）。 */
+export function sentBeforeStop(error: unknown): number {
+  return error instanceof SendStopped ? error.sent : 0
 }
 
 /** 返事を待っているテーマ。同じテーマは、返事が届くまで、もう一度頼めない。 */

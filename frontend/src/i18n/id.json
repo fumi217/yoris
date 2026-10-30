@@ -102,7 +102,19 @@
     "overdue": "Jika mendesak, silakan telepon fasilitas",
     "cancel": "Batalkan",
     "cancel_after_reply": "Balasan sudah datang, jadi tidak bisa dibatalkan",
-    "see_reply": "Lihat di buku harian"
+    "see_reply": "Lihat di buku harian",
+    "choose_sub": "Anda dapat mengirim permintaan ke fasilitas tentang hal yang Anda khawatirkan",
+    "selected_count": "{{count}} dipilih",
+    "none_selected": "Belum ada yang dipilih",
+    "can_select": "Anda dapat memilih {{count}} lagi",
+    "full": "Ada 3 permintaan yang menunggu balasan. Anda dapat mengirim lagi setelah fasilitas membalas",
+    "send_all": "Kirim permintaan ini",
+    "sent_done": "{{count}} permintaan terkirim",
+    "sent_partial": "{{count}} permintaan terkirim, tetapi sisanya tidak dapat dikirim",
+    "badge_answered": "Sudah dibalas",
+    "badge_waiting": "Menunggu balasan",
+    "badge_cancelled": "Dibatalkan",
+    "sent_partial_named": "{{names}} terkirim, tetapi sisanya tidak dapat dikirim"
   },
   "inquiry": {
     "title": "Pertanyaan",
@@ -785,5 +797,15 @@
     "done_approve": "Sudah disetujui",
     "done_return": "Sudah dikembalikan",
     "done_unpublish": "Publikasi sudah ditarik kembali"
+  },
+  "theme_desc": {
+    "daily_life": "Bagaimana mereka menghabiskan hari?",
+    "enjoying": "Ceritakan ekspresi dan suasananya",
+    "residents": "Kami ingin tahu tentang pertemanan dan interaksi",
+    "meals": "Kami ingin tahu jumlah, isi, dan cara makannya",
+    "staff": "Ceritakan bagaimana hubungan dengan staf",
+    "recreation": "Kami ingin tahu kegiatan yang diikuti",
+    "family_talk": "Kami ingin tahu apakah mereka membicarakan keluarga",
+    "supplies": "Beri tahu kami jika ada yang dibutuhkan atau mengkhawatirkan"
   }
 }

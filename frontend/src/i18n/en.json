@@ -102,7 +102,19 @@
     "overdue": "If it is urgent, please call the facility",
     "cancel": "Cancel",
     "cancel_after_reply": "A reply has arrived, so this cannot be cancelled",
-    "see_reply": "See it in the daily notes"
+    "see_reply": "See it in the daily notes",
+    "choose_sub": "You can send the facility a request about what concerns you",
+    "selected_count": "{{count}} selected",
+    "none_selected": "None selected",
+    "can_select": "You can choose {{count}} more",
+    "full": "You have 3 requests waiting for a reply. You can send more once the facility replies",
+    "send_all": "Send these requests",
+    "sent_done": "{{count}} request(s) sent",
+    "sent_partial": "{{count}} request(s) were sent, but the rest could not be sent",
+    "badge_answered": "Replied",
+    "badge_waiting": "Awaiting reply",
+    "badge_cancelled": "Cancelled",
+    "sent_partial_named": "{{names}} was sent, but the rest could not be sent"
   },
   "inquiry": {
     "title": "Questions",
@@ -785,5 +797,15 @@
     "done_approve": "Approved",
     "done_return": "Sent back",
     "done_unpublish": "Withdrawn from view"
+  },
+  "theme_desc": {
+    "daily_life": "How do they spend the day?",
+    "enjoying": "Tell us about their expression and atmosphere",
+    "residents": "We would like to know about friendships and interactions",
+    "meals": "We would like to know how much and what they eat, and how",
+    "staff": "Tell us how they get along with the staff",
+    "recreation": "We would like to know which activities they join",
+    "family_talk": "We would like to know if they talk about family",
+    "supplies": "Tell us if anything is needed or concerning"
   }
 }

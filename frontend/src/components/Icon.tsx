@@ -3,6 +3,7 @@ import { config } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faBars,
+  faBagShopping,
   faBed,
   faBell,
   faBookOpen,
@@ -10,6 +11,7 @@ import {
   faCalendarWeek,
   faChevronLeft,
   faChevronRight,
+  faCircleCheck,
   faCircleQuestion,
   faClipboardList,
   faCloudSun,
@@ -17,10 +19,17 @@ import {
   faCookieBite,
   faFaceSmile,
   faGear,
+  faHandshake,
+  faHeart,
+  faHouse,
   faImages,
   faMoon,
+  faPalette,
+  faPaperPlane,
   faPhone,
+  faSquareCheck,
   faSun,
+  faUsers,
   faUtensils,
   type IconDefinition,
 } from '@fortawesome/free-solid-svg-icons'
@@ -58,6 +67,18 @@ const ICONS = {
   snack: faCookieBite,
   phone: faPhone,
   'empty-record': faClipboardList,
+  // 知りたいこと（#385）
+  send: faPaperPlane,
+  'selected-count': faSquareCheck,
+  checked: faCircleCheck,
+  'theme-daily-life': faHouse,
+  'theme-enjoying': faFaceSmile,
+  'theme-residents': faUsers,
+  'theme-meals': faUtensils,
+  'theme-staff': faHandshake,
+  'theme-recreation': faPalette,
+  'theme-family-talk': faHeart,
+  'theme-supplies': faBagShopping,
 } as const satisfies Record<string, IconDefinition>
 
 export type IconName = keyof typeof ICONS
