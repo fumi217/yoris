@@ -47,6 +47,7 @@
   "notifications": {
     "title": "Notices",
     "empty": "There are no notices yet",
+    "empty_sub": "We will let you know when there is something new.",
     "unread": "new",
     "at": "{{month}}/{{day}} {{time}}",
     "kind": {

@@ -47,6 +47,7 @@
   "notifications": {
     "title": "Pemberitahuan",
     "empty": "Belum ada pemberitahuan",
+    "empty_sub": "Kami akan memberi tahu Anda jika ada kabar baru.",
     "unread": "baru",
     "at": "{{day}}/{{month}} {{time}}",
     "kind": {

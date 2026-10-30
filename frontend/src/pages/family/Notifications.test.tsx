@@ -83,8 +83,21 @@ describe('NotificationsView', () => {
     expect(html.match(/href="\/family\/visits"/g)).toHaveLength(3)
   })
 
-  it('お知らせがなければ、そう伝える', () => {
-    expect(text(render([]))).toContain('お知らせはまだありません')
+  it('お知らせがなければ、そう伝え、キャラクター（飾り）とやわらかい一言を出す（#350）', () => {
+    const html = render([])
+
+    expect(text(html)).toContain('お知らせはまだありません')
+    expect(text(html)).toContain('また何かあればお知らせしますね。')
+    expect(html).toMatch(/<img[^>]*alt=""/)
+    // ホームと同じふわふわ（4.8 秒で止まる・動きを減らす設定では動かない）
+    expect(html).toMatch(/<img[^>]*class="[^"]*mascot-float/)
+  })
+
+  it('お知らせが 1 つでもあれば、キャラクターは出さない', () => {
+    const html = render([notification()])
+
+    expect(html).not.toContain('<img')
+    expect(text(html)).not.toContain('お知らせはまだありません')
   })
 
   it('返事・まとめは連絡帳へのリンク、施設からのお知らせはリンクにしない', () => {

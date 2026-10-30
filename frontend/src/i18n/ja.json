@@ -87,6 +87,7 @@
   "notifications": {
     "title": "お{知|し}らせ",
     "empty": "お{知|し}らせはまだありません",
+    "empty_sub": "また{何|なに}かあればお{知|し}らせしますね。",
     "unread": "new",
     "at": "{{month}}{月|がつ}{{day}}{日|にち} {{time}}",
     "kind": {
