@@ -1,31 +1,37 @@
 // 家族の画面のメニュー（spec 001 の Clarifications・T019）。
-// 下に 4 つ、そのほかは「☰ その他」にまとめる。項目を足すときは、ここに 1 行と、FamilyRoutes.tsx に画面を 1 行足す。
+// 下に 4 つ、そのほかは「その他」（≡）にまとめる。項目を足すときは、ここに 1 行と、FamilyRoutes.tsx に画面を 1 行足す。
 
+import type { IconName } from '../../components/Icon'
 import type { FamilyFeatures } from './albumView'
 
 export type FamilyMenuItem = {
   to: string
   labelKey: string
-  icon: string
+  // 用途の名前（components/Icon.tsx）。同じ用途には同じアイコン
+  icon: IconName
 }
 
 // 画面の下に並べる 4 つ（これ以上増やさない。「お問い合わせ」は spec 001 の Session 2026-10-26・spec 004 の T020）
 export const familyMainMenu: FamilyMenuItem[] = [
-  { to: '/family', labelKey: 'layout.family_menu.contact_book', icon: '📖' },
-  { to: '/family/requests', labelKey: 'layout.family_menu.requests', icon: '💬' },
-  { to: '/family/inquiry', labelKey: 'layout.family_menu.inquiry', icon: '🤖' },
-  { to: '/family/notifications', labelKey: 'layout.family_menu.notifications', icon: '🔔' },
+  { to: '/family', labelKey: 'layout.family_menu.contact_book', icon: 'contact-book' },
+  { to: '/family/requests', labelKey: 'layout.family_menu.requests', icon: 'requests' },
+  { to: '/family/inquiry', labelKey: 'layout.family_menu.inquiry', icon: 'inquiry' },
+  {
+    to: '/family/notifications',
+    labelKey: 'layout.family_menu.notifications',
+    icon: 'notifications',
+  },
 ]
 
-// 「☰ その他」の中（面会は spec 003 の T014、アルバムは spec 005 が中身を作る）
+// 「その他」の中（面会は spec 003 の T014、アルバムは spec 005 が中身を作る）
 export const familyMoreMenu: FamilyMenuItem[] = [
-  { to: '/family/visits', labelKey: 'layout.family_menu.visits', icon: '📅' },
-  { to: '/family/album', labelKey: 'layout.family_menu.album', icon: '🖼️' },
-  { to: '/family/settings', labelKey: 'layout.family_menu.settings', icon: '⚙️' },
+  { to: '/family/visits', labelKey: 'layout.family_menu.visits', icon: 'visits' },
+  { to: '/family/album', labelKey: 'layout.family_menu.album', icon: 'album' },
+  { to: '/family/settings', labelKey: 'layout.family_menu.settings', icon: 'settings' },
 ]
 
 /**
- * 家族の画面の、ブラウザのタブの題に使う名前（辞書のキー）。下のメニューと「☰ その他」の名前から決める
+ * 家族の画面の、ブラウザのタブの題に使う名前（辞書のキー）。下のメニューと「その他」の名前から決める
  * （`/family` は連絡帳、`/family/more` は「その他」。メニューにない画面は null で、アプリの名前だけになる。#330）。
  */
 export function familyTitleKey(pathname: string): string | null {
@@ -40,7 +46,7 @@ export function familyTitleKey(pathname: string): string | null {
 }
 
 /**
- * 「☰ その他」に出す項目。アルバムは、開示設定で「見せる」と分かったときだけ出す
+ * 「その他」に出す項目。アルバムは、開示設定で「見せる」と分かったときだけ出す
  * （`GET /api/family/features` の答えが来るまでは出さない。出たり消えたりしないように。spec 005 の 005-T013）。
  */
 export function visibleMoreMenu(features: FamilyFeatures | undefined): FamilyMenuItem[] {

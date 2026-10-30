@@ -39,3 +39,20 @@ describe('FamilyLayout の上の枠', () => {
     expect(render()).toMatch(/<img[^>]*class="[^"]*h-7/)
   })
 })
+
+describe('FamilyLayout の下のメニューのアイコン（#379）', () => {
+  it('5 つとも、Font Awesome のアイコン（svg。飾りなので読み上げない）。絵文字は出さない', () => {
+    const html = render()
+    const nav = html.match(/<nav[^>]*>(.*?)<\/nav>/)?.[1] ?? ''
+
+    expect(nav.match(/<svg[^>]*aria-hidden="true"/g)).toHaveLength(5)
+    expect(nav).not.toMatch(/[\u{1F300}-\u{1FAFF}☰]/u)
+  })
+
+  it('選んでいるものは太字・YORIS の青、ほかはブルーグレー', () => {
+    const nav = render('/family/notifications').match(/<nav[^>]*>(.*?)<\/nav>/)?.[1] ?? ''
+
+    expect(nav).toMatch(/class="[^"]*font-bold text-primary[^"]*"[^>]*>(?:(?!<\/a>).)*お/)
+    expect(nav).toContain('text-ink-sub')
+  })
+})

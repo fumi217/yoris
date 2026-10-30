@@ -1,20 +1,23 @@
 import { useEffect, useRef, type RefObject } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 import { useMe } from '../../auth/me'
+import { Icon } from '../../components/Icon'
 import { Logo } from '../../components/Logo'
 import { Text } from '../../components/Text'
 import { usePageTitle } from '../../components/usePageTitle'
 import { familyMainMenu, familyMoreMenu, familyTitleKey } from './menu'
 
-// 下は 4 つ＋「☰ その他」なので、360px の幅でも名前が折り返さない大きさにする（PR #213 さとこ）
+// 下は 4 つ＋「その他」なので、360px の幅でも名前が折り返さない大きさにする（PR #213 さとこ）。
+// 選んでいるものは YORIS の青・太字、ほかはブルーグレー（色だけにしない。太字でも示す。#379）。
+// アイコンの大きさ・文字との間は、すべてそろえる（文字は text-xs、アイコンは text-lg）
 const tabClass = ({ isActive }: { isActive: boolean }) =>
-  `flex flex-1 flex-col items-center py-2 text-xs ${isActive ? 'font-bold text-primary' : 'text-gray-600'}`
+  `flex flex-1 flex-col items-center gap-0.5 py-2 text-xs ${isActive ? 'font-bold text-primary' : 'text-ink-sub'}`
 
-/** 家族の画面の枠。上の左にロゴ・右に入居者の呼び名、下にメニュー（4 つ＋「☰ その他」）。 */
+/** 家族の画面の枠。上の左にロゴ・右に入居者の呼び名、下にメニュー（4 つ＋「その他」）。 */
 export function FamilyLayout() {
   const me = useMe().data
   const { pathname } = useLocation()
-  // 「☰ その他」の中の画面（面会など）を開いているときも、「☰ その他」を選ばれた表示にする
+  // 「その他」の中の画面（面会など）を開いているときも、「その他」を選ばれた表示にする
   const inMore = familyMoreMenu.some((item) => pathname.startsWith(item.to))
   // ブラウザのタブの題：「連絡帳 ｜ YORIS」など（デザインの決めごと 12.3。#330）
   usePageTitle(familyTitleKey(pathname) ?? undefined)
@@ -40,7 +43,7 @@ export function FamilyLayout() {
         {familyMainMenu.map((item) => (
           // 連絡帳（/family）は、ほかの画面を開いているときに選ばれた表示にしない
           <NavLink key={item.to} to={item.to} end={item.to === '/family'} className={tabClass}>
-            <span aria-hidden="true">{item.icon}</span>
+            <Icon name={item.icon} className="text-lg" />
             {/* 縦に並べる枠の中で、ふりがなと文字が別々の行にならないよう、1 つにまとめる */}
             <span>
               <Text k={item.labelKey} />
@@ -51,7 +54,7 @@ export function FamilyLayout() {
           to="/family/more"
           className={({ isActive }) => tabClass({ isActive: isActive || inMore })}
         >
-          <span aria-hidden="true">☰</span>
+          <Icon name="more" className="text-lg" />
           <span>
             <Text k="layout.family_menu.more" />
           </span>

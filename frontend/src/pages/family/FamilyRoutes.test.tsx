@@ -25,7 +25,7 @@ function renderFamily(path: string) {
 
 describe('FamilyRoutes のふりがな（#260）', () => {
   it('家族の画面（FamilyRoutes の中）では、枠・メニューも含めて、ふりがなを出さない', () => {
-    // 「☰ その他」は、API を呼ばずに辞書の文言（面会・アルバム・設定・ログアウト）と下のメニューを出す
+    // 「その他」は、API を呼ばずに辞書の文言（面会・アルバム・設定・ログアウト）と下のメニューを出す
     const html = renderFamily('/family/more')
 
     expect(html).toContain('面会')

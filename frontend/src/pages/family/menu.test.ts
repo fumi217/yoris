@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { familyMainMenu, familyMoreMenu, familyTitleKey } from './menu'
 
 describe('familyTitleKey（ブラウザのタブの題に使う名前）', () => {
-  it('ホームは連絡帳、「☰ その他」は「その他」', () => {
+  it('ホームは連絡帳、「その他」は「その他」', () => {
     expect(familyTitleKey('/family')).toBe('layout.family_menu.contact_book')
     expect(familyTitleKey('/family/')).toBe('layout.family_menu.contact_book')
     expect(familyTitleKey('/family/more')).toBe('layout.family_menu.more')
   })
 
-  it('下のメニューと「☰ その他」の中の画面は、メニューの名前', () => {
+  it('下のメニューと「その他」の中の画面は、メニューの名前', () => {
     for (const item of [...familyMainMenu, ...familyMoreMenu]) {
       expect(familyTitleKey(item.to)).toBe(item.labelKey)
     }
@@ -20,5 +20,20 @@ describe('familyTitleKey（ブラウザのタブの題に使う名前）', () =>
 
   it('メニューにない画面は null（アプリの名前だけになる）', () => {
     expect(familyTitleKey('/family/unknown')).toBeNull()
+  })
+})
+
+describe('メニューのアイコン（#379）', () => {
+  it('下のメニューと「その他」の中の項目は、すべてアイコンの名前を持ち、絵文字は使わない', () => {
+    const emoji = /[\u{1F300}-\u{1FAFF}☀-➿⭐]/u
+    for (const item of [...familyMainMenu, ...familyMoreMenu]) {
+      expect(item.icon).toMatch(/^[a-z-]+$/)
+      expect(item.icon).not.toMatch(emoji)
+    }
+  })
+
+  it('同じ用途は同じアイコン：下のメニューの 4 つは、すべて別のアイコン', () => {
+    const icons = familyMainMenu.map((item) => item.icon)
+    expect(new Set(icons).size).toBe(icons.length)
   })
 })
