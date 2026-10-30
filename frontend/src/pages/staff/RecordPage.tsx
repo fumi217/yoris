@@ -100,7 +100,8 @@ export function RecordPage() {
       book={book.data}
       waitingRequests={requests.data?.requests.length ?? 0}
       canWriteMemo={isMemoWriter(me?.role)}
-      flagPanel={<ChangeFlagPanel residentId={book.data.resident.id} />}
+      // 入居者が変わったら作り直す（直前の「確かめた」の結果を、別の入居者に引き継がない）
+      flagPanel={<ChangeFlagPanel key={book.data.resident.id} residentId={book.data.resident.id} />}
       saving={save.isPending ? save.variables : null}
       cancelling={cancel.isPending}
       notice={notice}

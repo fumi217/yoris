@@ -1,6 +1,8 @@
 // 変化の目印の形と、文を組み立てる部品（spec 006 の 006-T006・T013・T018。research.md R-06）。
 // API は文言を返さず、決まりのコードともとの記録のコードだけを返す。文は画面が辞書から組み立てる。
 
+import { ApiError, messageKeyOf } from '../../api/client'
+
 /** もとになった記録の 1 件（`GET /api/staff/residents/{id}/change-flags` の evidence）。 */
 export type Evidence = { record_id: number; date: string; slot: string; value: string }
 
@@ -70,6 +72,19 @@ export function noteLength(note: string): number {
 /** まだ確かめていない目印があるか（「確かめた」ボタンを出すか）。 */
 export function hasUnconfirmed(current: ChangeFlag[]): boolean {
   return current.some((flag) => flag.status === 'unconfirmed')
+}
+
+/**
+ * 「確かめた」が失敗したとき、画面に出す案内。直前の 1 回の結果だけから決める
+ * （別の状態に持つと、409 のあとに押し直しても「ほかの職員が確かめました」が残り、
+ * 別のエラーが隠れる）。失敗していない（error が空）ときは、どちらも出さない。
+ */
+export function confirmFailure(error: unknown): { conflict: boolean; errorKey: string | null } {
+  if (error == null) return { conflict: false, errorKey: null }
+  if (error instanceof ApiError && error.code === 'already_confirmed') {
+    return { conflict: true, errorKey: null }
+  }
+  return { conflict: false, errorKey: messageKeyOf(error) }
 }
 
 /** 確かめる API に送る内容。空白だけのひとことは送らない。 */

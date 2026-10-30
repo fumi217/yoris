@@ -1,9 +1,10 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
+import { ApiError } from '../../api/client'
 import i18n from '../../i18n'
 import { ChangeFlagPanelView } from './ChangeFlagPanel'
 import type { ChangeFlag, ChangeFlags } from './changeFlags'
-import { confirmBody, noteLength } from './changeFlags'
+import { confirmBody, confirmFailure, noteLength } from './changeFlags'
 
 // ふりがな（<ruby>・<rt>・<rp>）を外して、画面に出る文字だけで比べる
 function text(html: string): string {
@@ -245,9 +246,19 @@ describe('目印の欄（spec 006 の T006・T013）', () => {
   })
 
   it('ほかの職員が先に確かめたときは、その案内を出す（409。FR-009）', () => {
-    const shown = text(render({ current: [mealFlag()], history: [] }, { conflict: true }))
+    const shown = text(
+      render({ current: [mealFlag({ status: 'confirmed' })], history: [] }, { conflict: true }),
+    )
 
     expect(shown).toContain('ほかの職員が確かめました')
+  })
+
+  it('未確認の目印がまた出ているときは、前の 409 の案内を出さない（#341）', () => {
+    // 確かめ済みになったあとに、3 食目が続いて「まだ確かめていません」に戻った（FR-010）
+    const shown = text(render({ current: [mealFlag()], history: [] }, { conflict: true }))
+
+    expect(shown).not.toContain('ほかの職員が確かめました')
+    expect(shown).toContain('確かめた')
   })
 
   it('確かめられなかったときは、理由を出す', () => {
@@ -255,6 +266,36 @@ describe('目印の欄（spec 006 の T006・T013）', () => {
 
     expect(html).toContain('role="alert"')
     expect(text(html)).toContain('うまくいきませんでした')
+  })
+})
+
+describe('確かめられなかったときの案内（#341）', () => {
+  const conflict = new ApiError(409, 'already_confirmed', 'error.already_confirmed')
+  const validation = new ApiError(422, 'validation_error', 'error.validation_error')
+
+  it('まだ失敗していない（押し直した直後を含む）ときは、どちらも出さない', () => {
+    expect(confirmFailure(null)).toEqual({ conflict: false, errorKey: null })
+    expect(confirmFailure(undefined)).toEqual({ conflict: false, errorKey: null })
+  })
+
+  it('ほかの職員が先に確かめたとき（409）は、その案内だけを出す', () => {
+    expect(confirmFailure(conflict)).toEqual({ conflict: true, errorKey: null })
+  })
+
+  it('409 のあとに押し直して別のエラーになったら、そのエラーを出し、前の案内は出さない', () => {
+    // 案内は直前の 1 回の結果だけから決める。409 のあとの 422 は、422 の文言になる
+    expect(confirmFailure(conflict).conflict).toBe(true)
+    expect(confirmFailure(validation)).toEqual({
+      conflict: false,
+      errorKey: 'error.validation_error',
+    })
+  })
+
+  it('API のエラーでない失敗（ネットワークなど）は、サーバーの失敗の文言を出す', () => {
+    expect(confirmFailure(new TypeError('Failed to fetch'))).toEqual({
+      conflict: false,
+      errorKey: 'error.server_error',
+    })
   })
 })
 

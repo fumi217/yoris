@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ApiError, api, messageKeyOf } from '../../api/client'
+import { api, messageKeyOf } from '../../api/client'
 import { Ruby } from '../../i18n/Ruby'
 import { Message } from '../Message'
 import { Text } from '../Text'
 import {
   confirmBody,
+  confirmFailure,
   hasUnconfirmed,
   isShown,
   itemOf,
@@ -32,7 +33,6 @@ export function ChangeFlagPanel({ residentId }: { residentId: number }) {
     queryKey: key,
     queryFn: () => api.get<ChangeFlags>(`/api/staff/residents/${residentId}/change-flags`),
   })
-  const [conflict, setConflict] = useState(false)
 
   // 確かめると、入居者一覧の「確かめていない目印：◯件」も変わる
   const refresh = () =>
@@ -43,18 +43,14 @@ export function ChangeFlagPanel({ residentId }: { residentId: number }) {
   const confirm = useMutation({
     mutationFn: (note: string) =>
       api.post(`/api/staff/residents/${residentId}/change-flags/confirm`, confirmBody(note)),
-    onSuccess: () => {
-      setConflict(false)
-      return refresh()
-    },
+    onSuccess: () => refresh(),
     onError: (error) => {
       // ほかの職員が先に確かめた：読み直して、確かめ済みの様子を見せる
-      if (error instanceof ApiError && error.code === 'already_confirmed') {
-        setConflict(true)
-        void refresh()
-      }
+      if (confirmFailure(error).conflict) void refresh()
     },
   })
+  // 案内は、直前に押した結果だけから決める（押し直せば、前の案内は消える）
+  const failure = confirmFailure(confirm.error)
 
   if (flags.isError) return <Message k={messageKeyOf(flags.error)} />
   if (!flags.data) return null
@@ -62,8 +58,8 @@ export function ChangeFlagPanel({ residentId }: { residentId: number }) {
     <ChangeFlagPanelView
       data={flags.data}
       saving={confirm.isPending}
-      conflict={conflict}
-      errorKey={confirm.isError && !conflict ? messageKeyOf(confirm.error) : null}
+      conflict={failure.conflict}
+      errorKey={failure.errorKey}
       onConfirm={(note) => confirm.mutate(note)}
     />
   )
@@ -106,7 +102,8 @@ export function ChangeFlagPanelView({ data, saving, conflict, errorKey, onConfir
           {hasUnconfirmed(current) && (
             <ConfirmForm saving={saving} errorKey={errorKey} onConfirm={onConfirm} />
           )}
-          {conflict && (
+          {/* 案内の意味は「全部、確かめ済みになった」。未確認の目印がまた出ているときは、出さない */}
+          {conflict && !hasUnconfirmed(current) && (
             <p role="status" className="text-sm font-bold">
               <Text k="change.already_confirmed" />
             </p>
