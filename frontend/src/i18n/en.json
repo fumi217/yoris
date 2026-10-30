@@ -380,7 +380,7 @@
     }
   },
   "contact_book": {
-    "title": "Daily notes for {{month}}/{{day}}",
+    "title": "Daily notes for {{month}}/{{day}} ({{weekday}})",
     "unread_reply": "new",
     "reply_from": "replied",
     "reply_date": "Reply added to the daily notes for {{month}}/{{day}}",
@@ -389,8 +389,25 @@
     "emergency": "In an emergency, the facility will call you",
     "prev_day": "Previous day",
     "next_day": "Next day",
-    "go_today": "Go to today",
-    "pick_date": "Pick a date"
+    "go_today": "Back to today's contact book",
+    "pick_date": "Pick a date",
+    "date_label": "{{month}}/{{day}} ({{weekday}})",
+    "subtitle_today": "A summary of today's condition",
+    "subtitle_other": "A summary of that day's condition",
+    "status": {
+      "recorded": "Recorded",
+      "partial": "Partly recorded",
+      "unrecorded": "Not recorded"
+    },
+    "section": {
+      "meal": "We record how much and how they ate",
+      "mood": "We record changes in expression and mood",
+      "sleep": "We record how they slept"
+    },
+    "wait_for_record": "Please wait for the facility to record it",
+    "next_unavailable": "Tomorrow's notes are not available yet",
+    "more_dates": "See earlier days",
+    "weekly_summary": "Weekly summary"
   },
   "resident_list": {
     "title": "Residents",

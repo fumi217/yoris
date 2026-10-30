@@ -81,6 +81,25 @@ export function monthDayOf(date: string): { month: number; day: number } {
   return { month, day }
 }
 
+/** "2026-10-30" の曜日（言語ごと。日本語なら「金」）。UTC で数えるので、端末の時刻に左右されない。 */
+export function weekdayOf(date: string, language: string): string {
+  return new Intl.DateTimeFormat(language, { weekday: 'short', timeZone: 'UTC' }).format(
+    new Date(`${date}T00:00:00Z`),
+  )
+}
+
+export type SectionStatus = 'recorded' | 'partial' | 'unrecorded'
+
+/**
+ * セクション（食事・機嫌・眠り）の状態の印。おやつは毎日付けるとは限らないので、数えない（FR-017）。
+ * 数える欄がすべて記録済み → recorded、1 つも記録がない → unrecorded、それ以外 → partial。
+ */
+export function sectionStatus(section: ContactSection): SectionStatus {
+  if (!section.slots.some((slot) => slot.record !== null)) return 'unrecorded'
+  const counted = section.slots.filter((slot) => slot.slot !== 'snack')
+  return counted.every((slot) => slot.record !== null) ? 'recorded' : 'partial'
+}
+
 /** 食事は区分（朝・昼・夜・おやつ）の名前の辞書のキー。機嫌・眠りは 1 日 1 つなので、区分は出さない。 */
 export function slotLabelKey(item: string, slot: string): string | null {
   return item === 'meal' ? `record.slot.${slot}` : null

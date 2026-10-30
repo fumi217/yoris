@@ -48,7 +48,7 @@ const text = (html: string) =>
 
 describe('NotificationSettingsView', () => {
   it('緊急のときは電話で知らせる、という案内を、いつも出す（FR-028）', () => {
-    expect(text(render())).toContain('緊急のときは、施設から電話します')
+    expect(text(render())).toContain('緊急のときは、施設からお電話します')
   })
 
   it('保存した設定どおりに、選んだ状態で出る（返事・3 つの項目・頻度）', () => {

@@ -1,4 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server'
+import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import '../../i18n'
 import { ContactBookView } from './ContactBook'
@@ -6,11 +7,13 @@ import {
   markSentOnce,
   monthDayOf,
   pickDate,
+  sectionStatus,
   shiftDate,
   slotLabelKey,
   timeInJapan,
   todayInJapan,
   valueKey,
+  weekdayOf,
   type ContactBookData,
   type ContactReply,
   type ContactSection,
@@ -62,11 +65,17 @@ const book = (overrides: Partial<ContactBookData> = {}): ContactBookData => ({
 })
 
 const render = (data: ContactBookData) =>
-  renderToStaticMarkup(<ContactBookView book={data} onRead={vi.fn()} />)
+  renderToStaticMarkup(
+    <MemoryRouter>
+      <ContactBookView book={data} onRead={vi.fn()} />
+    </MemoryRouter>,
+  )
 
 const renderWithNav = (data: ContactBookData, today: string) =>
   renderToStaticMarkup(
-    <ContactBookView book={data} onRead={vi.fn()} today={today} onMove={vi.fn()} />,
+    <MemoryRouter>
+      <ContactBookView book={data} onRead={vi.fn()} today={today} onMove={vi.fn()} />
+    </MemoryRouter>,
   )
 
 /** 画面に出る文字だけにする（ふりがな・タグを除く）。 */
@@ -158,7 +167,7 @@ describe('ContactBookView', () => {
   })
 
   it('画面の下に、緊急のときの案内が出る', () => {
-    expect(text(render(book()))).toContain('緊急のときは、施設から電話します')
+    expect(text(render(book()))).toContain('緊急のときは、施設からお電話します')
   })
 
   it('開示していない項目（API が返さなかったもの）は、出ない', () => {
@@ -174,9 +183,10 @@ describe('日付の切り替え（T094）', () => {
     const html = renderWithNav(book({ date: '2026-10-26' }), '2026-10-27')
     const shown = text(html)
 
-    expect(shown).toContain('前の日')
-    expect(shown).toContain('次の日')
-    expect(shown).toContain('今日へ')
+    // 前の日・次の日は、矢印のアイコンのボタン（名前は aria-label）
+    expect(html).toContain('aria-label="前の日"')
+    expect(html).toContain('aria-label="次の日"')
+    expect(shown).toContain('今日の連絡帳に戻る')
     expect(html).toContain('type="date"')
     expect(html).toContain('max="2026-10-27"')
     expect(html).toContain('value="2026-10-26"')
@@ -189,7 +199,56 @@ describe('日付の切り替え（T094）', () => {
     // 押せないボタンは、今日を見ているときの「次の日」だけ
     expect(html).toContain('disabled=""')
     expect(past).not.toContain('disabled=""')
-    expect(text(html)).not.toContain('今日へ')
+    expect(text(html)).not.toContain('今日の連絡帳に戻る')
+  })
+
+  it('今日を見ているときは、次の日が押せない理由を近くに書き、結びつける', () => {
+    const html = renderWithNav(book({ date: '2026-10-27' }), '2026-10-27')
+    const past = renderWithNav(book({ date: '2026-10-26' }), '2026-10-27')
+
+    expect(text(html)).toContain('明日の記録は、まだありません')
+    expect(html).toContain('aria-describedby="next-day-hint"')
+    expect(text(past)).not.toContain('明日の記録は、まだありません')
+  })
+
+  it('日付の入力は、「もっと前の日を見る」の中に入れる（ふだんは閉じている）', () => {
+    const html = renderWithNav(book({ date: '2026-10-27' }), '2026-10-27')
+
+    expect(html).toMatch(/<details>.*もっと.*type="date"/s)
+    expect(html).not.toContain('<details open')
+  })
+
+  it('食事は、狭い幅では 1 列・広い幅では 3 列。単語の途中で折り返さない', () => {
+    const html = render(book())
+
+    expect(html).toContain('grid-cols-1')
+    expect(html).toContain('sm:grid-cols-3')
+    expect(html).toContain('break-keep')
+  })
+
+  it('「今日の連絡帳に戻る」は、背景色のあるボタン', () => {
+    const html = renderWithNav(book({ date: '2026-10-26' }), '2026-10-27')
+
+    const button = html.match(/<button[^>]*>(?=<span><ruby>今日)/)?.[0] ?? ''
+
+    expect(text(html)).toContain('今日の連絡帳に戻る')
+    expect(button).toContain('bg-primary-soft')
+  })
+
+  it('「1 週間のまとめ」の入口（FR-036）：見出しの行にあり、/family/weekly へ移る', () => {
+    const html = render(book())
+
+    expect(html).toMatch(/<a[^>]*href="\/family\/weekly"/)
+    expect(text(html)).toContain('1週間のまとめ')
+    expect(html).toContain('data-icon="calendar-week"')
+  })
+
+  it('未読の返事は、生の sky ではなく unread の色と左の線で強調する', () => {
+    const html = render(book({ unread_replies: [reply()] }))
+
+    expect(html).toContain('bg-unread')
+    expect(html).toContain('border-primary')
+    expect(html).not.toContain('sky-')
   })
 
   it('日付の切り替えを渡さないときは、出ない（今までの画面のまま）', () => {
@@ -258,5 +317,131 @@ describe('contactBookView', () => {
     expect(markSentOnce(sent, 5)).toBe(true)
     expect(markSentOnce(sent, 5)).toBe(false)
     expect(markSentOnce(sent, 6)).toBe(true)
+  })
+})
+
+describe('連絡帳の見た目（#382）', () => {
+  const recorded = (slot: string, value: string) => ({
+    slot,
+    record: { id: 9, value, recorded_at: '2026-10-26T00:00:00Z', recorded_by_name: '田中' },
+    message_key: null,
+  })
+  const none = { slot: 'day', record: null, message_key: NOT_RECORDED }
+
+  it('見出しに曜日を出し、今日は「本日のご様子をまとめています」、過去の日は「この日の…」', () => {
+    const today = text(renderWithNav(book({ date: '2026-10-30' }), '2026-10-30'))
+    const past = text(renderWithNav(book({ date: '2026-10-26' }), '2026-10-30'))
+
+    expect(today).toContain('10月30日（金）の連絡帳')
+    expect(today).toContain('本日のご様子をまとめています')
+    expect(past).toContain('10月26日（月）の連絡帳')
+    expect(past).toContain('当日のご様子をまとめています')
+  })
+
+  it('日付の操作は、前の日・今の日付・次の日を 1 つにつなげる（今日を見ているときは次の日が押せない）', () => {
+    const html = renderWithNav(book({ date: '2026-10-30' }), '2026-10-30')
+    const nav = html.slice(html.indexOf('aria-label="前の日"'), html.indexOf('type="date"'))
+
+    expect(nav.indexOf('aria-label="前の日"')).toBeLessThan(nav.indexOf('10月30日（金）'))
+    expect(nav.indexOf('10月30日（金）')).toBeLessThan(nav.indexOf('aria-label="次の日"'))
+    expect(html).toMatch(/aria-label="次の日"[^>]*disabled=""|disabled=""[^>]*aria-label="次の日"/)
+  })
+
+  it('食事・機嫌・眠りは 1 枚のカードの中に入る（カードの中にカードを重ねない）', () => {
+    const html = render(
+      book({
+        sections: [
+          sections()[0],
+          { item: 'mood', slots: [none] },
+          { item: 'sleep', slots: [none] },
+        ],
+      }),
+    )
+
+    expect(html.match(/rounded-2xl border border-card-line/g)).toHaveLength(1)
+    expect(html.match(/<h2/g)).toHaveLength(3)
+  })
+
+  it('食事は朝・昼・夜を横 3 列に並べ、区分ごとに小さなアイコン（飾り）が付く', () => {
+    const html = render(book())
+
+    expect(html).toContain('grid-cols-3')
+    expect(html.match(/<svg[^>]*aria-hidden="true"/g)?.length).toBeGreaterThanOrEqual(3)
+    expect(text(html)).toContain('食事の量や様子を記録しています')
+  })
+
+  it('機嫌・眠りが未記録のときは、中央に「まだ記録されていません」「施設からの記録をお待ちください」', () => {
+    const shown = text(render(book()))
+
+    expect(shown).toContain('施設からの記録をお待ちください')
+    expect(shown).toContain('表情やご様子の変化を記録しています')
+  })
+
+  it('記録した機嫌は、値と記録した職員・時刻が出る（お待ちくださいは出ない）', () => {
+    const shown = text(
+      render(book({ sections: [{ item: 'mood', slots: [recorded('day', 'good')] }] })),
+    )
+
+    expect(shown).toContain('田中 09:00')
+    expect(shown).not.toContain('施設からの記録をお待ちください')
+  })
+
+  it('各セクションの右に、状態の印（文字）を出す。色だけにしない', () => {
+    const shown = text(render(book()))
+
+    expect(shown).toContain('一部記録') // 食事：朝だけ記録済み
+    expect(shown).toContain('未記録') // 機嫌
+  })
+
+  it('緊急の案内は、電話のアイコンつきの淡い青の帯（警告の赤・オレンジにしない）', () => {
+    const html = render(book())
+    const bar = html.slice(html.lastIndexOf('<p class="flex items-center gap-3'))
+
+    expect(bar).toContain('bg-primary-soft')
+    expect(bar).toContain('<svg')
+    expect(bar).not.toMatch(/red|orange|amber/)
+  })
+
+  it('絵文字は出さない（返事のカードのテーマの絵文字だけは、データなので、④で置き換える）', () => {
+    const html = render(book())
+
+    expect(html).not.toMatch(/[\u{1F300}-\u{1FAFF}\u25C0\u25B6]/u)
+  })
+})
+
+describe('contactBookView（#382）', () => {
+  it('曜日は言語ごと（UTC で数える）', () => {
+    expect(weekdayOf('2026-10-30', 'ja')).toBe('金')
+    expect(weekdayOf('2026-10-30', 'en')).toBe('Fri')
+    expect(weekdayOf('2026-10-26', 'ja')).toBe('月')
+  })
+
+  it('セクションの状態：記録なし・一部・すべて（おやつは数えない）', () => {
+    const slot = (name: string, has: boolean) => ({
+      slot: name,
+      record: has
+        ? { id: 1, value: '8', recorded_at: '2026-10-26T00:00:00Z', recorded_by_name: '田中' }
+        : null,
+      message_key: has ? null : NOT_RECORDED,
+    })
+
+    expect(sectionStatus({ item: 'meal', slots: [slot('breakfast', false)] })).toBe('unrecorded')
+    expect(
+      sectionStatus({ item: 'meal', slots: [slot('breakfast', true), slot('lunch', false)] }),
+    ).toBe('partial')
+    expect(
+      sectionStatus({
+        item: 'meal',
+        slots: [slot('breakfast', true), slot('lunch', true), slot('dinner', true)],
+      }),
+    ).toBe('recorded')
+    // おやつだけが記録されていて、ほかが未記録のときは、一部
+    expect(
+      sectionStatus({ item: 'meal', slots: [slot('lunch', false), slot('snack', true)] }),
+    ).toBe('partial')
+    // おやつが未記録でも、数えない
+    expect(
+      sectionStatus({ item: 'meal', slots: [slot('lunch', true), slot('snack', false)] }),
+    ).toBe('recorded')
   })
 })

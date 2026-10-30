@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router'
 import { AreaGuard } from '../../components/AreaGuard'
+import { ComingSoon } from '../../components/ComingSoon'
 import { FamilyContext } from '../../i18n/audience'
 import { FuriganaContext } from '../../i18n/furigana'
 import { Album } from './Album'
@@ -36,6 +37,8 @@ export default function FamilyRoutes() {
               <Route path="inquiry" element={<Inquiry />} />
               {/* アルバム（UI-F06。spec 005 の 005-T012 さとこ） */}
               <Route path="album" element={<Album />} />
+              {/* 1 週間のまとめ（連絡帳の入口から。FR-036。画面の中身は設計中なので、仮の中身） */}
+              <Route path="weekly" element={<ComingSoon />} />
               {/* 設定（通知・言語） */}
               <Route path="settings" element={<NotificationSettings />} />
               <Route path="*" element={<Navigate to="/family" replace />} />

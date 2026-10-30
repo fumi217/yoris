@@ -16,6 +16,9 @@
   --color-field-line: #748097;
   --color-danger: #c81e1e;
 
+  /* 未読の強調の背景（連絡帳の未読の返事。#384）。文字 ink との比 14.52・ink-sub との比 5.30。左の線は primary */
+  --color-unread: #eaf2ff;
+
   /*
    * 使っているクラス名は意味のある名前に書き換えた（#353）。以下は、少しだけ残るクラス名のための差し替え
    * （border-sky-600・text-gray-300・bg-gray-300。デザインの決めごと 2.3）

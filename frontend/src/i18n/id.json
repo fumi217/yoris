@@ -380,7 +380,7 @@
     }
   },
   "contact_book": {
-    "title": "Buku harian {{day}}/{{month}}",
+    "title": "Buku harian {{day}}/{{month}} ({{weekday}})",
     "unread_reply": "baru",
     "reply_from": "membalas",
     "reply_date": "Balasan yang masuk ke buku harian {{day}}/{{month}}",
@@ -389,8 +389,25 @@
     "emergency": "Dalam keadaan darurat, fasilitas akan menelepon Anda",
     "prev_day": "Hari sebelumnya",
     "next_day": "Hari berikutnya",
-    "go_today": "Ke hari ini",
-    "pick_date": "Pilih tanggal"
+    "go_today": "Kembali ke buku harian hari ini",
+    "pick_date": "Pilih tanggal",
+    "date_label": "{{day}}/{{month}} ({{weekday}})",
+    "subtitle_today": "Ringkasan keadaan hari ini",
+    "subtitle_other": "Ringkasan keadaan pada hari itu",
+    "status": {
+      "recorded": "Sudah dicatat",
+      "partial": "Sebagian dicatat",
+      "unrecorded": "Belum dicatat"
+    },
+    "section": {
+      "meal": "Kami mencatat jumlah dan cara makan",
+      "mood": "Kami mencatat perubahan ekspresi dan suasana hati",
+      "sleep": "Kami mencatat bagaimana tidurnya"
+    },
+    "wait_for_record": "Mohon tunggu catatan dari fasilitas",
+    "next_unavailable": "Catatan besok belum tersedia",
+    "more_dates": "Lihat hari sebelumnya",
+    "weekly_summary": "Ringkasan mingguan"
   },
   "resident_list": {
     "title": "Daftar penghuni",
