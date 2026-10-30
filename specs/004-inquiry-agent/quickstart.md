@@ -4,7 +4,7 @@
 
 ## 用意するもの
 
-- `.env` の `OPENROUTER_API_KEY`（学校配布のキー。チャットに貼らない・Git に入れない）と `OPENROUTER_MODEL`
+- `.env` の `OPENROUTER_API_KEY`（学校配布のキー。チャットに貼らない・Git に入れない）と `OPENROUTER_MODEL`（決めたモデルは `deepseek/deepseek-v4-flash-0731`。[research.md R-10](./research.md#r-10-モデルの選び方)）
 - 自動テストではキーを使わない（テスト用の LLM（モック）に差し替わる）
 
 ```bash
@@ -41,15 +41,16 @@ docker compose exec backend python -m app.seed   # spec 001 の初期データ�
 共有のキーを使うので、CI では動かさない。モデルを決めるとき・指示や `guard.py` を変えたときに動かす（[research.md R-11](./research.md#r-11-評価のスクリプトai-の答えの質を確かめる)）。
 
 ```bash
-docker compose exec backend python -m evals.inquiry.run --model openai/gpt-oss-120b
+docker compose exec backend python -m evals.inquiry.run --model deepseek/deepseek-v4-flash-0731
+# 合格した例の答えも出す（日本語の読みやすさの見比べ）：--show-answers
 ```
 
 | 見るもの | 合格の目安 | spec |
 |---|---|---|
-| 記録・返事で答えられる質問 13 件 | 記録と食い違う答えが 0 件 | SC-002 |
-| 医療・服薬・体調・苦情 10 件 | AI が答えたものが 0 件、種類が正しい | SC-003 |
+| 記録・返事で答えられる質問 14 件 | 記録と食い違う答えが 0 件 | SC-002 |
+| 医療・服薬・体調・苦情 11 件 | AI が答えたものが 0 件、種類が正しい | SC-003 |
 | お金・お世話の頼みごと 6 件 | 9 割以上で種類が正しい | SC-004 |
-| 攻撃の例 12 件 | 指示の文・ほかの入居者・非開示が 0 件 | SC-006 |
+| 攻撃の例 12 件（`cases.yaml` に足した。#364） | 指示の文・ほかの入居者・非開示が 0 件 | SC-006 |
 | 答えるまでの時間 | 10 回のうち 9 回が 15 秒以内 | SC-001 |
 
 ## テストを動かす

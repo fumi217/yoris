@@ -140,9 +140,11 @@ US1 は、001-T038（`get_disclosed_records`）と 001-T054（`get_active_replie
 - [x] T043 モデルを比べる：評価の質問の例を 43 件（記録 10・返事 3・医療 6・苦情 4・お金 3・お世話の頼みごと 3・緊急 2・攻撃 12）にそろえ、技術選定 5 章の 5 つのモデルで流す。医療・苦情の取りこぼしが 0 件のモデルから、SC-001〜006 がいちばん良いものを `OPENROUTER_MODEL` に決め、結果を research.md R-10 に書く（みさき・作）
   - 済み（2026-10-30）：33 件で 5 モデルを比べ、`deepseek/deepseek-v4-flash-0731` に決めた（予備は gemma-4-26b）。結果は research.md R-10。攻撃の例（SC-006）は #105 で。評価の質問に `answer_includes_any` を足す課題は R-10 に書いた
 - [x] T044 [P] インドネシア語・英語の文言：質問の種類・家族の画面の固定の文言・返事の定型文を `frontend/src/i18n/id.json`・`en.json` に足す。日本語にはふりがなを付ける（001-T082・001-T083 と一緒に）（FR-021・FR-014）。済み：`inquiry`（質問の種類 `inquiry.category` を含む）・`template`・`theme` が id・en にある（#313・#349。`i18n.test.ts` が、訳し忘れを止める）（みさき・作）
+  - 済み（2026-10-30）：確かめた。`inquiry`（41）・`family_messages`（33）・`staff_template`（17）・`template`（26）の各グループは、ja・id・en でキーが同数で、エラーの文言（`error.ai_unavailable`・`error.inquiry_limit` など）もそろっている。訳は #314・#348 で入っており、言い方も自然（連絡帳は daily notes・buku harian でほかの画面とそろう）。今回、直した所はない
 - [x] T045 [P] ログの確かめ：本番の設定で、発言の文・答え・要約・記録の値・氏名がログに出ず、会話・発言・メッセージの id・種類・結果・ツールの回数・時間・モデル名だけが出ることをテストで確かめる（FR-029・research.md R-15）（みさき・作）
   - 済み：`service.py` に 1 回のやり取りのログ（会話・発言の id・結果・種類・ツールの回数・時間・モデル名）、`api/family/inquiry.py` に AI につながらなかった理由のログを足した。テスト：`tests/api/test_inquiry_logging.py`
 - [ ] T046 quickstart.md の確認をすべて通し、`docs/テスト設計書.md` に spec 004 の結合・総合テストのシナリオと結果を書く（みさき・作）
+  - 進み具合（2026-10-30。すべて通すまで [x] にしない）：quickstart.md の確認を、実物の API（本物のモデル）と pytest・frontend のテストで通し、`docs/テスト設計書.md` に spec 004 の表（16 件）を書いた。未は、画面の目視・SC-012 の 3 タップ・10 と 14 の実物の確認。攻撃の例 12 件は評価済み（#105）。quickstart.md の評価の件数も、`cases.yaml` に合わせた
 - [x] T047 [P] 職員の「家族からのメッセージ」の質問の原文と AI の要約に、ふりがなの読みを自動で付ける：`backend/app/furigana.py`（pykakasi）で `{漢字|かんじ}` の形にし、一覧・詳細の API に `summary_ruby`・`origin_ruby` を足す。画面は `Ruby` で出し、「ふりがなは自動で付けています」を出す。保存する文は変えない（FR-028a・#266）（みさき・作）
 - [x] T048 [US1] お問い合わせの画面（`frontend/src/pages/family/Inquiry.tsx`）を、デザインの決めごと 13 章のとおりに作り直す：AI の発言の左にキャラクター（飾り）と「AI」の文字、あいさつ、用件の選択肢 3 つ（FR-001a。AI を呼ばない）、「アプリの案内」のカード、丸い送るボタンと文字数。「AI がお答えしています…」「AI がお答えできないときは…」は常に出す（FR-005・FR-012a）（ゆう・作。#348）
 
