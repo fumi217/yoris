@@ -138,7 +138,9 @@ def reply(
     except ReplyError as error:
         raise AppError(ErrorCode(error.code)) from error
     session.commit()
-    background_tasks.add_task(send_email_now, outbox_id)
+    # 家族が通知設定で「返事のお知らせ」を外していれば、送る予定がない（outbox_id は None）
+    if outbox_id is not None:
+        background_tasks.add_task(send_email_now, outbox_id)
     return ReplyResponse(
         id=saved.id,
         request_id=saved.request_id,

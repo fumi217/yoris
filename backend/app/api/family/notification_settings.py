@@ -1,6 +1,7 @@
 """家族の通知設定の API（spec 001 の 001-T064。contracts の「家族」・FR-023）。
 
-- `GET /api/family/notification-settings`：通知設定と、送り先のメールアドレスを返す。
+- `GET /api/family/notification-settings`：通知設定と、送り先のメールアドレスと、選べる記録項目
+  （`available_items`：開示されている項目だけ。非開示の項目は、画面で選択肢に出さない。FR-023）を返す。
   設定の行がなければ、初めの設定（返事は通知・meal/mood/sleep・毎日）を返す（行は作らない）
 - `PUT /api/family/notification-settings`：通知設定を変える。行がなければ作る。
   頻度が daily／weekly／none 以外、記録項目が meal／mood／sleep 以外なら 422（何も変えない）
@@ -28,6 +29,7 @@ from app.models.notifications import (
     NotificationSetting,
 )
 from app.models.records import ITEMS
+from app.services.disclosure import is_item_disclosed
 
 router = APIRouter(prefix="/api/family", tags=["family"])
 
@@ -37,6 +39,8 @@ class NotificationSettingsOut(BaseModel):
     notify_items: list[str]
     frequency: str
     email: str  # 送り先（ログイン用と同じ）。メールが届かないとき、画面で確かめられるように
+    # 選べる記録項目（いま開示されているものだけ。ITEMS の並び）。選択肢の表示に使う
+    available_items: list[str]
 
 
 class NotificationSettingsIn(BaseModel):
@@ -58,19 +62,27 @@ def _family_account_and_email(session: Session, user: CurrentUser) -> tuple[int,
     return row.id, row.email
 
 
-def _out(setting: NotificationSetting | None, email: str) -> NotificationSettingsOut:
+def _available_items(session: Session) -> list[str]:
+    return [item for item in ITEMS if is_item_disclosed(session, item)]
+
+
+def _out(
+    setting: NotificationSetting | None, email: str, available_items: list[str]
+) -> NotificationSettingsOut:
     if setting is None:
         return NotificationSettingsOut(
             notify_reply=True,
             notify_items=list(DEFAULT_NOTIFY_ITEMS),
             frequency=DEFAULT_FREQUENCY,
             email=email,
+            available_items=available_items,
         )
     return NotificationSettingsOut(
         notify_reply=setting.notify_reply,
         notify_items=list(setting.notify_items),
         frequency=setting.frequency,
         email=email,
+        available_items=available_items,
     )
 
 
@@ -80,7 +92,9 @@ def get_notification_settings(
     session: Annotated[Session, Depends(get_session)],
 ) -> NotificationSettingsOut:
     family_account_id, email = _family_account_and_email(session, user)
-    return _out(session.get(NotificationSetting, family_account_id), email)
+    return _out(
+        session.get(NotificationSetting, family_account_id), email, _available_items(session)
+    )
 
 
 @router.put("/notification-settings")
@@ -116,6 +130,6 @@ def put_notification_settings(
         .where(NotificationSetting.family_account_id == family_account_id)
         .execution_options(populate_existing=True)
     ).one()
-    out = _out(setting, email)
+    out = _out(setting, email, _available_items(session))
     session.commit()
     return out

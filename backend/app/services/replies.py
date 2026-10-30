@@ -138,10 +138,12 @@ def save_reply_with_notice(
     staff_id: int,
     template_ids: Sequence[int],
     note: str | None = None,
-) -> tuple[Reply, int]:
+) -> tuple[Reply, int | None]:
     """返事をして、家族へのお知らせとメールの送る予定も作る。返事と email_outbox の id を返す。
 
     commit は呼んだ側が行い、そのあとに send_email_now(outbox_id) でその場でも送る（R-09）。
+    家族が通知設定で「返事のお知らせ」を外していれば、お知らせもメールも作らず、id は None
+    （呼んだ側は、メールを送らない）。
     先に返事をした人がいれば save_reply がエラーにするので、お知らせが 2 回できることはない。
     """
     reply = save_reply(

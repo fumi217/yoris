@@ -3,14 +3,43 @@
 DB と Redis を使う（conftest.py の client・session・make_family・make_staff・login_as）。
 """
 
+from datetime import UTC, datetime
+
 import pytest
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 
 from app.models.core import User
+from app.models.disclosure import DisclosureSetting
 from app.models.notifications import NotificationSetting
+from app.seed.themes import add_disclosure_settings, add_themes
+from app.services.disclosure import clear_disclosure_cache
 
 URL = "/api/family/notification-settings"
 DEFAULT = {"notify_reply": True, "notify_items": ["meal", "mood", "sleep"], "frequency": "daily"}
+
+
+@pytest.fixture
+def world(session, redis, facility):
+    """開示設定は、初期データ（記録項目はすべて見せる）。"""
+    add_themes(session)
+    add_disclosure_settings(session, facility_id=facility.id)
+    clear_disclosure_cache(facility.id)
+    yield facility
+    clear_disclosure_cache(facility.id)
+
+
+def _hide_item(session, facility, code: str) -> None:
+    session.execute(
+        update(DisclosureSetting)
+        .where(
+            DisclosureSetting.facility_id == facility.id,
+            DisclosureSetting.target_type == "item",
+            DisclosureSetting.target_code == code,
+        )
+        .values(visible=False)
+    )
+    session.flush()
+    clear_disclosure_cache(facility.id)
 
 
 def _count(session) -> int:
@@ -28,7 +57,7 @@ def test_needs_a_family_login(client, make_staff, login_as):
 
 
 def test_get_returns_the_first_settings_and_the_email_without_making_a_row(
-    client, session, make_family, login_as
+    client, session, world, make_family, login_as
 ):
     family = make_family()
     login_as(family.user_id)
@@ -37,8 +66,27 @@ def test_get_returns_the_first_settings_and_the_email_without_making_a_row(
     body = client.get(URL).json()
 
     # 初めは「返事は通知・meal/mood/sleep・毎日」（FR-023）。送り先は、ログイン用と同じメール
-    assert body == {**DEFAULT, "email": session.get(User, family.user_id).email}
+    assert body == {
+        **DEFAULT,
+        "email": session.get(User, family.user_id).email,
+        "available_items": ["meal", "mood", "sleep"],
+    }
     assert _count(session) == before  # 見ただけでは、行を作らない
+
+
+def test_available_items_are_only_the_disclosed_ones(client, session, world, make_family, login_as):
+    # 非開示の項目は、選択肢に出さない（FR-023・FR-010）。選んだ項目は、そのまま持つ
+    login_as(make_family().user_id)
+    _hide_item(session, world, "mood")
+
+    got = client.get(URL).json()
+    saved = client.put(
+        URL, json={"notify_reply": True, "notify_items": ["meal", "mood"], "frequency": "daily"}
+    ).json()
+
+    assert got["available_items"] == ["meal", "sleep"]
+    assert saved["available_items"] == ["meal", "sleep"]
+    assert saved["notify_items"] == ["meal", "mood"]
 
 
 def test_put_saves_and_get_returns_the_same(client, session, make_family, login_as):
@@ -83,6 +131,29 @@ def test_put_updates_a_row_that_was_just_made_by_another_request(
     assert response.status_code == 200
     assert {key: response.json()[key] for key in change} == change
     assert _count(session) == before  # 行は増えない（1 家族に 1 行）
+
+
+def test_put_renews_updated_at(client, session, make_family, login_as):
+    # 保存したら、最後に保存した日時（updated_at）が、いまの日時に新しくなる。
+    # テストの中では now() が動かないので、昔の日時に書き換えてから保存して、新しくなったかを見る
+    family = make_family()
+    old = datetime(2000, 1, 1, tzinfo=UTC)
+    session.add(NotificationSetting(family_account_id=family.id, frequency="daily"))
+    session.flush()
+    session.execute(
+        update(NotificationSetting)
+        .where(NotificationSetting.family_account_id == family.id)
+        .values(updated_at=old)
+    )
+    login_as(family.user_id)
+
+    response = client.put(
+        URL, json={"notify_reply": True, "notify_items": ["meal"], "frequency": "weekly"}
+    )
+
+    assert response.status_code == 200
+    session.expire_all()
+    assert session.get(NotificationSetting, family.id).updated_at > old
 
 
 def test_families_do_not_see_each_others_settings(client, make_family, login_as):

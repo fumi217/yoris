@@ -10,7 +10,7 @@ from sqlalchemy import func, select
 
 from app.api.staff import requests as requests_api
 from app.models.disclosure import ReplyTemplate, Theme
-from app.models.notifications import EmailOutbox, Notification
+from app.models.notifications import EmailOutbox, Notification, NotificationSetting
 from app.models.replies import Reply
 from app.models.requests import Request
 from app.seed.themes import add_themes
@@ -174,6 +174,25 @@ def test_reply_creates_notice_and_mail(client, session, world, sent):
     # メールには返事の中身を渡さない（SC-010）。APP_BASE_URL がないときは link も入らない（#198）
     assert set(outbox.params) <= {"lang", "link"}
     assert "秘密" not in str(outbox.params)
+
+
+def test_reply_makes_no_notice_or_mail_when_the_family_turned_it_off(client, session, world, sent):
+    # 通知設定で「知りたいことへの返事」を外している家族には、お知らせもメールも作らない（FR-023）。
+    # 返事そのものは保存され、連絡帳では読める
+    session.add(NotificationSetting(family_account_id=world["family"].id, notify_reply=False))
+    session.flush()
+
+    response = _reply(client, world["request"].id, template_ids=world["templates"][:1])
+
+    assert response.status_code == 201
+    assert sent == []
+    notices = session.scalar(
+        select(func.count())
+        .select_from(Notification)
+        .where(Notification.reply_id == response.json()["id"])
+    )
+    assert notices == 0
+    assert session.get(Reply, response.json()["id"]) is not None
 
 
 def test_second_reply_adds_no_notice(client, session, world, sent):

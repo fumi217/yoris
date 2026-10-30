@@ -99,8 +99,8 @@ API の名前は開発前MTG に合わせて `contact-book`（連絡帳）にす
 | `POST /api/family/replies/{reply_id}/read` | F | ミ | 返事を読んだ（家族で共有）。返事のカードが画面に出たら、フロントが自動で呼ぶ（R-15） | FR-015 |
 | `GET /api/family/notifications` | F | ミ | お知らせの一覧（返事・まとめ・施設からのお知らせ） | FR-023・FR-034 |
 | `POST /api/family/notifications/{id}/read` | F | 作 | お知らせを読んだ | FR-023 |
-| `GET /api/family/notification-settings` | F | 作 | 通知設定と送り先のメールアドレス | FR-023 |
-| `PUT /api/family/notification-settings` | F | 作 | 通知設定を変える（`notify_reply`・`notify_items`・`frequency`） | FR-023 |
+| `GET /api/family/notification-settings` | F | 作 | 通知設定と送り先のメールアドレスと、選べる記録項目（`available_items`） | FR-023 |
+| `PUT /api/family/notification-settings` | F | 作 | 通知設定を変える（`notify_reply`・`notify_items`・`frequency`）。返り値は GET と同じ（`available_items` を含む） | FR-023 |
 | `GET /api/family/announcements/{id}` | F | 作 | 施設からのお知らせの本文と添付 | FR-034 |
 
 - id で指定する API（`requests/{id}`・`replies/{id}`・`notifications/{id}`・`announcements/{id}`）は、ログイン中の家族のものかを必ず確かめる（id は連番で推測できるため。ほかの家族のものは 404）。

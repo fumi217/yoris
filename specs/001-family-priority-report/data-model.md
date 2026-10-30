@@ -322,6 +322,7 @@ CurrentUser:
 | notify_reply | boolean | 知りたいことへの返事（初期値 `true`） |
 | notify_items | text[] | 通知する記録項目（初期値 `{meal,mood,sleep}`）。非開示の項目は、まとめを作るときに除く |
 | frequency | text | `daily`（初期値）／`weekly`／`none` |
+| updated_at | timestamptz | 最後に保存した日時 |
 
 ### `digest_runs`（作り込み）
 | 列 | 型 | 説明 |

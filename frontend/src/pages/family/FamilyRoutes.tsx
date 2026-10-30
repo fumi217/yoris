@@ -1,6 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router'
 import { AreaGuard } from '../../components/AreaGuard'
-import { ComingSoon } from '../../components/ComingSoon'
 import { FamilyContext } from '../../i18n/audience'
 import { FuriganaContext } from '../../i18n/furigana'
 import { Album } from './Album'
@@ -8,6 +7,7 @@ import { ContactBook } from './ContactBook'
 import { FamilyLayout } from './FamilyLayout'
 import { FamilyMorePage } from './FamilyMorePage'
 import { Inquiry } from './Inquiry'
+import { NotificationSettings } from './NotificationSettings'
 import { Notifications } from './Notifications'
 import { Requests } from './Requests'
 import { VisitBooking } from './visits/VisitBooking'
@@ -37,7 +37,7 @@ export default function FamilyRoutes() {
               {/* アルバム（UI-F06。spec 005 の 005-T012 さとこ） */}
               <Route path="album" element={<Album />} />
               {/* 設定（通知・言語） */}
-              <Route path="settings" element={<ComingSoon />} />
+              <Route path="settings" element={<NotificationSettings />} />
               <Route path="*" element={<Navigate to="/family" replace />} />
             </Route>
           </Routes>

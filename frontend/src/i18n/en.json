@@ -61,6 +61,32 @@
       "announcement": "A notice from the facility has arrived"
     }
   },
+  "notification_settings": {
+    "title": "Notification settings",
+    "intro": "Notifications are sent by email and shown in the app.",
+    "reply_title": "Replies to what you would like to know",
+    "reply_label": "Notify me when a reply arrives (by email and in the app)",
+    "items_title": "Items to include in the record summary",
+    "items_hint": "You can choose only the items the facility shows to families.",
+    "items_empty": "There are no items to choose right now.",
+    "item": {
+      "meal": "Meals",
+      "mood": "Mood",
+      "sleep": "Sleep"
+    },
+    "frequency_title": "How often to send the record summary",
+    "frequency": {
+      "daily": "Every day (8 p.m.)",
+      "weekly": "Once a week, on Sunday (8 p.m.)",
+      "none": "Do not notify"
+    },
+    "email_title": "Email address for notifications",
+    "email_hint": "If emails do not arrive, please check your spam folder. You can always see notices in the app.",
+    "changed": "You have unsaved changes. Please press \"Save\".",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved"
+  },
   "requests": {
     "choose_title": "Choose what you would like to know",
     "send": "Send",

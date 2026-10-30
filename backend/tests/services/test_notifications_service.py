@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from app.models.core import FamilyAccount, User
 from app.models.disclosure import ReplyTemplate, Theme
 from app.models.inquiry import InquiryConversation, InquiryMessage, StaffMessage
-from app.models.notifications import EmailOutbox, Notification
+from app.models.notifications import EmailOutbox, Notification, NotificationSetting
 from app.models.requests import Request
 from app.models.visits import VisitReservation
 from app.seed.themes import add_themes
@@ -50,6 +50,30 @@ def world(session: Session, make_staff, make_family):
         note=NOTE,
     )
     return {"family": family, "other_family": other_family, "reply": reply}
+
+
+def test_makes_nothing_when_the_family_turned_reply_notices_off(session, world):
+    # 通知設定で「知りたいことへの返事」を外している家族（FR-023）。連絡帳の返事は、通知とは別
+    session.add(NotificationSetting(family_account_id=world["family"].id, notify_reply=False))
+    session.flush()
+
+    assert create_reply_notice(session, world["reply"].id) is None
+
+    assert session.scalars(select(Notification)).all() == []
+    assert session.scalars(select(EmailOutbox)).all() == []
+
+
+def test_makes_the_notice_when_the_setting_row_says_yes_or_is_missing(session, world):
+    # 行がなくても（初めの設定）、行が「通知する」でも、作る。頻度の設定には、かかわらない
+    session.add(
+        NotificationSetting(
+            family_account_id=world["family"].id, notify_reply=True, frequency="none"
+        )
+    )
+    session.flush()
+
+    assert create_reply_notice(session, world["reply"].id) is not None
+    assert len(session.scalars(select(Notification)).all()) == 1
 
 
 def test_creates_notification_and_outbox_for_the_family(session, world):

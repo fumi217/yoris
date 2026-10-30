@@ -4,10 +4,11 @@
   返事の保存と同じトランザクションで確定するので、返事だけ保存されてお知らせが消える、ということが起きない
 - 関数の中では commit しない（呼んだ API が最後に 1 回だけ commit する）
 - 作った email_outbox の id を返す。呼んだ側は、コミットのあとに send_email_now(outbox_id) で
-  その場でも送ってみる
+  その場でも送ってみる。家族が通知設定で「返事のお知らせ」を外していれば、何も作らず None を返す
 - メールの文面に渡すのは、種類とリンクと家族の言語（lang）だけ。
   返事の中身・職員の名前・入居者の名前は渡さない（SC-010）
-- 返事のお知らせは、家族の通知設定にかかわらず作る
+- 返事のお知らせは、通知の頻度の設定にかかわらず作る（FR-023）。作らないのは、通知設定で
+  「知りたいことへの返事」を外している家族だけ（設定の行がなければ、初めの設定で作る）
 """
 
 from datetime import date, time
@@ -18,14 +19,18 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.models.core import FamilyAccount, User
 from app.models.inquiry import StaffMessage
-from app.models.notifications import EmailOutbox, Notification
+from app.models.notifications import EmailOutbox, Notification, NotificationSetting
 from app.models.replies import Reply
 from app.models.requests import Request
 from app.models.visits import VisitReservation
 
 
-def create_reply_notice(session: Session, reply_id: int) -> int:
-    """返事のお知らせ（アプリ内）とメールの送る予定を作り、email_outbox の id を返す。"""
+def create_reply_notice(session: Session, reply_id: int) -> int | None:
+    """返事のお知らせ（アプリ内）とメールの送る予定を作り、email_outbox の id を返す。
+
+    通知設定で「知りたいことへの返事」を外している家族には、お知らせもメールも作らず None を返す
+    （連絡帳の中の返事は、通知とは別で、いつでも見られる）。
+    """
     family_account_id, email, language = session.execute(
         select(FamilyAccount.id, User.email, User.language)
         .join(User, User.id == FamilyAccount.user_id)
@@ -33,6 +38,11 @@ def create_reply_notice(session: Session, reply_id: int) -> int:
         .join(Reply, Reply.request_id == Request.id)
         .where(Reply.id == reply_id)
     ).one()
+
+    # 設定の行がない家族は、初めの設定（返事のお知らせは作る）として扱う
+    setting = session.get(NotificationSetting, family_account_id)
+    if setting is not None and not setting.notify_reply:
+        return None
 
     session.add(Notification(family_account_id=family_account_id, kind="reply", reply_id=reply_id))
 

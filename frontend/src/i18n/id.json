@@ -61,6 +61,32 @@
       "announcement": "Ada pemberitahuan dari fasilitas"
     }
   },
+  "notification_settings": {
+    "title": "Pengaturan pemberitahuan",
+    "intro": "Pemberitahuan dikirim melalui email dan ditampilkan di aplikasi.",
+    "reply_title": "Balasan untuk hal yang ingin Anda ketahui",
+    "reply_label": "Beri tahu saya saat ada balasan (melalui email dan di aplikasi)",
+    "items_title": "Item yang dimasukkan dalam ringkasan catatan",
+    "items_hint": "Anda hanya dapat memilih item yang ditampilkan oleh fasilitas kepada keluarga.",
+    "items_empty": "Saat ini tidak ada item yang dapat dipilih.",
+    "item": {
+      "meal": "Makan",
+      "mood": "Suasana hati",
+      "sleep": "Tidur"
+    },
+    "frequency_title": "Seberapa sering ringkasan catatan dikirim",
+    "frequency": {
+      "daily": "Setiap hari (pukul 20.00)",
+      "weekly": "Seminggu sekali, pada hari Minggu (pukul 20.00)",
+      "none": "Jangan beri tahu"
+    },
+    "email_title": "Alamat email untuk pemberitahuan",
+    "email_hint": "Jika email tidak masuk, silakan periksa folder spam. Pemberitahuan selalu dapat dilihat di aplikasi.",
+    "changed": "Ada perubahan yang belum disimpan. Silakan tekan \"Simpan\".",
+    "save": "Simpan",
+    "saving": "Menyimpan…",
+    "saved": "Tersimpan"
+  },
   "requests": {
     "choose_title": "Pilih hal yang ingin Anda ketahui",
     "send": "Kirim",
