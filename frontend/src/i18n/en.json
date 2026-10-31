@@ -733,7 +733,7 @@
   },
   "change": {
     "title": "Different from usual",
-    "guide": "If you are concerned, please talk to a nurse or a counselor. For sudden changes, call by phone",
+    "guide": "If you are concerned, please talk to a nurse or a counselor.",
     "from_meal": "{{slot}} on {{date}}",
     "rule": {
       "meal_low": "Meals: {{count}} meals in a row, a little or less, starting from {{from}}",

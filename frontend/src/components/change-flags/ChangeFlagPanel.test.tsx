@@ -101,7 +101,9 @@ describe('目印の欄（spec 006 の T006・T013）', () => {
   it('そばに、看護職員・生活相談員への案内を出す（FR-004）', () => {
     const shown = text(render({ current: [mealFlag()], history: [] }))
 
-    expect(shown).toContain('気になるときは、看護職員・生活相談員に相談してください。急変は電話で')
+    expect(shown).toContain('気になるときは、看護職員・生活相談員に相談してください。')
+    // 急変・事故の電話の案内は、様子のメモを書く画面に出す（目印のそばには入れない。2026-10-30）
+    expect(shown).not.toContain('急変は電話で')
   })
 
   it('まだ確かめていない目印には、「確かめた」とひとこと欄（100 文字まで・任意）を出す', () => {
@@ -213,7 +215,7 @@ describe('目印の欄（spec 006 の T006・T013）', () => {
     expect(shown).toContain('消えた日：10月23日')
     expect(shown).toContain('確かめた人：田中（10月22日）')
     // 今の目印がないので、「確かめた」の欄と案内は出さない
-    expect(shown).not.toContain('急変は電話で')
+    expect(shown).not.toContain('気になるときは')
     expect(shown).not.toContain('いつもと違う様子')
   })
 

@@ -68,7 +68,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
   目印が付いても `notifications`・`email_outbox` の行が増えない（SC-004）／家族の連絡帳・通知のまとめ・spec 001 の共通の関数の返す値に目印が入らない（FR-007・SC-005）／ログに入居者の氏名・記録の値が出ない（FR-014）
   （みさき。記録の保存・押し直し・取り消しの API 経由の確認は、下の T005b に切り出した）
 - [x] T005b [P] [US1] テスト `backend/tests/api/test_change_flags.py` に足す（T008 のあと）：記録の保存（`PUT /api/staff/residents/{id}/records`）で当てはまれば目印が付く／押し直し・取り消し（001-T034）で当てはまらなくなれば消える。T005 は `evaluate_change_flags` を直接呼んで確かめたので、**保存・取り消しの処理から実際に呼ばれること**をここで確かめる。**2 人が同時に、同じ入居者の別の食事区分を新しく記録しても、止まらない**（deadlock にならない）テストも入れる（`evaluate_change_flags` の入居者の行のロックが `FOR UPDATE` だと、保存の API 経由でだけ起きるため。R-03。PR #310 のゆうの指摘）（ゆう）
-- [x] T006 [P] [US1] テスト `frontend/src/components/change-flags/ChangeFlagPanel.test.tsx` を書く（Vitest）：`rule_code`・`evidence` から「食事量：昨日の夜ごはんから 2 食続けて、少し以下」のような文を辞書で組み立てる／案内「気になるときは、看護職員・生活相談員に相談してください。急変は電話で」が出る／
+- [x] T006 [P] [US1] テスト `frontend/src/components/change-flags/ChangeFlagPanel.test.tsx` を書く（Vitest）：`rule_code`・`evidence` から「食事量：昨日の夜ごはんから 2 食続けて、少し以下」のような文を辞書で組み立てる／案内「気になるときは、看護職員・生活相談員に相談してください。」が出る（「急変は電話で」は出さない）／
   **辞書の目印まわり（`change.*`）の日本語に、医療の言葉（病気・疑い・診断・症状・脱水 など）が入っていない**（SC-003・research.md R-06）（みさき）
 
 ### Implementation for User Story 1
@@ -83,7 +83,7 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 - [x] T011 [US1] 入居者一覧の API（`backend/app/api/staff/residents.py`、001-T028）で `get_flag_summary` を呼び、`residents[].change_flag`（目印がなければ `null`）と `unconfirmed_flag_count` を足す。一覧を開けるのは事務員以外の職員だけ（spec 001）なので、役割で分けない（contracts/api.md）（ゆう）
 - [x] T012 [US1] `GET /api/staff/residents/{id}/change-flags` を `backend/app/api/staff/change_flags.py` に作る（役割：介護職員・リーダー・生活相談員・施設長。`require_staff(roles)`）：`current`（今の目印：`id`・`rule_code`・`started_at`・`streak`・`evidence`・`status`・`confirmations`）と
   `history`（消えた目印：あわせて `cleared_at`・`cleared_reason`。新しい順）を返す。文言は返さずコードで返す。確かめた職員は `display_name` だけ。ない入居者は 404。ルーターを `backend/app/main.py` に登録する（contracts/api.md）（みさき）
-- [x] T013 [US1] 目印の欄 `frontend/src/components/change-flags/ChangeFlagPanel.tsx` を作る：当てはまった決まりともとの記録（日付・項目・区分・値）を辞書で組み立てて表示し、そばに案内「気になるときは、看護職員・生活相談員に相談してください。急変は電話で」を出す（FR-003・FR-004）。
+- [x] T013 [US1] 目印の欄 `frontend/src/components/change-flags/ChangeFlagPanel.tsx` を作る：当てはまった決まりともとの記録（日付・項目・区分・値）を辞書で組み立てて表示し、そばに案内「気になるときは、看護職員・生活相談員に相談してください。」を出す（FR-003・FR-004）。
   目印・決まりの名前・案内の日本語を `frontend/src/i18n/ja.json` の `change.*` に足す（医療の言葉を使わない）。T006 を通す（みさき）
 - [x] T014 [P] [US1] 入居者一覧の上の部品 `frontend/src/components/change-flags/UnconfirmedFlagFilter.tsx` を作る：「確かめていない目印：◯件」（`unconfirmed_flag_count`）を出し、押すと、まだ確かめていない目印のある入居者だけに絞れる（FR-003）。（みさき）
 - [x] T015 [US1] 入居者一覧（`frontend/src/pages/staff/ResidentList.tsx`、001-T031）に `UnconfirmedFlagFilter` を置き、目印のある入居者の行に「⚠️ いつもと違う様子」を出して上のほうに並べる。記録の画面（`frontend/src/pages/staff/RecordPage.tsx`、001-T032）に `ChangeFlagPanel` を置く（事務員のときは出さない）。

@@ -733,7 +733,7 @@
   },
   "change": {
     "title": "Berbeda dari biasanya",
-    "guide": "Jika Anda khawatir, mohon konsultasikan dengan perawat atau konselor. Untuk perubahan mendadak, hubungi lewat telepon",
+    "guide": "Jika Anda khawatir, mohon konsultasikan dengan perawat atau konselor.",
     "from_meal": "{{slot}} pada {{date}}",
     "rule": {
       "meal_low": "Makan: {{count}} kali berturut-turut, sedikit atau kurang, mulai dari {{from}}",
