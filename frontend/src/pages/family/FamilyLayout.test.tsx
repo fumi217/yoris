@@ -8,9 +8,10 @@ import { FamilyLayout } from './FamilyLayout'
 
 const me: Me = { kind: 'family', role: null, display_name: '架空 太郎さんの母', language: 'ja' }
 
-function render(path = '/family') {
+function render(path = '/family', features?: { album: boolean }) {
   const queryClient = new QueryClient()
   queryClient.setQueryData(ME_QUERY_KEY, me)
+  if (features) queryClient.setQueryData(['family', 'features'], features)
   return renderToStaticMarkup(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[path]}>
@@ -41,18 +42,49 @@ describe('FamilyLayout の上の枠', () => {
 })
 
 describe('FamilyLayout の下のメニューのアイコン（#379）', () => {
-  it('5 つとも、Font Awesome のアイコン（svg。飾りなので読み上げない）。絵文字は出さない', () => {
-    const html = render()
-    const nav = html.match(/<nav[^>]*>(.*?)<\/nav>/)?.[1] ?? ''
+  it('すべて、Font Awesome のアイコン（svg。飾りなので読み上げない）。絵文字は出さない。アルバムが出るときは 5 つ', () => {
+    const nav = (html: string) => html.match(/<nav[^>]*>(.*?)<\/nav>/)?.[1] ?? ''
+    const shown = nav(render('/family', { album: true }))
 
-    expect(nav.match(/<svg[^>]*aria-hidden="true"/g)).toHaveLength(5)
-    expect(nav).not.toMatch(/[\u{1F300}-\u{1FAFF}☰]/u)
+    expect(shown.match(/<svg[^>]*aria-hidden="true"/g)).toHaveLength(5)
+    expect(shown).not.toMatch(/[\u{1F300}-\u{1FAFF}☰]/u)
+  })
+
+  it('下は 連絡帳・知りたいこと・面会予約・アルバム・その他。アルバムは、見せないときは出ない（答えが来るまでも出さない）', () => {
+    const nav = (html: string) => html.match(/<nav[^>]*>(.*?)<\/nav>/)?.[1] ?? ''
+    const text = (html: string) =>
+      nav(html)
+        .replace(/<rt>.*?<\/rt>|<rp>.*?<\/rp>/g, '')
+        .replace(/<[^>]+>/g, '')
+
+    expect(text(render('/family', { album: true }))).toBe(
+      '連絡帳知りたいこと面会予約アルバムその他',
+    )
+    expect(text(render('/family', { album: false }))).toBe('連絡帳知りたいこと面会予約その他')
+    expect(text(render('/family'))).toBe('連絡帳知りたいこと面会予約その他')
+  })
+
+  it('「お知らせ」「お問い合わせ」は、下に出ない（「その他」の中）。「知りたいこと」は、下に出る', () => {
+    const nav = render('/family', { album: true }).match(/<nav[^>]*>(.*?)<\/nav>/)?.[1] ?? ''
+
+    // ふりがな（<rt>・<rp>）と印を除いた、画面に出る文字
+    const shown = nav.replace(/<rt>.*?<\/rt>|<rp>.*?<\/rp>/g, '').replace(/<[^>]+>/g, '')
+
+    expect(shown).not.toContain('お知らせ')
+    expect(shown).not.toContain('お問い合わせ')
+    expect(shown).toContain('知りたいこと')
+  })
+
+  it('「その他」の中の画面（お知らせなど）を開いているときは、「その他」が選ばれた表示になる', () => {
+    const nav = render('/family/notifications').match(/<nav[^>]*>(.*?)<\/nav>/)?.[1] ?? ''
+
+    expect(nav).toMatch(/class="[^"]*font-bold text-primary[^"]*"[^>]*>(?:(?!<\/a>).)*その/)
   })
 
   it('選んでいるものは太字・YORIS の青、ほかはブルーグレー', () => {
-    const nav = render('/family/notifications').match(/<nav[^>]*>(.*?)<\/nav>/)?.[1] ?? ''
+    const nav = render('/family/requests').match(/<nav[^>]*>(.*?)<\/nav>/)?.[1] ?? ''
 
-    expect(nav).toMatch(/class="[^"]*font-bold text-primary[^"]*"[^>]*>(?:(?!<\/a>).)*お/)
+    expect(nav).toMatch(/class="[^"]*font-bold text-primary[^"]*"[^>]*>(?:(?!<\/a>).)*知/)
     expect(nav).toContain('text-ink-sub')
   })
 })

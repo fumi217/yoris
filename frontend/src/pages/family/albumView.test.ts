@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { dayParts, mergeAlbumPages, nextBefore, type AlbumPage, type AlbumPhoto } from './albumView'
-import { familyMoreMenu, visibleMoreMenu } from './menu'
+import { familyMainMenu, visibleMainMenu } from './menu'
 
 const photo = (id: number): AlbumPhoto => ({
   id,
@@ -66,22 +66,22 @@ describe('nextBefore', () => {
   })
 })
 
-describe('visibleMoreMenu', () => {
+describe('visibleMainMenu（下のメニュー）', () => {
   const hasAlbum = (items: { to: string }[]) => items.some((item) => item.to === '/family/album')
 
   it('アルバムは、「見せる」と分かったときだけ出る', () => {
-    expect(hasAlbum(visibleMoreMenu({ album: true }))).toBe(true)
-    expect(hasAlbum(visibleMoreMenu({ album: false }))).toBe(false)
+    expect(hasAlbum(visibleMainMenu({ album: true }))).toBe(true)
+    expect(hasAlbum(visibleMainMenu({ album: false }))).toBe(false)
   })
 
   it('API の答えが来るまでは、アルバムを出さない（出たり消えたりしない）', () => {
-    expect(hasAlbum(visibleMoreMenu(undefined))).toBe(false)
+    expect(hasAlbum(visibleMainMenu(undefined))).toBe(false)
   })
 
   it('アルバム以外の項目は、いつも出る', () => {
-    const others = familyMoreMenu.filter((item) => item.to !== '/family/album')
+    const others = familyMainMenu.filter((item) => item.to !== '/family/album')
 
-    expect(visibleMoreMenu({ album: false })).toEqual(others)
-    expect(visibleMoreMenu(undefined)).toEqual(others)
+    expect(visibleMainMenu({ album: false })).toEqual(others)
+    expect(visibleMainMenu(undefined)).toEqual(others)
   })
 })

@@ -1,22 +1,15 @@
-import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
-import { api } from '../../api/client'
 import { Icon } from '../../components/Icon'
 import { LanguageSwitcher } from '../../components/LanguageSwitcher'
 import { LogoutButton } from '../../components/LogoutButton'
 import { Text } from '../../components/Text'
-import type { FamilyFeatures } from './albumView'
-import { visibleMoreMenu } from './menu'
+import { familyMoreMenu } from './menu'
 
-/** 「その他」の中身。menu.ts の項目（アルバムは「見せる」設定のときだけ）を並べ、最後にログアウト。 */
+/** 「その他」の中身。menu.ts の項目（知りたいこと・お問い合わせ・設定）を並べ、最後に言語とログアウト。 */
 export function FamilyMorePage() {
-  const features = useQuery({
-    queryKey: ['family', 'features'],
-    queryFn: () => api.get<FamilyFeatures>('/api/family/features'),
-  })
   return (
     <ul className="divide-y">
-      {visibleMoreMenu(features.data).map((item) => (
+      {familyMoreMenu.map((item) => (
         <li key={item.to}>
           <Link to={item.to} className="flex items-center gap-3 p-4">
             <Icon name={item.icon} className="text-lg text-primary" />

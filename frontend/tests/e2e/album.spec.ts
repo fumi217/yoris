@@ -104,9 +104,8 @@ test('アルバム：載せる → 家族 A が見る → 家族 B には見え�
     // 載せたあと、すぐ下の「載せた写真」の一覧にも出る
     await expect(staff.locator('ul.grid li', { hasText: comment })).toBeVisible()
 
-    // --- 5：家族 A が「その他」→「アルバム」（2 タップ）で開く。コメントが見える ---
+    // --- 5：家族 A が、下のメニューの「アルバム」（1 タップ。#396）で開く。コメントが見える ---
     await familyA.goto('/family')
-    await familyA.getByRole('link', { name: /その他/ }).click()
     await familyA.getByRole('link', { name: /アルバム/ }).click()
     await expect(familyA.getByRole('heading', { name: 'アルバム' })).toBeVisible()
     await expect(familyA.getByText(comment)).toBeVisible()

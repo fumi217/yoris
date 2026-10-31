@@ -32,8 +32,28 @@ describe('メニューのアイコン（#379）', () => {
     }
   })
 
-  it('同じ用途は同じアイコン：下のメニューの 4 つは、すべて別のアイコン', () => {
+  it('同じ用途は同じアイコン：下のメニューは、すべて別のアイコン', () => {
     const icons = familyMainMenu.map((item) => item.icon)
     expect(new Set(icons).size).toBe(icons.length)
+  })
+})
+
+describe('メニューの並び（spec 001 の Session 2026-10-30。#396）', () => {
+  it('下は 連絡帳・知りたいこと・面会予約・アルバム。お知らせ・お問い合わせ・設定は「その他」の中', () => {
+    expect(familyMainMenu.map((item) => item.to)).toEqual([
+      '/family',
+      '/family/requests',
+      '/family/visits',
+      '/family/album',
+    ])
+    expect(familyMoreMenu.map((item) => item.to)).toEqual([
+      '/family/notifications',
+      '/family/inquiry',
+      '/family/settings',
+    ])
+  })
+
+  it('下は、「その他」を足して 5 つまで', () => {
+    expect(familyMainMenu.length + 1).toBeLessThanOrEqual(5)
   })
 })

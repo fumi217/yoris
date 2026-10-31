@@ -1,23 +1,31 @@
 import { useEffect, useRef, type RefObject } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
+import { api } from '../../api/client'
 import { useMe } from '../../auth/me'
 import { Icon } from '../../components/Icon'
 import { Logo } from '../../components/Logo'
 import { Text } from '../../components/Text'
 import { usePageTitle } from '../../components/usePageTitle'
-import { familyMainMenu, familyMoreMenu, familyTitleKey } from './menu'
+import type { FamilyFeatures } from './albumView'
+import { familyMoreMenu, familyTitleKey, visibleMainMenu } from './menu'
 
-// 下は 4 つ＋「その他」なので、360px の幅でも名前が折り返さない大きさにする（PR #213 さとこ）。
+// 下は最大 4 つ＋「その他」なので、360px の幅でも名前が折り返さない大きさにする（PR #213 さとこ）。
 // 選んでいるものは YORIS の青・太字、ほかはブルーグレー（色だけにしない。太字でも示す。#379）。
 // アイコンの大きさ・文字との間は、すべてそろえる（文字は text-xs、アイコンは text-lg）
 const tabClass = ({ isActive }: { isActive: boolean }) =>
   `flex flex-1 flex-col items-center gap-0.5 py-2 text-xs ${isActive ? 'font-bold text-primary' : 'text-ink-sub'}`
 
-/** 家族の画面の枠。上の左にロゴ・右に入居者の呼び名、下にメニュー（4 つ＋「その他」）。 */
+/** 家族の画面の枠。上の左にロゴ・右に入居者の呼び名、下にメニュー（連絡帳・面会予約・アルバム・お知らせ＋「その他」）。 */
 export function FamilyLayout() {
   const me = useMe().data
   const { pathname } = useLocation()
-  // 「その他」の中の画面（面会など）を開いているときも、「その他」を選ばれた表示にする
+  // アルバムは、開示設定で「見せる」ときだけ下に出す（答えが来るまでは出さない）
+  const features = useQuery({
+    queryKey: ['family', 'features'],
+    queryFn: () => api.get<FamilyFeatures>('/api/family/features'),
+  })
+  // 「その他」の中の画面（知りたいことなど）を開いているときも、「その他」を選ばれた表示にする
   const inMore = familyMoreMenu.some((item) => pathname.startsWith(item.to))
   // ブラウザのタブの題：「連絡帳 ｜ YORIS」など（デザインの決めごと 12.3。#330）
   usePageTitle(familyTitleKey(pathname) ?? undefined)
@@ -40,7 +48,7 @@ export function FamilyLayout() {
         ref={menuRef}
         className="fixed inset-x-0 bottom-0 mx-auto flex max-w-xl border-t bg-white"
       >
-        {familyMainMenu.map((item) => (
+        {visibleMainMenu(features.data).map((item) => (
           // 連絡帳（/family）は、ほかの画面を開いているときに選ばれた表示にしない
           <NavLink key={item.to} to={item.to} end={item.to === '/family'} className={tabClass}>
             <Icon name={item.icon} className="text-lg" />
