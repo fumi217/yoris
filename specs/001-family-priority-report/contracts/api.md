@@ -55,13 +55,13 @@
 |---|---|---|---|
 | `POST /api/auth/login` | だれでも | ミ | 職員は ID、家族はメールアドレスと、パスワードでログイン（`{login, password}`。`login` は職員の ID か家族のメールアドレス）。成功したら `GET /api/me` と同じ中身を返す（画面が続けて `/api/me` を呼ばずに、最初の画面へ移れるように。#65）。違えば 401 `login_failed` |
 | `POST /api/auth/logout` | ログイン中 | ミ | ログアウト（セッションをすぐ消し、Cookie も消す。204。ログインしていなくても 204） |
-| `GET /api/me` | ログイン中 | ミ | 自分の種類（家族／職員）・役割・表示名・表示言語（`{kind, role, display_name, language}`。表示名は、職員は返事に出す名前、家族は入居者の呼び名。ユーザーの切り替えを確かめるため、#64 で先に作った） |
+| `GET /api/me` | ログイン中 | ミ | 自分の種類（家族／職員）・役割・表示名・表示言語（`{kind, role, display_name, language}`。表示名は、職員は返事に出す名前、家族は入居者の名前（表示言語に合わせる。data-model.md「入居者の名前の出し方」。#389）。ユーザーの切り替えを確かめるため、#64 で先に作った） |
 | `PUT /api/me/language` | ログイン中 | 作 | 表示言語を変える（`ja`／`id`／`en`。FR-021） |
 | `POST /api/admin/staff` | CO・D | 作 | 職員のアカウントを作る（#68）。本文 `{display_name, role, occupation}`：`display_name` は前後の空白を除いて 1〜20 文字（同じ名前の人がいてもよい）、`role` は役割の 5 つ、`occupation` は職種の 8 つのコードか、null・省略（知らない値は 422 `validation_error`。空なら家族の画面に名前だけが出る）。施設は、ログイン中の職員の施設から決める（本文からは受け取らない）。どの役割も作れる（生活相談員が施設長を作ることもできる）。成功は 201 `{id, login_id, display_name, role, occupation, initial_password}`。ID は `s` ＋ 5 桁（R-06）、初期パスワードは半角の英数字 8 文字（見分けにくい `0`・`O`・`1`・`l`・`I` は除く）をサーバーが作り、この返事で 1 回だけ返す（`Cache-Control: no-store`。DB にはハッシュだけを入れ、ログに出さない）。表示言語は `ja` で作る。初回ログインで変える仕組み・再発行は #276 |
 | `POST /api/admin/invitations` | CO・D | 作 | 家族を招待する（招待のメールを送る） |
 | `POST /api/invitations/accept` | だれでも | 作 | 招待を受けてパスワードを決める。トークンは本文で送る（メールのリンクは `#token=` の形） |
 | `POST /api/dev/switch-user` | 開発環境だけ | ミ | 初期データの人としてログインする。本文 `{user_id}`、成功は 204（前のセッションは消す）、いない人なら 404（本番では存在しない。`APP_ENV` がなければ本番扱い。R-02・#64） |
-| `GET /api/dev/users` | 開発環境だけ | ミ | 切り替えで選べる人の一覧。`[{user_id, kind, role, display_name, language}]`（職員が先、それぞれ id の順。家族の `display_name` は入居者の呼び名）。本番では存在しない（#62） |
+| `GET /api/dev/users` | 開発環境だけ | ミ | 切り替えで選べる人の一覧。`[{user_id, kind, role, display_name, language}]`（職員が先、それぞれ id の順。家族の `display_name` は入居者の名前）。本番では存在しない（#62） |
 
 - 職員は操作がないまま 30 分で自動ログアウト、家族は 30 日（R-01。作り込み）。
 

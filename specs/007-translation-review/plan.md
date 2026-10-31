@@ -65,7 +65,7 @@ AI へのつなぎ方は spec 004 の `inquiry/llm.py`（OpenRouter ＋ OpenAI P
 | 家族に出す道（連絡帳・通知のまとめ）は `get_disclosed_memos()` を通り、`status = 'approved'` と開示設定の両方で絞る（[data-model.md](./data-model.md)） | ✅ |
 | 問い合わせ AI（spec 004）は様子のメモを根拠にしない（spec 004 FR-002 は記録と返事だけ）。FR-012a の「問い合わせ AI に出さない」はそのまま満たす | ✅ |
 | 承認する API は、書いた職員本人を受け付けない（[contracts/api.md](./contracts/api.md)） | ✅ |
-| AI に渡すのは原文（または整えた日本語）と固定の指示だけ。入居者の呼び名も渡さない | ✅ |
+| AI に渡すのは原文（または整えた日本語）と固定の指示だけ。入居者の名前も渡さない | ✅ |
 
 ## Project Structure
 
