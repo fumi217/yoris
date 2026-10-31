@@ -87,11 +87,11 @@
 |---|---|---|
 | `GET /api/family/notification-settings` の返り値 | `notify_album`（アルバムの新しい写真を通知するか）。アルバムを見せない設定のときは、この項目を返さない | FR-017 |
 | `PUT /api/family/notification-settings` | `notify_album` を変えられる | FR-017 |
-| `GET /api/family/notifications` の返り値（まとめ） | `has_album`（まとめに写真が含まれるか）。画面は、文言を辞書から引く | FR-018 |
+| `GET /api/family/notifications` の返り値（まとめ） | `has_album`（まとめに写真が含まれるか）と `has_records`（まとめに記録が含まれるか）。画面は、2 つの組み合わせ（記録だけ・写真だけ・両方）で、文言を辞書から引く | FR-018 |
 
 ## メール（worker。spec 001 のメールの一覧に足すもの）
 
-新しい種類は作らない。`daily_digest`・`weekly_digest` の文面を、`has_album` で出し分ける。
+新しい種類は作らない。`daily_digest`・`weekly_digest` の文面を、`has_album` と `has_records` で出し分ける。
 
 | 種類 | 件名の例 | テンプレートに渡すもの |
 |---|---|---|

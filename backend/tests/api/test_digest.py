@@ -1,4 +1,4 @@
-"""20 時のまとめ（001-T065・T066）のテスト。SC-010・research.md R-13。
+"""20 時のまとめ（001-T065・T066）と、アルバムの写真（005-T025）のテスト。SC-010・research.md R-13。
 
 テストごとに取り消す session を使う。日付は、初期データの記録とぶつからないよう、
 ずっと先（2031 年）にする。時刻は at で渡す（日本時間）。
@@ -6,6 +6,7 @@
 """
 
 import logging
+from collections.abc import Callable
 from contextlib import contextmanager
 from datetime import date, datetime, timedelta, timezone
 from types import SimpleNamespace
@@ -18,12 +19,17 @@ from sqlalchemy.orm import Session
 from app.jobs import digest
 from app.jobs import run as run_module
 from app.jobs.digest import create_digests
-from app.models.core import User
+from app.models.album import AlbumPhoto
+from app.models.core import Resident, User
 from app.models.disclosure import DisclosureSetting
+from app.models.files import UploadedFile
 from app.models.notifications import DigestRun, EmailOutbox, Notification, NotificationSetting
 from app.models.records import DAY_SLOT, VALUES, CareRecord
 from app.seed.themes import add_disclosure_settings, add_themes
 from app.services.disclosure import clear_disclosure_cache
+from app.services.mail import deliver_pending
+from app.services.uploads import save_upload
+from tests.helpers.images import fake_png
 
 JST = timezone(timedelta(hours=9))
 SUNDAY = date(2031, 3, 9)
@@ -279,6 +285,7 @@ def test_the_unique_rule_stops_the_same_digest_made_at_once(session, world):
         world.family.id,
         resident_id,
         ["meal", "mood", "sleep"],
+        True,  # notify_album
         "daily",
         at(MONDAY, 20),
     )
@@ -434,3 +441,219 @@ def test_the_time_can_be_given_by_hand(monkeypatch):
     digest.main()
 
     assert given == [at(MONDAY, 20)]
+
+
+# ---- アルバムの写真（005-T025。FR-017〜019・SC-007） ----
+
+ALBUM_TYPES = ("image/jpeg", "image/png")
+
+
+@pytest.fixture
+def add_photo(
+    session: Session, world, tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> Callable[..., AlbumPhoto]:
+    """家族の入居者の写真を 1 枚、載せた状態にする（保存先は一時フォルダ）。"""
+    monkeypatch.setenv("UPLOAD_DIR", str(tmp_path))
+
+    def add(posted_at: datetime, comment: str | None = None) -> AlbumPhoto:
+        saved = save_upload(
+            session,
+            data=fake_png(),
+            purpose="album",
+            uploaded_by=world.staff.id,
+            allowed_types=ALBUM_TYPES,
+        )
+        photo = AlbumPhoto(
+            resident_id=world.family.resident_id,
+            file_id=saved.id,
+            comment=comment,
+            posted_by=world.staff.id,
+            posted_at=posted_at,
+        )
+        session.add(photo)
+        session.flush()
+        return photo
+
+    return add
+
+
+def hide_album(session: Session, world) -> None:
+    session.execute(
+        update(DisclosureSetting)
+        .where(
+            DisclosureSetting.facility_id == world.facility.id,
+            DisclosureSetting.target_type == "feature",
+            DisclosureSetting.target_code == "album",
+        )
+        .values(visible=False)
+    )
+    session.flush()
+    clear_disclosure_cache(world.facility.id)
+
+
+def test_a_day_with_only_photos_makes_a_digest_with_album(session, world, add_photo):
+    add_photo(at(MONDAY, 10))
+
+    create_digests(session, at(MONDAY, 20))
+
+    [notice] = digests(session, world)
+    assert notice.kind == "daily_digest"
+    assert (notice.has_album, notice.has_records) == (True, False)
+    assert [run.kind for run in runs(session, world)] == ["daily"]
+
+
+def test_a_day_with_only_records_has_no_album(session, world, add_photo):
+    record(session, world, at(MONDAY, 10))
+
+    create_digests(session, at(MONDAY, 20))
+
+    [notice] = digests(session, world)
+    assert (notice.has_album, notice.has_records) == (False, True)
+
+
+def test_records_and_photos_make_one_digest_with_both(session, world, add_photo):
+    record(session, world, at(MONDAY, 10))
+    add_photo(at(MONDAY, 11))
+
+    create_digests(session, at(MONDAY, 20))
+
+    [notice] = digests(session, world)
+    assert (notice.has_album, notice.has_records) == (True, True)
+
+
+def test_three_photos_make_only_one_notice(session, world, add_photo):
+    for hour in (9, 10, 11):
+        add_photo(at(MONDAY, hour))
+
+    create_digests(session, at(MONDAY, 20))
+
+    assert len(digests(session, world)) == 1
+
+
+def test_a_photo_digest_made_twice_at_the_same_time_is_made_once(session, world, add_photo):
+    add_photo(at(MONDAY, 10))
+
+    create_digests(session, at(MONDAY, 20))
+    create_digests(session, at(MONDAY, 20))
+
+    assert len(digests(session, world)) == 1
+    assert len(runs(session, world)) == 1
+
+
+def test_a_deleted_photo_is_not_counted(session, world, add_photo):
+    photo = add_photo(at(MONDAY, 10))
+    photo.deleted_at = at(MONDAY, 12)
+    photo.deleted_by = world.staff.id
+    session.flush()
+
+    create_digests(session, at(MONDAY, 20))
+
+    assert digests(session, world) == []
+    assert runs(session, world) == []
+
+
+def test_a_photo_after_8pm_goes_into_the_next_digest(session, world, add_photo):
+    add_photo(at(MONDAY, 21))
+
+    create_digests(session, at(MONDAY, 22))  # 締めは 20:00 なので、21 時の写真は入らない
+    assert digests(session, world) == []
+
+    create_digests(session, at(TUESDAY, 20))
+    [notice] = digests(session, world)
+    assert notice.has_album is True
+
+
+def test_no_records_and_no_photos_make_nothing_and_leave_no_run(session, world, add_photo):
+    create_digests(session, at(MONDAY, 20))
+
+    assert digests(session, world) == []
+    assert runs(session, world) == []
+
+
+def test_without_notify_album_photos_are_left_out(session, world, add_photo):
+    set_settings(session, world, notify_album=False)
+    add_photo(at(MONDAY, 10))
+
+    create_digests(session, at(MONDAY, 20))
+    assert digests(session, world) == []
+    assert runs(session, world) == []
+
+    record(session, world, at(MONDAY, 11))
+    create_digests(session, at(MONDAY, 20))
+    [notice] = digests(session, world)
+    assert (notice.has_album, notice.has_records) == (False, True)
+
+
+def test_a_hidden_album_leaves_photos_out(session, world, add_photo):
+    hide_album(session, world)
+    add_photo(at(MONDAY, 10))
+
+    create_digests(session, at(MONDAY, 20))
+    assert digests(session, world) == []
+    assert runs(session, world) == []
+
+    record(session, world, at(MONDAY, 11))
+    create_digests(session, at(MONDAY, 20))
+    [notice] = digests(session, world)
+    assert (notice.has_album, notice.has_records) == (False, True)
+
+
+def test_frequency_none_ignores_photos(session, world, add_photo):
+    set_settings(session, world, frequency="none")
+    add_photo(at(SUNDAY, 10))
+
+    create_digests(session, at(SUNDAY, 20))
+
+    assert digests(session, world) == []
+    assert runs(session, world) == []
+
+
+def test_a_weekly_family_counts_the_photos_of_the_week(session, world, add_photo):
+    set_settings(session, world, frequency="weekly")
+    add_photo(at(SUNDAY - timedelta(days=3), 10))
+
+    create_digests(session, at(SUNDAY, 20))
+
+    [notice] = digests(session, world)
+    assert notice.kind == "weekly_digest"
+    assert (notice.has_album, notice.has_records) == (True, False)
+
+
+def test_the_mail_and_notice_have_no_photo_content(session, world, add_photo):
+    photo = add_photo(at(MONDAY, 10), comment="とても楽しそうでした")
+
+    create_digests(session, at(MONDAY, 20))
+
+    email = session.get(User, world.family.user_id).email
+    [outbox] = session.scalars(select(EmailOutbox).where(EmailOutbox.to_email == email)).all()
+    # 渡すのは、言語・リンク・文面を選ぶ真偽だけ。写真・ファイル名・コメント・入居者名は入れない
+    # （FR-019）
+    assert set(outbox.params) <= {"lang", "link", "has_album", "has_records"}
+    resident = session.get(Resident, world.family.resident_id)
+    storage_key = session.get(UploadedFile, photo.file_id).storage_key
+    text = str(outbox.params)
+    for secret in ("とても楽しそうでした", resident.display_name, resident.name, storage_key):
+        assert secret not in text
+    [notice] = digests(session, world)
+    assert photo.comment not in str(vars(notice))
+
+
+def test_the_photo_digest_mail_is_built_from_the_stored_row(session, world, add_photo, monkeypatch):
+    # 真偽値の params（has_album・has_records）が、DB（JSONB）を通っても壊れず、
+    # 配る処理（build_message・deliver_pending）まで届くことを確かめる
+    monkeypatch.setenv("MAIL_FROM", "no-reply@example.com")
+    monkeypatch.setenv("APP_BASE_URL", "http://app.test")
+    add_photo(at(MONDAY, 10))
+
+    create_digests(session, at(MONDAY, 20))
+
+    email = session.get(User, world.family.user_id).email
+    session.expire_all()  # DB から読み直す
+    [outbox] = session.scalars(select(EmailOutbox).where(EmailOutbox.to_email == email)).all()
+    assert outbox.params["has_album"] is True
+    assert outbox.params["has_records"] is False
+
+    sent = []
+    assert deliver_pending(session, ids=[outbox.id], send=sent.append) == 1
+    assert sent[0]["Subject"] == "アルバムに新しい写真が載りました"
+    assert outbox.sent_at is not None

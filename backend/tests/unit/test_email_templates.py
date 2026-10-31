@@ -126,3 +126,65 @@ def test_missing_or_unknown_language_falls_back_to_japanese(lang):
 def test_curly_braces_in_the_title_do_not_break_the_mail():
     _, body = render("announcement", {"title": "{link} {visit_at} {x}"}, "http://base.test")
     assert "{link} {visit_at} {x}" in body
+
+
+# ---- まとめに写真が入るとき（005-T027。FR-018・FR-019） ----
+
+ALBUM_ONLY = {"has_album": True, "has_records": False}
+ALBUM_AND_RECORDS = {"has_album": True, "has_records": True}
+
+
+def test_digest_mail_without_album_stays_the_same():
+    subject, body = render("daily_digest", {"lang": "ja"}, "http://base.test")
+    assert subject == "今日の連絡帳がまとまりました"
+    assert "写真" not in subject + body
+
+
+def test_digest_mail_with_photos_only():
+    subject, body = render("daily_digest", {**ALBUM_ONLY, "lang": "ja"}, "http://base.test")
+    assert subject == "アルバムに新しい写真が載りました"
+    assert "http://base.test" in body
+    subject, _ = render("weekly_digest", {**ALBUM_ONLY, "lang": "ja"}, "http://base.test")
+    assert subject == "今週、アルバムに新しい写真が載りました"
+
+
+@pytest.mark.parametrize("template", ["daily_digest", "weekly_digest"])
+def test_digest_mail_with_records_and_photos(template):
+    subject, _ = render(template, {**ALBUM_AND_RECORDS, "lang": "ja"}, "http://base.test")
+    assert "連絡帳がまとまりました" in subject
+    assert "アルバムに新しい写真が載りました" in subject
+
+
+@pytest.mark.parametrize("template", ["daily_digest", "weekly_digest"])
+@pytest.mark.parametrize("language", ["ja", "id", "en"])
+@pytest.mark.parametrize("flags", [ALBUM_ONLY, ALBUM_AND_RECORDS])
+def test_digest_album_mails_exist_in_every_language(template, language, flags):
+    subject, body = render(template, {**flags, "lang": language}, "http://base.test")
+    assert subject
+    assert "http://base.test" in body
+    # 記録だけの文面とは別の文面になっている
+    plain_subject, _ = render(template, {"lang": language}, "http://base.test")
+    assert subject != plain_subject
+
+
+def test_digest_album_mails_show_only_the_link():
+    # params に余計なものが入っていても、文面には出ない（FR-019 の最後の守り）
+    params = {
+        **ALBUM_AND_RECORDS,
+        "lang": "ja",
+        "comment": "ひみつのコメント",
+        "file_name": "photo-secret.png",
+        "resident": "佐藤さんの母",
+    }
+    subject, body = render("daily_digest", params, "http://base.test")
+    for secret in ("ひみつのコメント", "photo-secret.png", "佐藤さんの母"):
+        assert secret not in subject + body
+
+
+@pytest.mark.parametrize("template", ["reply", "announcement", "visit_confirmed"])
+def test_album_flag_does_not_change_other_kinds(template):
+    plain = render(template, {"lang": "ja", "title": "題", "visit_at": "月曜"}, None)
+    flagged = render(
+        template, {**ALBUM_ONLY, "lang": "ja", "title": "題", "visit_at": "月曜"}, None
+    )
+    assert flagged == plain

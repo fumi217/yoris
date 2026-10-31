@@ -81,6 +81,72 @@ _TEXTS: dict[str, dict[str, tuple[str, str]]] = {
             "This week's daily notes are ready. Please open the app to check them.\n{link}\n",
         ),
     },
+    # まとめに写真が入るとき（spec 005 の FR-018）。album は写真だけ、both は記録と写真の両方
+    "daily_digest:album": {
+        "ja": (
+            "アルバムに新しい写真が載りました",
+            "アルバムに新しい写真が載りました。アプリを開いて確かめてください。\n{link}\n",
+        ),
+        "id": (
+            "Foto baru telah ditambahkan ke album",
+            "Foto baru telah ditambahkan ke album. "
+            "Silakan buka aplikasi untuk memeriksanya.\n{link}\n",
+        ),
+        "en": (
+            "New photos have been added to the album",
+            "New photos have been added to the album. Please open the app to check them.\n{link}\n",
+        ),
+    },
+    "daily_digest:both": {
+        "ja": (
+            "今日の連絡帳がまとまりました（アルバムに新しい写真が載りました）",
+            "今日の連絡帳がまとまりました。アルバムに新しい写真が載りました。"
+            "アプリを開いて確かめてください。\n{link}\n",
+        ),
+        "id": (
+            "Buku harian hari ini sudah siap (foto baru telah ditambahkan ke album)",
+            "Buku harian hari ini sudah siap. Foto baru telah ditambahkan ke album. "
+            "Silakan buka aplikasi untuk memeriksanya.\n{link}\n",
+        ),
+        "en": (
+            "Today's daily notes are ready (new photos added to the album)",
+            "Today's daily notes are ready. New photos have been added to the album. "
+            "Please open the app to check them.\n{link}\n",
+        ),
+    },
+    "weekly_digest:album": {
+        "ja": (
+            "今週、アルバムに新しい写真が載りました",
+            "今週、アルバムに新しい写真が載りました。アプリを開いて確かめてください。\n{link}\n",
+        ),
+        "id": (
+            "Foto baru telah ditambahkan ke album minggu ini",
+            "Foto baru telah ditambahkan ke album minggu ini. "
+            "Silakan buka aplikasi untuk memeriksanya.\n{link}\n",
+        ),
+        "en": (
+            "New photos were added to the album this week",
+            "New photos were added to the album this week. "
+            "Please open the app to check them.\n{link}\n",
+        ),
+    },
+    "weekly_digest:both": {
+        "ja": (
+            "今週の連絡帳がまとまりました（アルバムに新しい写真が載りました）",
+            "今週の連絡帳がまとまりました。アルバムに新しい写真が載りました。"
+            "アプリを開いて確かめてください。\n{link}\n",
+        ),
+        "id": (
+            "Buku harian minggu ini sudah siap (foto baru telah ditambahkan ke album)",
+            "Buku harian minggu ini sudah siap. Foto baru telah ditambahkan ke album. "
+            "Silakan buka aplikasi untuk memeriksanya.\n{link}\n",
+        ),
+        "en": (
+            "This week's daily notes are ready (new photos added to the album)",
+            "This week's daily notes are ready. New photos were added to the album. "
+            "Please open the app to check them.\n{link}\n",
+        ),
+    },
     "announcement": {
         "ja": (
             "施設からのお知らせが届きました",
@@ -149,19 +215,35 @@ _TEXTS: dict[str, dict[str, tuple[str, str]]] = {
 }
 
 
-def render(template: str, params: Mapping[str, str], base_url: str | None) -> tuple[str, str]:
-    """(件名, 本文) を返す。リンクは params の "link"（なければアプリの URL）、言語は "lang"。"""
-    texts = _TEXTS.get(template)
-    if texts is None:
+def _text(params: Mapping[str, str | bool], key: str) -> str:
+    value = params.get(key, "")
+    return value if isinstance(value, str) else ""
+
+
+def render(
+    template: str, params: Mapping[str, str | bool], base_url: str | None
+) -> tuple[str, str]:
+    """(件名, 本文) を返す。リンクは params の "link"（なければアプリの URL）、言語は "lang"。
+
+    まとめ（daily_digest・weekly_digest）は、写真が入るとき（has_album）、記録の有無（has_records）で
+    「写真だけ」「両方」の文面にする（spec 005 の FR-018）。
+    """
+    if template not in _TEXTS:
         raise UnknownTemplate(template)
-    subject, body = texts.get(params.get("lang", ""), texts[DEFAULT_LANGUAGE])
-    link = params.get("link") or base_url or ""
+    key = template
+    if params.get("has_album") is True:
+        variant = "both" if params.get("has_records", True) is True else "album"
+        # お知らせ（announcement）など、写真の文面がない種類は、そのままの文面にする
+        key = f"{template}:{variant}" if f"{template}:{variant}" in _TEXTS else template
+    texts = _TEXTS[key]
+    subject, body = texts.get(_text(params, "lang"), texts[DEFAULT_LANGUAGE])
+    link = _text(params, "link") or base_url or ""
     # str.format は使わない（タイトルに { } が入っても壊れないように、1 つずつ置き換える）。
     # 利用者が書いた title は、置き換えた文をもう一度置き換えないよう、最後にする
     for key, value in (
         ("{link}", link),
-        ("{visit_at}", params.get("visit_at", "")),
-        ("{title}", params.get("title", "")),
+        ("{visit_at}", _text(params, "visit_at")),
+        ("{title}", _text(params, "title")),
     ):
         body = body.replace(key, value)
     return subject, body

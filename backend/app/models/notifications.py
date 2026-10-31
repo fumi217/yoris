@@ -75,6 +75,10 @@ class Notification(Base):
     # まとめ（daily_digest・weekly_digest）の対象の期間
     period_start: Mapped[datetime | None]
     period_end: Mapped[datetime | None]
+    # まとめに、載せた写真・記録が含まれるか（spec 005 の FR-018）。写真だけのまとめは
+    # has_records が false。まとめ以外の種類では使わない
+    has_album: Mapped[bool] = mapped_column(server_default=text("false"))
+    has_records: Mapped[bool] = mapped_column(server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     read_at: Mapped[datetime | None]
 
@@ -94,7 +98,7 @@ class EmailOutbox(Base):
     template: Mapped[str]
     # 種類・お知らせのタイトル・リンクだけ。記録・返事・本文は入れない（SC-010）。
     # 例外：owner_account だけは login_id を入れる（spec 002 の research.md R-08）
-    params: Mapped[dict[str, str]] = mapped_column(JSONB)
+    params: Mapped[dict[str, str | bool]] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     # 送れたら入れる
     sent_at: Mapped[datetime | None]
@@ -122,6 +126,8 @@ class NotificationSetting(Base):
     notify_items: Mapped[list[str]] = mapped_column(
         ARRAY(Text), server_default=text("'{meal,mood,sleep}'")
     )
+    # 「アルバムの新しい写真」を通知するか（spec 005 の FR-017）
+    notify_album: Mapped[bool] = mapped_column(server_default=text("true"))
     frequency: Mapped[str] = mapped_column(server_default=DEFAULT_FREQUENCY)
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 

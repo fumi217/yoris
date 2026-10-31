@@ -13,7 +13,7 @@ PostgreSQL のテーブルの形と、状態の動き。土台は [spec 001 の 
 | `album_photos`（新規） | 載せた写真（入居者ごと） | さとこ | 作り込み | FR-001・FR-023 |
 | `uploaded_files`（既存に足す） | `purpose` に `album` を足す | さとこ | 作り込み | FR-034（spec 001） |
 | `disclosure_settings`（既存に足す） | `target_type` に `feature` を足し、`album` の行を持つ | ゆう | 作り込み | FR-013 |
-| `notifications`（既存に足す） | `has_album` を足す | さとこ | 作り込み | FR-017・FR-018 |
+| `notifications`（既存に足す） | `has_album`・`has_records` を足す | さとこ | 作り込み | FR-017・FR-018 |
 | `notification_settings`（既存に足す） | `notify_album` を足す | さとこ | 作り込み | FR-017 |
 
 ## `album_photos`（新規）
@@ -68,6 +68,7 @@ PostgreSQL のテーブルの形と、状態の動き。土台は [spec 001 の 
 | 列 | 変更 |
 |---|---|
 | has_album | boolean、初期値 `false`。まとめ（`daily_digest`・`weekly_digest`）に、載せた写真が含まれるとき `true` |
+| has_records | boolean、初期値 `true`。まとめに、記録が含まれるとき `true`。写真だけのまとめ（その日の記録が 0 件で、写真がある）のとき `false`。`has_album` と合わせて、文言（記録だけ・写真だけ・両方）を決める。すでにあるまとめは、すべて記録のまとめなので `true` |
 
 ## `notification_settings`（既存に足す）
 

@@ -88,6 +88,41 @@ def test_list_has_no_reply_content(world, session):
     assert world["staff"].display_name not in text
 
 
+def _digest(session: Session, family, *, has_album: bool, has_records: bool) -> None:
+    session.add(
+        Notification(
+            family_account_id=family.id,
+            kind="daily_digest",
+            has_album=has_album,
+            has_records=has_records,
+        )
+    )
+    session.commit()
+
+
+def test_list_has_album_and_records_flags_for_a_digest(world, session):
+    _digest(session, world["mine"], has_album=False, has_records=True)
+    _digest(session, world["mine"], has_album=True, has_records=False)
+    _digest(session, world["mine"], has_album=True, has_records=True)
+
+    body = world["client"].get("/api/family/notifications").json()
+
+    # 記録だけ・写真だけ・両方（画面が文言を選ぶ。005-T029）
+    assert {(item["has_album"], item["has_records"]) for item in body} == {
+        (False, True),
+        (True, False),
+        (True, True),
+    }
+
+
+def test_list_flags_have_the_default_for_other_kinds(world, session):
+    _reply_with_notice(session, world["mine"], world["staff"])
+
+    [item] = world["client"].get("/api/family/notifications").json()
+
+    assert (item["has_album"], item["has_records"]) == (False, True)
+
+
 # --- 返事を読んだ ---
 
 

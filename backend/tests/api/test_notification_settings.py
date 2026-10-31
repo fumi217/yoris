@@ -42,6 +42,20 @@ def _hide_item(session, facility, code: str) -> None:
     clear_disclosure_cache(facility.id)
 
 
+def _hide_album(session, facility) -> None:
+    session.execute(
+        update(DisclosureSetting)
+        .where(
+            DisclosureSetting.facility_id == facility.id,
+            DisclosureSetting.target_type == "feature",
+            DisclosureSetting.target_code == "album",
+        )
+        .values(visible=False)
+    )
+    session.flush()
+    clear_disclosure_cache(facility.id)
+
+
 def _count(session) -> int:
     return session.scalar(select(func.count()).select_from(NotificationSetting))
 
@@ -70,6 +84,7 @@ def test_get_returns_the_first_settings_and_the_email_without_making_a_row(
         **DEFAULT,
         "email": session.get(User, family.user_id).email,
         "available_items": ["meal", "mood", "sleep"],
+        "notify_album": True,  # アルバムを見せる設定のときだけ返す（FR-017）
     }
     assert _count(session) == before  # 見ただけでは、行を作らない
 
@@ -193,6 +208,13 @@ def test_items_are_deduplicated_in_the_fixed_order_and_may_be_empty(client, make
         {"notify_reply": "yes", "notify_items": ["meal"], "frequency": "daily"},  # 真偽ではない
         {"notify_reply": True, "notify_items": "meal", "frequency": "daily"},  # 配列ではない
         {"notify_reply": True, "notify_items": ["meal"]},  # 頻度がない
+        # 真偽ではない
+        {
+            "notify_reply": True,
+            "notify_items": ["meal"],
+            "frequency": "daily",
+            "notify_album": "yes",
+        },
     ],
 )
 def test_invalid_body_is_422_and_changes_nothing(client, session, make_family, login_as, body):
@@ -204,3 +226,56 @@ def test_invalid_body_is_422_and_changes_nothing(client, session, make_family, l
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "validation_error"
     assert _count(session) == before
+
+
+# ---- アルバムの新しい写真（005-T028。FR-017・FR-014） ----
+
+
+def _save(client, **extra):
+    body = {"notify_reply": True, "notify_items": ["meal"], "frequency": "daily", **extra}
+    return client.put(URL, json=body)
+
+
+def test_notify_album_is_saved_and_kept_when_left_out(
+    client, session, world, make_family, login_as
+):
+    login_as(make_family().user_id)
+
+    assert _save(client, notify_album=False).json()["notify_album"] is False
+    assert client.get(URL).json()["notify_album"] is False
+    # 省略したら、いまの値のまま
+    assert _save(client, frequency="weekly").json()["notify_album"] is False
+    assert _save(client, notify_album=True).json()["notify_album"] is True
+
+
+def test_a_hidden_album_has_no_notify_album(client, session, world, make_family, login_as):
+    login_as(make_family().user_id)
+    _hide_album(session, world)
+
+    body = client.get(URL).json()
+
+    # アルバムを見せない設定のときは、項目ごと返さない（FR-014）
+    assert "notify_album" not in body
+    assert body["frequency"] == "daily"
+
+
+def test_a_hidden_album_ignores_notify_album_and_keeps_the_other_settings(
+    client, session, world, make_family, login_as
+):
+    family = make_family()
+    login_as(family.user_id)
+    _save(client, notify_album=False)
+    _hide_album(session, world)
+
+    saved = _save(client, notify_reply=False, frequency="weekly", notify_album=True)
+
+    assert saved.status_code == 200
+    assert "notify_album" not in saved.json()
+    assert (saved.json()["notify_reply"], saved.json()["frequency"]) == (False, "weekly")
+    # 送られた notify_album は無視する。前の選択（false）が残る
+    stored = session.scalar(
+        select(NotificationSetting.notify_album).where(
+            NotificationSetting.family_account_id == family.id
+        )
+    )
+    assert stored is False

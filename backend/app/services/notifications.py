@@ -165,12 +165,16 @@ def create_digest_notice(
     kind: str,
     period_start: datetime,
     period_end: datetime,
+    *,
+    has_album: bool = False,
+    has_records: bool = True,
 ) -> int:
     """まとめのお知らせ（アプリ内）とメールの送る予定を作り、email_outbox の id を返す。
 
     kind は daily（今日の連絡帳）／weekly（今週の連絡帳）。期間（period_start〜period_end）も残す。
     commit しない（まとめの job が、同じトランザクションで呼ぶ。送るのは、あとの deliver_pending）。
-    メールに渡すのは、種類・リンク・家族の言語だけで、記録の中身は渡さない（SC-010）。
+    メールに渡すのは、種類・リンク・家族の言語と、写真があるときの has_album・has_records
+    （文面を選ぶ真偽）だけで、記録の中身・写真・コメントは渡さない（SC-010・FR-019）。
     """
     if kind not in DIGEST_KINDS:
         raise ValueError(f"kind: {kind}")
@@ -186,9 +190,14 @@ def create_digest_notice(
             kind=template,
             period_start=period_start,
             period_end=period_end,
+            has_album=has_album,
+            has_records=has_records,
         )
     )
-    params = {"lang": language}
+    params: dict[str, str | bool] = {"lang": language}
+    if has_album:
+        params["has_album"] = True
+        params["has_records"] = has_records
     base_url = get_settings().app_base_url
     if base_url:
         params["link"] = f"{base_url}/family"

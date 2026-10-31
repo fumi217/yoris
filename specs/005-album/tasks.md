@@ -132,14 +132,14 @@ issue は担当者が、ここから自分のタスクを選んで立てる（1 
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T025 [P] [US4] テスト `backend/tests/api/test_digest.py`（アルバム）：写真が載った日のまとめに `has_album = true` が入り、**3 枚載せても知らせは 1 回**／同じ時刻で 2 回動かしても 1 回だけ／削除した写真は入らない／記録も写真も 0 件の日は送らない／
+- [x] T025 [P] [US4] テスト `backend/tests/api/test_digest.py`（アルバム）：写真が載った日のまとめに `has_album = true` が入り、**3 枚載せても知らせは 1 回**／同じ時刻で 2 回動かしても 1 回だけ／削除した写真は入らない／記録も写真も 0 件の日は送らない／
   頻度が「通知しない」・`notify_album = false`・アルバムを見せない設定のときは写真の分が入らない／20 時より後に載せた写真は次のまとめに入る／メールとお知らせに、写真・ファイル名・コメント・入居者名がない（FR-017〜019・SC-007）（さとこ）
 
 ### Implementation for User Story 4
 
-- [ ] T026 [US4] `notifications` に `has_album`（boolean、初期値 `false`）を、`notification_settings` に `notify_album`（boolean、初期値 `true`）を足し、マイグレーションを足す（`backend/app/models/notifications.py`。001-T048・001-T064 のあと。data-model.md）（さとこ）
-- [ ] T027 [US4] まとめにアルバムを足す（`backend/app/jobs/digest.py`。001-T065 のあと）：記録のまとめを作るとき、`count_new_photos(resident_id, 前回のまとめのあと, 今回の 20:00)` が 1 以上で、`notify_album` が真で、アルバムが「見せる」なら、`has_album = true` にする。
-  記録も写真も 0 件なら送らない。同じまとめを 2 回送らない仕組み（`digest_runs`）はそのまま使う。文面は辞書から引く：記録だけ・写真だけ・両方の 3 通り。テンプレートに渡すのは `has_album` とリンクだけ（research.md R-06。FR-018・FR-019）（さとこ）
+- [x] T026 [US4] `notifications` に `has_album`（boolean、初期値 `false`）と `has_records`（boolean、初期値 `true`）を、`notification_settings` に `notify_album`（boolean、初期値 `true`）を足し、マイグレーションを足す（`backend/app/models/notifications.py`。001-T048・001-T064 のあと。data-model.md）（さとこ）
+- [x] T027 [US4] まとめにアルバムを足す（`backend/app/jobs/digest.py`。001-T065 のあと）：記録のまとめを作るとき、`count_new_photos(resident_id, 前回のまとめのあと, 今回の 20:00)` が 1 以上で、`notify_album` が真で、アルバムが「見せる」なら、`has_album = true` にする。
+  記録も写真も 0 件なら送らない。同じまとめを 2 回送らない仕組み（`digest_runs`）はそのまま使う。文面は辞書から引く：記録だけ・写真だけ・両方の 3 通り（`has_album` と `has_records` で決める）。テンプレートに渡すのは `has_album`・`has_records` とリンクだけ（research.md R-06。FR-018・FR-019）（さとこ）
 - [ ] T028 [US4] 通知設定の API と画面に「アルバムの新しい写真」を足す（`GET/PUT /api/family/notification-settings` の `notify_album`、`frontend/src/pages/family/` の通知設定の画面。アルバムを見せない設定のときは項目を出さない。T024 から引き継いだ確認：見せない設定のとき、項目を出さず、まとめの通知にもアルバムを出さないことを、テストで確かめる）（FR-017）（さとこ）
 - [ ] T029 [US4] お知らせ一覧の画面で、まとめの `has_album` を文言に反映する（`frontend/src/pages/family/` のお知らせ一覧。辞書から引く）（FR-018）（さとこ）
 

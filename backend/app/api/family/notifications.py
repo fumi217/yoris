@@ -41,6 +41,9 @@ class NotificationOut(BaseModel):
     announcement_id: int | None
     period_start: datetime | None
     period_end: datetime | None
+    # まとめに、写真・記録が含まれるか。画面が、文言（記録だけ・写真だけ・両方）を選ぶ（FR-018）
+    has_album: bool
+    has_records: bool
 
 
 def _resident_id(user: CurrentUser) -> int:
@@ -74,6 +77,8 @@ def list_notifications(
             announcement_id=row.announcement_id,
             period_start=row.period_start,
             period_end=row.period_end,
+            has_album=row.has_album,
+            has_records=row.has_records,
         )
         for row in rows
     ]
