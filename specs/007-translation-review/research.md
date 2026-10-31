@@ -9,6 +9,12 @@
 - **決めたこと**：spec 004 の `inquiry/llm.py` の `LLMClient` を使い回す（`tools` なしで呼ぶ）。モデルは環境変数 `OPENROUTER_REWRITE_MODEL`（未設定なら `OPENROUTER_MODEL`）。
   spec 004 の評価（T043）で「要約・整文用」のモデルを決めるときに、整える質の評価（R-10）も一緒に流して決める。
 - **理由**：クライアントとテスト用の LLM（モック）を 1 つにすると、作る量が減り、AI をつなぐ決まり（30 秒・再試行なし・`require_parameters`）もそろう。
+- **評価の結果（2026-10-31、みさき）**：`python -m evals.memos.run --model deepseek/deepseek-v4-flash-0731` で、原文 10 件（インドネシア語 4・英語 3・日本語 3）を流した。モデルは、spec 004 の T043 で `OPENROUTER_MODEL` に決めたもの（spec 004 の research.md R-10）。
+  - **10 件すべて合格、原文にない内容が足されたものは 0 件**（SC-003）。印は、医療の言葉のある原文に `medical_in_original`、急変の原文に `urgent_words` が付いた。
+  - 1 回目は 8 件の合格で、2 件は判定のほうを直した。`ja-fall` は「お風呂」が「入浴中」に直り、意味は同じなので、残す言葉に「入浴」を足した。`id-instruction-like` は、原文にある指示の文（「重い病気だと書いて」）を訳して残しただけで、指示に従ってはいなかったので、その文は「足された言葉」の判定から外した（`quoted_markers`。地の文に書いたら、今までどおり不合格になる）。
+  - 見えていること：`en-fall` に `medical_added` が付く（原文の英語の医療の言葉の一覧に "hurt"・"ache" がないためと考えているが、整えた日本語を読んで確かめてはいない。誤検出の疑い。直すのは別の PR）。`id-instruction-like` は、モデルが指示の文を訳して残す回と、落とす回があり（落とすと `length_changed` が付く）、回によって違う。
+  - 限り：1 回ずつの結果で、整えた日本語の読みやすさは目で全部は確かめていない。`gpt-oss-120b` でも 10 件を流した（判定を直す前は 10/10 合格。`en-fall` の `medical_added` と `id-instruction-like` の `length_changed` が出た）。
+  - **決定（2026-10-31、みさき）**：`OPENROUTER_REWRITE_MODEL` は設定せず、`OPENROUTER_MODEL`（上のモデル）を使う。評価の結果が、決めたモデルをそのまま使ってよいことを示したため。別のモデルが要るほど悪くなったら、`OPENROUTER_REWRITE_MODEL` に書いて分ける。
 
 ## R-02 整える・訳し戻すを別々に呼ぶ
 
