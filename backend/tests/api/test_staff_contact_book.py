@@ -36,7 +36,7 @@ def _record(session, resident_id, staff_id, item, slot, value, day=None):
 
 @pytest.fixture
 def world(session, make_staff, make_family, login_as):
-    family = make_family(display_name="テストさんの母")
+    family = make_family(name="テスト 花子")
     staff = make_staff(display_name="職員A")
     login_as(staff.user_id)
     return {"family": family, "staff": staff}
@@ -57,7 +57,7 @@ def test_records_of_the_day_in_time_order(client, session, world):
     assert response.status_code == 200
     data = response.json()
     assert data["date"] == today_jst().isoformat()
-    assert data["resident"]["display_name"] == "テストさんの母"
+    assert data["resident"]["display_name"] == "テスト 花子"
     assert [r["id"] for r in data["records"]] == [first.id, second.id]
     assert data["records"][0]["recorded_by_name"] == "職員A"
 

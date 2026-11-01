@@ -7,7 +7,7 @@ from app.models.core import Facility
 
 
 def test_me_returns_family(client, make_family, login_as):
-    family = make_family(display_name="テストさんの母")
+    family = make_family(name="テスト 花子")
     login_as(family.user_id)
 
     response = client.get("/api/me")
@@ -16,7 +16,7 @@ def test_me_returns_family(client, make_family, login_as):
     assert response.json() == {
         "kind": "family",
         "role": None,
-        "display_name": "テストさんの母",
+        "display_name": "テスト 花子",
         "language": "ja",
     }
 

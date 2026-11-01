@@ -21,7 +21,7 @@ URL = "/api/family/inquiry/messages"
 @pytest.fixture
 def world(redis, make_family, login_as):
     family = make_family()
-    other = make_family(display_name="べつの入居者")
+    other = make_family(name="べつの入居者")
     login_as(family.user_id)
     return {"family": family, "other": other, "login_as": login_as}
 

@@ -27,7 +27,7 @@ TODAY = date(2026, 10, 23)
 def world(session: Session, redis, facility: Facility) -> Iterator[dict]:
     """架空の入居者・職員と、すべて見せる開示設定（test_disclosure.py と同じ準備）。"""
     resident = Resident(
-        facility_id=facility.id, name="架空 花子", display_name="テストさんの母", room="101"
+        facility_id=facility.id, name="架空 花子", display_name="テスト 花子", room="101"
     )
     user = User(kind="staff", login_id="s90021", password_hash="x")
     session.add_all([resident, user])

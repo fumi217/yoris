@@ -79,7 +79,7 @@ def ids(session: Session) -> dict[str, int]:
     session.add(facility)
     session.flush()
     resident = Resident(
-        facility_id=facility.id, name="架空 花子", display_name="テストさんの母", room="101"
+        facility_id=facility.id, name="架空 花子", display_name="テスト 花子", room="101"
     )
     staff = []
     for n in (1, 2):

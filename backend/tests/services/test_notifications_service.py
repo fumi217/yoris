@@ -37,8 +37,8 @@ def world(session: Session, make_staff, make_family):
         session.scalars(select(ReplyTemplate.id).where(ReplyTemplate.theme_id == theme.id))
     )
     staff = make_staff(display_name="ひみつの職員名")
-    family = make_family(display_name="ひみつの入居者名")
-    other_family = make_family(display_name="べつの入居者")
+    family = make_family(name="ひみつの入居者名")
+    other_family = make_family(name="べつの入居者")
     request = Request(resident_id=family.resident_id, theme_id=theme.id)
     session.add(request)
     session.flush()
@@ -184,8 +184,8 @@ def test_does_not_commit(session, world):
 @pytest.fixture
 def message_world(session: Session, make_family):
     """家族 2 組と、1 組目の入居者についての、職員に渡したメッセージ。"""
-    family = make_family(display_name="ひみつの入居者名")
-    other_family = make_family(display_name="べつの入居者")
+    family = make_family(name="ひみつの入居者名")
+    other_family = make_family(name="べつの入居者")
     conversation = InquiryConversation(family_account_id=family.id, resident_id=family.resident_id)
     session.add(conversation)
     session.flush()
@@ -262,8 +262,8 @@ def test_staff_message_reply_notice_does_not_commit(session, message_world):
 @pytest.fixture
 def visit_world(session: Session, facility, make_family):
     """家族 2 組と、1 組目の入居者の面会予約（2026-10-26 月曜 13:00。職員が取り消した理由つき）。"""
-    family = make_family(display_name="ひみつの入居者名")
-    other_family = make_family(display_name="べつの入居者")
+    family = make_family(name="ひみつの入居者名")
+    other_family = make_family(name="べつの入居者")
     reservation = VisitReservation(
         facility_id=facility.id,
         resident_id=family.resident_id,

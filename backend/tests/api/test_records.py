@@ -91,7 +91,7 @@ def setup(session: Session) -> dict:
     session.add(facility)
     session.flush()
     resident = Resident(
-        facility_id=facility.id, name="架空 花子", display_name="テストさんの母", room="101"
+        facility_id=facility.id, name="架空 花子", display_name="テスト 花子", room="101"
     )
     user = User(kind="staff", login_id="s90001", password_hash="x")
     session.add_all([resident, user])

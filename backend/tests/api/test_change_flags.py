@@ -361,7 +361,7 @@ def _committed_resident(engine, *, with_low_meals: bool) -> Iterator[dict[str, i
         [login_id] = next_login_ids(setup_session, 1)
         user = User(kind="staff", login_id=login_id, password_hash="x")
         resident = Resident(
-            facility_id=facility.id, name="架空 同時", display_name="同時さんの母", room="999"
+            facility_id=facility.id, name="架空 同時", display_name="同時 花子", room="999"
         )
         setup_session.add_all([user, resident])
         setup_session.flush()
@@ -509,7 +509,7 @@ def test_flag_makes_no_notification_or_email(session, setup):
 
 def test_log_has_ids_only(rules, session, make_staff, make_family, caplog):
     staff = make_staff(display_name="ログ確認の職員")
-    family = make_family(display_name="ログ確認さんの母")
+    family = make_family(name="ログ確認 花子")
     _two_low_meals(session, family.resident_id, staff.id)
 
     with caplog.at_level(logging.INFO):
@@ -517,7 +517,7 @@ def test_log_has_ids_only(rules, session, make_staff, make_family, caplog):
 
     text = caplog.text
     assert "meal_low" in text
-    assert "ログ確認さんの母" not in text
+    assert "ログ確認 花子" not in text
     assert "ログ確認の職員" not in text
     assert "breakfast" not in text
     assert "evidence" not in text
@@ -876,9 +876,7 @@ def _other_facility_resident(session) -> Resident:
     other = Facility(name="ほかの施設")
     session.add(other)
     session.flush()
-    resident = Resident(
-        facility_id=other.id, name="架空 他施設", display_name="他さんの母", room="1"
-    )
+    resident = Resident(facility_id=other.id, name="架空 他施設", display_name="他 花子", room="1")
     session.add(resident)
     session.flush()
     return resident

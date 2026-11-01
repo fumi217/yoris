@@ -28,7 +28,7 @@ def world(client, session, make_staff, make_family, login_as):
     leader = make_staff(role="leader", display_name="リーダーA")
     other_leader = make_staff(role="leader", display_name="リーダーB")
     director = make_staff(role="director", display_name="施設長")
-    resident = make_family(display_name="さくらさんの母")
+    resident = make_family(name="さくら 花子")
     login_as(leader.user_id)
     return {
         "writer": writer,
@@ -73,7 +73,7 @@ def other_facility_memo(session) -> CareMemo:
     session.add(facility)
     session.flush()
     resident = Resident(
-        facility_id=facility.id, name="架空 遠方", display_name="とおくさんの父", room="9"
+        facility_id=facility.id, name="架空 遠方", display_name="とおく 太郎", room="9"
     )
     user = User(kind="staff", login_id="s99999", password_hash="x")
     session.add_all([resident, user])
@@ -376,7 +376,7 @@ def test_list_shows_pending_memos_longest_waiting_first_with_the_waiting_time(
     assert (by_id[new.id]["waiting_minutes"], by_id[new.id]["overdue"]) == (90, False)
     # 画面に必要なものが入っている。タグは実行されず、そのままの文字で返る（FR-017）
     first = by_id[old.id]
-    assert first["resident_name"] == "さくらさんの母"
+    assert first["resident_name"] == "さくら 花子"
     assert first["author_name"] == "シティ"
     assert first["original_text"] == "<script>alert(1)</script>"
     assert first["rewritten_text"] == "今日は、よく笑っていました。"

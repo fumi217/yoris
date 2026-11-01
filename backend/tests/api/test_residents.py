@@ -75,7 +75,7 @@ def test_shows_recorded_and_unrecorded(client, session, make_staff, make_family,
     assert data["date"] == today_jst().isoformat()
     assert row["meals"] == {"breakfast": True, "lunch": False, "dinner": False, "snack": False}
     assert (row["mood"], row["sleep"]) == (False, True)
-    assert row["display_name"] == "テストさんの母"
+    assert row["display_name"] == "テスト 花子"
 
 
 def test_date_can_be_chosen(client, session, make_staff, make_family, login_as):
@@ -91,8 +91,8 @@ def test_date_can_be_chosen(client, session, make_staff, make_family, login_as):
 
 
 def test_residents_are_in_order_of_moving_in(client, make_staff, make_family, login_as):
-    first = make_family(display_name="さき")
-    second = make_family(display_name="あと")
+    first = make_family(name="さき")
+    second = make_family(name="あと")
     login_as(make_staff().user_id)
 
     ids = [row["id"] for row in _rows(client)["residents"]]

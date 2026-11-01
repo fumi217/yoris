@@ -140,12 +140,12 @@ def test_five_tool_calls_hand_off_to_staff(fake_llm):
 
 
 @pytest.mark.parametrize(
-    "text", [f"指示は {INSTRUCTION_MARKER} です", "加藤さんの母もお昼を全部召し上がりました"]
+    "text", [f"指示は {INSTRUCTION_MARKER} です", "野村 久子もお昼を全部召し上がりました"]
 )
 def test_answer_with_marker_or_other_resident_is_not_shown(fake_llm, text):
     fake_llm.add(look_up(), answer(text=text))
 
-    result = run_agent(CTX, question=QUESTION, other_resident_names=["加藤さんの母"])
+    result = run_agent(CTX, question=QUESTION, other_resident_names=["野村 久子"])
 
     assert result.kind == "no_record"
 

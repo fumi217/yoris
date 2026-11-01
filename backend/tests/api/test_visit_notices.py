@@ -34,7 +34,7 @@ def world(session, facility, make_staff, make_family, monkeypatch):
     monkeypatch.setattr("app.clock.now", lambda: AT)
     add_visit_settings(session, facility_id=facility.id)
     return {
-        "family": make_family(display_name="佐藤さんの母"),
+        "family": make_family(name="佐藤 文江"),
         "staff": make_staff(role="care_worker"),
     }
 
@@ -210,7 +210,7 @@ def test_opening_visits_marks_visit_notices_read(client, session, world, login_a
 
 
 def test_other_family_visit_notices_stay_unread(client, session, world, login_as, make_family):
-    other = make_family(display_name="べつの入居者")
+    other = make_family(name="べつの入居者")
     login_as(other.user_id)
     response = client.post(
         "/api/family/visits",

@@ -172,7 +172,7 @@ def test_put_renews_updated_at(client, session, make_family, login_as):
 
 
 def test_families_do_not_see_each_others_settings(client, make_family, login_as):
-    mine, other = make_family(), make_family(display_name="べつの入居者")
+    mine, other = make_family(), make_family(name="べつの入居者")
     login_as(mine.user_id)
     client.put(URL, json={"notify_reply": False, "notify_items": [], "frequency": "none"})
 

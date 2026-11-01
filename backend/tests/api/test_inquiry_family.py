@@ -235,7 +235,7 @@ def test_other_family_cannot_see_the_conversation(client, fake_llm, world, make_
     _answer_with_lunch(fake_llm, world["lunch"].id)
     client.post(URL, json={"body": "今日のお昼は食べましたか？"})
 
-    other = make_family(display_name="ほかの方の父")
+    other = make_family(name="ほかの方の父")
     login_as(other.user_id)
 
     assert client.get(URL).json() == []

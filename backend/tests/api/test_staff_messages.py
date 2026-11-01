@@ -224,7 +224,7 @@ def test_list_filters_by_status(staff_client, make_family, add_message):
 def test_list_row(staff_client, make_staff, make_family, add_message):
     client, _ = staff_client()
     assignee = make_staff(display_name="担当の職員")
-    family = make_family(display_name="テストさん")
+    family = make_family(name="テスト 花子")
     message = add_message(family, "care_request", assignee=assignee)
 
     row = client.get("/api/staff/messages", params={"resident_id": family.resident_id}).json()[
@@ -232,7 +232,7 @@ def test_list_row(staff_client, make_staff, make_family, add_message):
     ][0]
 
     assert row["id"] == message.id
-    assert row["resident_display_name"] == "テストさん"
+    assert row["resident_display_name"] == "テスト 花子"
     assert row["category"] == "care_request"
     assert row["assignee"] == {"id": assignee.id, "display_name": "担当の職員"}
     assert row["summary"] == "要約"

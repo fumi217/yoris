@@ -31,7 +31,7 @@ QUESTION = "ひみつの質問：今日のお昼は食べましたか"
 ANSWER = "ひみつの答え：ほぼ全部召し上がりました"
 SUMMARY = "ひみつの要約：先月の請求書の金額について知りたい"
 RECORD_NOTE = "ひみつの記録の値"
-RESIDENT = "ひみつ入居者さんの母"
+RESIDENT = "ひみつ入居者 花子"
 STAFF = "ひみつ職員"
 
 
@@ -60,7 +60,7 @@ def world(session, redis, facility, make_staff, make_family, login_as):
     add_disclosure_settings(session, facility_id=facility.id)
     clear_disclosure_cache(facility.id)
     staff = make_staff(display_name=STAFF)
-    family = make_family(display_name=RESIDENT)
+    family = make_family(name=RESIDENT)
     lunch = CareRecord(
         resident_id=family.resident_id,
         date=today_jst(),

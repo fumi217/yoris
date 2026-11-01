@@ -58,7 +58,7 @@ def test_dev_users_lists_staff_first(make_client, make_staff, make_family):
     client = make_client(app_env="development")
     staff = make_staff(role="counselor", display_name="テスト相談員")
     foreign = make_staff(display_name="テスト外国人", language="id")
-    family = make_family(display_name="テストさんの母")
+    family = make_family(name="テスト 花子")
 
     users = client.get("/api/dev/users").json()
 
@@ -73,7 +73,7 @@ def test_dev_users_lists_staff_first(make_client, make_staff, make_family):
         "user_id": family.user_id,
         "kind": "family",
         "role": None,
-        "display_name": "テストさんの母",
+        "display_name": "テスト 花子",
         "language": "ja",
     } in users
     # 外国人の職員を選んで試すときの目印

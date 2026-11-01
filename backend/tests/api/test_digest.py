@@ -298,7 +298,7 @@ def test_the_unique_rule_stops_the_same_digest_made_at_once(session, world):
 
 
 def test_one_family_failing_does_not_stop_the_others(session, world, make_family, monkeypatch):
-    other = make_family(display_name="べつの入居者")
+    other = make_family(name="べつの入居者")
     session.add(
         CareRecord(
             resident_id=other.resident_id,
@@ -334,7 +334,7 @@ def test_one_family_failing_does_not_stop_the_others(session, world, make_family
 def test_an_unexpected_error_for_one_family_is_logged_and_the_others_continue(
     session, world, make_family, monkeypatch, caplog
 ):
-    other = make_family(display_name="べつの入居者")
+    other = make_family(name="べつの入居者")
     session.add(
         CareRecord(
             resident_id=other.resident_id,

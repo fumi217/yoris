@@ -103,8 +103,8 @@ def test_length_changed_uses_the_back_translation_for_a_foreign_original():
 def test_other_resident_name_in_the_rewrite():
     warnings = check(
         "さくらさんと散歩しました",
-        "さくらさんの母と散歩しました。",
-        names=["さくらさんの母", "ひまわりさん"],
+        "さくら 花子と散歩しました。",
+        names=["さくら 花子", "ひまわりさん"],
     )
 
     assert "other_name" in warnings
@@ -130,8 +130,8 @@ def test_urgent_words_in_the_original(original, lang):
 def test_warnings_come_in_a_fixed_order():
     warnings = check(
         "きょうは薬のあとにころんだ",
-        "今日は薬のあとに転びました。さくらさんの母。",
-        names=["さくらさんの母"],
+        "今日は薬のあとに転びました。さくら 花子。",
+        names=["さくら 花子"],
     )
 
     assert warnings == ["medical_in_original", "other_name", "urgent_words"]
@@ -139,7 +139,7 @@ def test_warnings_come_in_a_fixed_order():
 
 def test_without_a_rewrite_only_the_original_is_checked():
     # 原文を直して整えた日本語を消したあと。整えた日本語・訳し戻しから付く印は付けない
-    warnings = check("きょうは薬のあとにころんだ", None, names=["さくらさんの母"])
+    warnings = check("きょうは薬のあとにころんだ", None, names=["さくら 花子"])
 
     assert warnings == ["medical_in_original", "urgent_words"]
     assert check("今日は元気でした。", None) == []
@@ -151,8 +151,8 @@ def test_without_a_rewrite_only_the_original_is_checked():
 @pytest.fixture
 def writer(client, make_staff, make_family, login_as):
     staff = make_staff(role="care_worker", display_name="シティ", language="id")
-    resident = make_family(display_name="さくらさんの母")
-    other = make_family(display_name="ひまわりさん")
+    resident = make_family(name="さくら 花子")
+    other = make_family(name="ひまわりさん")
     login_as(staff.user_id)
     return {"staff": staff, "resident_id": resident.resident_id, "other_id": other.resident_id}
 

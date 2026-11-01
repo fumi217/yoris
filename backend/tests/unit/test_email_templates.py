@@ -55,9 +55,9 @@ def test_visit_reminder_asks_to_call_the_facility():
 @pytest.mark.parametrize("template", ["visit_confirmed", "visit_cancelled", "visit_reminder"])
 def test_visit_mails_never_show_resident_name_or_reason(template):
     # params に余計なものが入っていても、文面には出ない（FR-014 の最後の守り）
-    params = {"visit_at": "10月26日（月）13:00", "resident": "佐藤さんの母", "reason": "体調不良"}
+    params = {"visit_at": "10月26日（月）13:00", "resident": "佐藤 文江", "reason": "体調不良"}
     _, body = render(template, params, "http://base.test")
-    assert "佐藤さんの母" not in body
+    assert "佐藤 文江" not in body
     assert "体調不良" not in body
 
 
@@ -174,10 +174,10 @@ def test_digest_album_mails_show_only_the_link():
         "lang": "ja",
         "comment": "ひみつのコメント",
         "file_name": "photo-secret.png",
-        "resident": "佐藤さんの母",
+        "resident": "佐藤 文江",
     }
     subject, body = render("daily_digest", params, "http://base.test")
-    for secret in ("ひみつのコメント", "photo-secret.png", "佐藤さんの母"):
+    for secret in ("ひみつのコメント", "photo-secret.png", "佐藤 文江"):
         assert secret not in subject + body
 
 

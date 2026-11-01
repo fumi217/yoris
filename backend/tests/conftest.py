@@ -240,17 +240,24 @@ def make_family(session: Session, facility: Facility) -> Callable[..., FamilyAcc
     """架空の入居者と、その家族を作る。
 
     返す FamilyAccount の user_id でログインでき、resident_id を持つ。
+    name は入居者のフルネーム（#389）。
     """
 
-    def make(display_name: str = "テストさんの母") -> FamilyAccount:
+    def make(name: str = "テスト 花子", *, language: str = "ja") -> FamilyAccount:
         number = next(_numbers)
+        # 入居者の名前はフルネーム。いまの display_name の列にも、同じ値を入れる
         resident = Resident(
             facility_id=facility.id,
-            name=f"架空 {number}",
-            display_name=display_name,
+            name=name,
+            display_name=name,
             room=str(number),
         )
-        user = User(kind="family", email=f"family{number}@example.test", password_hash="x")
+        user = User(
+            kind="family",
+            email=f"family{number}@example.test",
+            password_hash="x",
+            language=language,
+        )
         session.add_all([resident, user])
         session.flush()
         family = FamilyAccount(user_id=user.id, resident_id=resident.id)

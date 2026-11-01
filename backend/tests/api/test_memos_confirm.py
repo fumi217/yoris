@@ -24,7 +24,7 @@ BACK_EDITED = "Hari ini senyumnya lebih sedikit, dan makan siangnya habis semua.
 def writer(client, make_staff, make_family, login_as):
     """介護職員（表示言語：インドネシア語）でログインした状態と、架空の入居者。"""
     staff = make_staff(role="care_worker", display_name="シティ", language="id")
-    resident = make_family(display_name="さくらさんの母")
+    resident = make_family(name="さくら 花子")
     login_as(staff.user_id)
     return {"staff": staff, "resident_id": resident.resident_id}
 

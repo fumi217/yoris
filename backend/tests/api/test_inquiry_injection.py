@@ -41,8 +41,8 @@ def world(session, redis, facility, make_staff, make_family, login_as):
     add_disclosure_settings(session, facility_id=facility.id)
     clear_disclosure_cache(facility.id)
     staff = make_staff()
-    mine = make_family(display_name="ログイン中の家族")
-    other = make_family(display_name="ほかの入居者の家族")
+    mine = make_family(name="ログイン中の家族")
+    other = make_family(name="ほかの入居者の家族")
 
     def add_lunch(family, value):
         record = CareRecord(

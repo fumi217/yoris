@@ -312,7 +312,7 @@ def _committed_world(engine) -> Iterator[dict[str, int]]:
         [login_id] = next_login_ids(setup_session, 1)
         user = User(kind="staff", login_id=login_id, password_hash="x")
         resident = Resident(
-            facility_id=facility.id, name="架空 変更", display_name="変更さんの母", room="998"
+            facility_id=facility.id, name="架空 変更", display_name="変更 花子", room="998"
         )
         setup_session.add_all([user, resident])
         setup_session.flush()

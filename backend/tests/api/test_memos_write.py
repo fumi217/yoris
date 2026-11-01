@@ -24,7 +24,7 @@ BACK = "Hari ini senyumnya lebih sedikit dari biasanya, tetapi makan siangnya ha
 def writer(client, make_staff, make_family, login_as):
     """介護職員（表示言語：インドネシア語）でログインした状態と、架空の入居者。"""
     staff = make_staff(role="care_worker", display_name="シティ", language="id")
-    resident = make_family(display_name="さくらさんの母")
+    resident = make_family(name="さくら 花子")
     login_as(staff.user_id)
     return {"staff": staff, "resident_id": resident.resident_id}
 
@@ -122,7 +122,7 @@ def test_create_for_a_resident_of_another_facility_is_404(client, session, write
     session.add(facility)
     session.flush()
     resident = Resident(
-        facility_id=facility.id, name="架空 遠方", display_name="とおくさんの父", room="9"
+        facility_id=facility.id, name="架空 遠方", display_name="とおく 太郎", room="9"
     )
     session.add(resident)
     session.flush()
@@ -211,7 +211,7 @@ def test_rewrite_sends_only_the_fixed_instructions_and_the_original(
     assert first.tools is None and second.tools is None
     # 入居者の呼び名・氏名・職員の名前は、AI に渡さない
     sent = " ".join(message["content"] for call in (first, second) for message in call.messages)
-    for private in ("さくらさんの母", "シティ"):
+    for private in ("さくら 花子", "シティ"):
         assert private not in sent
 
 

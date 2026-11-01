@@ -25,7 +25,7 @@ from app.services.replies import save_reply
 def world(session: Session, make_family, make_staff, login_as, client):
     add_themes(session)
     mine = make_family()
-    other = make_family(display_name="べつの入居者")
+    other = make_family(name="べつの入居者")
     staff = make_staff()
     login_as(mine.user_id)
     return {"client": client, "mine": mine, "other": other, "staff": staff}

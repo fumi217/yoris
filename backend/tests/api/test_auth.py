@@ -49,14 +49,14 @@ def test_staff_logs_in_with_login_id(client, make_staff, with_password):
 
 
 def test_family_logs_in_with_email(client, make_family, with_password):
-    family = make_family(display_name="テストさんの父")
+    family = make_family(name="テスト 太郎")
     user = with_password(family.user_id)
 
     response = client.post("/api/auth/login", json={"login": user.email, "password": PASSWORD})
 
     assert response.status_code == 200
     assert response.json()["kind"] == "family"
-    assert response.json()["display_name"] == "テストさんの父"
+    assert response.json()["display_name"] == "テスト 太郎"
 
 
 def test_login_ignores_case_and_spaces(client, make_family, with_password):

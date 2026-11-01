@@ -39,7 +39,7 @@ def world(session, facility, make_staff, make_family, login_as, monkeypatch):
     return {
         "facility": facility,
         "clerk": clerk,
-        "family": make_family(display_name="佐藤さんの母"),
+        "family": make_family(name="佐藤 文江"),
     }
 
 
@@ -208,7 +208,7 @@ def test_reservation_list_for_all_staff(client, session, world, make_staff, logi
 
     [row] = rows
     assert row["id"] == reservation.id
-    assert row["resident_name"] == "佐藤さんの母"
+    assert row["resident_name"] == "佐藤 文江"
     assert (row["party_size"], row["status"]) == (2, "booked")
 
 

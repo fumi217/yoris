@@ -34,7 +34,7 @@ FORBIDDEN = (
     RETURN_REASON,
     "シティ",
     "リーダーA",
-    "さくらさんの母",
+    "さくら 花子",
     "Hari ini",
     "お昼ごはん",
 )
@@ -69,7 +69,7 @@ def world(client, make_staff, make_family, login_as):
     """書く介護職員（インドネシア語）、リーダー、入居者 1 人。ログインは書く職員。"""
     writer = make_staff(role="care_worker", display_name="シティ", language="id")
     leader = make_staff(role="leader", display_name="リーダーA")
-    resident = make_family(display_name="さくらさんの母")
+    resident = make_family(name="さくら 花子")
     login_as(writer.user_id)
     return {"writer": writer, "leader": leader, "resident_id": resident.resident_id}
 
