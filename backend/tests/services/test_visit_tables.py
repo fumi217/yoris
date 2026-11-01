@@ -28,7 +28,11 @@ def ids(session: Session) -> dict[str, int]:
     session.flush()
     residents = [
         Resident(
-            facility_id=facility.id, name=f"架空 {n}", display_name=f"テスト{n}", room=f"10{n}"
+            facility_id=facility.id,
+            name=f"架空 {n}",
+            name_kana="かくう",
+            name_romaji="Kaku",
+            room=f"10{n}",
         )
         for n in (1, 2)
     ]

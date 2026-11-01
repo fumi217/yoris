@@ -26,6 +26,8 @@ REDACTED = "[省略]"
 PERSONAL_FIELDS = frozenset(
     {
         "name",
+        "name_kana",
+        "name_romaji",
         "display_name",
         "facility_name",
         "director_name",

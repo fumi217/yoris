@@ -26,7 +26,13 @@ def resident_id(session: Session) -> int:
     facility = Facility(name="テスト施設")
     session.add(facility)
     session.flush()
-    resident = Resident(facility_id=facility.id, name="架空 1", display_name="テスト1", room="101")
+    resident = Resident(
+        facility_id=facility.id,
+        name="架空 1",
+        name_kana="かくう",
+        name_romaji="Kaku",
+        room="101",
+    )
     session.add(resident)
     add_change_rules(session)
     session.flush()

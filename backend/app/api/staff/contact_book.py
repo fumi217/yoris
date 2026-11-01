@@ -29,6 +29,7 @@ from app.models.records import CareRecord
 from app.models.replies import Reply
 from app.models.requests import Request
 from app.services.disclosure import get_active_replies
+from app.services.resident_names import resident_display_name
 
 router = APIRouter(prefix="/api/staff", tags=["staff"])
 
@@ -127,7 +128,9 @@ def get_contact_book(
     return StaffContactBook(
         date=target,
         resident=ResidentSummary(
-            id=resident.id, display_name=resident.display_name, room=resident.room
+            id=resident.id,
+            display_name=resident_display_name(resident, user.language),
+            room=resident.room,
         ),
         records=[
             StaffRecord(

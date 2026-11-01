@@ -30,6 +30,7 @@ from app.models.core import FamilyAccount, Resident
 from app.models.notifications import Notification
 from app.models.visits import VisitClosedDay, VisitReservation, VisitSetting, VisitStartTime
 from app.services.notifications import create_visit_notice
+from app.services.resident_names import resident_name
 from app.services.visit_rules import (
     VisitRuleError,
     check_bookable_date,
@@ -586,7 +587,8 @@ class StaffReservation:
     visit_date: date
     start_time: time
     resident_id: int
-    resident_name: str  # 入居者の呼び名（職員向け）
+    resident_name: str  # 入居者の名前（職員の表示言語に合わせる。#389）
+    family_relationship: str | None  # 家族の続柄（職員の画面だけに出す。#389）
     room: str
     party_size: int
     status: str
@@ -601,13 +603,18 @@ def list_reservations(
     date_to: date,
     *,
     booked_only: bool = False,
+    language: str = "ja",
 ) -> list[StaffReservation]:
-    """職員向けの予約の一覧（日時の順。003-T024・FR-011）。期間は 31 日まで。"""
+    """職員向けの予約の一覧（日時の順。003-T024・FR-011）。期間は 31 日まで。
+
+    入居者の名前は、見る職員の表示言語（language）に合わせる（#389）。
+    """
     if date_to < date_from or (date_to - date_from).days >= MAX_AVAILABILITY_DAYS:
         raise VisitInvalidInput(f"range: {date_from}..{date_to}")
     query = (
-        select(VisitReservation, Resident.display_name, Resident.room)
+        select(VisitReservation, resident_name(language), FamilyAccount.relationship, Resident.room)
         .join(Resident, Resident.id == VisitReservation.resident_id)
+        .outerjoin(FamilyAccount, FamilyAccount.resident_id == Resident.id)
         .where(
             VisitReservation.facility_id == facility_id,
             VisitReservation.visit_date >= date_from,
@@ -624,11 +631,12 @@ def list_reservations(
             start_time=row.start_time,
             resident_id=row.resident_id,
             resident_name=name,
+            family_relationship=relationship,
             room=room,
             party_size=row.party_size,
             status=row.status,
             created_at=row.created_at,
             cancel_reason=row.cancel_reason,
         )
-        for row, name, room in session.execute(query)
+        for row, name, relationship, room in session.execute(query)
     ]

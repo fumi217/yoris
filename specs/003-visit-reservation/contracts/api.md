@@ -60,7 +60,7 @@
 | メソッド・パス | 役割 | 中身 | 時期 | spec |
 |---|---|---|---|---|
 | `GET /api/staff/visits/today` | 職員 | 今日の面会予定（時刻・入居者名・人数）。今日（日本時間）の予約済みだけを時刻の順に。形は下の予約の一覧と同じ | 作り込み | FR-011 |
-| `GET /api/admin/visits?from=&to=` | 職員 | 予約の一覧（日付・時刻・入居者名・人数・予約した日時・状態）。`[{id, visit_date, start_time, resident_id, resident_name, room, party_size, status, created_at, cancel_reason}]`。取り消したものも状態つきで返す。期間は 31 日まで | 作り込み | FR-011 |
+| `GET /api/admin/visits?from=&to=` | 職員 | 予約の一覧（日付・時刻・入居者名・人数・予約した日時・状態）。`[{id, visit_date, start_time, resident_id, resident_name, family_relationship, room, party_size, status, created_at, cancel_reason}]`（`resident_name` は職員の表示言語に合わせる。`family_relationship` は家族の続柄のコードで、家族アカウントがなければ null。spec 001 の data-model.md。#389）。取り消したものも状態つきで返す。期間は 31 日まで | 作り込み | FR-011 |
 | `POST /api/admin/visits/{id}/cancel` | 職員 | 予約を取り消す（本文 `{reason}`。必須・200 文字まで。ないと 422）。締め切りなし。予約済みでなければ 404。さとこの `create_visit_notice(session, id, "visit_cancelled")` を同じトランザクションで呼び、commit のあとにメールを送る。返り値は予約の一覧の 1 件と同じ形 | 作り込み | FR-012・FR-013 |
 | `GET /api/admin/visit-settings` | CL・CO・D | 開始時刻の候補と、1 日に受け付ける組数。`{daily_limit, start_times}`（今の候補を早い順に） | 作り込み | FR-009 |
 | `PUT /api/admin/visit-settings` | CL・CO・D | 変える（本文は GET と同じ形）。候補は 30 分刻み・10:00 から・開始時刻＋1 時間 30 分が 17:00 まで、組数は 1 以上、候補は 1 つ以上（ほかは 422。何も変えない）。外した候補は `active = false` にするだけで、すでに入っている予約はそのまま | 作り込み | FR-009 |

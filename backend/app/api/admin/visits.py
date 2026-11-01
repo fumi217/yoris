@@ -181,8 +181,10 @@ class StaffReservationOut(BaseModel):
     visit_date: date
     start_time: time
     resident_id: int
-    # 入居者の呼び名。画面では文字としてだけ出す
+    # 入居者の名前（職員の表示言語に合わせる）。画面では文字としてだけ出す
     resident_name: str
+    # 家族の続柄のコード（daughter など。家族アカウントがなければ null。#389）
+    family_relationship: str | None
     room: str
     party_size: int
     status: str  # booked / cancelled_by_family / cancelled_by_staff
@@ -198,6 +200,7 @@ def reservation_out(row) -> StaffReservationOut:
         start_time=row.start_time,
         resident_id=row.resident_id,
         resident_name=row.resident_name,
+        family_relationship=row.family_relationship,
         room=row.room,
         party_size=row.party_size,
         status=row.status,
@@ -215,7 +218,9 @@ def get_reservations(
 ) -> list[StaffReservationOut]:
     """予約の一覧（日時の順。取り消したものも状態つきで）。期間は 31 日まで。"""
     try:
-        rows = list_reservations(session, facility_of(session, user), date_from, date_to)
+        rows = list_reservations(
+            session, facility_of(session, user), date_from, date_to, language=user.language
+        )
     except VisitRuleError as error:
         raise app_error(error) from error
     return [reservation_out(row) for row in rows]
@@ -252,7 +257,11 @@ def cancel_reservation(
     [row] = [
         row
         for row in list_reservations(
-            session, facility_id, reservation.visit_date, reservation.visit_date
+            session,
+            facility_id,
+            reservation.visit_date,
+            reservation.visit_date,
+            language=user.language,
         )
         if row.id == reservation.id
     ]

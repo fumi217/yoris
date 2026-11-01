@@ -122,7 +122,11 @@ def test_create_for_a_resident_of_another_facility_is_404(client, session, write
     session.add(facility)
     session.flush()
     resident = Resident(
-        facility_id=facility.id, name="架空 遠方", display_name="とおく 太郎", room="9"
+        facility_id=facility.id,
+        name="架空 遠方",
+        name_kana="かくう",
+        name_romaji="Kaku",
+        room="9",
     )
     session.add(resident)
     session.flush()

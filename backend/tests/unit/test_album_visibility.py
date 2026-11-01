@@ -38,7 +38,13 @@ def world(
     """架空の入居者 2 人と職員 1 人、開示設定（アルバムは見せる）。保存先は一時フォルダ。"""
     monkeypatch.setenv("UPLOAD_DIR", str(tmp_path))
     residents = [
-        Resident(facility_id=facility.id, name=f"架空 {n}", display_name=f"テスト{n}", room=str(n))
+        Resident(
+            facility_id=facility.id,
+            name=f"架空 {n}",
+            name_kana="かくう",
+            name_romaji="Kaku",
+            room=str(n),
+        )
         for n in (1, 2)
     ]
     user = User(kind="staff", login_id="s90021", password_hash="x")

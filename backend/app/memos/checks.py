@@ -8,6 +8,7 @@ AI の判断を AI で確かめるのではなく、決まった決まりで注�
 
 from app.inquiry.guard import KEYWORDS, _normalize
 from app.models.memos import WARNINGS
+from app.services.resident_names import mentions_any_name
 
 # 整えた日本語の長さが、原文から見てこの範囲を出たら length_changed（R-03）
 LENGTH_RATIO_MIN = 0.5
@@ -84,7 +85,7 @@ def check_memo(
     - `medical_in_original`：原文に医療・服薬・体調の言葉がある
     - `length_changed`：原文の長さに対して、0.5 倍未満か 2 倍超。文字の種類が違うので、
       原文が日本語以外のときは訳し戻しの長さと比べる（訳し戻しがなければ比べない）
-    - `other_name`：整えた日本語に、ほかの入居者の呼び名が入っている
+    - `other_name`：整えた日本語に、ほかの入居者の名前（フルネーム・読み・ローマ字）が入っている
     - `urgent_words`：原文に急変・事故の言葉がある
     """
     lang = source_lang if source_lang in _MEDICAL_WORDS else "ja"
@@ -110,7 +111,7 @@ def check_memo(
         "medical_added": medical_added,
         "medical_in_original": bool(medical_in_original),
         "length_changed": length_changed,
-        "other_name": any(name and name in rewritten_text for name in other_resident_names),
+        "other_name": mentions_any_name(rewritten_text, other_resident_names),
         "urgent_words": bool(_found(_URGENT_WORDS[lang], original_text)),
     }
     return [warning for warning in WARNINGS if found[warning]]

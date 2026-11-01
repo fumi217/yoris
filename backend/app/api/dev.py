@@ -21,6 +21,7 @@ from app.auth.sessions import (
 from app.db import get_session
 from app.errors import AppError, ErrorCode
 from app.models.core import FamilyAccount, Resident, Staff, User
+from app.services.resident_names import resident_name
 
 router = APIRouter(prefix="/api/dev", tags=["dev"])
 
@@ -33,7 +34,7 @@ class DevUser(BaseModel):
     user_id: int
     kind: str
     role: str | None
-    # 職員は返事に出す名前、家族は入居者の呼び名
+    # 職員は返事に出す名前、家族は入居者の名前（その家族の表示言語に合わせる）
     display_name: str
     # 表示言語（外国人の職員を選んで試すときの目印）
     language: str
@@ -51,7 +52,7 @@ def list_users(session: Annotated[Session, Depends(get_session)]) -> list[DevUse
             User.email,
             Staff.role,
             Staff.display_name.label("staff_name"),
-            Resident.display_name.label("resident_name"),
+            resident_name(User.language).label("resident_name"),
         )
         .outerjoin(Staff, Staff.user_id == User.id)
         .outerjoin(FamilyAccount, FamilyAccount.user_id == User.id)

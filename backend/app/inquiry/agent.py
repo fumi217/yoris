@@ -31,6 +31,7 @@ from app.inquiry.llm import ChatClient
 from app.inquiry.prompts import build_system_prompt, forced_hand_off_note, leaks_instructions
 from app.inquiry.tools import READ_TOOLS, TOOL_DEFINITIONS, ToolContext, run_read_tool
 from app.models.inquiry import CATEGORIES, SUMMARY_MAX
+from app.services.resident_names import mentions_any_name
 
 # 読むツールを呼べる回数（FR-025）
 MAX_TOOL_CALLS = 5
@@ -111,7 +112,7 @@ def _hand_off(args: dict[str, Any], question: str, waiting_ids: set[int]) -> Han
 
 
 def _mentions_other_resident(text: str, other_names: Iterable[str]) -> bool:
-    return any(name and name in text for name in other_names)
+    return mentions_any_name(text, other_names)
 
 
 def run_agent(

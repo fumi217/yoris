@@ -24,5 +24,12 @@ def today_visits(
     session: Annotated[Session, Depends(get_session)],
 ) -> list[StaffReservationOut]:
     today = today_jst()
-    rows = list_reservations(session, facility_of(session, user), today, today, booked_only=True)
+    rows = list_reservations(
+        session,
+        facility_of(session, user),
+        today,
+        today,
+        booked_only=True,
+        language=user.language,
+    )
     return [reservation_out(row) for row in rows]

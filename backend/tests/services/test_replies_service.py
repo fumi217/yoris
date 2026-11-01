@@ -122,7 +122,11 @@ def committed(engine) -> Iterator[dict]:
         db.add(facility)
         db.flush()
         resident = Resident(
-            facility_id=facility.id, name="架空 同時", display_name="同時", room="900"
+            facility_id=facility.id,
+            name="架空 同時",
+            name_kana="かくう",
+            name_romaji="Kaku",
+            room="900",
         )
         users = [User(kind="staff", login_id=f"s9{n}999", password_hash="x") for n in (8, 9)]
         db.add_all([resident, *users])

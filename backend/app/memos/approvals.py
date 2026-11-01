@@ -22,6 +22,7 @@ from app.auth.deps import CurrentUser
 from app.errors import AppError, ErrorCode
 from app.models.core import Resident, Staff
 from app.models.memos import CareMemo
+from app.services.resident_names import resident_name
 
 logger = logging.getLogger(__name__)
 
@@ -59,11 +60,14 @@ def _facility_id(session: Session, user: CurrentUser) -> int:
     return session.scalars(select(Staff.facility_id).where(Staff.id == user.staff_id)).one()
 
 
-def _rows_query(facility_id: int):
-    """同じ施設の、一度でも「確かめました」を押されたメモ（入居者の呼び名・書いた職員つき）。"""
+def _rows_query(facility_id: int, language: str):
+    """同じ施設の、一度でも「確かめました」を押されたメモ（入居者の名前・書いた職員つき）。
+
+    入居者の名前は、見る職員の表示言語（language）に合わせる（#389）。
+    """
     author = aliased(Staff)
     return (
-        select(CareMemo, Resident.display_name, author.display_name)
+        select(CareMemo, resident_name(language), author.display_name)
         .join(Resident, Resident.id == CareMemo.resident_id)
         .join(author, author.id == CareMemo.author_staff_id)
         .where(Resident.facility_id == facility_id, CareMemo.confirmed_at.is_not(None))
@@ -73,7 +77,7 @@ def _rows_query(facility_id: int):
 def list_approvals(session: Session, user: CurrentUser, status: str) -> list[ApprovalRow]:
     """承認待ち（確かめてから長く待っている順）か、承認済み（新しく承認した順）の一覧。"""
     assert status in LIST_STATUSES
-    query = _rows_query(_facility_id(session, user)).where(CareMemo.status == status)
+    query = _rows_query(_facility_id(session, user), user.language).where(CareMemo.status == status)
     if status == "pending":
         query = query.order_by(CareMemo.confirmed_at, CareMemo.id)
     else:
@@ -99,7 +103,7 @@ def count_pending_memos(session: Session, user: CurrentUser) -> int | None:
 
 def get_approval(session: Session, user: CurrentUser, memo_id: int) -> ApprovalRow:
     """メモ 1 つ。同じ施設で、確かめられたことがあるものだけ。ないときは NOT_FOUND。"""
-    query = _rows_query(_facility_id(session, user)).where(CareMemo.id == memo_id)
+    query = _rows_query(_facility_id(session, user), user.language).where(CareMemo.id == memo_id)
     row = session.execute(query).one_or_none()
     if row is None:
         raise AppError(ErrorCode.NOT_FOUND)

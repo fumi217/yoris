@@ -725,5 +725,6 @@ def test_album_does_not_log_file_names_comments_or_resident_names(
     assert client.delete(f"/api/staff/album/{body['id']}").status_code == 204
 
     # 載せる・一覧・開く・削除のどれも、ファイル名・コメント・入居者名を出さない
-    for secret in ("ひみつの名前", "ひみつのコメント", resident.display_name):
+    secrets = ("ひみつの名前", "ひみつのコメント")
+    for secret in (*secrets, resident.name, resident.name_kana, resident.name_romaji):
         assert secret not in caplog.text

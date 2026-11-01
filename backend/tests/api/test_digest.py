@@ -632,7 +632,8 @@ def test_the_mail_and_notice_have_no_photo_content(session, world, add_photo):
     resident = session.get(Resident, world.family.resident_id)
     storage_key = session.get(UploadedFile, photo.file_id).storage_key
     text = str(outbox.params)
-    for secret in ("とても楽しそうでした", resident.display_name, resident.name, storage_key):
+    secrets = ("とても楽しそうでした", resident.name, resident.name_kana, resident.name_romaji)
+    for secret in (*secrets, storage_key):
         assert secret not in text
     [notice] = digests(session, world)
     assert photo.comment not in str(vars(notice))

@@ -45,7 +45,11 @@ def committed(engine) -> Iterator[dict]:
         db.add(facility)
         db.flush()
         resident = Resident(
-            facility_id=facility.id, name="架空 同時の対応", display_name="同時の対応", room="901"
+            facility_id=facility.id,
+            name="架空 同時の対応",
+            name_kana="かくう",
+            name_romaji="Kaku",
+            room="901",
         )
         staff_users = [User(kind="staff", login_id=f"s9{n}001", password_hash="x") for n in (6, 7)]
         family_user = User(kind="family", email=FAMILY_EMAIL, password_hash="x")

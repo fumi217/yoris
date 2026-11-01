@@ -27,6 +27,7 @@ from app.models.core import Resident
 from app.models.records import MEAL_SLOTS, CareRecord
 from app.models.requests import Request
 from app.services.change_detection import get_flag_summary
+from app.services.resident_names import resident_display_name
 
 router = APIRouter(prefix="/api/staff", tags=["staff"])
 
@@ -104,7 +105,7 @@ def list_residents(
         rows.append(
             ResidentRow(
                 id=resident.id,
-                display_name=resident.display_name,
+                display_name=resident_display_name(resident, user.language),
                 room=resident.room,
                 meals=MealsRecorded(**meals),
                 mood=(resident.id, "mood", "day") in recorded,

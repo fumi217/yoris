@@ -99,8 +99,8 @@ def add_message(session, say):
 def staff_client(client, make_staff, login_as):
     """職員としてログインしたクライアントを作る（返すのは (client, staff)）。"""
 
-    def login(role: str = "care_worker"):
-        staff = make_staff(role=role, display_name=f"テスト{role}")
+    def login(role: str = "care_worker", language: str = "ja"):
+        staff = make_staff(role=role, display_name=f"テスト{role}", language=language)
         login_as(staff.user_id)
         return client, staff
 
@@ -224,7 +224,7 @@ def test_list_filters_by_status(staff_client, make_family, add_message):
 def test_list_row(staff_client, make_staff, make_family, add_message):
     client, _ = staff_client()
     assignee = make_staff(display_name="担当の職員")
-    family = make_family(name="テスト 花子")
+    family = make_family(name="テスト 花子", relationship="son")
     message = add_message(family, "care_request", assignee=assignee)
 
     row = client.get("/api/staff/messages", params={"resident_id": family.resident_id}).json()[
@@ -233,10 +233,29 @@ def test_list_row(staff_client, make_staff, make_family, add_message):
 
     assert row["id"] == message.id
     assert row["resident_display_name"] == "テスト 花子"
+    assert row["family_relationship"] == "son"
     assert row["category"] == "care_request"
     assert row["assignee"] == {"id": assignee.id, "display_name": "担当の職員"}
     assert row["summary"] == "要約"
     assert row["status"] == "waiting"
+
+
+def test_list_and_detail_show_romaji_to_staff_in_other_language(
+    staff_client, make_family, add_message
+):
+    # 表示言語が id・en の職員には、入居者の名前をローマ字で返す（#389）
+    client, _ = staff_client(language="id")
+    family = make_family(name="佐藤 文江", name_romaji="Sato Fumie")
+    message = add_message(family, "care_request")
+
+    [row] = client.get("/api/staff/messages", params={"resident_id": family.resident_id}).json()[
+        "messages"
+    ]
+    detail = client.get(f"/api/staff/messages/{message.id}").json()
+
+    assert row["resident_display_name"] == "Sato Fumie"
+    assert detail["resident_display_name"] == "Sato Fumie"
+    assert detail["family_relationship"] == "daughter"
 
 
 def test_summary_and_origin_come_with_readings_without_changing_the_saved_text(

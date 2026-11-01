@@ -34,7 +34,7 @@ from app.inquiry.visibility import (
     visible_conversation_messages,
     visible_staff_messages,
 )
-from app.models.core import Resident, Staff
+from app.models.core import FamilyAccount, Resident, Staff
 from app.models.inquiry import (
     NOTE_MAX,
     InquiryMessage,
@@ -42,6 +42,7 @@ from app.models.inquiry import (
     StaffMessageTemplate,
 )
 from app.services.mail import send_email_now
+from app.services.resident_names import resident_name
 
 router = APIRouter(prefix="/api/staff", tags=["staff"])
 
@@ -62,7 +63,10 @@ class AssigneeOut(BaseModel):
 class StaffMessageRow(BaseModel):
     id: int
     resident_id: int
+    # 入居者の名前（職員の表示言語に合わせる）と、家族の続柄のコード
+    # （家族アカウントがなければ null。#389）
     resident_display_name: str
+    family_relationship: str | None
     category: str
     assignee: AssigneeOut | None
     summary: str
@@ -117,13 +121,18 @@ def _waiting_since() -> ColumnElement[datetime]:
 
 
 def _row(
-    message: StaffMessage, resident_name: str, assignee: Staff | None, now: datetime
+    message: StaffMessage,
+    name: str,
+    relationship: str | None,
+    assignee: Staff | None,
+    now: datetime,
 ) -> StaffMessageRow:
     elapsed = now - (message.reopened_at or message.handed_at)
     return StaffMessageRow(
         id=message.id,
         resident_id=message.resident_id,
-        resident_display_name=resident_name,
+        resident_display_name=name,
+        family_relationship=relationship,
         category=message.category,
         assignee=AssigneeOut(id=assignee.id, display_name=assignee.display_name)
         if assignee
@@ -138,12 +147,16 @@ def _row(
 
 
 def _with_names(user: CurrentUser):
-    """見られるメッセージに、入居者の呼び名と担当の職員を付けて選ぶ問い合わせ。"""
+    """見られるメッセージに、入居者の名前・家族の続柄・担当の職員を付けて選ぶ問い合わせ。
+
+    入居者の名前は、見る職員の表示言語に合わせる（#389）。
+    """
     return (
         visible_staff_messages(user)
         .join(Resident, Resident.id == StaffMessage.resident_id)
+        .outerjoin(FamilyAccount, FamilyAccount.resident_id == StaffMessage.resident_id)
         .outerjoin(Staff, Staff.id == StaffMessage.assignee_id)
-        .add_columns(Resident.display_name, Staff)
+        .add_columns(resident_name(user.language), FamilyAccount.relationship, Staff)
     )
 
 
@@ -175,8 +188,8 @@ def list_messages(
     now = clock.now()
     return StaffMessageListResponse(
         messages=[
-            _row(message, resident_name, assignee, now)
-            for message, resident_name, assignee in session.execute(query)
+            _row(message, name, relationship, assignee, now)
+            for message, name, relationship, assignee in session.execute(query)
         ]
     )
 
@@ -214,7 +227,7 @@ def get_message(
     found = session.execute(_with_names(user).where(StaffMessage.id == message_id)).one_or_none()
     if found is None:
         raise AppError(ErrorCode.NOT_FOUND)
-    message, resident_name, assignee = found
+    message, name, relationship, assignee = found
 
     origin = session.get_one(InquiryMessage, message.origin_message_id)
     # 原文の直前の 6 件（家族 3・AI／職員 3）を取り出し、その中から見せられないもの
@@ -262,7 +275,7 @@ def get_message(
         else {}
     )
 
-    row = _row(message, resident_name, assignee, clock.now())
+    row = _row(message, name, relationship, assignee, clock.now())
     return StaffMessageDetail(
         **row.model_dump(),
         origin=_message_out(origin, codes),

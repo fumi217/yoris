@@ -52,6 +52,7 @@ from app.models.records import CareRecord
 from app.models.requests import Request
 from app.services.disclosure import is_item_disclosed
 from app.services.replies import save_reply
+from app.services.resident_names import other_resident_names
 
 CASES_PATH = Path(__file__).with_name("cases.yaml")
 KINDS = ("answered", "handed_off", "no_record")
@@ -362,7 +363,7 @@ def _add_reply(session: Session, resident_id: int, staff_id: int, reply: SetupRe
 def prepare(session: Session, setup: EvalSetup) -> tuple[int, list[str]]:
     """評価用の入居者と、記録・職員の返事を、トランザクションの中に作る（commit しない）。
 
-    返すのは、評価用の入居者の id と、同じ施設のほかの入居者の呼び名
+    返すのは、評価用の入居者の id と、同じ施設のほかの入居者の名前（フルネーム・読み・ローマ字）
     （答えに出たら出さない確かめに使う）。
     """
     facility = session.scalars(select(Facility).order_by(Facility.id)).first()
@@ -378,7 +379,11 @@ def prepare(session: Session, setup: EvalSetup) -> tuple[int, list[str]]:
             "施設と職員がありません。先に python -m app.seed で初期データを入れてください"
         )
     resident = Resident(
-        facility_id=facility.id, name="架空 評価用", display_name="評価用の入居者", room="999"
+        facility_id=facility.id,
+        name="評価 太郎",
+        name_kana="ひょうか たろう",
+        name_romaji="Hyoka Taro",
+        room="999",
     )
     session.add(resident)
     session.flush()
@@ -401,14 +406,7 @@ def prepare(session: Session, setup: EvalSetup) -> tuple[int, list[str]]:
         except EvalSetupError as error:
             # 評価全体の準備が整わないときは、始めずに止める
             raise SystemExit(str(error)) from error
-    others = list(
-        session.scalars(
-            select(Resident.display_name).where(
-                Resident.facility_id == facility.id, Resident.id != resident.id
-            )
-        )
-    )
-    return resident.id, others
+    return resident.id, other_resident_names(session, resident.id)
 
 
 def _line(outcome: Outcome) -> str:

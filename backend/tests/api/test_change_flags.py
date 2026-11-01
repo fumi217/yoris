@@ -361,7 +361,11 @@ def _committed_resident(engine, *, with_low_meals: bool) -> Iterator[dict[str, i
         [login_id] = next_login_ids(setup_session, 1)
         user = User(kind="staff", login_id=login_id, password_hash="x")
         resident = Resident(
-            facility_id=facility.id, name="架空 同時", display_name="同時 花子", room="999"
+            facility_id=facility.id,
+            name="架空 同時",
+            name_kana="かくう",
+            name_romaji="Kaku",
+            room="999",
         )
         setup_session.add_all([user, resident])
         setup_session.flush()
@@ -876,7 +880,13 @@ def _other_facility_resident(session) -> Resident:
     other = Facility(name="ほかの施設")
     session.add(other)
     session.flush()
-    resident = Resident(facility_id=other.id, name="架空 他施設", display_name="他 花子", room="1")
+    resident = Resident(
+        facility_id=other.id,
+        name="架空 他施設",
+        name_kana="かくう",
+        name_romaji="Kaku",
+        room="1",
+    )
     session.add(resident)
     session.flush()
     return resident

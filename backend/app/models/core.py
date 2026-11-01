@@ -27,6 +27,9 @@ STAFF_OCCUPATIONS = (
     "functional_trainer",
     "care_manager",
 )
+# 入居者から見た家族の続柄（書類の「本人との続柄」の向き）。長女・次女などは分けない。
+# 画面では辞書で引く（spec 001 の data-model.md の family_accounts。#389）
+FAMILY_RELATIONSHIPS = ("daughter", "son", "spouse", "grandchild", "sibling", "other")
 
 # 職員のログイン用の ID（`s` ＋ 5 桁の数字。s00001〜s99999）の番号。
 # 作り方は app/auth/login_ids.py（spec 002 の T006）にまとめる。spec 002 の research.md R-06
@@ -83,9 +86,12 @@ class Resident(Base):
 
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
     facility_id: Mapped[int] = mapped_column(ForeignKey("facilities.id"))
+    # フルネーム（姓 名。例：「佐藤 文江」）。日本語の画面に出す
     name: Mapped[str]
-    # 表示用の呼び名（例：「佐藤さんの母」）
-    display_name: Mapped[str]
+    # 名前の読み（ひらがな）とローマ字（姓 名）。漢字から自動で作らず、入れた値を使う（#389）。
+    # 画面にどれを出すかは app/services/resident_names.py で決める
+    name_kana: Mapped[str]
+    name_romaji: Mapped[str]
     room: Mapped[str]
 
 
@@ -93,12 +99,15 @@ class FamilyAccount(Base):
     """家族アカウント（入居者に 1 つ。spec 001 の Session 2026-10-20）。"""
 
     __tablename__ = "family_accounts"
+    __table_args__ = (check_in("relationship", FAMILY_RELATIONSHIPS, name="relationship"),)
 
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
     # ログイン中の家族から入居者を 1 人に決めるため（CurrentUser.resident_id）、
     # 1 人の家族は 1 つのアカウントだけ
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
     resident_id: Mapped[int] = mapped_column(ForeignKey("residents.id"), unique=True)
+    # 入居者から見た、この家族の続柄（職員の画面だけに出す。#389）
+    relationship: Mapped[str] = mapped_column(server_default="other")
 
 
 class Staff(Base):

@@ -23,6 +23,7 @@ from app.auth.sessions import SESSION_COOKIE, read_session
 from app.db import get_session
 from app.errors import AppError, ErrorCode
 from app.models.core import STAFF_ROLES, FamilyAccount, Resident, Staff, User
+from app.services.resident_names import resident_name
 
 
 @dataclass(frozen=True)
@@ -33,7 +34,8 @@ class CurrentUser:
     staff_id: int | None  # 職員なら staff.id（記録・返事などの職員の参照に使う。家族は None）
     resident_id: int | None  # 家族なら、紐づいた入居者（職員は None）
     language: str
-    display_name: str  # 職員は返事に出す名前、家族は入居者の呼び名（/api/me で使う）
+    # 職員は返事に出す名前、家族は入居者の名前（表示言語に合わせる。/api/me で使う。#389）
+    display_name: str
 
 
 def get_current_user(
@@ -64,7 +66,7 @@ def load_current_user(session: Session, user_id: int) -> CurrentUser | None:
             Staff.role,
             Staff.display_name.label("staff_name"),
             FamilyAccount.resident_id,
-            Resident.display_name.label("resident_name"),
+            resident_name(User.language).label("resident_name"),
         )
         .outerjoin(Staff, Staff.user_id == User.id)
         .outerjoin(FamilyAccount, FamilyAccount.user_id == User.id)

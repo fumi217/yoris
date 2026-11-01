@@ -77,6 +77,18 @@ def test_add_people_fills_a_new_facility(session):
     assert occupations["西村"] == "nurse"
     assert occupations["原田"] == "functional_trainer"
     assert occupations["青木"] == "care_manager"
+    # 入居者の名前（#389）：フルネーム・読み・ローマ字が入り、重ならない。続柄も入る
+    names = session.execute(
+        select(Resident.name, Resident.name_kana, Resident.name_romaji, FamilyAccount.relationship)
+        .join(FamilyAccount, FamilyAccount.resident_id == Resident.id)
+        .where(Resident.facility_id == facility.id)
+        .order_by(Resident.id)
+    ).all()
+    assert names[0] == ("佐藤 文江", "さとう ふみえ", "Sato Fumie", "daughter")
+    assert len({row.name for row in names}) == RESIDENT_COUNT
+    assert all(" " in row.name and "さんの" not in row.name for row in names)
+    assert all(row.name_romaji.isascii() for row in names)
+    assert {"daughter", "son", "spouse", "grandchild"} <= {row.relationship for row in names}
 
     # 2 回目は、もう入居者がいるので何もしない
     assert add_people(session, facility_id=facility.id) == []

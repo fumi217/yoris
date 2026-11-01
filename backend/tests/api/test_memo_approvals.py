@@ -73,7 +73,11 @@ def other_facility_memo(session) -> CareMemo:
     session.add(facility)
     session.flush()
     resident = Resident(
-        facility_id=facility.id, name="架空 遠方", display_name="とおく 太郎", room="9"
+        facility_id=facility.id,
+        name="架空 遠方",
+        name_kana="かくう",
+        name_romaji="Kaku",
+        room="9",
     )
     user = User(kind="staff", login_id="s99999", password_hash="x")
     session.add_all([resident, user])

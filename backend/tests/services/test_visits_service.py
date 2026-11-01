@@ -54,7 +54,11 @@ def families(session: Session) -> dict[str, CurrentUser]:
     add_visit_settings(session, facility_id=facility.id)
     residents = [
         Resident(
-            facility_id=facility.id, name=f"架空 {n}", display_name=f"テスト{n}", room=f"20{n}"
+            facility_id=facility.id,
+            name=f"架空 {n}",
+            name_kana="かくう",
+            name_romaji="Kaku",
+            room=f"20{n}",
         )
         for n in (1, 2, 3)
     ]
@@ -209,7 +213,13 @@ def committed_families(engine) -> Iterator[tuple[object, dict[str, CurrentUser],
         db.flush()
         add_visit_settings(db, facility_id=facility.id)
         residents = [
-            Resident(facility_id=facility.id, name=f"架空 {n}", display_name=f"同時{n}", room="300")
+            Resident(
+                facility_id=facility.id,
+                name=f"架空 {n}",
+                name_kana="かくう",
+                name_romaji="Kaku",
+                room="300",
+            )
             for n in (1, 2, 3)
         ]
         db.add_all(residents)

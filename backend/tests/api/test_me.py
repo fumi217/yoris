@@ -21,6 +21,29 @@ def test_me_returns_family(client, make_family, login_as):
     }
 
 
+def test_me_returns_romaji_for_family_in_other_language(client, make_family, login_as):
+    # 表示言語が id・en の家族には、入居者の名前をローマ字で返す（#389）
+    family = make_family(name="佐藤 文江", name_romaji="Sato Fumie", language="en")
+    login_as(family.user_id)
+
+    assert client.get("/api/me").json()["display_name"] == "Sato Fumie"
+
+
+def test_changing_language_returns_the_resident_name_in_the_new_language(
+    client, make_family, login_as
+):
+    # 言語を変えた返事の表示名も、新しい言語の名前にする（古い言語の名前を残さない。#389）
+    family = make_family(name="佐藤 文江", name_romaji="Sato Fumie")
+    login_as(family.user_id)
+
+    to_english = client.put("/api/me/language", json={"language": "en"}).json()
+    back_to_japanese = client.put("/api/me/language", json={"language": "ja"}).json()
+
+    assert (to_english["language"], to_english["display_name"]) == ("en", "Sato Fumie")
+    assert (back_to_japanese["language"], back_to_japanese["display_name"]) == ("ja", "佐藤 文江")
+    assert client.get("/api/me").json()["display_name"] == "佐藤 文江"
+
+
 def test_me_returns_staff_with_role(client, make_staff, login_as):
     staff = make_staff(role="counselor", display_name="テスト相談員")
     login_as(staff.user_id)

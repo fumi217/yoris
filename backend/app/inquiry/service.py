@@ -34,13 +34,14 @@ from app.inquiry.guard import detect_category
 from app.inquiry.llm import ChatClient
 from app.inquiry.staff_replies import load_staff_reply_details
 from app.inquiry.tools import ToolContext
-from app.models.core import FamilyAccount, Resident
+from app.models.core import FamilyAccount
 from app.models.inquiry import InquiryConversation, InquiryMessage, StaffMessage
 from app.models.notifications import Notification
 from app.models.records import CareRecord
 from app.models.replies import Reply
 from app.models.requests import Request
 from app.services.disclosure import get_active_replies, get_disclosed_records
+from app.services.resident_names import other_resident_names
 
 logger = logging.getLogger(__name__)
 
@@ -211,18 +212,6 @@ def _waiting(session: Session, conversation_id: int) -> list[dict[str, Any]]:
     return [{"id": m.id, "category": m.category, "summary": m.summary} for m in rows]
 
 
-def _other_resident_names(session: Session, resident_id: int) -> list[str]:
-    """同じ施設のほかの入居者の呼び名（答えに入っていたら出さない。R-04 の 6）。"""
-    facility_id = select(Resident.facility_id).where(Resident.id == resident_id).scalar_subquery()
-    return list(
-        session.scalars(
-            select(Resident.display_name).where(
-                Resident.facility_id == facility_id, Resident.id != resident_id
-            )
-        )
-    )
-
-
 def send_message(
     session: Session, user: CurrentUser, body: str, *, llm: ChatClient | None = None
 ) -> tuple[InquiryMessage, InquiryMessage]:
@@ -240,7 +229,8 @@ def send_message(
         language=user.language,
         history=_history(session, user.resident_id, existing.id) if existing else [],
         waiting=_waiting(session, existing.id) if existing else [],
-        other_resident_names=_other_resident_names(session, user.resident_id),
+        # 同じ施設のほかの入居者の名前（答えに入っていたら出さない。R-04 の 6）
+        other_resident_names=other_resident_names(session, user.resident_id),
         forced_category=detect_category(body),
         llm=llm,
     )

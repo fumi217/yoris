@@ -30,6 +30,7 @@ from app.memos.checks import check_memo
 from app.memos.rewrite import back_translate_memo, rewrite_memo
 from app.models.core import Resident, Staff
 from app.models.memos import CareMemo, CareMemoRevision
+from app.services.resident_names import other_resident_names
 
 # ログに出すのは、メモの id・状態・操作・印の名前・かかった時間・モデル名だけ。
 # 原文・整えた日本語・訳し戻し・氏名・理由の文は出さない（FR-018・research.md R-11）
@@ -84,20 +85,6 @@ def create_memo(
     session.flush()
     logger.info("様子のメモの下書きを作った: memo=%s resident=%s", memo.id, resident_id)
     return memo
-
-
-def _other_resident_names(session: Session, resident_id: int) -> list[str]:
-    """同じ施設の、ほかの入居者の呼び名（機械の目の other_name に使う。R-03）。"""
-    facility_id = session.scalars(
-        select(Resident.facility_id).where(Resident.id == resident_id)
-    ).one()
-    return list(
-        session.scalars(
-            select(Resident.display_name).where(
-                Resident.facility_id == facility_id, Resident.id != resident_id
-            )
-        )
-    )
 
 
 def get_own_memo(
@@ -206,7 +193,8 @@ def _warnings_of(session: Session, memo: CareMemo) -> list[str]:
         source_lang=memo.source_lang,
         rewritten_text=memo.rewritten_text,
         back_translation=memo.back_translation,
-        other_resident_names=_other_resident_names(session, memo.resident_id),
+        # 同じ施設の、ほかの入居者の名前（機械の目の other_name に使う。R-03）
+        other_resident_names=other_resident_names(session, memo.resident_id),
     )
 
 

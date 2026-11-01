@@ -102,7 +102,13 @@ def clients(session: Session, monkeypatch) -> dict[str, TestClient]:
     session.flush()
     add_visit_settings(session, facility_id=facility.id)
     residents = [
-        Resident(facility_id=facility.id, name=f"架空 {n}", display_name=f"テスト{n}", room="101")
+        Resident(
+            facility_id=facility.id,
+            name=f"架空 {n}",
+            name_kana="かくう",
+            name_romaji="Kaku",
+            room="101",
+        )
         for n in (1, 2, 3)
     ]
     session.add_all(residents)

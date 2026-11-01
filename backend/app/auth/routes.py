@@ -3,7 +3,6 @@
 spec 001 の T022・contracts「ログイン・アカウント」。
 """
 
-from dataclasses import replace
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Request, Response
@@ -93,7 +92,7 @@ def logout(request: Request, response: Response) -> None:
 
 @router.get("/me")
 def me(user: Annotated[CurrentUser, Depends(get_current_user)]) -> MeResponse:
-    """自分の種類・役割・表示名・表示言語。表示名は、職員は返事に出す名前、家族は入居者の呼び名。"""
+    """自分の種類・役割・表示名・表示言語。表示名は、職員は返事に出す名前、家族は入居者の名前。"""
     return _me_response(user)
 
 
@@ -113,4 +112,9 @@ def change_language(
     """
     session.execute(update(User).where(User.id == user.user_id).values(language=body.language))
     session.commit()
-    return _me_response(replace(user, language=body.language))
+    # 家族の表示名は入居者の名前で、言語で変わる。言語だけ入れ替えると古い名前が残るので、読み直す
+    updated = load_current_user(session, user.user_id)
+    if updated is None:
+        # 保存の直後に、ログインさせない人になっていた（get_current_user と同じ扱いにする）
+        raise AppError(ErrorCode.NOT_LOGGED_IN)
+    return _me_response(updated)

@@ -35,7 +35,11 @@ def world(session: Session, redis, facility: Facility) -> Iterator[dict]:
     初期データ（テーマ・すべて見せる開示設定）を作る。
     """
     resident = Resident(
-        facility_id=facility.id, name="架空 花子", display_name="テスト 花子", room="101"
+        facility_id=facility.id,
+        name="架空 花子",
+        name_kana="かくう",
+        name_romaji="Kaku",
+        room="101",
     )
     user = User(kind="staff", login_id="s90011", password_hash="x")
     session.add_all([resident, user])
@@ -381,7 +385,11 @@ def test_a_range_is_required(session, world):
 
 def test_only_the_residents_own_memos_are_returned(session, world, facility):
     other = Resident(
-        facility_id=facility.id, name="架空 次郎", display_name="ほか 太郎", room="102"
+        facility_id=facility.id,
+        name="架空 次郎",
+        name_kana="かくう",
+        name_romaji="Kaku",
+        room="102",
     )
     session.add(other)
     session.flush()

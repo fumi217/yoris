@@ -46,13 +46,43 @@ STAFF: list[tuple[str, str, str, str]] = [
     ("猪熊", "director", "ja", "director"),
 ]
 
-# 入居者 30 人の名字。呼び名は「◯◯さんの母」「◯◯さんの父」（家族から見た呼び方）
-SURNAMES = [
-    "佐藤", "加藤", "吉田", "山田", "大野", "山口", "松本", "井上", "木村", "林",
-    "斎藤", "清水", "山崎", "森", "池田", "橋本", "阿部", "石川", "山下", "中島",
-    "石井", "小川", "前田", "岡田", "長谷川", "藤田", "後藤", "近藤", "村上", "遠藤",
-]  # fmt: skip
-RESIDENT_COUNT = len(SURNAMES)
+# 入居者 30 人の (フルネーム, 読み, ローマ字, 家族の続柄)。名前はすべて架空（#389）。
+# ローマ字は姓 名の順のヘボン式。長音の印を付けずに済むよう、長音を含む名字は使わない
+# （佐藤だけは、家族のペルソナ 佐藤美紀さんの名字なので残す）。
+# 続柄は入居者から見た家族（spec 001 の data-model.md の family_accounts）
+RESIDENTS: list[tuple[str, str, str, str]] = [
+    ("佐藤 文江", "さとう ふみえ", "Sato Fumie", "daughter"),
+    ("野村 久子", "のむら ひさこ", "Nomura Hisako", "son"),
+    ("吉田 正雄", "よしだ まさお", "Yoshida Masao", "spouse"),
+    ("山田 トミ", "やまだ とみ", "Yamada Tomi", "grandchild"),
+    ("杉山 キヨ", "すぎやま きよ", "Sugiyama Kiyo", "son"),
+    ("山口 繁", "やまぐち しげる", "Yamaguchi Shigeru", "son"),
+    ("松本 良子", "まつもと よしこ", "Matsumoto Yoshiko", "daughter"),
+    ("井上 ハル", "いのうえ はる", "Inoue Haru", "son"),
+    ("木村 勇", "きむら いさむ", "Kimura Isamu", "daughter"),
+    ("林 澄子", "はやし すみこ", "Hayashi Sumiko", "daughter"),
+    ("坂本 静江", "さかもと しずえ", "Sakamoto Shizue", "son"),
+    ("清水 昭", "しみず あきら", "Shimizu Akira", "son"),
+    ("山崎 たね", "やまざき たね", "Yamazaki Tane", "daughter"),
+    ("森 初枝", "もり はつえ", "Mori Hatsue", "daughter"),
+    ("池田 義雄", "いけだ よしお", "Ikeda Yoshio", "daughter"),
+    ("橋本 君代", "はしもと きみよ", "Hashimoto Kimiyo", "son"),
+    ("阿部 ミヨ", "あべ みよ", "Abe Miyo", "daughter"),
+    ("石川 清", "いしかわ きよし", "Ishikawa Kiyoshi", "son"),
+    ("山下 咲子", "やました さきこ", "Yamashita Sakiko", "daughter"),
+    ("中島 富子", "なかじま とみこ", "Nakajima Tomiko", "daughter"),
+    ("石井 弘", "いしい ひろし", "Ishii Hiroshi", "son"),
+    ("小川 和子", "おがわ かずこ", "Ogawa Kazuko", "daughter"),
+    ("前田 セツ", "まえだ せつ", "Maeda Setsu", "son"),
+    ("岡田 隆", "おかだ たかし", "Okada Takashi", "daughter"),
+    ("長谷川 トシ", "はせがわ とし", "Hasegawa Toshi", "daughter"),
+    ("藤田 光江", "ふじた みつえ", "Fujita Mitsue", "son"),
+    ("宮崎 実", "みやざき みのる", "Miyazaki Minoru", "son"),
+    ("平野 たまえ", "ひらの たまえ", "Hirano Tamae", "daughter"),
+    ("村上 芳子", "むらかみ よしこ", "Murakami Yoshiko", "daughter"),
+    ("藤井 三男", "ふじい みつお", "Fujii Mitsuo", "son"),
+]
+RESIDENT_COUNT = len(RESIDENTS)
 
 
 def get_or_add_facility(session: Session) -> Facility:
@@ -111,12 +141,13 @@ def add_people(session: Session, *, facility_id: int) -> list[Staff]:
     residents = [
         Resident(
             facility_id=facility_id,
-            name=f"{surname} 架空{n}",
-            display_name=f"{surname}さんの{'母' if n % 3 else '父'}",
+            name=name,
+            name_kana=kana,
+            name_romaji=romaji,
             # 居室は 1 階 101〜115、2 階 201〜215
             room=f"{1 + (n - 1) // 15}{(n - 1) % 15 + 1:02d}",
         )
-        for n, surname in enumerate(SURNAMES, start=1)
+        for n, (name, kana, romaji, _) in enumerate(RESIDENTS, start=1)
     ]
     session.add_all([*staff_users, *family_users, *residents])
     session.flush()
@@ -133,8 +164,10 @@ def add_people(session: Session, *, facility_id: int) -> list[Staff]:
         for user, (display_name, role, _, occupation) in zip(staff_users, staff_rows, strict=True)
     ]
     families = [
-        FamilyAccount(user_id=user.id, resident_id=resident.id)
-        for user, resident in zip(family_users, residents, strict=True)
+        FamilyAccount(user_id=user.id, resident_id=resident.id, relationship=relationship)
+        for user, resident, (_, _, _, relationship) in zip(
+            family_users, residents, RESIDENTS, strict=True
+        )
     ]
     session.add_all([*staff, *families])
     session.flush()
