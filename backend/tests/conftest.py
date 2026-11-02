@@ -68,8 +68,10 @@ from app.redis import get_redis
 from tests.fakes.llm import FakeLLM
 from tests.fakes.stripe import TEST_SIGNING_KEY, FakeStripe
 
-# テストで使う Redis の番号（開発のログインは 0 番）
-TEST_REDIS_DB = 15
+# テストで使う Redis の番号（開発のログインは 0 番）。TEST_REDIS_DB で変えられる。
+# 複数の pytest を同時に流すときは、別の番号にする（同じ番号だと、片方の flushdb() で
+# もう片方のログインのセッションが消えて 401 になる）
+TEST_REDIS_DB = int(os.environ.get("TEST_REDIS_DB", "15"))
 
 
 def _require(name: str) -> str:
