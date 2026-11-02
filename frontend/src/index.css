@@ -116,3 +116,42 @@ body {
 html:has([data-mascot]) {
   scroll-padding-bottom: calc(var(--family-menu-height) + 5.5rem);
 }
+
+/*
+ * ボタンの影と、押したときの動き（デザインの決めごと 7 章。#377）。押せるものだと一目で分かるように、
+ * 背景色か枠のあるボタンに、薄い影をつける。ボタンごとの className は書き換えず、ここで 1 か所に効かせる。
+ * 付けないもの：文字だけのリンク風のボタン（背景も枠もない）・タブ（role="tab"）・押せないボタン（disabled）。
+ * 影は飾り（枠の 3:1 は、影に頼らない。1.4.11）。
+ */
+@layer base {
+  button:where([class*='bg-'], [class*='border-']):not(:disabled, [role='tab']) {
+    box-shadow:
+      0 1px 2px rgb(15 31 61 / 0.2),
+      0 2px 4px rgb(15 31 61 / 0.12);
+  }
+
+  /* マウスのある端末だけ、乗せたときに影を少し大きくする（タッチの端末では、乗せたままにならないように） */
+  @media (hover: hover) {
+    button:where([class*='bg-'], [class*='border-']):not(:disabled, [role='tab']):hover {
+      box-shadow:
+        0 2px 4px rgb(15 31 61 / 0.22),
+        0 4px 8px rgb(15 31 61 / 0.14);
+    }
+  }
+}
+
+/*
+ * 押したとき：影を消して、1px 下げる（押し込んだように見える）。ここは @layer の外に置く。
+ * 画面ごとに \`shadow-sm\`・\`shadow-md\` などの指定があるボタン（予約する・用件のボタンなど）も、押した間は影が消えて、
+ * 同じ動きになるようにするため（@layer の中だと、画面ごとの指定が勝って、影が残る）。
+ */
+button:where([class*='bg-'], [class*='border-']):not(:disabled, [role='tab']):active {
+  box-shadow: none;
+}
+
+/* 「動きを減らす」設定のときは、押したときに下げない（2.3.3） */
+@media (prefers-reduced-motion: no-preference) {
+  button:where([class*='bg-'], [class*='border-']):not(:disabled, [role='tab']):active {
+    transform: translateY(1px);
+  }
+}
