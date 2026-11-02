@@ -10,6 +10,9 @@ export type StaffReservation = {
   start_time: string // "10:00:00"
   resident_id: number
   resident_name: string
+  resident_name_ruby: string
+  // 家族アカウントの代表者の続柄のコード（daughter など。家族アカウントがなければ null）
+  family_relationship: string | null
   room: string
   party_size: number
   status: 'booked' | 'cancelled_by_family' | 'cancelled_by_staff'

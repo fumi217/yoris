@@ -25,3 +25,13 @@ export function parseRuby(text: string): RubySegment[] {
 export function stripRuby(text: string): string {
   return text.replace(RUBY_PATTERN, '$1')
 }
+
+const FULL_WIDTH_MARKS: Record<string, string> = { '{': '｛', '}': '｝', '|': '｜' }
+
+/**
+ * ふりがなの書き方に使う `{ } |` を、全角にする（書き方として解釈されないように）。
+ * 入居者の名前のように、文字のまま出したい文を、Ruby 部品に渡す前に通す（FR-017）。
+ */
+export function escapeRubyMarks(text: string): string {
+  return text.replace(/[{}|]/g, (mark) => FULL_WIDTH_MARKS[mark])
+}

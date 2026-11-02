@@ -22,7 +22,9 @@ import {
 const row = (overrides: Partial<MessageRow> = {}): MessageRow => ({
   id: 1,
   resident_id: 10,
-  resident_display_name: 'さくらさん',
+  resident_display_name: 'さくら 花子',
+  resident_display_name_ruby: 'さくら 花子',
+  family_relationship: 'daughter',
   category: 'money',
   assignee: null,
   summary: '先月の請求書の金額について知りたい',
@@ -102,7 +104,7 @@ describe('MessageListView（一覧）', () => {
       renderList([row(), row({ id: 2, assignee: { id: 5, display_name: '西村' } })]),
     )
 
-    expect(shown).toContain('さくらさん')
+    expect(shown).toContain('さくら 花子さんのご家族（娘）')
     expect(shown).toContain('お金・書類')
     expect(shown).toContain('先月の請求書の金額について知りたい')
     expect(shown).toContain('担当はまだいません')

@@ -835,5 +835,18 @@
     "recreation": "We would like to know which activities they join",
     "family_talk": "We would like to know if they talk about family",
     "supplies": "Tell us if anything is needed or concerning"
+  },
+  "resident_name": {
+    "honorific_suffix": "",
+    "family_of": "Family of {{name}} ({{relationship}})",
+    "family_of_plain": "Family of {{name}}",
+    "relationship": {
+      "daughter": "Daughter",
+      "son": "Son",
+      "spouse": "Spouse",
+      "grandchild": "Grandchild",
+      "sibling": "Sibling",
+      "other": "Other"
+    }
   }
 }

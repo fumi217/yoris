@@ -6,7 +6,7 @@ import { ME_QUERY_KEY, type Me } from '../../auth/me'
 import '../../i18n'
 import { FamilyLayout } from './FamilyLayout'
 
-const me: Me = { kind: 'family', role: null, display_name: '架空 太郎さんの母', language: 'ja' }
+const me: Me = { kind: 'family', role: null, display_name: '架空 太郎', language: 'ja' }
 
 function render(path = '/family', features?: { album: boolean }) {
   const queryClient = new QueryClient()
@@ -27,13 +27,13 @@ describe('FamilyLayout の上の枠', () => {
     const header = html.match(/<header[^>]*>(.*?)<\/header>/)?.[1] ?? ''
 
     expect(header).toMatch(/<a [^>]*href="\/family"[^>]*><img[^>]*alt="YORIS"/)
-    expect(header).toContain('架空 太郎さんの母')
+    expect(header).toContain('架空 太郎<span class="text-[0.85em]">さん</span>')
     // ロゴが先（左）、呼び名があと（右）
-    expect(header.indexOf('alt="YORIS"')).toBeLessThan(header.indexOf('架空 太郎さんの母'))
+    expect(header.indexOf('alt="YORIS"')).toBeLessThan(header.indexOf('架空 太郎'))
   })
 
   it('呼び名が長くても、横にあふれない（省略する。幅 320px）', () => {
-    expect(render()).toMatch(/<p class="[^"]*truncate[^"]*">架空 太郎さんの母/)
+    expect(render()).toMatch(/<p class="[^"]*truncate[^"]*">架空 太郎/)
   })
 
   it('ロゴの高さは 28px（h-7）', () => {

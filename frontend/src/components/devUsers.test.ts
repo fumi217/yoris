@@ -43,9 +43,9 @@ describe('devUserLabel', () => {
       user_id: 17,
       kind: 'family',
       role: null,
-      display_name: '佐藤さんの母',
+      display_name: '佐藤 文江',
       language: 'ja',
     }
-    expect(devUserLabel(user, t)).toBe('佐藤さんの母')
+    expect(devUserLabel(user, t)).toBe('佐藤 文江')
   })
 })

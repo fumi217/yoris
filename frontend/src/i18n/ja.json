@@ -893,5 +893,18 @@
     "recreation": "{参加|さんか}している{活動|かつどう}を{知|し}りたいです",
     "family_talk": "{家族|かぞく}の{話題|わだい}が{出|で}ているか{知|し}りたいです",
     "supplies": "{必要|ひつよう}なものや{気|き}になることがあれば{教|おし}えてください"
+  },
+  "resident_name": {
+    "honorific_suffix": "さん",
+    "family_of": "{{name}}のご{家族|かぞく}（{{relationship}}）",
+    "family_of_plain": "{{name}}のご{家族|かぞく}",
+    "relationship": {
+      "daughter": "{娘|むすめ}",
+      "son": "{息子|むすこ}",
+      "spouse": "{配偶者|はいぐうしゃ}",
+      "grandchild": "{孫|まご}",
+      "sibling": "きょうだい",
+      "other": "その{他|た}"
+    }
   }
 }

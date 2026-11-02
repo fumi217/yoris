@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { messageKeyOf } from '../../api/client'
 import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
+import { ResidentFamily } from '../../components/ResidentName'
 import { Ruby } from '../../i18n/Ruby'
 import { endOf, hhmm } from '../family/visits/visitDates'
 import { useTodayVisits } from './useTodayVisits'
@@ -49,15 +50,23 @@ export function TodayVisitsView({ rows }: { rows: StaffReservation[] }) {
       {rows.map((row) => {
         const start = hhmm(row.start_time)
         return (
-          <li key={row.id} className="p-3">
-            <span className="mr-3 text-lg font-bold">
+          <li key={row.id} className="flex flex-wrap items-baseline p-3">
+            <span className="w-36 shrink-0 text-lg font-bold">
               {t('visit.time_range', { start, end: endOf(start) })}
             </span>
-            <span className="mr-2 text-gray-600">{row.room}</span>
-            {/* 入居者の呼び名は、辞書を通さずそのまま出す */}
-            <span className="mr-3">{row.resident_name}</span>
+            <span className="w-12 shrink-0 text-gray-600">{row.room}</span>
+            <span className="w-80 shrink-0">
+              {/* 続柄は出さない：予約したのは代表者だが、来る人が同じとは限らないため（デザインの決めごと 15 章） */}
+              <ResidentFamily
+                name={row.resident_name}
+                ruby={row.resident_name_ruby}
+                relationship={null}
+              />
+            </span>
             {/* 来館する人の数（入居者の人数に見えないよう「来館者」と付ける。#311） */}
-            <Ruby text={t('visit.visitors', { count: row.party_size })} />
+            <span>
+              <Ruby text={t('visit.visitors', { count: row.party_size })} />
+            </span>
           </li>
         )
       })}

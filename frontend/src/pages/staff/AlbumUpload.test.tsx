@@ -12,7 +12,9 @@ const render = (items: UploadItem[] = [], extra: { skipped?: number; sending?: b
     <MemoryRouter>
       <AlbumUploadView
         residentId="5"
-        resident={{ id: 5, display_name: '佐藤さんの母', room: '101' } as never}
+        resident={
+          { id: 5, display_name: '佐藤 文江', display_name_ruby: '佐藤 文江', room: '101' } as never
+        }
         items={items}
         previews={Object.fromEntries(items.map((item) => [item.id, `blob:preview-${item.id}`]))}
         skipped={extra.skipped ?? 0}

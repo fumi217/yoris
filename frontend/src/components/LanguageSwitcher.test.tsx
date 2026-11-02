@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { ME_QUERY_KEY, type Me } from '../auth/me'
+import { ME_QUERY_KEY, refetchAfterLanguageChange, type Me } from '../auth/me'
 import '../i18n'
 import { LanguageSwitcher } from './LanguageSwitcher'
 
@@ -35,5 +35,18 @@ describe('LanguageSwitcher', () => {
 
   it('ログインしていないときは出さない', () => {
     expect(render(null)).toBe('')
+  })
+
+  it('言語を変えたら、ログイン中の人以外の取得済みの一覧を取り直す（名前の言語が変わるため。#389）', async () => {
+    const queryClient = new QueryClient()
+    queryClient.setQueryData(ME_QUERY_KEY, staff)
+    queryClient.setQueryData(['staff', 'residents'], { residents: [] })
+    queryClient.setQueryData(['family', 'contact-book'], {})
+
+    await refetchAfterLanguageChange(queryClient)
+
+    expect(queryClient.getQueryState(ME_QUERY_KEY)?.isInvalidated).toBe(false)
+    expect(queryClient.getQueryState(['staff', 'residents'])?.isInvalidated).toBe(true)
+    expect(queryClient.getQueryState(['family', 'contact-book'])?.isInvalidated).toBe(true)
   })
 })

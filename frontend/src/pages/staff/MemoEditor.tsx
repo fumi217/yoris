@@ -7,6 +7,7 @@ import { api } from '../../api/client'
 import { useMe } from '../../auth/me'
 import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
+import { ResidentName } from '../../components/ResidentName'
 import { stripRuby } from '../../i18n/rubyText'
 import {
   canWriteMemo,
@@ -129,8 +130,7 @@ export function MemoEditorView({
         {resident && (
           <span className="ml-3 text-base font-normal">
             <span className="mr-2 text-gray-600">{resident.room}</span>
-            {/* 入居者の呼び名は、辞書を通さずそのまま出す */}
-            {resident.display_name}
+            <ResidentName name={resident.display_name} ruby={resident.display_name_ruby} />
           </span>
         )}
       </h1>

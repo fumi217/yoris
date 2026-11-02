@@ -7,6 +7,7 @@ import { ConfirmButton } from '../../components/ConfirmButton'
 import { Message } from '../../components/Message'
 import { ReasonField } from '../../components/ReasonField'
 import { Text } from '../../components/Text'
+import { ResidentFamily } from '../../components/ResidentName'
 import { Ruby } from '../../i18n/Ruby'
 import { stripRuby } from '../../i18n/rubyText'
 import { changedAtParts } from '../admin/historyRows'
@@ -146,15 +147,25 @@ function ReservationItem({ row, cancelling, disabled, onCancel }: ItemProps) {
 
   return (
     <li className={`space-y-1 p-3 ${active ? '' : 'text-ink-sub'}`}>
-      <p>
-        <span className="mr-3 font-bold">
+      {/* 時刻・居室・名前の列に決まった幅を付け、「来館者」の開始位置を、行によらずそろえる
+          （名前の長さで、あとの列がずれないように）。ふりがなで行の高さが変わっても、文字の下の線をそろえる */}
+      <p className="flex flex-wrap items-baseline">
+        <span className="w-36 shrink-0 font-bold">
           {t('visit.time_range', { start, end: endOf(start) })}
         </span>
-        <span className="mr-2 text-gray-600">{row.room}</span>
-        {/* 入居者の呼び名は、辞書を通さずそのまま出す */}
-        <span className="mr-3">{row.resident_name}</span>
+        <span className="w-12 shrink-0 text-gray-600">{row.room}</span>
+        <span className="w-80 shrink-0">
+          {/* 続柄は出さない：予約したのは代表者だが、来る人が同じとは限らないため（デザインの決めごと 15 章） */}
+          <ResidentFamily
+            name={row.resident_name}
+            ruby={row.resident_name_ruby}
+            relationship={null}
+          />
+        </span>
         {/* 来館する人の数（入居者の人数に見えないよう「来館者」と付ける。#311） */}
-        <Ruby text={t('visit.visitors', { count: row.party_size })} />
+        <span>
+          <Ruby text={t('visit.visitors', { count: row.party_size })} />
+        </span>
       </p>
       <p className="text-sm">
         <Text k={`visit.status.${row.status}`} />

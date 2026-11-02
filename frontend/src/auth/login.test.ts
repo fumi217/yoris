@@ -5,7 +5,7 @@ import { logIn, logOut } from './login'
 import { ME_QUERY_KEY, type Me } from './me'
 
 const staff: Me = { kind: 'staff', role: 'leader', display_name: 'テストリーダー', language: 'ja' }
-const family: Me = { kind: 'family', role: null, display_name: 'テストさんの母', language: 'ja' }
+const family: Me = { kind: 'family', role: null, display_name: 'テスト 花子', language: 'ja' }
 
 function mockFetch(status: number, body?: unknown) {
   const fetchMock = vi

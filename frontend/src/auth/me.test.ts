@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { canOpen, homePathFor, type Me, type StaffRole } from './me'
 
-const family: Me = { kind: 'family', role: null, display_name: 'テストさんの母', language: 'ja' }
+const family: Me = { kind: 'family', role: null, display_name: 'テスト 花子', language: 'ja' }
 const staff = (role: StaffRole): Me => ({
   kind: 'staff',
   role,

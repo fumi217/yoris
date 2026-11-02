@@ -24,7 +24,8 @@ function text(html: string): string {
 const item = (changes: Partial<Approval> = {}): Approval => ({
   id: 1,
   resident_id: 10,
-  resident_name: 'さくらさんの母',
+  resident_name: 'さくら 花子',
+  resident_name_ruby: 'さくら 花子',
   author_name: 'シティ',
   is_own: false,
   memo_date: '2026-10-28',
@@ -72,7 +73,7 @@ describe('様子のメモの承認の画面（spec 007 の T023）', () => {
   it('入居者の呼び名・書いた職員・原文・整えた日本語・訳し戻しを並べて出す（FR-011）', () => {
     const shown = text(render([item()]))
 
-    expect(shown).toContain('さくらさんの母')
+    expect(shown).toContain('さくら 花子')
     expect(shown).toContain('書いた職員：シティ')
     expect(shown).toContain('10月28日に書きました')
     expect(shown).toContain('原文（Bahasa Indonesia）')
@@ -202,6 +203,7 @@ describe('様子のメモの承認の画面（spec 007 の T023）', () => {
         original_text: '<script>alert(1)</script>',
         rewritten_text: '{太郎|たろう}さんは元気でした',
         resident_name: '田中{花子|はなこ}',
+        resident_name_ruby: '田中{花子|はなこ}',
         author_name: '<b>職員</b>',
       }),
     ])
@@ -210,7 +212,8 @@ describe('様子のメモの承認の画面（spec 007 の T023）', () => {
     expect(html).not.toContain('<b>職員')
     expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
     expect(text(html)).toContain('{太郎|たろう}さんは元気でした')
-    expect(text(html)).toContain('田中{花子|はなこ}')
+    // 名前の { } | は、書き方として解釈せず、全角にして出す
+    expect(text(html)).toContain('田中｛花子｜はなこ｝')
   })
 
   it('整えた日本語・訳し戻しがまだないメモも、画面が壊れない', () => {
@@ -231,7 +234,9 @@ describe('様子のメモの承認の画面（spec 007 の T023）', () => {
   })
 
   it('できなかった理由は、押したメモの中に出す（一覧が長くても、押した場所の近くで気づける）', () => {
-    const items = [1, 2, 3].map((id) => item({ id, resident_name: `入居者${id}` }))
+    const items = [1, 2, 3].map((id) =>
+      item({ id, resident_name: `入居者${id}`, resident_name_ruby: `入居者${id}` }),
+    )
 
     const html = render(items, { errorKey: 'error.invalid_state', errorId: 3 })
 

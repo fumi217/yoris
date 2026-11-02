@@ -23,7 +23,7 @@ const render = (props: Partial<Parameters<typeof ReplyView>[0]> = {}) =>
     <MemoryRouter>
       <ReplyView
         residentId="3"
-        resident={{ id: 3, display_name: '佐藤さんの母', room: '101' }}
+        resident={{ id: 3, display_name: '佐藤 文江', display_name_ruby: '佐藤 文江', room: '101' }}
         requests={[request()]}
         sendingId={null}
         errorKey={null}

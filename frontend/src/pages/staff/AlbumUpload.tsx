@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router'
 import { api, messageKeyOf } from '../../api/client'
 import { Text } from '../../components/Text'
+import { ResidentName } from '../../components/ResidentName'
 import { Ruby } from '../../i18n/Ruby'
 import { AlbumPosted, type StaffAlbum } from './AlbumPosted'
 import {
@@ -237,8 +238,7 @@ export function AlbumUploadView({
         {resident && (
           <span className="ml-3 text-base font-normal">
             <span className="mr-2 text-gray-600">{resident.room}</span>
-            {/* 入居者の呼び名は、辞書を通さずそのまま出す */}
-            {resident.display_name}
+            <ResidentName name={resident.display_name} ruby={resident.display_name_ruby} />
           </span>
         )}
       </h1>

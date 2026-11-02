@@ -13,7 +13,8 @@ import {
 
 const row = (overrides: Partial<ResidentRow> = {}): ResidentRow => ({
   id: 1,
-  display_name: '佐藤さんの母',
+  display_name: '佐藤 文江',
+  display_name_ruby: '佐藤 文江',
   room: '101',
   meals: { breakfast: true, lunch: false, dinner: false, snack: false },
   mood: true,
@@ -60,7 +61,7 @@ describe('ResidentTable', () => {
 
     expect(html).toContain('href="/staff/residents/7"')
     expect(html).toContain('101')
-    expect(html).toContain('佐藤さんの母')
+    expect(html).toContain('佐藤 文江')
   })
 
   it('朝・昼・夜のまだは目立たせ、おやつのまだは目立たせない', () => {
@@ -88,7 +89,9 @@ describe('ResidentTable', () => {
   })
 
   it('入居者の呼び名は、HTML として解釈しない', () => {
-    const html = render([row({ display_name: '<b>テスト</b>' })])
+    const html = render([
+      row({ display_name: '<b>テスト</b>', display_name_ruby: '<b>テスト</b>' }),
+    ])
 
     expect(html).not.toContain('<b>テスト</b>')
     expect(html).toContain('&lt;b&gt;テスト&lt;/b&gt;')
@@ -138,14 +141,19 @@ describe('変化の目印（spec 006 の 006-T015）', () => {
 
   it('目印のある行は、呼び名のすぐ横に「いつもと違う様子」（注意のアイコン付き）を出し、上に並べる', () => {
     const html = render([
-      row({ id: 1, display_name: '目印なしさん' }),
-      row({ id: 2, display_name: '目印ありさん', change_flag: unconfirmed }),
+      row({ id: 1, display_name: '目印なし太郎', display_name_ruby: '目印なし太郎' }),
+      row({
+        id: 2,
+        display_name: '目印あり太郎',
+        display_name_ruby: '目印あり太郎',
+        change_flag: unconfirmed,
+      }),
     ])
 
-    expect(html.indexOf('目印ありさん')).toBeLessThan(html.indexOf('目印なしさん'))
-    const flagged = html.slice(html.indexOf('目印ありさん'), html.indexOf('目印なしさん'))
+    expect(html.indexOf('目印あり太郎')).toBeLessThan(html.indexOf('目印なし太郎'))
+    const flagged = html.slice(html.indexOf('目印あり太郎'), html.indexOf('目印なし太郎'))
     expect(flagged).toContain('data-icon="triangle-exclamation"')
-    expect(html.slice(html.indexOf('目印なしさん'))).not.toContain(
+    expect(html.slice(html.indexOf('目印なし太郎'))).not.toContain(
       'data-icon="triangle-exclamation"',
     )
   })

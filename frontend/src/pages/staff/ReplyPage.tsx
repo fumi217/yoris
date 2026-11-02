@@ -7,6 +7,7 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { ApiError, api, messageKeyOf } from '../../api/client'
 import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
+import { ResidentName } from '../../components/ResidentName'
 import { Ruby } from '../../i18n/Ruby'
 import { timeInJapan } from './contactBookTimeline'
 import type { StaffContactBook } from './recordValues'
@@ -102,8 +103,7 @@ export function ReplyView({
         {resident && (
           <span className="ml-3 text-base font-normal">
             <span className="mr-2 text-gray-600">{resident.room}</span>
-            {/* 入居者の呼び名は、辞書を通さずそのまま出す */}
-            {resident.display_name}
+            <ResidentName name={resident.display_name} ruby={resident.display_name_ruby} />
           </span>
         )}
       </h1>

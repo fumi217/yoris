@@ -5,6 +5,7 @@ import { Link, useLocation, useParams } from 'react-router'
 import { ApiError, api, messageKeyOf } from '../../api/client'
 import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
+import { ResidentFamily } from '../../components/ResidentName'
 import { Ruby } from '../../i18n/Ruby'
 import {
   arrivedKey,
@@ -110,8 +111,11 @@ export function MessageDetailView({
   return (
     <section className="space-y-4 p-4">
       <h1 className="text-xl font-bold">
-        {/* 入居者の呼び名は、辞書を通さずそのまま出す */}
-        {message.resident_display_name}
+        <ResidentFamily
+          name={message.resident_display_name}
+          ruby={message.resident_display_name_ruby}
+          relationship={message.family_relationship}
+        />
         <span className="ml-2 rounded bg-gray-100 px-2 py-0.5 text-base font-normal">
           <Text k={categoryKey(message.category)} />
         </span>

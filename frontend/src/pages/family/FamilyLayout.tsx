@@ -7,6 +7,7 @@ import { Icon } from '../../components/Icon'
 import { Logo } from '../../components/Logo'
 import { Text } from '../../components/Text'
 import { usePageTitle } from '../../components/usePageTitle'
+import { ResidentName } from '../../components/ResidentName'
 import type { FamilyFeatures } from './albumView'
 import { familyMoreMenu, familyTitleKey, visibleMainMenu } from './menu'
 
@@ -39,7 +40,9 @@ export function FamilyLayout() {
         <Link to="/family">
           <Logo className="h-7" />
         </Link>
-        <p className="min-w-0 truncate text-lg font-bold">{me?.display_name}</p>
+        <p className="min-w-0 truncate text-lg font-bold">
+          {me && <ResidentName name={me.display_name} />}
+        </p>
       </header>
       <main className="flex-1 pb-20">
         <Outlet />

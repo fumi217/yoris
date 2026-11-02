@@ -9,6 +9,7 @@ import { ConfirmButton } from '../../components/ConfirmButton'
 import { ChangeFlagPanel } from '../../components/change-flags/ChangeFlagPanel'
 import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
+import { ResidentName } from '../../components/ResidentName'
 import { Ruby } from '../../i18n/Ruby'
 import { isMemoWriter } from './memoEditorLogic'
 import {
@@ -157,8 +158,7 @@ export function RecordView({
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-xl font-bold">
           <span className="mr-3 text-base font-normal text-gray-600">{resident.room}</span>
-          {/* 入居者の呼び名は、辞書を通さずそのまま出す */}
-          {resident.display_name}
+          <ResidentName name={resident.display_name} ruby={resident.display_name_ruby} />
         </h1>
         <span>
           <Ruby text={t('record_page.date', monthDay(book.date))} />

@@ -46,7 +46,7 @@ export type StaffReply = {
 
 export type StaffContactBook = {
   date: string // YYYY-MM-DD（日本時間）
-  resident: { id: number; display_name: string; room: string }
+  resident: { id: number; display_name: string; display_name_ruby: string; room: string }
   records: StaffRecord[]
   replies: StaffReply[]
 }

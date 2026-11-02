@@ -6,6 +6,7 @@ import { api, messageKeyOf } from '../../api/client'
 import { ConfirmButton } from '../../components/ConfirmButton'
 import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
+import { ResidentName } from '../../components/ResidentName'
 import { Ruby } from '../../i18n/Ruby'
 import { stripRuby } from '../../i18n/rubyText'
 import {
@@ -205,7 +206,7 @@ function MemoCard({
       <header className="space-y-1">
         {/* 入居者の呼び名・職員の名前・メモの文は、辞書を通さず、文字のまま出す（FR-017） */}
         <h2 id={`memo-${item.id}`} className="text-lg font-bold">
-          {item.resident_name}
+          <ResidentName name={item.resident_name} ruby={item.resident_name_ruby} />
         </h2>
         <p className="text-sm">
           <Text k="memo_approval.author" />

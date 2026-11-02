@@ -6,7 +6,7 @@ import { ME_QUERY_KEY, type Me } from '../../auth/me'
 import '../../i18n'
 import FamilyRoutes from './FamilyRoutes'
 
-const family: Me = { kind: 'family', role: null, display_name: '佐藤さんの母', language: 'ja' }
+const family: Me = { kind: 'family', role: null, display_name: '佐藤 文江', language: 'ja' }
 
 /** ログイン中の家族を先に入れておき（/api/me を呼ばない）、家族の画面をその URL で出す。 */
 function renderFamily(path: string) {

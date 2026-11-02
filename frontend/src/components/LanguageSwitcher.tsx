@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { api, messageKeyOf } from '../api/client'
-import { ME_QUERY_KEY, useMe, type Me } from '../auth/me'
+import { ME_QUERY_KEY, refetchAfterLanguageChange, useMe, type Me } from '../auth/me'
 import { SUPPORTED_LANGUAGES, isLanguage, type Language } from '../i18n'
 import { Text } from './Text'
 
@@ -29,6 +29,7 @@ export function LanguageSwitcher({ className, id }: { className?: string; id?: s
     try {
       const updated = await api.put<Me>('/api/me/language', { language: value })
       queryClient.setQueryData(ME_QUERY_KEY, updated)
+      void refetchAfterLanguageChange(queryClient)
     } catch (error) {
       setErrorKey(messageKeyOf(error))
     }

@@ -14,6 +14,8 @@ export type ChangeFlagMark = {
 export type ResidentRow = {
   id: number
   display_name: string
+  // ふりがな付きの名前（日本語の職員の画面だけ。それ以外は display_name と同じ）
+  display_name_ruby: string
   room: string
   meals: Record<MealSlot, boolean>
   mood: boolean

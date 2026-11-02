@@ -835,5 +835,18 @@
     "recreation": "Kami ingin tahu kegiatan yang diikuti",
     "family_talk": "Kami ingin tahu apakah mereka membicarakan keluarga",
     "supplies": "Beri tahu kami jika ada yang dibutuhkan atau mengkhawatirkan"
+  },
+  "resident_name": {
+    "honorific_suffix": "",
+    "family_of": "Keluarga {{name}} ({{relationship}})",
+    "family_of_plain": "Keluarga {{name}}",
+    "relationship": {
+      "daughter": "Anak perempuan",
+      "son": "Anak laki-laki",
+      "spouse": "Pasangan",
+      "grandchild": "Cucu",
+      "sibling": "Saudara kandung",
+      "other": "Lainnya"
+    }
   }
 }

@@ -19,7 +19,9 @@ const reservation = (overrides: Partial<StaffReservation> = {}): StaffReservatio
   visit_date: '2026-10-28',
   start_time: '10:00:00',
   resident_id: 3,
-  resident_name: '佐藤さんの母',
+  resident_name: '佐藤 文江',
+  resident_name_ruby: '佐藤 文江',
+  family_relationship: 'daughter',
   room: '101',
   party_size: 2,
   status: 'booked',
@@ -82,11 +84,13 @@ describe('VisitListView', () => {
     expect(html).toContain('（水）')
     expect(html).toContain('10:00〜11:30')
     expect(html).toContain('101')
-    expect(html).toContain('佐藤さんの母')
+    expect(html).toContain('佐藤 文江')
     // 予約した日時は日本時間（01:05Z → 10:05）
     expect(html).toContain('10/26 10:05')
     // 人数は、入居者の人数に見えないよう「来館者」と付ける（#311）
     expect(html).toMatch(/来館者.*2/)
+    // 続柄は出さない（来る人が代表者と同じとは限らない）
+    expect(html).not.toContain('（娘）')
   })
 
   it('予約済みにだけ「取り消す」を出す。施設が取り消した理由は文字としてだけ出す', () => {
@@ -144,8 +148,9 @@ describe('TodayVisitsView', () => {
     )
 
     expect(html).toContain('13:30〜15:00')
-    expect(html).toContain('佐藤さんの母')
+    expect(html).toContain('佐藤 文江')
     expect(html).toMatch(/来館者.*2/)
+    expect(html).not.toContain('（娘）')
   })
 })
 

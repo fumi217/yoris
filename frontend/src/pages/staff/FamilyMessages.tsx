@@ -5,6 +5,7 @@ import { Link, useLocation } from 'react-router'
 import { api, messageKeyOf } from '../../api/client'
 import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
+import { ResidentFamily } from '../../components/ResidentName'
 import { Ruby } from '../../i18n/Ruby'
 import {
   arrivedKey,
@@ -150,8 +151,11 @@ function MessageItem({
     <Link to={`${base}/${message.id}${search}`} className="block space-y-1 p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="font-bold">
-          {/* 入居者の呼び名は、辞書を通さずそのまま出す */}
-          {message.resident_display_name}
+          <ResidentFamily
+            name={message.resident_display_name}
+            ruby={message.resident_display_name_ruby}
+            relationship={message.family_relationship}
+          />
           <span className="ml-2 rounded bg-gray-100 px-2 py-0.5 text-sm font-normal">
             <Text k={categoryKey(message.category)} />
           </span>

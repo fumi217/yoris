@@ -5,6 +5,7 @@ export type Approval = {
   id: number
   resident_id: number
   resident_name: string
+  resident_name_ruby: string
   author_name: string
   // ログイン中の職員が書いたメモか。本人のメモには「承認する」「戻す」を出さない（FR-011a）
   is_own: boolean

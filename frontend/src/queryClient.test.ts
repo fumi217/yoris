@@ -3,7 +3,7 @@ import { ApiError } from './api/client'
 import { ME_QUERY_KEY, type Me } from './auth/me'
 import { createQueryClient } from './queryClient'
 
-const me: Me = { kind: 'family', role: null, display_name: 'テストさんの母', language: 'ja' }
+const me: Me = { kind: 'family', role: null, display_name: 'テスト 花子', language: 'ja' }
 
 describe('createQueryClient', () => {
   it('どの API でも 401 が返ったら、ログイン中の人を「いない」にする', async () => {

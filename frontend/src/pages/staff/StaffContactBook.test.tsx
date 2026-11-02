@@ -38,7 +38,7 @@ const reply = (overrides: Partial<StaffReply> = {}): StaffReply => ({
 
 const book = (records: StaffRecord[] = [], replies: StaffReply[] = []): StaffContactBook => ({
   date: '2026-10-26',
-  resident: { id: 3, display_name: '佐藤さんの母', room: '101' },
+  resident: { id: 3, display_name: '佐藤 文江', display_name_ruby: '佐藤 文江', room: '101' },
   records,
   replies,
 })

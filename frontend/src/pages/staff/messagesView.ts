@@ -8,8 +8,11 @@ export type Assignee = { id: number; display_name: string }
 export type MessageRow = {
   id: number
   resident_id: number
-  // 入居者の呼び名。辞書を通さず、そのまま出す
+  // 入居者の名前（表示言語に合わせたもの）と、ふりがな付きの名前。辞書を通さず、名前の部品で出す
   resident_display_name: string
+  resident_display_name_ruby: string
+  // 家族アカウントの代表者の続柄のコード（daughter など。家族アカウントがなければ null）
+  family_relationship: string | null
   category: 'medical' | 'complaint' | 'money' | 'care_request' | 'urgent' | 'other'
   assignee: Assignee | null
   // AI がまとめた要約。辞書を通さず、文字としてだけ出す（FR-028）

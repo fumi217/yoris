@@ -24,7 +24,7 @@ const record = (overrides: Partial<StaffRecord>): StaffRecord => ({
 
 const book = (records: StaffRecord[] = []): StaffContactBook => ({
   date: '2026-10-26',
-  resident: { id: 3, display_name: '佐藤さんの母', room: '101' },
+  resident: { id: 3, display_name: '佐藤 文江', display_name_ruby: '佐藤 文江', room: '101' },
   records,
   replies: [],
 })
@@ -109,7 +109,10 @@ describe('RecordView', () => {
 
   it('入居者の呼び名は、HTML として解釈しない', () => {
     const html = render({
-      book: { ...book(), resident: { id: 3, display_name: '<i>x</i>', room: '101' } },
+      book: {
+        ...book(),
+        resident: { id: 3, display_name: '<i>x</i>', display_name_ruby: '<i>x</i>', room: '101' },
+      },
     })
 
     expect(html).not.toContain('<i>x</i>')

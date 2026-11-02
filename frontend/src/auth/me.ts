@@ -1,6 +1,6 @@
 // ログイン中の人（`GET /api/me`）と、役割ごとにどの画面を開けるか（spec 001 の T019・docs/画面設計.md「3」）。
 // 画面で隠すのは見た目のためだけで、守りは API の 403（家族が職員の API を呼んでも読めない）。
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, type QueryClient } from '@tanstack/react-query'
 import { ApiError, api, messageKeyOf } from '../api/client'
 
 export type StaffRole = 'care_worker' | 'leader' | 'counselor' | 'clerk' | 'director'
@@ -70,4 +70,15 @@ export function homePathFor(me: Me | null): string {
   if (canOpen(me, 'staff')) return '/staff'
   if (canOpen(me, 'admin')) return '/admin'
   return '/login'
+}
+
+/**
+ * 言語を変えたあと、「ログイン中の人」以外の取得済みの一覧を取り直す。
+ * 入居者の名前は表示言語で変わる（日本語は漢字、ほかはローマ字。#389）のに、一覧のキーに言語が
+ * 入っていないので、そのままだと、再読み込みするまで古い言語の名前が残る。
+ */
+export function refetchAfterLanguageChange(queryClient: QueryClient) {
+  return queryClient.invalidateQueries({
+    predicate: (query) => query.queryKey[0] !== ME_QUERY_KEY[0],
+  })
 }

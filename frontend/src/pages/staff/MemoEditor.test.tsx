@@ -40,7 +40,12 @@ const render = (props: Partial<Parameters<typeof MemoEditorView>[0]> = {}) =>
     <MemoryRouter>
       <MemoEditorView
         residentId="10"
-        resident={{ id: 10, display_name: 'さくらさんの母', room: '203' }}
+        resident={{
+          id: 10,
+          display_name: 'さくら 花子',
+          display_name_ruby: 'さくら 花子',
+          room: '203',
+        }}
         lang="id"
         onLang={vi.fn()}
         text=""
@@ -82,7 +87,7 @@ describe('MemoEditorView（書く前）', () => {
     const text = visibleText(html)
 
     expect(text).toContain('203')
-    expect(text).toContain('さくらさんの母')
+    expect(text).toContain('さくら 花子')
     for (const name of ['日本語', 'Bahasa Indonesia', 'English']) expect(text).toContain(name)
     expect(html).toContain('<textarea')
     expect(text).toContain('8 / 500')

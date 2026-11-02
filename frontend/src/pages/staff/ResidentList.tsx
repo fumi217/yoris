@@ -7,6 +7,7 @@ import { api, messageKeyOf } from '../../api/client'
 import { UnconfirmedFlagFilter } from '../../components/change-flags/UnconfirmedFlagFilter'
 import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
+import { ResidentName } from '../../components/ResidentName'
 import { Ruby } from '../../i18n/Ruby'
 import { stripRuby } from '../../i18n/rubyText'
 import {
@@ -120,8 +121,10 @@ function ResidentItem({ row }: { row: ResidentRow }) {
       >
         <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span className="w-10 text-sm text-gray-600">{row.room}</span>
-          {/* 入居者の呼び名は、辞書を通さずそのまま出す */}
-          <span className="font-bold">{row.display_name}</span>
+          {/* 一覧は文字が多くなるので、「さん」は付けない（docs/デザインの決めごと.md の 15 章） */}
+          <span className="font-bold">
+            <ResidentName name={row.display_name} ruby={row.display_name_ruby} honorific={false} />
+          </span>
           {row.change_flag && (
             // 右の件数の列に入れると見落としやすいので、呼び名のすぐ横に置く（docs/画面設計.md「4」）
             <span className="text-sm font-bold text-amber-800">
