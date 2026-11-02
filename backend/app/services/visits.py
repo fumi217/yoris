@@ -30,7 +30,7 @@ from app.models.core import FamilyAccount, Resident
 from app.models.notifications import Notification
 from app.models.visits import VisitClosedDay, VisitReservation, VisitSetting, VisitStartTime
 from app.services.notifications import create_visit_notice
-from app.services.resident_names import resident_name
+from app.services.resident_names import name_ruby, resident_name
 from app.services.visit_rules import (
     VisitRuleError,
     check_bookable_date,
@@ -588,6 +588,7 @@ class StaffReservation:
     start_time: time
     resident_id: int
     resident_name: str  # 入居者の名前（職員の表示言語に合わせる。#389）
+    resident_name_ruby: str  # ふりがな付きの名前（表示言語が ja のときだけ）
     family_relationship: str | None  # 家族の続柄（職員の画面だけに出す。#389）
     room: str
     party_size: int
@@ -612,7 +613,13 @@ def list_reservations(
     if date_to < date_from or (date_to - date_from).days >= MAX_AVAILABILITY_DAYS:
         raise VisitInvalidInput(f"range: {date_from}..{date_to}")
     query = (
-        select(VisitReservation, resident_name(language), FamilyAccount.relationship, Resident.room)
+        select(
+            VisitReservation,
+            resident_name(language),
+            Resident.name_kana,
+            FamilyAccount.relationship,
+            Resident.room,
+        )
         .join(Resident, Resident.id == VisitReservation.resident_id)
         .outerjoin(FamilyAccount, FamilyAccount.resident_id == Resident.id)
         .where(
@@ -631,6 +638,7 @@ def list_reservations(
             start_time=row.start_time,
             resident_id=row.resident_id,
             resident_name=name,
+            resident_name_ruby=name_ruby(name, kana, language),
             family_relationship=relationship,
             room=room,
             party_size=row.party_size,
@@ -638,5 +646,5 @@ def list_reservations(
             created_at=row.created_at,
             cancel_reason=row.cancel_reason,
         )
-        for row, name, relationship, room in session.execute(query)
+        for row, name, kana, relationship, room in session.execute(query)
     ]

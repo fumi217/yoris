@@ -124,3 +124,14 @@ def test_clerk_and_family_cannot_open(client, world, make_staff, login_as):
 
     login_as(world["family"].user_id)
     assert client.get(_url(world["family"].resident_id)).status_code == 403
+
+
+def test_resident_name_comes_with_a_reading_for_japanese_staff(client, world, make_family):
+    family = make_family(name="佐藤 文江", name_kana="さとう ふみえ")
+    # world の職員（ja）でログインしたまま
+    resident = client.get(f"/api/staff/residents/{family.resident_id}/contact-book").json()[
+        "resident"
+    ]
+
+    assert resident["display_name"] == "佐藤 文江"
+    assert resident["display_name_ruby"] == "{佐藤|さとう} {文江|ふみえ}"

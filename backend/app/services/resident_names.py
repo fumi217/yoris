@@ -16,6 +16,7 @@ from collections.abc import Iterable
 from sqlalchemy import ColumnElement, case, func, select
 from sqlalchemy.orm import Session
 
+from app.furigana import add_reading
 from app.models.core import Resident
 
 _SPACES = re.compile(r"\s+")
@@ -66,3 +67,21 @@ def mentions_any_name(text: str, names: Iterable[str]) -> bool:
     """
     target = _normalized(text)
     return any(key and key in target for key in map(_normalized, names))
+
+
+def name_ruby(display_name: str, kana: str, language: str) -> str:
+    """ふりがな付きの名前。職員の画面で、日本語のときだけ付ける（家族の画面は、画面の側で外す）。
+
+    display_name は resident_name・resident_display_name で決めた名前、kana は name_kana。
+    ja なら、姓と名に分けて、漢字を含む方だけに読みを付ける（「{佐藤|さとう} {文江|ふみえ}」）。
+    ja 以外（ローマ字）や、読みが空のときは、名前のまま返す。
+    """
+    if language != "ja" or not kana or set("{}|") & set(display_name + kana):
+        # ふりがなの書き方の記号（{ } |）を含む名前は、書き方が崩れるので、読みを付けない
+        return display_name
+    names, readings = display_name.split(" "), kana.split(" ")
+    if len(names) != len(readings):
+        return add_reading(display_name, kana)
+    return " ".join(
+        add_reading(name, reading) for name, reading in zip(names, readings, strict=True)
+    )

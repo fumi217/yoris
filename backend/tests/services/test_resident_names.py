@@ -6,6 +6,7 @@ from sqlalchemy import select
 from app.models.core import Resident
 from app.services.resident_names import (
     mentions_any_name,
+    name_ruby,
     other_resident_names,
     resident_display_name,
     resident_name,
@@ -88,3 +89,24 @@ def test_mentions_any_name_finds_variants(text):
 
 def test_mentions_any_name_ignores_other_text_and_empty_names():
     assert not mentions_any_name("今日はお昼を全部召し上がりました", ["山下 咲子", ""])
+
+
+@pytest.mark.parametrize(
+    ("display_name", "kana", "language", "expected"),
+    [
+        # 日本語：漢字を含む方だけに読みを付ける
+        ("佐藤 文江", "さとう ふみえ", "ja", "{佐藤|さとう} {文江|ふみえ}"),
+        ("山田 トミ", "やまだ とみ", "ja", "{山田|やまだ} トミ"),
+        # 姓と名の数が合わないときは、全体に付ける
+        ("佐藤 文江", "さとうふみえ", "ja", "{佐藤 文江|さとうふみえ}"),
+        # 読みが空なら、名前のまま
+        ("佐藤 文江", "", "ja", "佐藤 文江"),
+        # ふりがなの書き方の記号を含む名前は、書き方が崩れるので、読みを付けない
+        ("田中{花子|はなこ}", "たなか はなこ", "ja", "田中{花子|はなこ}"),
+        # ローマ字（ja 以外）は、ふりがなを付けない
+        ("Sato Fumie", "さとう ふみえ", "en", "Sato Fumie"),
+        ("Sato Fumie", "さとう ふみえ", "id", "Sato Fumie"),
+    ],
+)
+def test_name_ruby(display_name, kana, language, expected):
+    assert name_ruby(display_name, kana, language) == expected

@@ -22,7 +22,7 @@ from app.auth.deps import CurrentUser
 from app.errors import AppError, ErrorCode
 from app.models.core import Resident, Staff
 from app.models.memos import CareMemo
-from app.services.resident_names import resident_name
+from app.services.resident_names import name_ruby, resident_name
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +42,8 @@ class ApprovalRow:
     memo: CareMemo
     resident_name: str
     author_name: str
+    # ふりがな付きの名前（表示言語が ja のときだけ。#389）
+    resident_name_ruby: str
 
 
 def waiting_minutes(memo: CareMemo) -> int | None:
@@ -67,7 +69,7 @@ def _rows_query(facility_id: int, language: str):
     """
     author = aliased(Staff)
     return (
-        select(CareMemo, resident_name(language), author.display_name)
+        select(CareMemo, resident_name(language), author.display_name, Resident.name_kana)
         .join(Resident, Resident.id == CareMemo.resident_id)
         .join(author, author.id == CareMemo.author_staff_id)
         .where(Resident.facility_id == facility_id, CareMemo.confirmed_at.is_not(None))
@@ -85,7 +87,8 @@ def list_approvals(session: Session, user: CurrentUser, status: str) -> list[App
             APPROVED_LIST_LIMIT
         )
     return [
-        ApprovalRow(memo, resident, author) for memo, resident, author in session.execute(query)
+        ApprovalRow(memo, resident, author, name_ruby(resident, kana, user.language))
+        for memo, resident, author, kana in session.execute(query)
     ]
 
 
@@ -107,8 +110,8 @@ def get_approval(session: Session, user: CurrentUser, memo_id: int) -> ApprovalR
     row = session.execute(query).one_or_none()
     if row is None:
         raise AppError(ErrorCode.NOT_FOUND)
-    memo, resident, author = row
-    return ApprovalRow(memo, resident, author)
+    memo, resident, author, kana = row
+    return ApprovalRow(memo, resident, author, name_ruby(resident, kana, user.language))
 
 
 def _move(

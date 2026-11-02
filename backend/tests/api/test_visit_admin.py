@@ -39,7 +39,9 @@ def world(session, facility, make_staff, make_family, login_as, monkeypatch):
     return {
         "facility": facility,
         "clerk": clerk,
-        "family": make_family(name="佐藤 文江", name_romaji="Sato Fumie"),
+        "family": make_family(
+            name="佐藤 文江", name_kana="さとう ふみえ", name_romaji="Sato Fumie"
+        ),
         "family_romaji": "Sato Fumie",
     }
 
@@ -211,6 +213,7 @@ def test_reservation_list_for_all_staff(client, session, world, make_staff, logi
     assert row["id"] == reservation.id
     assert row["resident_name"] == "佐藤 文江"
     assert row["family_relationship"] == "daughter"
+    assert row["resident_name_ruby"] == "{佐藤|さとう} {文江|ふみえ}"
     assert (row["party_size"], row["status"]) == (2, "booked")
 
 
@@ -224,6 +227,7 @@ def test_reservation_list_shows_romaji_to_staff_in_other_language(
     [row] = client.get(f"/api/admin/visits?from={DAY}&to={DAY}").json()
 
     assert row["resident_name"] == world["family_romaji"]
+    assert row["resident_name_ruby"] == world["family_romaji"]
 
 
 def test_today_visits(client, session, world, make_staff, login_as):

@@ -42,7 +42,7 @@ from app.models.inquiry import (
     StaffMessageTemplate,
 )
 from app.services.mail import send_email_now
-from app.services.resident_names import resident_name
+from app.services.resident_names import name_ruby, resident_name
 
 router = APIRouter(prefix="/api/staff", tags=["staff"])
 
@@ -66,6 +66,8 @@ class StaffMessageRow(BaseModel):
     # 入居者の名前（職員の表示言語に合わせる）と、家族の続柄のコード
     # （家族アカウントがなければ null。#389）
     resident_display_name: str
+    # ふりがな付きの名前（表示言語が ja のときだけ。#389）
+    resident_display_name_ruby: str
     family_relationship: str | None
     category: str
     assignee: AssigneeOut | None
@@ -123,6 +125,7 @@ def _waiting_since() -> ColumnElement[datetime]:
 def _row(
     message: StaffMessage,
     name: str,
+    name_ruby_text: str,
     relationship: str | None,
     assignee: Staff | None,
     now: datetime,
@@ -132,6 +135,7 @@ def _row(
         id=message.id,
         resident_id=message.resident_id,
         resident_display_name=name,
+        resident_display_name_ruby=name_ruby_text,
         family_relationship=relationship,
         category=message.category,
         assignee=AssigneeOut(id=assignee.id, display_name=assignee.display_name)
@@ -156,7 +160,9 @@ def _with_names(user: CurrentUser):
         .join(Resident, Resident.id == StaffMessage.resident_id)
         .outerjoin(FamilyAccount, FamilyAccount.resident_id == StaffMessage.resident_id)
         .outerjoin(Staff, Staff.id == StaffMessage.assignee_id)
-        .add_columns(resident_name(user.language), FamilyAccount.relationship, Staff)
+        .add_columns(
+            resident_name(user.language), Resident.name_kana, FamilyAccount.relationship, Staff
+        )
     )
 
 
@@ -188,8 +194,8 @@ def list_messages(
     now = clock.now()
     return StaffMessageListResponse(
         messages=[
-            _row(message, name, relationship, assignee, now)
-            for message, name, relationship, assignee in session.execute(query)
+            _row(message, name, name_ruby(name, kana, user.language), relationship, assignee, now)
+            for message, name, kana, relationship, assignee in session.execute(query)
         ]
     )
 
@@ -227,7 +233,7 @@ def get_message(
     found = session.execute(_with_names(user).where(StaffMessage.id == message_id)).one_or_none()
     if found is None:
         raise AppError(ErrorCode.NOT_FOUND)
-    message, name, relationship, assignee = found
+    message, name, kana, relationship, assignee = found
 
     origin = session.get_one(InquiryMessage, message.origin_message_id)
     # 原文の直前の 6 件（家族 3・AI／職員 3）を取り出し、その中から見せられないもの
@@ -275,7 +281,9 @@ def get_message(
         else {}
     )
 
-    row = _row(message, name, relationship, assignee, clock.now())
+    row = _row(
+        message, name, name_ruby(name, kana, user.language), relationship, assignee, clock.now()
+    )
     return StaffMessageDetail(
         **row.model_dump(),
         origin=_message_out(origin, codes),

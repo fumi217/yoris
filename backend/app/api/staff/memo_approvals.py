@@ -53,6 +53,8 @@ class ApprovalOut(BaseModel):
     resident_id: int
     # 入居者の呼び名（氏名ではない）と、書いた職員の表示名
     resident_name: str
+    # ふりがな付きの名前（表示言語が ja のときだけ。#389）
+    resident_name_ruby: str
     author_name: str
     # ログイン中の職員が書いたメモか。画面は、本人のメモに「承認する」「戻す」を出さない（FR-011a）
     is_own: bool
@@ -84,6 +86,7 @@ def _out(row: ApprovalRow, user: CurrentUser) -> ApprovalOut:
         id=memo.id,
         resident_id=memo.resident_id,
         resident_name=row.resident_name,
+        resident_name_ruby=row.resident_name_ruby,
         author_name=row.author_name,
         is_own=memo.author_staff_id == user.staff_id,
         memo_date=memo.memo_date,

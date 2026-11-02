@@ -27,7 +27,7 @@ from app.models.core import Resident
 from app.models.records import MEAL_SLOTS, CareRecord
 from app.models.requests import Request
 from app.services.change_detection import get_flag_summary
-from app.services.resident_names import resident_display_name
+from app.services.resident_names import name_ruby, resident_display_name
 
 router = APIRouter(prefix="/api/staff", tags=["staff"])
 
@@ -49,6 +49,8 @@ class ChangeFlagMark(BaseModel):
 class ResidentRow(BaseModel):
     id: int
     display_name: str
+    # ふりがな付きの名前（表示言語が ja のときだけ。#389）
+    display_name_ruby: str
     room: str
     # その日に記録済みか（食事は区分ごと）。未記録が分かるように（FR-008）
     meals: MealsRecorded
@@ -101,11 +103,13 @@ def list_residents(
     rows = []
     for resident in residents:
         flag = flags.residents.get(resident.id)
+        display_name = resident_display_name(resident, user.language)
         meals = {slot: (resident.id, "meal", slot) in recorded for slot in MEAL_SLOTS}
         rows.append(
             ResidentRow(
                 id=resident.id,
-                display_name=resident_display_name(resident, user.language),
+                display_name=display_name,
+                display_name_ruby=name_ruby(display_name, resident.name_kana, user.language),
                 room=resident.room,
                 meals=MealsRecorded(**meals),
                 mood=(resident.id, "mood", "day") in recorded,

@@ -258,6 +258,23 @@ def test_list_and_detail_show_romaji_to_staff_in_other_language(
     assert detail["family_relationship"] == "daughter"
 
 
+def test_name_comes_with_a_reading_only_for_japanese_staff(staff_client, make_family, add_message):
+    # ふりがな付きの名前は、表示言語が ja の職員にだけ（ほかはローマ字のまま。#389）
+    family = make_family(name="佐藤 文江", name_kana="さとう ふみえ", name_romaji="Sato Fumie")
+    message = add_message(family, "care_request")
+
+    client, _ = staff_client(language="ja")
+    ja = client.get(f"/api/staff/messages/{message.id}").json()
+    client, _ = staff_client(language="en")
+    en = client.get(f"/api/staff/messages/{message.id}").json()
+
+    assert ja["resident_display_name_ruby"] == "{佐藤|さとう} {文江|ふみえ}"
+    assert (en["resident_display_name"], en["resident_display_name_ruby"]) == (
+        "Sato Fumie",
+        "Sato Fumie",
+    )
+
+
 def test_summary_and_origin_come_with_readings_without_changing_the_saved_text(
     staff_client, make_family, add_message
 ):

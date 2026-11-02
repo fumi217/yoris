@@ -159,3 +159,20 @@ def test_waiting_requests_are_counted(client, session, make_staff, make_family, 
 
     assert _row(data, family.resident_id)["waiting_requests"] == 2
     assert _row(data, other.resident_id)["waiting_requests"] == 0
+
+
+def test_name_comes_with_a_reading_only_for_japanese_staff(
+    client, make_staff, make_family, login_as
+):
+    # ふりがな付きの名前は、表示言語が ja の職員にだけ（ほかはローマ字のまま。#389）
+    family = make_family(name="佐藤 文江", name_kana="さとう ふみえ", name_romaji="Sato Fumie")
+    login_as(make_staff(language="ja").user_id)
+    ja = _row(_rows(client), family.resident_id)
+    login_as(make_staff(language="en").user_id)
+    en = _row(_rows(client), family.resident_id)
+
+    assert (ja["display_name"], ja["display_name_ruby"]) == (
+        "佐藤 文江",
+        "{佐藤|さとう} {文江|ふみえ}",
+    )
+    assert (en["display_name"], en["display_name_ruby"]) == ("Sato Fumie", "Sato Fumie")

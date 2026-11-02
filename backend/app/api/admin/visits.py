@@ -183,6 +183,8 @@ class StaffReservationOut(BaseModel):
     resident_id: int
     # 入居者の名前（職員の表示言語に合わせる）。画面では文字としてだけ出す
     resident_name: str
+    # ふりがな付きの名前（表示言語が ja のときだけ。#389）
+    resident_name_ruby: str
     # 家族の続柄のコード（daughter など。家族アカウントがなければ null。#389）
     family_relationship: str | None
     room: str
@@ -200,6 +202,7 @@ def reservation_out(row) -> StaffReservationOut:
         start_time=row.start_time,
         resident_id=row.resident_id,
         resident_name=row.resident_name,
+        resident_name_ruby=row.resident_name_ruby,
         family_relationship=row.family_relationship,
         room=row.room,
         party_size=row.party_size,

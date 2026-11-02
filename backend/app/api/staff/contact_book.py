@@ -29,7 +29,7 @@ from app.models.records import CareRecord
 from app.models.replies import Reply
 from app.models.requests import Request
 from app.services.disclosure import get_active_replies
-from app.services.resident_names import resident_display_name
+from app.services.resident_names import name_ruby, resident_display_name
 
 router = APIRouter(prefix="/api/staff", tags=["staff"])
 
@@ -37,6 +37,8 @@ router = APIRouter(prefix="/api/staff", tags=["staff"])
 class ResidentSummary(BaseModel):
     id: int
     display_name: str
+    # ふりがな付きの名前（表示言語が ja のときだけ。#389）
+    display_name_ruby: str
     room: str
 
 
@@ -130,6 +132,9 @@ def get_contact_book(
         resident=ResidentSummary(
             id=resident.id,
             display_name=resident_display_name(resident, user.language),
+            display_name_ruby=name_ruby(
+                resident_display_name(resident, user.language), resident.name_kana, user.language
+            ),
             room=resident.room,
         ),
         records=[

@@ -246,6 +246,7 @@ def make_family(session: Session, facility: Facility) -> Callable[..., FamilyAcc
     def make(
         name: str = "テスト 花子",
         *,
+        name_kana: str | None = None,
         name_romaji: str | None = None,
         relationship: str = "daughter",
         language: str = "ja",
@@ -254,7 +255,7 @@ def make_family(session: Session, facility: Facility) -> Callable[..., FamilyAcc
         resident = Resident(
             facility_id=facility.id,
             name=name,
-            name_kana=f"かくう {number}",
+            name_kana=name_kana if name_kana is not None else f"かくう {number}",
             name_romaji=name_romaji if name_romaji is not None else f"Kaku {number}",
             room=str(number),
         )

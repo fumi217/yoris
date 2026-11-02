@@ -389,6 +389,17 @@ def test_list_shows_pending_memos_longest_waiting_first_with_the_waiting_time(
     assert first["confirmed_at"] is not None
 
 
+def test_list_shows_the_name_with_a_reading_for_japanese_staff(client, session, world, make_family):
+    # ふりがな付きの名前は、表示言語が ja の職員にだけ（#389）
+    family = make_family(name="佐藤 文江", name_kana="さとう ふみえ")
+    add_memo(session, world, resident_id=family.resident_id)
+
+    [item] = client.get(BASE).json()
+
+    assert item["resident_name"] == "佐藤 文江"
+    assert item["resident_name_ruby"] == "{佐藤|さとう} {文江|ふみえ}"
+
+
 def test_list_does_not_show_another_facilitys_memo(client, session, world):
     other_facility_memo(session)
     mine = add_memo(session, world)

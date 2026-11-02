@@ -70,3 +70,11 @@ def _add_to_line(line: str) -> str:
         return line
     items = _converter().convert(line)
     return "".join(_ruby(item["orig"], _to_hiragana(item["hira"])) for item in items)
+
+
+def add_reading(surface: str, reading: str) -> str:
+    """1 つの語（`surface`）に、与えられた読み（ひらがな）を付ける。pykakasi は使わない。
+
+    入居者の名前のように、読みを DB に持っているときに使う（`{佐藤|さとう}` の書き方）。
+    """
+    return _ruby(surface, reading)
