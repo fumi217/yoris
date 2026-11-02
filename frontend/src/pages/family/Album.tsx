@@ -2,11 +2,16 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, messageKeyOf } from '../../api/client'
+import { EmptyState } from '../../components/EmptyState'
+import { Icon } from '../../components/Icon'
 import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
 import { Ruby } from '../../i18n/Ruby'
 import { stripRuby } from '../../i18n/rubyText'
+import { weekdayOf } from './contactBookView'
+import { todayInJapan } from './visits/visitDates'
 import {
+  dayKindOf,
   dayParts,
   mergeAlbumPages,
   nextBefore,
@@ -60,8 +65,9 @@ type ViewProps = {
 
 /** 画面の中身（テストではこれを直接出す）。 */
 export function AlbumView({ days, hasMore, loadingMore, onMore }: ViewProps) {
-  const { t } = useTranslation()
-  const [selected, setSelected] = useState<AlbumPhoto | null>(null)
+  const { t, i18n } = useTranslation()
+  // 大きく見る写真（その日の日付も持つ。大きく見る画面の日付の表示に使う）
+  const [selected, setSelected] = useState<(AlbumPhoto & { dayDate?: string }) | null>(null)
 
   // 大きく出しているあいだ、Esc キーで閉じられる
   useEffect(() => {
@@ -74,28 +80,42 @@ export function AlbumView({ days, hasMore, loadingMore, onMore }: ViewProps) {
   }, [selected])
 
   return (
-    <section className="space-y-6 p-4">
-      <h1 className="text-xl font-bold">
-        <Text k="album.title" />
-      </h1>
-      {days.length === 0 ? (
-        <p className="text-gray-600">
-          <Text k="album.empty" />
+    <section className="space-y-5 p-4">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold">
+          <Text k="album.title" />
+        </h1>
+        <p className="text-ink-sub">
+          <Text k="album.subtitle" />
         </p>
+      </div>
+      {days.length === 0 ? (
+        <div className="rounded-2xl border border-card-line bg-card">
+          <EmptyState
+            icon="album"
+            title={<Text k="album.empty" />}
+            description={<Text k="album.empty_sub" />}
+          />
+        </div>
       ) : (
         days.map((day) => (
           <section key={day.date} className="space-y-2">
-            <h2 className="font-bold">
-              <Ruby text={t('album.day', dayParts(day.date))} />
-            </h2>
-            <ul className="grid grid-cols-3 gap-2">
+            <div className="mx-1 flex items-center justify-between gap-3">
+              <h2 className="text-sm font-bold">
+                <Ruby text={dayHeading(t, i18n.language, day.date)} />
+              </h2>
+              <span className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-bold text-primary-dark">
+                <Ruby text={t('album.count', { count: day.photos.length })} />
+              </span>
+            </div>
+            <ul className="grid grid-cols-3 gap-2 rounded-2xl border border-card-line bg-card p-2.5">
               {day.photos.map((photo) => (
                 <li key={photo.id} className="space-y-1">
                   <button
                     type="button"
                     className="block w-full"
                     aria-label={stripRuby(t('album.open'))}
-                    onClick={() => setSelected(photo)}
+                    onClick={() => setSelected({ ...photo, dayDate: day.date })}
                   >
                     {/* 枠の大きさを先に決める（loading="lazy" が、画面の外の写真までまとめて読み込まないため） */}
                     <img
@@ -103,11 +123,13 @@ export function AlbumView({ days, hasMore, loadingMore, onMore }: ViewProps) {
                       alt=""
                       loading="lazy"
                       decoding="async"
-                      className="aspect-square w-full rounded bg-gray-100 object-cover"
+                      className="aspect-square w-full rounded-xl bg-page object-cover"
                     />
                   </button>
-                  {/* 職員が書いた文。辞書を通さず、文字としてだけ出す */}
-                  {photo.comment && <p className="text-sm break-words">{photo.comment}</p>}
+                  {/* 職員が書いた文。辞書を通さず、文字としてだけ出す。2 行まで（大きく見たときは全部） */}
+                  {photo.comment && (
+                    <p className="line-clamp-2 px-0.5 text-xs break-words">{photo.comment}</p>
+                  )}
                 </li>
               ))}
             </ul>
@@ -117,11 +139,12 @@ export function AlbumView({ days, hasMore, loadingMore, onMore }: ViewProps) {
       {hasMore && (
         <button
           type="button"
-          className="min-h-12 w-full rounded border-2 border-field-line px-3 disabled:opacity-40"
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-field-line bg-white px-3 font-bold text-ink shadow-sm disabled:opacity-40"
           disabled={loadingMore}
           onClick={onMore}
         >
           <Text k="album.more" />
+          <Icon name="expand" />
         </button>
       )}
       {selected && (
@@ -129,15 +152,40 @@ export function AlbumView({ days, hasMore, loadingMore, onMore }: ViewProps) {
           role="dialog"
           aria-modal="true"
           aria-label={stripRuby(t('album.open'))}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/85 p-4"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/90 p-4"
+          // 写真・コメント・ボタンの外側（黒い部分）を押したときも、閉じる（PR #413 ようこさん）
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setSelected(null)
+          }}
         >
-          <img src={selected.url} alt="" className="max-h-[75vh] max-w-full object-contain" />
+          {/* 閉じるボタンは、右上（丸い ×）と下の両方。Esc でも閉じる */}
+          {/* 右上の × は、下の「閉じる」と同じ動き。読み上げ・キーボードでは、下のボタンだけを使う
+              （同じ名前のボタンが 2 つ並ばないように。指で押しやすい位置に、もう 1 つ置いている） */}
+          <button
+            type="button"
+            aria-hidden="true"
+            tabIndex={-1}
+            className="absolute top-4 right-4 flex size-11 items-center justify-center rounded-full bg-white/20 text-xl text-white"
+            onClick={() => setSelected(null)}
+          >
+            <Icon name="close" />
+          </button>
+          <img
+            src={selected.url}
+            alt=""
+            className="max-h-[70vh] max-w-full rounded-2xl object-contain shadow-2xl"
+          />
           {selected.comment && (
-            <p className="max-w-full text-center break-words text-white">{selected.comment}</p>
+            <div className="w-full max-w-md rounded-xl bg-white/15 px-3 py-2 text-center text-white">
+              <p className="text-xs text-white/80">
+                <Ruby text={dayHeading(t, i18n.language, selected.dayDate ?? '')} />
+              </p>
+              <p className="break-words whitespace-pre-wrap">{selected.comment}</p>
+            </div>
           )}
           <button
             type="button"
-            className="min-h-12 rounded bg-white px-6 font-bold"
+            className="min-h-12 rounded-xl bg-white px-8 font-bold text-ink shadow-md"
             onClick={() => setSelected(null)}
           >
             <Text k="album.close" />
@@ -146,4 +194,18 @@ export function AlbumView({ days, hasMore, loadingMore, onMore }: ViewProps) {
       )}
     </section>
   )
+}
+
+/** 日の見出し：「今日（10月30日）」「昨日（10月29日）」「10月27日（火）」。日付は日本時間のまま使う。 */
+function dayHeading(
+  t: (key: string, options?: Record<string, unknown>) => string,
+  language: string,
+  date: string,
+): string {
+  if (!date) return ''
+  const parts = dayParts(date)
+  return t(`album.day_${dayKindOf(date, todayInJapan())}`, {
+    ...parts,
+    weekday: weekdayOf(date, language),
+  })
 }

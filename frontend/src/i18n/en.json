@@ -720,7 +720,13 @@
     "day": "{{month}}/{{day}}",
     "more": "See more",
     "open": "View larger",
-    "close": "Close"
+    "close": "Close",
+    "subtitle": "These are photos taken at the facility. Tap a photo to view it larger.",
+    "empty_sub": "When the staff post photos, they will appear here",
+    "count": "{{count}} photo(s)",
+    "day_today": "Today ({{month}}/{{day}})",
+    "day_yesterday": "Yesterday ({{month}}/{{day}})",
+    "day_other": "{{month}}/{{day}} ({{weekday}})"
   },
   "staff_accounts": {
     "title": "Create a staff account",

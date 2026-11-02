@@ -11,6 +11,7 @@ import {
   faCalendarCheck,
   faCalendarDays,
   faCalendarWeek,
+  faChevronDown,
   faCalendarXmark,
   faCamera,
   faCheck,
@@ -50,6 +51,7 @@ import {
   faUserTie,
   faUsers,
   faUtensils,
+  faXmark,
   type IconDefinition,
 } from '@fortawesome/free-solid-svg-icons'
 
@@ -76,6 +78,8 @@ const ICONS = {
   logout: faRightFromBracket,
   // 連絡帳（#382）
   prev: faChevronLeft,
+  expand: faChevronDown,
+  close: faXmark,
   next: faChevronRight,
   date: faCalendarDays,
   weekly: faCalendarWeek,

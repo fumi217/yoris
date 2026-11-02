@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { ApiError } from '../../api/client'
 import '../../i18n'
 import { Album, AlbumView } from './Album'
-import type { AlbumDay, AlbumPage } from './albumView'
+import { dayKindOf, type AlbumDay, type AlbumPage } from './albumView'
+import { addDays, todayInJapan } from './visits/visitDates'
 
 // Album.tsx の ALBUM_KEY と同じ（コンポーネントのファイルからは定数を出さない決まり）
 const ALBUM_KEY = ['family', 'album']
@@ -123,5 +124,66 @@ describe('Album の読み込みの失敗', () => {
 
     expect(html).not.toContain('<img')
     expect(text(html)).toContain('うまくいきませんでした')
+  })
+})
+
+describe('アルバムの見た目（#412）', () => {
+  it('見出し（h1）と一言の説明を出す', () => {
+    const html = render([])
+
+    expect(html).toMatch(/<h1 class="text-2xl[^"]*">/)
+    expect(text(html)).toContain(
+      '施設で撮影したお写真を掲載しています。写真を押すと、拡大して見ることができます。',
+    )
+    expect(text(html)).not.toContain('職員が載せた')
+  })
+
+  it('日の見出しに、枚数の印を出す', () => {
+    const shown = text(render([{ date: '2026-11-05', photos: [photo(2), photo(1)] }]))
+
+    expect(shown).toContain('11月5日')
+    expect(shown).toContain('2枚')
+  })
+
+  it('今日・昨日は「今日（◯月◯日）」「昨日（◯月◯日）」、それ以外は日付と曜日', () => {
+    const today = todayInJapan()
+    const yesterday = addDays(today, -1)
+    const shown = text(
+      render([
+        { date: today, photos: [photo(3)] },
+        { date: yesterday, photos: [photo(2)] },
+        { date: '2020-11-05', photos: [photo(1)] },
+      ]),
+    )
+
+    expect(shown).toMatch(/今日（\d+月\d+日）/)
+    expect(shown).toMatch(/昨日（\d+月\d+日）/)
+    expect(shown).toContain('11月5日（木）')
+    expect(dayKindOf(today, today)).toBe('today')
+    expect(dayKindOf(yesterday, today)).toBe('yesterday')
+    expect(dayKindOf('2020-11-05', today)).toBe('other')
+  })
+
+  it('日ごとに 1 つの白い面に、角丸の写真を 3 列で並べる。コメントは 2 行まで', () => {
+    const html = render([{ date: '2026-11-05', photos: [photo(1, '花見')] }])
+
+    expect(html).toMatch(/<ul class="[^"]*grid-cols-3[^"]*rounded-2xl[^"]*bg-card/)
+    expect(html).toMatch(/<img[^>]*class="[^"]*rounded-xl/)
+    expect(html).toMatch(/<p class="[^"]*line-clamp-2[^"]*">花見<\/p>/)
+  })
+
+  it('「もっと見る」は、矢印つきで、背景色と影のあるボタン', () => {
+    const html = render([{ date: '2026-11-05', photos: [photo(1)] }], true)
+    const button = html.match(/<button[^>]*shadow-sm[^>]*>.*?<\/button>/s)?.[0] ?? ''
+
+    expect(button).toContain('bg-white')
+    expect(button).toContain('data-icon="chevron-down"')
+  })
+
+  it('写真がないときは、アイコンと一言（案内）を、白い面の中に出す', () => {
+    const html = render([])
+
+    expect(html).toContain('data-icon="images"')
+    expect(text(html)).toContain('職員が写真を載せると、ここに並びます')
   })
 })

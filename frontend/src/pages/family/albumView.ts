@@ -1,3 +1,5 @@
+import { addDays } from './visits/visitDates'
+
 // 家族のアルバムの画面で使う、型と小さな関数（spec 005 の 005-T012。contracts の「家族」）。
 
 export type AlbumPhoto = {
@@ -46,4 +48,12 @@ export function dayParts(date: string): { month: string; day: string } {
 /** 続きを読むときの `before`（最後のページの next_before）。続きがなければ undefined。 */
 export function nextBefore(lastPage: AlbumPage): number | undefined {
   return lastPage.next_before ?? undefined
+}
+
+/** 日の見出しの種類：今日・昨日・それ以外（日付と曜日）。today は日本時間の今日（"2026-10-30"）。 */
+export type DayKind = 'today' | 'yesterday' | 'other'
+
+export function dayKindOf(date: string, today: string): DayKind {
+  if (date === today) return 'today'
+  return date === addDays(today, -1) ? 'yesterday' : 'other'
 }

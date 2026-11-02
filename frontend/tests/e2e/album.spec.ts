@@ -118,6 +118,12 @@ test('アルバム：載せる → 家族 A が見る → 家族 B には見え�
     await dialog.getByRole('button', { name: /閉じる/ }).click()
     await expect(dialog).toBeHidden()
 
+    // 黒い部分（写真・コメント・ボタンの外側）を押しても、閉じる
+    await familyA.locator('li', { hasText: comment }).getByRole('button').click()
+    await expect(dialog).toBeVisible()
+    await dialog.click({ position: { x: 4, y: 4 } })
+    await expect(dialog).toBeHidden()
+
     // --- 8：家族 B のアルバムには、A の写真が出ない ---
     await familyB.goto('/family/album')
     await expect(familyB.getByRole('heading', { name: 'アルバム' })).toBeVisible()

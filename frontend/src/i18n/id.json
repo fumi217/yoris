@@ -720,7 +720,13 @@
     "day": "{{day}}/{{month}}",
     "more": "Lihat lebih banyak",
     "open": "Lihat foto lebih besar",
-    "close": "Tutup"
+    "close": "Tutup",
+    "subtitle": "Foto yang diambil di fasilitas. Ketuk foto untuk melihatnya lebih besar.",
+    "empty_sub": "Jika staf mengunggah foto, foto akan muncul di sini",
+    "count": "{{count}} foto",
+    "day_today": "Hari ini ({{day}}/{{month}})",
+    "day_yesterday": "Kemarin ({{day}}/{{month}})",
+    "day_other": "{{day}}/{{month}} ({{weekday}})"
   },
   "staff_accounts": {
     "title": "Buat akun staf",
