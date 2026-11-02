@@ -40,6 +40,13 @@ const render = (props: Partial<Parameters<typeof BookingView>[0]> = {}) =>
     />,
   )
 
+/** 画面に出る文字だけにする（ふりがな・タグを除く）。 */
+const text = (html: string) =>
+  html
+    .replace(/<rt>.*?<\/rt>/g, '')
+    .replace(/<rp>.*?<\/rp>/g, '')
+    .replace(/<[^>]+>/g, '')
+
 describe('visitDates', () => {
   it('今日は日本時間で決める', () => {
     // 日本時間では 10/27 の 0 時台（UTC ではまだ 10/26）
@@ -87,10 +94,14 @@ describe('calendar', () => {
 })
 
 describe('BookingView', () => {
-  it('期間が次の月にかかるときだけ、「次の月」を押せる', () => {
-    const next = /<button type="button"( disabled="")?[^>]*>(?:(?!<\/button>).)*次/
-    expect(render().match(next)?.[1]).toBe(' disabled=""')
-    expect(render({ days: [day(), day({ date: '2026-11-02' })] }).match(next)?.[1]).toBeUndefined()
+  it('期間が次の月にかかるときだけ、「次の月」を押せる（矢印のボタン。名前は aria-label）', () => {
+    const next = (html: string) => html.match(/<button[^>]*aria-label="次の月"[^>]*>/)?.[0] ?? ''
+
+    expect(next(render())).toContain('disabled=""')
+    expect(next(render({ days: [day(), day({ date: '2026-11-02' })] }))).not.toContain(
+      'disabled=""',
+    )
+    expect(render()).toContain('data-icon="chevron-right"')
   })
 
   it('期間の外の日は、押せるボタンにしない', () => {
@@ -154,5 +165,86 @@ describe('BookingView', () => {
     )
 
     expect(html).toContain('ほかの予約と重なっています')
+  })
+
+  it('手順は 3 つの面に分け、丸い番号を付ける（日にち → 時刻 → 人数）。人数は、時刻を選んでから出す', () => {
+    const date = render({ initialDate: '2026-10-27' })
+
+    expect(text(date)).toContain('日にちを選んでください')
+    expect(text(date)).toContain('面会開始時刻を選んでください')
+    expect(text(date)).not.toContain('来館者の人数')
+    expect(date.match(/<section aria-labelledby="visit-step-/g)).toHaveLength(2)
+    expect(date).toMatch(/<span aria-hidden="true"[^>]*>1<\/span>/)
+    expect(date).toMatch(/<span aria-hidden="true"[^>]*>2<\/span>/)
+  })
+
+  it('説明（1 回 1 時間 30 分・前日 17 時まで）は、薄い青の案内の帯に、アイコンつきで出す', () => {
+    const html = render()
+
+    expect(html).toMatch(
+      /<p class="[^"]*bg-primary-soft[^"]*"[^>]*><svg[^>]*data-icon="circle-info"/,
+    )
+    expect(text(html)).toContain('1時間30分')
+  })
+
+  it('カレンダーは、選んだ日を青の塗り、予約済みを薄い青、空きなしをグレーで見分け、文字も添える', () => {
+    const html = render({
+      days: [
+        day({ date: '2026-10-27' }),
+        day({ date: '2026-10-28', mine: true }),
+        day({ date: '2026-10-29', closed: true }),
+      ],
+      initialDate: '2026-10-27',
+    })
+
+    expect(html).toMatch(
+      /<button[^>]*aria-label="10月27日（火）"[^>]*class="[^"]*bg-primary [^"]*shadow-md/,
+    )
+    expect(html).toMatch(/<button[^>]*aria-label="10月28日（水）"[^>]*class="[^"]*bg-primary-soft/)
+    expect(html).toMatch(/<button[^>]*aria-label="10月29日（木）"[^>]*class="[^"]*bg-page/)
+    expect(text(html)).toContain('予約済み')
+    expect(text(html)).toContain('空きなし')
+    // 見分けの見本（凡例）
+    expect(text(html)).toContain('選べる')
+  })
+
+  it('日付を選んだだけでは、「予約する」のボタンと、選んだ内容の 1 行は出さない（時刻を選んでから）', () => {
+    const html = render({ initialDate: '2026-10-27' })
+
+    expect(html).not.toContain('data-icon="check"')
+  })
+
+  it('確定のあとは、緑のチェックの丸と、前の日の知らせの一言を出す', () => {
+    const confirmed: Reservation = {
+      id: 1,
+      visit_date: '2026-10-27',
+      start_time: '13:00:00',
+      party_size: 2,
+      status: 'booked',
+    }
+    const html = render({ confirmed })
+
+    expect(html).toContain('data-icon="check"')
+    expect(html).toContain('bg-[#dcfce7]')
+    expect(text(html)).toContain('前の日の 20時に、あらためてお知らせします')
+    expect(text(html)).toContain('ほかの日を見る')
+  })
+
+  it('手順 3 の見出しは、「〜を選んでください」の形。手順 2 の選んだ日付は、見出しの下に出す', () => {
+    const html = render({ initialDate: '2026-10-27' })
+
+    expect(text(html)).toContain('面会開始時刻を選んでください')
+    // 日付は、見出し（h2）の中ではなく、その下の段落
+    expect(html).toMatch(/<\/h2><\/div><p class="[^"]*ml-\[2\.125rem\][^"]*">/)
+  })
+
+  it('カレンダーのマスの中の「予約／済み」「空き／なし」は 12px（text-xs）で、マスの高さは 56px（min-h-14）', () => {
+    const html = render({
+      days: [day({ date: '2026-10-27', mine: true }), day({ date: '2026-10-28', closed: true })],
+    })
+
+    expect(html).toMatch(/<span class="block text-xs[^"]*whitespace-pre-line">/)
+    expect(html).not.toContain('text-[0.6rem]')
+    expect(html).toContain('min-h-14')
   })
 })

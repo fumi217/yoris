@@ -3,9 +3,11 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, messageKeyOf } from '../../../api/client'
 import { ConfirmButton } from '../../../components/ConfirmButton'
+import { StatusBadge } from '../../../components/StatusBadge'
 import { Text } from '../../../components/Text'
 import { Ruby } from '../../../i18n/Ruby'
 import { stripRuby } from '../../../i18n/rubyText'
+import { DateChip } from './DateChip'
 import { endOf, hhmm, monthDay, MY_VISITS_KEY, weekdayOf, type MyReservation } from './visitDates'
 
 /**
@@ -82,7 +84,7 @@ type ViewProps = {
 export function MyVisitsView({ rows, cancellingId, notice, errorKey, onCancel }: ViewProps) {
   return (
     <section className="space-y-2">
-      <h2 className="font-bold">
+      <h2 className="ml-1 text-sm font-bold text-ink-sub">
         <Text k="visit.mine_title" />
       </h2>
       {errorKey && (
@@ -96,11 +98,11 @@ export function MyVisitsView({ rows, cancellingId, notice, errorKey, onCancel }:
         </p>
       )}
       {rows.length === 0 ? (
-        <p className="text-sm text-gray-600">
+        <p className="rounded-2xl border border-card-line bg-card p-4 text-sm text-ink-sub">
           <Text k="visit.mine_empty" />
         </p>
       ) : (
-        <ul className="divide-y rounded border border-card-line">
+        <ul className="overflow-hidden rounded-2xl border border-card-line bg-card">
           {rows.map((row) => (
             <ReservationRow
               key={row.id}
@@ -127,22 +129,49 @@ function ReservationRow({ row, cancelling, disabled, onCancel }: RowProps) {
   const { t } = useTranslation()
   const start = hhmm(row.start_time)
   const active = row.status === 'booked'
+  // 取り消しの確かめ（「もう一度押すと取り消します」と「やめる」）が出ているとき（行の下の段に出す）
+  const [armed, setArmed] = useState(false)
 
   return (
-    <li className={`space-y-1 p-3 ${active ? '' : 'text-ink-sub'}`}>
-      <p className="font-bold">
-        <Ruby
-          text={t('visit.date', {
-            ...monthDay(row.visit_date),
-            weekday: stripRuby(t(`visit.weekday.${weekdayOf(row.visit_date)}`)),
-          })}
-        />{' '}
-        {t('visit.time_range', { start, end: endOf(start) })}{' '}
-        <Ruby text={t('visit.people', { count: row.party_size })} />
-      </p>
-      <p className="text-sm">
-        <Text k={`visit.status.${row.status}`} />
-      </p>
+    <li className="space-y-2 border-t border-card-line p-3 first:border-t-0">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <DateChip date={row.visit_date} active={active} />
+        <div className={`min-w-32 flex-1 space-y-0.5 ${active ? '' : 'text-ink-sub'}`}>
+          <p className="font-bold tabular-nums">
+            {/* 日付の札は読み上げないので、日付は、読み上げる文字として持つ */}
+            <span className="sr-only">
+              <Ruby
+                text={t('visit.date', {
+                  ...monthDay(row.visit_date),
+                  weekday: stripRuby(t(`visit.weekday.${weekdayOf(row.visit_date)}`)),
+                })}
+              />{' '}
+            </span>
+            {t('visit.time_range', { start, end: endOf(start) })}
+          </p>
+          <p className="text-sm text-ink-sub">
+            <Ruby text={t('visit.visitors', { count: row.party_size })} />
+          </p>
+          <StatusBadge tone={active ? 'success' : 'neutral'}>
+            <Text k={`visit.status.${row.status}`} />
+          </StatusBadge>
+        </div>
+        {active && row.can_cancel && (
+          // 確かめの状態のときは、行の下の段に、幅いっぱいで出す（横に並べると、時刻や人数が細く潰れる。#407 ようこさん）
+          <div className={armed ? 'w-full' : ''}>
+            <ConfirmButton
+              onArmedChange={setArmed}
+              labelKey="visit.cancel"
+              confirmKey="visit.cancel_confirm"
+              busyKey="visit.cancelling"
+              busy={cancelling}
+              disabled={disabled}
+              onConfirm={() => onCancel(row.id)}
+              className="min-h-11 rounded-xl border border-field-line bg-page px-3 text-sm font-bold shadow-sm"
+            />
+          </div>
+        )}
+      </div>
       {row.cancel_reason && (
         <p className="text-sm">
           <Text k="visit.cancel_reason" />
@@ -150,22 +179,11 @@ function ReservationRow({ row, cancelling, disabled, onCancel }: RowProps) {
           <span className="whitespace-pre-wrap">{row.cancel_reason}</span>
         </p>
       )}
-      {active &&
-        (row.can_cancel ? (
-          <ConfirmButton
-            labelKey="visit.cancel"
-            confirmKey="visit.cancel_confirm"
-            busyKey="visit.cancelling"
-            busy={cancelling}
-            disabled={disabled}
-            onConfirm={() => onCancel(row.id)}
-            className="rounded border-2 border-field-line px-3 py-1 text-sm"
-          />
-        ) : (
-          <p className="text-sm text-orange-700">
-            <Text k="visit.deadline_passed" />
-          </p>
-        ))}
+      {active && !row.can_cancel && (
+        <p className="text-sm text-orange-700">
+          <Text k="visit.deadline_passed" />
+        </p>
+      )}
     </li>
   )
 }

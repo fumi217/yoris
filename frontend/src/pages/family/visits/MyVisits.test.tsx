@@ -107,4 +107,28 @@ describe('家族の画面のふりがな（#260）', () => {
     expect(html).toContain('10月28日')
     expect(html).toContain('2人')
   })
+
+  it('行に、日付の札（月・日・曜日。読み上げない）と「予約済み」の印を出す。取り消した予約は、グレーの札', () => {
+    const booked = render()
+    const cancelled = render({ rows: [row({ status: 'cancelled_by_family' })] })
+
+    expect(booked).toMatch(/<span aria-hidden="true" class="[^"]*bg-primary-soft/)
+    expect(booked).toContain('bg-[#dcfce7]')
+    expect(cancelled).toMatch(/<span aria-hidden="true" class="[^"]*bg-page/)
+    expect(cancelled).not.toContain('bg-[#dcfce7]')
+  })
+
+  it('「取り消す」は、背景色（page）と影のあるボタン', () => {
+    const button = render().match(/<button[^>]*>/)?.[0] ?? ''
+
+    expect(button).toContain('bg-page')
+    expect(button).toContain('shadow-sm')
+  })
+
+  it('取り消す行は、折り返せる（確かめの文と「やめる」が出ても、時刻や人数が細く潰れない）', () => {
+    const html = render()
+
+    expect(html).toMatch(/<div class="flex flex-wrap items-center[^"]*gap-y-2">/)
+    expect(html).toMatch(/<div class="min-w-32 flex-1/)
+  })
 })

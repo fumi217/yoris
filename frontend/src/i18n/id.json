@@ -259,9 +259,9 @@
   "visit": {
     "title": "Reservasi kunjungan",
     "hours_note": "Satu kunjungan berlangsung 1 jam 30 menit. Reservasi dan pembatalan dapat dilakukan sampai pukul 17.00 hari sebelumnya",
-    "choose_date": "1. Pilih tanggal",
-    "choose_time": "2. Pilih jam mulai",
-    "party_size": "3. Jumlah pengunjung",
+    "choose_date": "Pilih tanggal",
+    "choose_time": "Pilih jam mulai",
+    "party_size": "Pilih jumlah pengunjung",
     "people": "{{count}} orang",
     "visitors": "Pengunjung: {{count}} orang",
     "fewer": "Kurangi jumlah orang",
@@ -301,7 +301,11 @@
     "cancelling": "Sedang membatalkan",
     "cancelled_notice": "Reservasi dibatalkan",
     "deadline_passed": "Sudah lewat pukul 17.00 sehari sebelumnya, jadi tidak dapat dibatalkan di aplikasi. Untuk membatalkan, silakan telepon fasilitas",
-    "mine_error": "Reservasi tidak dapat dimuat"
+    "mine_error": "Reservasi tidak dapat dimuat",
+    "booked_cell": "Dipesan",
+    "confirmed_note": "Kami akan mengingatkan lagi pukul 20.00 hari sebelumnya",
+    "full_cell": "Penuh",
+    "legend_open": "Tersedia"
   },
   "staff_template": {
     "medical": {

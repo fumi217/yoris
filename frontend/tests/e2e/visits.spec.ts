@@ -120,7 +120,8 @@ test('面会の予約：重なる時刻と 1 日 2 組を守り、同じ家族�
       // 2 組に達したあとは、1 日の組数の確かめ（visit_day_full）が先に返るので、家族 B の予約の前に確かめる
       const dayButton = await openDay(page, date)
       await expect(dayButton).toBeDisabled()
-      await expect(dayButton).toContainText('予約済み')
+      // マスの中では、2 行（「予約／済み」）に折れる。改行を挟んでも、同じ言葉として確かめる（#407）
+      await expect(dayButton).toContainText(/予約\s*済み/)
 
       const again = await page.request.post('/api/family/visits', {
         data: { visit_date: date, start_time: '15:00', party_size: 1 },
@@ -153,7 +154,7 @@ test('面会の予約：重なる時刻と 1 日 2 組を守り、同じ家族�
       await loginAs(page, { kind: 'family', index: 2 })
       const dayButton = await openDay(page, date)
       await expect(dayButton).toBeDisabled()
-      await expect(dayButton).toContainText('空きなし')
+      await expect(dayButton).toContainText(/空き\s*なし/)
     })
 
     await test.step('7. ログインしていないと、ログインの画面に案内される', async () => {

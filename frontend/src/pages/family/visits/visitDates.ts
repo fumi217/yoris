@@ -54,6 +54,13 @@ export function monthDay(date: string): { month: number; day: number } {
   return { month, day }
 }
 
+/** 日付の札の上に出す月の名前（日本語は「11月」、英語・インドネシア語は「Nov」）。UTC で数える。 */
+export function monthShort(date: string, language: string): string {
+  return new Intl.DateTimeFormat(language, { month: 'short', timeZone: 'UTC' }).format(
+    new Date(`${date}T00:00:00Z`),
+  )
+}
+
 /** "10:00:00" → "10:00" */
 export function hhmm(time: string): string {
   return time.slice(0, 5)

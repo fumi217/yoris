@@ -259,9 +259,9 @@
   "visit": {
     "title": "Reserve a visit",
     "hours_note": "A visit lasts 1 hour 30 minutes. You can book or cancel until 5 PM the day before",
-    "choose_date": "1. Choose a date",
-    "choose_time": "2. Choose a start time",
-    "party_size": "3. Number of visitors",
+    "choose_date": "Choose a date",
+    "choose_time": "Choose a start time",
+    "party_size": "Choose the number of visitors",
     "people": "{{count}} people",
     "visitors": "Visitors: {{count}}",
     "fewer": "Fewer people",
@@ -301,7 +301,11 @@
     "cancelling": "Cancelling",
     "cancelled_notice": "Your reservation was cancelled",
     "deadline_passed": "It is past 17:00 on the day before, so you cannot cancel in the app. To cancel, please call the facility",
-    "mine_error": "We could not load your reservations"
+    "mine_error": "We could not load your reservations",
+    "booked_cell": "Booked",
+    "confirmed_note": "We will remind you again at 8 PM the day before",
+    "full_cell": "Full",
+    "legend_open": "Available"
   },
   "staff_template": {
     "medical": {

@@ -116,22 +116,39 @@ export function BookingView({
       weekday: stripRuby(t(`visit.weekday.${weekdayOf(value)}`)),
     })
 
+  const summaryOf = (value: { date: string; start: string; people: number }) =>
+    t('visit.confirmed_detail', {
+      date: dateLabel(value.date),
+      time: t('visit.time_range', { start: value.start, end: endOf(value.start) }),
+      people: t('visit.people', { count: value.people }),
+    })
+
   if (confirmed) {
-    const start = hhmm(confirmed.start_time)
     return (
-      <section className="space-y-4 p-4" role="status">
-        <h1 className="text-xl font-bold">
-          <Text k="visit.confirmed" />
-        </h1>
-        <p className="text-lg">
-          <Ruby
-            text={t('visit.confirmed_detail', {
-              date: dateLabel(confirmed.visit_date),
-              time: t('visit.time_range', { start, end: endOf(start) }),
-              people: t('visit.people', { count: confirmed.party_size }),
-            })}
-          />
-        </p>
+      <section className="space-y-5 p-4" role="status">
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-card-line bg-card px-4 py-6 text-center">
+          <span
+            aria-hidden="true"
+            className="flex size-14 items-center justify-center rounded-full bg-[#dcfce7] text-[#166534]"
+          >
+            <Icon name="check" className="text-3xl" />
+          </span>
+          <h1 className="text-xl font-bold">
+            <Text k="visit.confirmed" />
+          </h1>
+          <p className="text-lg font-bold tabular-nums">
+            <Ruby
+              text={summaryOf({
+                date: confirmed.visit_date,
+                start: hhmm(confirmed.start_time),
+                people: confirmed.party_size,
+              })}
+            />
+          </p>
+          <p className="text-sm text-ink-sub">
+            <Text k="visit.confirmed_note" />
+          </p>
+        </div>
         <button
           type="button"
           onClick={() => {
@@ -139,7 +156,7 @@ export function BookingView({
             setTime(null)
             onReset()
           }}
-          className="text-primary underline"
+          className="flex min-h-12 w-full items-center justify-center rounded-xl border border-field-line bg-white font-bold shadow-sm"
         >
           <Text k="visit.book_another" />
         </button>
@@ -154,12 +171,13 @@ export function BookingView({
   const month = months[Math.min(monthIndex, months.length - 1)] ?? monthOf(todayInJapan())
 
   return (
-    <section className="space-y-6 p-4">
-      <div>
-        <h1 className="text-xl font-bold">
+    <section className="space-y-5 p-4">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold">
           <Text k="visit.title" />
         </h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <p className="flex items-start gap-2 rounded-xl bg-primary-soft p-3 text-sm">
+          <Icon name="info" className="mt-0.5 shrink-0 text-primary" />
           <Text k="visit.hours_note" />
         </p>
       </div>
@@ -167,41 +185,38 @@ export function BookingView({
       {mine}
 
       {errorKey && (
-        <p role="alert" className="rounded border border-red-700 p-3 text-red-700">
+        <p role="alert" className="rounded border border-red-700 bg-white p-3 text-red-700">
           <Text k={errorKey} />
         </p>
       )}
 
-      <fieldset>
-        <legend className="mb-2 font-bold">
-          <Text k="visit.choose_date" />
-        </legend>
+      <StepCard number={1} titleKey="visit.choose_date">
         <div className="mb-2 flex items-center justify-between">
           <button
             type="button"
+            aria-label={stripRuby(t('visit.previous_month'))}
             disabled={monthIndex === 0}
             onClick={() => setMonthIndex((index) => index - 1)}
-            className="rounded px-2 py-1 text-primary underline disabled:text-gray-300 disabled:no-underline"
+            className="flex size-11 items-center justify-center rounded-full text-primary hover:bg-primary-soft disabled:text-ink-sub disabled:opacity-40 disabled:hover:bg-transparent"
           >
-            <Icon name="prev" className="mr-1" />
-            <Text k="visit.previous_month" />
+            <Icon name="prev" />
           </button>
           <span className="font-bold">
             <Ruby text={t('visit.month', yearMonth(month))} />
           </span>
           <button
             type="button"
+            aria-label={stripRuby(t('visit.next_month'))}
             disabled={monthIndex >= months.length - 1}
             onClick={() => setMonthIndex((index) => index + 1)}
-            className="rounded px-2 py-1 text-primary underline disabled:text-gray-300 disabled:no-underline"
+            className="flex size-11 items-center justify-center rounded-full text-primary hover:bg-primary-soft disabled:text-ink-sub disabled:opacity-40 disabled:hover:bg-transparent"
           >
-            <Text k="visit.next_month" />
-            <Icon name="next" className="ml-1" />
+            <Icon name="next" />
           </button>
         </div>
         <div className="grid grid-cols-7 gap-1 text-center">
           {[0, 1, 2, 3, 4, 5, 6].map((weekday) => (
-            <span key={weekday} className="text-xs text-gray-600">
+            <span key={weekday} className="pb-0.5 text-xs text-ink-sub">
               <Text k={`visit.weekday.${weekday}`} />
             </span>
           ))}
@@ -211,7 +226,10 @@ export function BookingView({
             // 予約できる期間（明日〜28 日先）の外の日は、数字だけを出して押せない
             if (!day) {
               return (
-                <span key={cell} className="p-2 text-gray-300">
+                <span
+                  key={cell}
+                  className="flex min-h-14 items-center justify-center text-gray-300"
+                >
                   {monthDay(cell).day}
                 </span>
               )
@@ -229,29 +247,43 @@ export function BookingView({
                   setDate(day.date)
                   setTime(null)
                 }}
-                className={`min-h-12 rounded border-2 p-1 disabled:bg-gray-100 disabled:text-ink-sub ${
-                  selected ? 'border-primary bg-primary text-white' : 'border-field-line'
+                className={`flex min-h-14 flex-col items-center justify-center rounded-xl border leading-tight tabular-nums ${
+                  selected
+                    ? 'border-primary bg-primary font-bold text-white shadow-md'
+                    : status === 'mine'
+                      ? 'border-primary-soft bg-primary-soft font-bold text-primary-dark'
+                      : status === 'full'
+                        ? 'border-page bg-page text-ink-sub'
+                        : 'border-card-line bg-white hover:bg-primary-soft'
                 }`}
               >
                 {monthDay(day.date).day}
                 {status !== 'open' && (
-                  <span className="block text-xs leading-tight">
-                    <Text k={status === 'mine' ? 'visit.booked_day' : 'visit.no_slot'} />
+                  // 12px。短い 2 行（「予約／済み」「空き／なし」）にして、マスの中で折れる位置をそろえる
+                  <span className="block text-xs leading-tight whitespace-pre-line">
+                    <Text k={status === 'mine' ? 'visit.booked_cell' : 'visit.full_cell'} />
                   </span>
                 )}
               </button>
             )
           })}
         </div>
-      </fieldset>
+        {/* 色だけで伝えない：どの色が何かを、文字でも添える（1.4.1） */}
+        <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-sub">
+          <Legend className="border-card-line bg-white" labelKey="visit.legend_open" />
+          <Legend className="border-primary-soft bg-primary-soft" labelKey="visit.booked_day" />
+          <Legend className="border-page bg-page" labelKey="visit.no_slot" />
+        </p>
+      </StepCard>
 
       {selectedDay && (
-        <fieldset>
-          <legend className="mb-2 font-bold">
-            <Text k="visit.choose_time" />
-          </legend>
+        <StepCard
+          number={2}
+          titleKey="visit.choose_time"
+          sub={<Ruby text={dateLabel(selectedDay.date)} />}
+        >
           {selectedDay.start_times.some((slot) => slot.selectable) ? (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2">
               {selectedDay.start_times.map((slot) => {
                 const start = hhmm(slot.start_time)
                 const selected = slot.start_time === time
@@ -262,8 +294,12 @@ export function BookingView({
                     aria-pressed={selected}
                     disabled={!slot.selectable}
                     onClick={() => setTime(slot.start_time)}
-                    className={`min-h-12 rounded border-2 p-2 disabled:bg-gray-100 disabled:text-ink-sub disabled:line-through ${
-                      selected ? 'border-primary bg-primary text-white' : 'border-field-line'
+                    className={`min-h-12 rounded-xl border tabular-nums ${
+                      selected
+                        ? 'border-primary bg-primary font-bold text-white shadow-md'
+                        : slot.selectable
+                          ? 'border-card-line bg-white hover:bg-primary-soft'
+                          : 'border-page bg-page text-ink-sub line-through'
                     }`}
                   >
                     {t('visit.time_range', { start, end: endOf(start) })}
@@ -274,54 +310,107 @@ export function BookingView({
           ) : (
             <Message k="visit.no_time" />
           )}
-        </fieldset>
+        </StepCard>
       )}
 
       {selectedDay && time && (
-        <fieldset>
-          <legend className="mb-2 font-bold">
-            <Text k="visit.party_size" />
-          </legend>
-          <div className="flex items-center gap-4">
+        <StepCard number={3} titleKey="visit.party_size">
+          <div className="flex items-center justify-center gap-6">
             <button
               type="button"
               aria-label={stripRuby(t('visit.fewer'))}
               disabled={partySize <= 1}
               onClick={() => setPartySize((size) => Math.max(1, size - 1))}
-              className="h-12 w-12 rounded border-2 border-field-line text-xl disabled:opacity-40"
+              className="size-12 rounded-full border border-field-line bg-white text-2xl text-primary-dark shadow-sm disabled:opacity-40"
             >
               −
             </button>
-            <span className="min-w-12 text-center text-lg" aria-live="polite">
+            <span className="min-w-24 text-center text-2xl font-bold" aria-live="polite">
               <Ruby text={t('visit.people', { count: partySize })} />
             </span>
             <button
               type="button"
               aria-label={stripRuby(t('visit.more'))}
               onClick={() => setPartySize((size) => size + 1)}
-              className="h-12 w-12 rounded border-2 border-field-line text-xl"
+              className="size-12 rounded-full border border-field-line bg-white text-2xl text-primary-dark shadow-sm"
             >
               ＋
             </button>
           </div>
-        </fieldset>
+        </StepCard>
       )}
 
       {selectedDay && time && (
-        <button
-          type="button"
-          disabled={booking}
-          onClick={() =>
-            onBook({ visit_date: selectedDay.date, start_time: time, party_size: partySize }, () =>
-              setTime(null),
-            )
-          }
-          className="w-full rounded bg-primary p-4 text-lg font-bold text-white disabled:opacity-60"
-        >
-          <Text k={booking ? 'visit.booking' : 'visit.book'} />
-        </button>
+        <div className="space-y-2">
+          <button
+            type="button"
+            disabled={booking}
+            onClick={() =>
+              onBook(
+                { visit_date: selectedDay.date, start_time: time, party_size: partySize },
+                () => setTime(null),
+              )
+            }
+            className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-lg font-bold text-white shadow-md disabled:opacity-60"
+          >
+            <Icon name="check" />
+            <Text k={booking ? 'visit.booking' : 'visit.book'} />
+          </button>
+          {/* 押す前に、選んだ内容をもう一度見せる */}
+          <p className="text-center text-sm text-ink-sub">
+            <Ruby
+              text={summaryOf({ date: selectedDay.date, start: hhmm(time), people: partySize })}
+            />
+          </p>
+        </div>
       )}
     </section>
+  )
+}
+
+/** 手順の白い面：丸い番号・見出し・（右に補足）。見出しで、面の名前を付ける（読み上げ用）。 */
+function StepCard({
+  number,
+  titleKey,
+  sub,
+  children,
+}: {
+  number: number
+  titleKey: string
+  // 見出しの下に出す補足（手順 2 の、選んだ日付。横に並べると、見出しが折れるため）
+  sub?: ReactNode
+  children: ReactNode
+}) {
+  const headingId = `visit-step-${number}`
+  return (
+    <section
+      aria-labelledby={headingId}
+      className="rounded-2xl border border-card-line bg-card p-4"
+    >
+      <div className="mb-3 flex items-center gap-2.5">
+        <span
+          aria-hidden="true"
+          className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-white"
+        >
+          {number}
+        </span>
+        <h2 id={headingId} className="font-bold">
+          <Text k={titleKey} />
+        </h2>
+      </div>
+      {sub && <p className="-mt-1.5 mb-3 ml-[2.125rem] text-sm text-ink-sub">{sub}</p>}
+      {children}
+    </section>
+  )
+}
+
+/** カレンダーの見分けの小さな見本。 */
+function Legend({ className, labelKey }: { className: string; labelKey: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span aria-hidden="true" className={`inline-block size-3 rounded border ${className}`} />
+      <Text k={labelKey} />
+    </span>
   )
 }
 
