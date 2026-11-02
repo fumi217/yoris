@@ -4,7 +4,7 @@
 ログイン中の家族の CurrentUser.resident_id から決める（FR-020）。
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
@@ -35,6 +35,7 @@ class RequestOut(BaseModel):
     created_at: datetime
     days_ago: int
     overdue: bool  # 返事待ちのまま 3 日たった（「お急ぎのときは、施設にお電話ください」）
+    reply_date: date | None  # 返事が入った連絡帳の日付（返事のないものは None。#403）
 
 
 class CreateRequestBody(BaseModel):

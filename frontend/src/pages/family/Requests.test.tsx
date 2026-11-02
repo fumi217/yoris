@@ -9,6 +9,7 @@ import {
   remainingSlots,
   SendStopped,
   sendErrorKey,
+  replyLinkFor,
   sentBeforeStop,
   sentThemeIdsBeforeStop,
   themeDescKey,
@@ -352,5 +353,26 @@ describe('テーマの選び方（FR-014）', () => {
     expect(sentBeforeStop(stopped)).toBe(1)
     expect(sendErrorKey(stopped)).toBe('error.too_many_waiting')
     expect(sentBeforeStop(new Error('x'))).toBe(0)
+  })
+})
+
+describe('「連絡帳で見る」の行き先（#403）', () => {
+  it('返事が入った日の連絡帳へ。日付が分からないときは、今日の連絡帳', () => {
+    expect(replyLinkFor({ reply_date: '2026-10-26' })).toBe('/family?date=2026-10-26')
+    expect(replyLinkFor({ reply_date: null })).toBe('/family')
+    expect(replyLinkFor({})).toBe('/family')
+    // 形の合わない値は、使わない（アドレスに入れない）
+    expect(replyLinkFor({ reply_date: '../admin' })).toBe('/family')
+    expect(replyLinkFor({ reply_date: '2026-10-26&x=1' })).toBe('/family')
+  })
+
+  it('返事が届いたリクエストのリンクは、返事の日の連絡帳。返事待ちには、リンクを出さない', () => {
+    const answered = render({
+      requests: [request({ status: 'answered', reply_date: '2026-10-20' })],
+    })
+    const waiting = render({ requests: [request({ status: 'waiting' })] })
+
+    expect(answered).toContain('href="/family?date=2026-10-20"')
+    expect(waiting).not.toContain('href="/family')
   })
 })

@@ -4,7 +4,13 @@ import { Icon } from '../../components/Icon'
 import { StatusBadge, type StatusTone } from '../../components/StatusBadge'
 import { Text } from '../../components/Text'
 import { Ruby } from '../../i18n/Ruby'
-import { sentAtParts, statusKeyOf, themeIconName, type FamilyRequest } from './requestsView'
+import {
+  replyLinkFor,
+  sentAtParts,
+  statusKeyOf,
+  themeIconName,
+  type FamilyRequest,
+} from './requestsView'
 
 const BADGE: Record<FamilyRequest['status'], { key: string; tone: StatusTone }> = {
   answered: { key: 'requests.badge_answered', tone: 'success' },
@@ -75,7 +81,7 @@ export function SentRequestCard({ request, cancelling, onCancel }: Props) {
         </StatusBadge>
         {request.status === 'answered' && (
           <Link
-            to="/family"
+            to={replyLinkFor(request)}
             className="inline-flex min-h-11 items-center gap-1 text-sm font-bold text-primary underline"
           >
             <Text k="requests.see_reply" />

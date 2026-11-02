@@ -186,3 +186,84 @@ def test_cannot_cancel_after_the_reply(family_client, session, themes):
 
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "already_replied"
+
+
+# --- 返事が入った連絡帳の日付（reply_date。#403） ---
+
+
+def _answer(session, request_id: int, staff_id: int, contact_book_date) -> None:
+    """リクエストに返事を付けて、answered にする（職員の返事の保存と同じ形）。"""
+    from sqlalchemy import select as _select
+
+    from app.models.disclosure import ReplyTemplate
+    from app.models.replies import Reply
+    from app.models.requests import Request
+
+    request = session.get(Request, request_id)
+    template_id = session.scalars(
+        _select(ReplyTemplate.id).where(ReplyTemplate.theme_id == request.theme_id)
+    ).first()
+    if template_id is None:
+        template_id = session.scalars(_select(ReplyTemplate.id)).first()
+    session.add(
+        Reply(
+            request_id=request_id,
+            template_ids=[template_id],
+            note=None,
+            replied_by=staff_id,
+            contact_book_date=contact_book_date,
+        )
+    )
+    request.status = "answered"
+    session.flush()
+
+
+def test_list_has_the_reply_date_only_for_answered_requests(
+    client, make_family, make_staff, login_as, session, themes
+):
+    from datetime import date
+
+    family = make_family()
+    staff = make_staff("care_worker")
+    login_as(family.user_id)
+    waiting = client.post("/api/family/requests", json={"theme_id": themes[0].id}).json()
+    answered = client.post("/api/family/requests", json={"theme_id": themes[1].id}).json()
+    cancelled = client.post("/api/family/requests", json={"theme_id": themes[2].id}).json()
+    client.delete(f"/api/family/requests/{cancelled['id']}")
+    # 返事が入った日は、今日より前（過去の連絡帳）。リクエストは、その前に送ったことにする
+    from datetime import UTC, datetime
+
+    from app.models.requests import Request
+
+    session.get(Request, answered["id"]).created_at = datetime(2026, 10, 18, 3, 0, tzinfo=UTC)
+    reply_day = date(2026, 10, 20)
+    _answer(session, answered["id"], staff.id, reply_day)
+
+    rows = {row["id"]: row for row in client.get("/api/family/requests").json()}
+
+    assert rows[answered["id"]]["reply_date"] == "2026-10-20"
+    assert rows[waiting["id"]]["reply_date"] is None
+    assert rows[cancelled["id"]]["reply_date"] is None
+    assert rows[answered["id"]]["status"] == "answered"
+
+
+def test_reply_date_is_not_shown_for_other_familys_requests(
+    client, make_family, make_staff, login_as, session, themes
+):
+    from datetime import UTC, date, datetime
+
+    from app.models.requests import Request
+
+    mine = make_family()
+    other = make_family()
+    staff = make_staff("care_worker")
+    login_as(other.user_id)
+    theirs = client.post("/api/family/requests", json={"theme_id": themes[0].id}).json()
+    session.get(Request, theirs["id"]).created_at = datetime(2026, 10, 18, 3, 0, tzinfo=UTC)
+    _answer(session, theirs["id"], staff.id, date(2026, 10, 21))
+
+    login_as(mine.user_id)
+    rows = client.get("/api/family/requests").json()
+
+    # 自分の一覧に、ほかの家族のリクエストも返事の日付も出ない
+    assert rows == []

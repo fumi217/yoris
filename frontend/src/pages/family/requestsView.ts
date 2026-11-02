@@ -13,6 +13,9 @@ export type FamilyRequest = {
   created_at: string
   days_ago: number
   overdue: boolean
+  // 返事が入った連絡帳の日付（"2026-10-26"。返事のないものは null。#403）。
+  // 古い API では、項目がないこともある
+  reply_date?: string | null
 }
 
 /**
@@ -111,4 +114,13 @@ export function statusKeyOf(request: FamilyRequest): string {
   if (request.status === 'answered') return 'requests.status_answered'
   if (request.status === 'cancelled') return 'requests.status_cancelled'
   return 'requests.status_waiting'
+}
+
+/**
+ * 「連絡帳で見る」の行き先。返事が入った日の連絡帳（`/family?date=`）。日付が分からないとき
+ * （古い API・形の合わない値）は、今日の連絡帳（#403）。
+ */
+export function replyLinkFor(request: Pick<FamilyRequest, 'reply_date'>): string {
+  const date = request.reply_date
+  return date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? `/family?date=${date}` : '/family'
 }

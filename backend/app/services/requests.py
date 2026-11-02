@@ -11,7 +11,7 @@
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -21,7 +21,11 @@ from app.auth.deps import CurrentUser
 from app.clock import JST, now, today_jst
 from app.models.core import FamilyAccount
 from app.models.requests import MAX_WAITING_REQUESTS, Request
-from app.services.disclosure import get_disclosed_themes, get_requested_themes
+from app.services.disclosure import (
+    get_active_replies,
+    get_disclosed_themes,
+    get_requested_themes,
+)
 
 # 送ってから、この時間がたっても返事がないときは、「お急ぎのときは、施設にお電話ください」を出す
 OVERDUE_AFTER = timedelta(days=3)
@@ -73,6 +77,8 @@ class RequestView:
     created_at: datetime
     days_ago: int  # 送ってからの日数（日本時間の日付で数える。「2 日前に送りました」）
     overdue: bool  # 返事待ちのまま 3 日たった
+    # 返事が入った連絡帳の日付（返事待ち・取り消しは None。「連絡帳で見る」の行き先。#403）
+    reply_date: date | None = None
 
 
 def _resident_id(current_user: CurrentUser) -> int:
@@ -157,6 +163,7 @@ def list_requests(
         theme.id: theme for theme in get_requested_themes(session, {r.theme_id for r in requests})
     }
     today = today_jst(at)
+    reply_dates = _reply_dates(session, resident_id, requests, today)
     return [
         RequestView(
             id=request.id,
@@ -167,6 +174,24 @@ def list_requests(
             created_at=request.created_at,
             days_ago=(today - request.created_at.astimezone(JST).date()).days,
             overdue=is_overdue(request.status, request.created_at, at),
+            reply_date=reply_dates.get(request.id),
         )
         for request in requests
     ]
+
+
+def _reply_dates(
+    session: Session, resident_id: int, requests: Sequence[Request], today: date
+) -> dict[int, date]:
+    """返事が付いたリクエストの、返事が入った連絡帳の日付（request_id → 日付）。
+
+    家族に出す返事なので、共通の関数 get_active_replies を通す（R-06）。中身（定型文・書き足し）は
+    使わず、日付だけを取る。
+    """
+    answered = [request for request in requests if request.status == "answered"]
+    if not answered:
+        return {}
+    # 返事は、送った日以降に入る。いちばん古い送った日から、明日まで探す（日またぎの余裕）
+    first = min(request.created_at.astimezone(JST).date() for request in answered)
+    replies = get_active_replies(session, resident_id, first, today + timedelta(days=1))
+    return {reply.request_id: reply.contact_book_date for reply in replies}

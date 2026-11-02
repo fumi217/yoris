@@ -93,7 +93,7 @@ API の名前は開発前MTG に合わせて `contact-book`（連絡帳）にす
 |---|---|---|---|---|
 | `GET /api/family/contact-book?date=` | F | ミ | その日の連絡帳。返事には、返事をした職員の表示名（`replied_by_name`）と職種のコード（`replied_by_occupation`。職員の `occupation`。空なら null で、画面は名前だけを出す。画面が辞書の `occupation.*` で引き、「表示名（職種）からの返事」と出す。#263）を付ける。まだ読んでいない返事を（日付に関わらず）先頭に、開示済みの記録（食事 → 機嫌・様子 → 眠り）、未記録の欄（おやつだけは、記録があるときだけ出す） | FR-015・FR-017・FR-019 |
 | `GET /api/family/themes` | F | ミ | 頼めるテーマ（`get_disclosed_themes` を通す） | FR-013 |
-| `GET /api/family/requests` | F | ミ | 送ったリクエスト（状態・送った日時・日数・3 日たったか） | FR-014 |
+| `GET /api/family/requests` | F | ミ | 送ったリクエスト（状態・送った日時・日数・3 日たったか・**返事が入った連絡帳の日付 `reply_date`**。返事のないもの（返事待ち・取り消し）は null。10/31 に足した。#403） | FR-014 |
 | `POST /api/family/requests` | F | ミ | テーマを選んで送る（`theme_id`）。409：`request_limit`・`theme_waiting` | FR-013・FR-014 |
 | `DELETE /api/family/requests/{id}` | F | ミ | 返事の前に取り消す。返事がついたあとは 409 `already_replied`、ほかの家族のものやない id は 404 | FR-014 |
 | `POST /api/family/replies/{reply_id}/read` | F | ミ | 返事を読んだ（家族で共有）。返事のカードが画面に出たら、フロントが自動で呼ぶ（R-15） | FR-015 |
