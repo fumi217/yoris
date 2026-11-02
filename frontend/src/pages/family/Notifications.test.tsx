@@ -3,7 +3,14 @@ import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import '../../i18n'
 import { NotificationsView } from './Notifications'
-import { kindKey, linkFor, type FamilyNotification } from './notificationsView'
+import {
+  groupByDay,
+  kindKey,
+  linkFor,
+  noticeIconName,
+  unreadCount,
+  type FamilyNotification,
+} from './notificationsView'
 
 const notification = (overrides: Partial<FamilyNotification> = {}): FamilyNotification => ({
   id: 1,
@@ -17,10 +24,13 @@ const notification = (overrides: Partial<FamilyNotification> = {}): FamilyNotifi
   ...overrides,
 })
 
+// 今日は 2026-10-27（火）の昼（日本時間）にそろえる
+const NOW = new Date('2026-10-27T03:00:00Z')
+
 const render = (notifications: FamilyNotification[]) =>
   renderToStaticMarkup(
     <MemoryRouter>
-      <NotificationsView notifications={notifications} />
+      <NotificationsView notifications={notifications} now={NOW} />
     </MemoryRouter>,
   )
 
@@ -48,7 +58,9 @@ describe('NotificationsView', () => {
     expect(shown).toContain('今週の連絡帳がまとまりました')
     expect(shown).toContain('施設からのお知らせが届きました')
     expect(shown).toContain('施設からメッセージの返事が届きました')
-    expect(shown).toContain('10月26日 9:30')
+    // 日付は日ごとの見出しに、行には時刻だけ（日本時間）
+    expect(shown).toContain('昨日（10月26日）')
+    expect(shown).toContain('9:30')
   })
 
   it('面会のお知らせは、専用の文言で出る', () => {
@@ -121,7 +133,7 @@ describe('NotificationsView', () => {
     const shown = text(render([notification()]))
 
     // 見出し・「new」の印・お知らせの文・日時、これだけ
-    expect(shown).toBe('お知らせnew知りたいことへの返事が届きました10月26日 9:30')
+    expect(shown).toBe('お知らせ未読 1 件昨日（10月26日）知りたいことへの返事が届きましたnew9:30')
   })
 
   it('API がうっかり返事の中身や職員の名前を返しても、画面には出ない', () => {
@@ -159,5 +171,114 @@ describe('notificationsView', () => {
     expect(linkFor(notification({ kind: 'visit_cancelled' }))).toBe('/family/visits')
     expect(linkFor(notification({ kind: 'visit_reminder' }))).toBe('/family/visits')
     expect(linkFor(notification({ kind: 'announcement' }))).toBeNull()
+  })
+
+  it('上に「未読 ◯ 件」を出す。0 件のときは出さない', () => {
+    const some = text(
+      render([
+        notification({ id: 1 }),
+        notification({ id: 2 }),
+        notification({ id: 3, read: true }),
+      ]),
+    )
+    const none = text(render([notification({ read: true })]))
+
+    expect(some).toContain('未読 2 件')
+    expect(none).not.toContain('未読')
+  })
+
+  it('未読は、薄い青の背景（unread）・太字・「new」の印の 3 つで示す。読んだものは、どれもない', () => {
+    const unread = render([notification({ read: false })])
+    const read = render([notification({ read: true })])
+
+    expect(unread).toContain('bg-unread')
+    expect(unread).toContain('font-bold')
+    expect(text(unread)).toContain('new')
+    expect(read).not.toContain('bg-unread')
+    expect(read).not.toMatch(/<span class="block font-bold/)
+    expect(text(read)).not.toContain('new')
+  })
+
+  it('日ごとの見出しでまとめる（今日・昨日・それ以外は日付と曜日）', () => {
+    const shown = text(
+      render([
+        notification({ id: 1, created_at: '2026-10-27T01:00:00Z' }),
+        notification({ id: 2, created_at: '2026-10-26T05:00:00Z' }),
+        notification({ id: 3, created_at: '2026-10-23T05:00:00Z' }),
+      ]),
+    )
+
+    expect(shown).toContain('今日（10月27日）')
+    expect(shown).toContain('昨日（10月26日）')
+    expect(shown).toContain('10月23日（金）')
+    expect(shown.indexOf('今日（')).toBeLessThan(shown.indexOf('昨日（'))
+    expect(shown.indexOf('昨日（')).toBeLessThan(shown.indexOf('10月23日'))
+  })
+
+  it('種類のアイコンを、行の左に出す（飾りなので読み上げない）', () => {
+    const html = render([
+      notification({ id: 1, kind: 'reply' }),
+      notification({ id: 2, kind: 'announcement', reply_id: null }),
+    ])
+
+    expect(html).toContain('data-icon="comment-dots"')
+    expect(html).toContain('data-icon="bullhorn"')
+    expect(html.match(/<svg[^>]*aria-hidden="true"/g)?.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('押せる行にだけ、右に矢印を出す（進む先のない施設からのお知らせには出さない）', () => {
+    const link = render([notification({ id: 1, kind: 'reply' })])
+    const staticRow = render([notification({ id: 1, kind: 'announcement', reply_id: null })])
+
+    expect(link).toContain('data-icon="chevron-right"')
+    expect(staticRow).not.toContain('data-icon="chevron-right"')
+  })
+
+  it('1 つの白い面の中を、薄い線で区切る（行ごとのカードにしない）', () => {
+    const html = render([notification({ id: 1 }), notification({ id: 2 })])
+
+    expect(html.match(/<ul /g)).toHaveLength(1)
+    expect(html).toContain('border-t border-card-line')
+  })
+})
+
+describe('お知らせの見た目を決める部分', () => {
+  it('種類ごとのアイコン。知らない種類は、施設からのお知らせと同じ', () => {
+    expect(noticeIconName('reply')).toBe('notice-reply')
+    expect(noticeIconName('daily_digest')).toBe('contact-book')
+    expect(noticeIconName('weekly_digest')).toBe('contact-book')
+    expect(noticeIconName('staff_message_reply')).toBe('inquiry')
+    expect(noticeIconName('visit_confirmed')).toBe('notice-visit-confirmed')
+    expect(noticeIconName('visit_cancelled')).toBe('notice-visit-cancelled')
+    expect(noticeIconName('visit_reminder')).toBe('visits')
+    expect(noticeIconName('announcement')).toBe('notice-announcement')
+    expect(noticeIconName('something_new')).toBe('notice-announcement')
+  })
+
+  it('未読の数', () => {
+    expect(unreadCount([])).toBe(0)
+    expect(unreadCount([notification({ read: false }), notification({ id: 2, read: true })])).toBe(
+      1,
+    )
+  })
+
+  it('日ごとにまとめる：日本時間の日付で分け、順番は API のまま（日をまたぐ UTC に注意）', () => {
+    const now = new Date('2026-10-27T03:00:00Z')
+    const groups = groupByDay(
+      [
+        // UTC では 26 日の 15:30 だが、日本時間では 27 日の 0:30（今日）
+        notification({ id: 1, created_at: '2026-10-26T15:30:00Z' }),
+        notification({ id: 2, created_at: '2026-10-26T14:00:00Z' }),
+        notification({ id: 3, created_at: '2026-10-20T00:00:00Z' }),
+      ],
+      now,
+    )
+
+    expect(groups.map((group) => [group.date, group.kind, group.items.length])).toEqual([
+      ['2026-10-27', 'today', 1],
+      ['2026-10-26', 'yesterday', 1],
+      ['2026-10-20', 'other', 1],
+    ])
+    expect(groupByDay([], now)).toEqual([])
   })
 })

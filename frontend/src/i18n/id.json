@@ -49,7 +49,6 @@
     "empty": "Belum ada pemberitahuan",
     "empty_sub": "Kami akan memberi tahu Anda jika ada kabar baru.",
     "unread": "baru",
-    "at": "{{day}}/{{month}} {{time}}",
     "kind": {
       "reply": "Balasan atas hal yang ingin Anda ketahui sudah datang",
       "daily_digest": "Buku harian hari ini sudah siap",
@@ -59,7 +58,11 @@
       "visit_cancelled": "Reservasi kunjungan dibatalkan",
       "visit_reminder": "Besok ada jadwal kunjungan",
       "announcement": "Ada pemberitahuan dari fasilitas"
-    }
+    },
+    "unread_count": "{{count}} belum dibaca",
+    "day_today": "Hari ini ({{day}}/{{month}})",
+    "day_yesterday": "Kemarin ({{day}}/{{month}})",
+    "day_other": "{{day}}/{{month}} ({{weekday}})"
   },
   "notification_settings": {
     "title": "Pengaturan pemberitahuan",

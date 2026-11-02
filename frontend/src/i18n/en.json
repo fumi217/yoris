@@ -49,7 +49,6 @@
     "empty": "There are no notices yet",
     "empty_sub": "We will let you know when there is something new.",
     "unread": "new",
-    "at": "{{month}}/{{day}} {{time}}",
     "kind": {
       "reply": "A reply to what you wanted to know has arrived",
       "daily_digest": "Today's daily notes are ready",
@@ -59,7 +58,11 @@
       "visit_cancelled": "Your visit reservation was cancelled",
       "visit_reminder": "You have a visit scheduled tomorrow",
       "announcement": "A notice from the facility has arrived"
-    }
+    },
+    "unread_count": "{{count}} unread",
+    "day_today": "Today ({{month}}/{{day}})",
+    "day_yesterday": "Yesterday ({{month}}/{{day}})",
+    "day_other": "{{month}}/{{day}} ({{weekday}})"
   },
   "notification_settings": {
     "title": "Notification settings",
