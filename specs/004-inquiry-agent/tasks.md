@@ -143,7 +143,7 @@ US1 は、001-T038（`get_disclosed_records`）と 001-T054（`get_active_replie
   - 済み（2026-10-30）：確かめた。`inquiry`（41）・`family_messages`（33）・`staff_template`（17）・`template`（26）の各グループは、ja・id・en でキーが同数で、エラーの文言（`error.ai_unavailable`・`error.inquiry_limit` など）もそろっている。訳は #314・#348 で入っており、言い方も自然（連絡帳は daily notes・buku harian でほかの画面とそろう）。今回、直した所はない
 - [x] T045 [P] ログの確かめ：本番の設定で、発言の文・答え・要約・記録の値・氏名がログに出ず、会話・発言・メッセージの id・種類・結果・ツールの回数・時間・モデル名だけが出ることをテストで確かめる（FR-029・research.md R-15）（みさき・作）
   - 済み：`service.py` に 1 回のやり取りのログ（会話・発言の id・結果・種類・ツールの回数・時間・モデル名）、`api/family/inquiry.py` に AI につながらなかった理由のログを足した。テスト：`tests/api/test_inquiry_logging.py`
-- [ ] T046 quickstart.md の確認をすべて通し、`docs/テスト設計書.md` に spec 004 の結合・総合テストのシナリオと結果を書く（みさき・作）
+- [x] T046 quickstart.md の確認をすべて通し、`docs/テスト設計書.md` に spec 004 の結合・総合テストのシナリオと結果を書く（みさき・作）。済み：2026-10-31 に、画面の目視・SC-012 の 3 タップ・10・14 の実物・決めたモデルでの評価を確かめ、すべて OK（`docs/テスト設計書.md` の「spec 004 問い合わせ AI」）
   - 進み具合（2026-10-30。すべて通すまで [x] にしない）：quickstart.md の確認を、実物の API（本物のモデル）と pytest・frontend のテストで通し、`docs/テスト設計書.md` に spec 004 の表（16 件）を書いた。未は、画面の目視・SC-012 の 3 タップ・10 と 14 の実物の確認。攻撃の例 12 件は評価済み（#105）。quickstart.md の評価の件数も、`cases.yaml` に合わせた
 - [x] T047 [P] 職員の「家族からのメッセージ」の質問の原文と AI の要約に、ふりがなの読みを自動で付ける：`backend/app/furigana.py`（pykakasi）で `{漢字|かんじ}` の形にし、一覧・詳細の API に `summary_ruby`・`origin_ruby` を足す。画面は `Ruby` で出し、「ふりがなは自動で付けています」を出す。保存する文は変えない（FR-028a・#266）（みさき・作）
 - [x] T048 [US1] お問い合わせの画面（`frontend/src/pages/family/Inquiry.tsx`）を、デザインの決めごと 13 章のとおりに作り直す：AI の発言の左にキャラクター（飾り）と「AI」の文字、あいさつ、用件の選択肢 3 つ（FR-001a。AI を呼ばない）、「アプリの案内」のカード、丸い送るボタンと文字数。「AI がお答えしています…」「AI がお答えできないときは…」は常に出す（FR-005・FR-012a）（ゆう・作。#348）
