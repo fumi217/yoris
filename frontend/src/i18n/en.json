@@ -221,7 +221,17 @@
       "settings": "Settings"
     },
     "confirm_stop": "Cancel",
-    "back_to_admin": "Back to Admin"
+    "back_to_admin": "Back to Admin",
+    "family_menu_desc": {
+      "inquiry": "Ask the AI. For some questions, the staff will answer",
+      "settings": "Notification and summary settings",
+      "notifications": "See the notices you have received"
+    },
+    "family_menu_group": {
+      "talk": "With the facility",
+      "app": "App settings"
+    },
+    "language_label": "Language"
   },
   "auth": {
     "title": "Log in",

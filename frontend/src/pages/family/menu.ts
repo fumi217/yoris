@@ -9,6 +9,8 @@ export type FamilyMenuItem = {
   labelKey: string
   // 用途の名前（components/Icon.tsx）。同じ用途には同じアイコン
   icon: IconName
+  // 「その他」の中で、名前の下に出す一言の説明（辞書のキー。#401）
+  descKey?: string
 }
 
 // 画面の下に並べる（「その他」を足して 5 つまで。これ以上増やさない。面会は spec 003 の T014、アルバムは spec 005 が中身を作る）
@@ -25,9 +27,20 @@ export const familyMoreMenu: FamilyMenuItem[] = [
     to: '/family/notifications',
     labelKey: 'layout.family_menu.notifications',
     icon: 'notifications',
+    descKey: 'layout.family_menu_desc.notifications',
   },
-  { to: '/family/inquiry', labelKey: 'layout.family_menu.inquiry', icon: 'inquiry' },
-  { to: '/family/settings', labelKey: 'layout.family_menu.settings', icon: 'settings' },
+  {
+    to: '/family/inquiry',
+    labelKey: 'layout.family_menu.inquiry',
+    icon: 'inquiry',
+    descKey: 'layout.family_menu_desc.inquiry',
+  },
+  {
+    to: '/family/settings',
+    labelKey: 'layout.family_menu.settings',
+    icon: 'settings',
+    descKey: 'layout.family_menu_desc.settings',
+  },
 ]
 
 /**

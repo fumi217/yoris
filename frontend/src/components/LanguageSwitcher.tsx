@@ -16,7 +16,7 @@ const LANGUAGE_NAMES: Record<Language, string> = {
  * 表示言語の切り替え（spec 001 の T084・FR-021）。職員の画面・管理画面の上の部分と、家族の「その他」に置く。
  * 選ぶとアカウントの言語を保存し、ログイン中の人を入れ替える（画面の言語は useUserLanguage が追いかける）。
  */
-export function LanguageSwitcher({ className }: { className?: string }) {
+export function LanguageSwitcher({ className, id }: { className?: string; id?: string }) {
   const queryClient = useQueryClient()
   const me = useMe().data
   const [errorKey, setErrorKey] = useState<string | null>(null)
@@ -37,7 +37,9 @@ export function LanguageSwitcher({ className }: { className?: string }) {
   return (
     <>
       <select
-        aria-label="Language"
+        id={id}
+        // 見出しのラベル（htmlFor）がある画面では、それを名前にする（見える文字と読み上げをそろえる。2.5.3）
+        aria-label={id ? undefined : 'Language'}
         value={me.language}
         onChange={(event) => void onChange(event.target.value)}
         className={className}
