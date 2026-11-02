@@ -165,7 +165,9 @@
       "condition": "Hal yang tidak ada di buku harian dapat ditanyakan di sini",
       "other": "Silakan tulis pertanyaan Anda di sini"
     },
-    "count": "{{count}} / 500"
+    "count": "{{count}} / 500",
+    "choices_title": "Pilih topik",
+    "placeholder": "Tulis pertanyaan Anda di sini"
   },
   "memo": {
     "title": "Catatan keadaan",

@@ -423,4 +423,95 @@ describe('並び順（PR #349 ようこさん）', () => {
     expect(choices).toBeLessThan(guide)
     expect(guide).toBeLessThan(form)
   })
+
+  it('見出しは h1。案内の帯は、薄い青（primary-soft）にアイコンつき（注意の黄色ではない。13.5）', () => {
+    const html = render()
+
+    expect(html).toMatch(/<h1 class="text-2xl[^"]*">/)
+    expect(html).toMatch(
+      /<p class="[^"]*bg-primary-soft[^"]*"[^>]*><svg[^>]*data-icon="circle-info"/,
+    )
+    expect(html).not.toContain('bg-amber-50')
+  })
+
+  it('用件のボタンに、丸いアイコンと「ご用件を選べます」の小見出しを出す。押したものは check と太字', () => {
+    const idle = render()
+    const picked = render({ choice: 'visit' })
+
+    expect(visibleText(idle)).toContain('ご用件を選べます')
+    expect(idle).toContain('data-icon="book-open"')
+    expect(idle).toContain('data-icon="calendar-days"')
+    expect(idle).toContain('data-icon="circle-question"')
+    expect(picked).toMatch(/<button[^>]*class="[^"]*bg-primary-soft[^"]*font-bold[^"]*"/)
+    expect(picked).toContain('data-icon="check"')
+  })
+
+  it('自分の発言は白い吹き出し（青の塗りにしない）で、時刻（日本時間）を添える。AI は影とキャラクターで見分ける', () => {
+    const html = render({
+      messages: [message({ created_at: '2026-10-26T03:05:00Z' }), answer({ id: 3 })],
+    })
+    const mine = html.slice(html.indexOf('<li class="ml-auto'), html.indexOf('12:05'))
+
+    // 自分の発言：白い面・薄い枠。青の塗り・白い文字は、押せるボタンと同じ見た目なので使わない
+    expect(mine).toContain('border-card-line bg-white')
+    expect(mine).not.toContain('bg-primary')
+    expect(mine).not.toContain('text-white')
+    expect(visibleText(html)).toContain('12:05')
+    // AI：キャラクター（飾り）と影
+    expect(html).toMatch(/class="[^"]*rounded-tl-sm bg-white[^"]*shadow-sm/)
+    expect(html).toMatch(/<img[^>]*alt=""/)
+  })
+
+  it('会話が短くても、入力欄が下に寄る（ページを画面の高さいっぱいの縦並びに）。いちばん下にすき間が出ない', () => {
+    const html = render()
+
+    expect(html).toMatch(
+      /<div class="[^"]*-mb-20[^"]*min-h-\[calc\(100dvh-3\.8rem\)\][^"]*flex-col/,
+    )
+    expect(html).toMatch(/<form class="[^"]*sticky[^"]*mt-auto/)
+    // 下の余白は、ゼロではなく、メニューの高さ分（入力欄の本来の位置が、メニューの真上になる。#410 ようこさん）
+    expect(html).toContain('pb-[var(--family-menu-height)]')
+    expect(html).not.toMatch(/<div class="-mb-20[^"]*\bpb-0\b/)
+  })
+
+  it('「もとにした記録」は、吹き出しの中の薄い面に出し、「AI がお答えしています」にアイコンを付ける', () => {
+    const html = render({ messages: [answer()] })
+
+    expect(html).toMatch(
+      /<div class="[^"]*rounded-xl bg-page[^"]*">\s*<p[^>]*><svg[^>]*data-icon="clipboard-list"/,
+    )
+    expect(html).toMatch(/<p class="[^"]*text-ink-sub[^"]*"><svg[^>]*data-icon="circle-info"/)
+  })
+
+  it('職員の返事は、緑の面。キャラクターは付けない（人の返事。13.2）', () => {
+    const html = render({
+      messages: [
+        message({
+          id: 5,
+          sender: 'staff',
+          body: '',
+          staff_name: '山本',
+          staff_occupation: 'occupation.counselor',
+          template_codes: ['staff_template.medical.ask_nurse'],
+          response_type: 'app',
+        }),
+      ],
+    })
+    const staff = html.slice(html.indexOf('bg-[#dcfce7]'))
+
+    expect(html).toContain('bg-[#dcfce7]')
+    expect(staff).toContain('山')
+    expect(staff.slice(0, 600)).not.toContain('<img')
+  })
+
+  it('入力欄は、下のメニューのすぐ上に固定する。ラベルの右に文字数、例の文、送れないときは薄い青のボタン', () => {
+    const html = render()
+
+    expect(html).toMatch(/<form class="[^"]*sticky bottom-\[var\(--family-menu-height\)\]/)
+    expect(html).toContain('placeholder="ここに質問を書いてください"')
+    expect(visibleText(html)).toContain('0 / 500')
+    expect(html).toMatch(
+      /<button[^>]*type="submit"[^>]*disabled=""[^>]*class="[^"]*disabled:bg-primary-soft/,
+    )
+  })
 })

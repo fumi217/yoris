@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Icon } from '../../components/Icon'
+import { Icon, type IconName } from '../../components/Icon'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
@@ -26,6 +26,7 @@ import {
   type SendResult,
 } from './inquiryView'
 import { markSentOnce } from './contactBookView'
+import { sentAtParts } from './requestsView'
 import { useOnVisible } from './useOnVisible'
 
 const MESSAGES_KEY = ['family-inquiry-messages'] as const
@@ -159,12 +160,17 @@ export function InquiryView({
   }, [choice]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <h2 className="text-lg font-bold">
+    // 会話が短いときも、入力欄が下に寄るよう、ページを画面の高さいっぱいの縦並びにする（上の枠の高さ 3.8rem を引く）。
+    // 下の余白（main の pb-20）を打ち消し、代わりに下のメニューの高さ分の余白を取る。入力欄の本来の位置が、メニューの
+    // すぐ上になるので、いちばん下までスクロールしても、入力欄が押し上げられて、最後の内容に重なることがない
+    // （余白がゼロだと、本来の位置が画面の下端で、メニューが重なって、入力欄が約 53px 上に押し上げられる。PR #410 ようこさん）
+    <div className="-mb-20 flex min-h-[calc(100dvh-3.8rem)] flex-col gap-4 p-4 pb-[var(--family-menu-height)]">
+      <h1 className="text-2xl font-bold">
         <Text k="inquiry.title" />
-      </h2>
-      {/* AI がお答えできないときは職員に伝えることを、常に出す（FR-012a） */}
-      <p className="rounded-lg bg-amber-50 p-3 text-sm">
+      </h1>
+      {/* AI がお答えできないときは職員に伝えることを、常に出す（FR-012a）。注意ではなく案内なので、薄い青の帯（13.5） */}
+      <p className="flex items-start gap-2 rounded-xl bg-primary-soft p-3 text-sm">
+        <Icon name="info" className="mt-0.5 shrink-0 text-primary" />
         <Text k="inquiry.handoff_notice" />
       </p>
 
@@ -194,7 +200,13 @@ export function InquiryView({
         {sending !== null && (
           <>
             <FamilyBubble body={sending} />
-            <li className="text-sm text-gray-600">
+            <li className="ml-12 flex items-center gap-2 text-sm text-ink-sub">
+              {/* 点が並ぶ印（動かさない）。意味は文字で伝える */}
+              <span aria-hidden="true" className="flex gap-1">
+                <span className="size-1.5 rounded-full bg-primary/50" />
+                <span className="size-1.5 rounded-full bg-primary/75" />
+                <span className="size-1.5 rounded-full bg-primary" />
+              </span>
               <Text k="inquiry.thinking" />
             </li>
           </>
@@ -203,6 +215,9 @@ export function InquiryView({
 
       {/* 用件の選択肢（FR-001a）。入力欄のすぐ上に置く。押しても AI を呼ばない。
           縦に並べると高さをとり、最新の答えが押し上げられるので、横に並べて折り返す */}
+      <p className="-mb-2 ml-1 text-sm font-bold text-ink-sub">
+        <Text k="inquiry.choices_title" />
+      </p>
       <div
         role="group"
         aria-label={stripRuby(t('inquiry.choices_label'))}
@@ -213,12 +228,21 @@ export function InquiryView({
             key={value}
             type="button"
             onClick={() => onChoose(value)}
-            className={`min-h-11 rounded-full border-2 bg-white px-4 py-2 text-left ${
-              choice === value ? 'border-primary font-bold' : 'border-field-line'
+            className={`flex min-h-11 items-center gap-2 rounded-full border py-1.5 pr-4 pl-2 text-left shadow-sm ${
+              choice === value
+                ? 'border-primary bg-primary-soft font-bold'
+                : 'border-card-line bg-white'
             }`}
           >
-            {choice === value && <Icon name="check" className="mr-1" />}
-            <Text k={`inquiry.choice.${value}`} />
+            <span
+              aria-hidden="true"
+              className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary"
+            >
+              <Icon name={choice === value ? 'check' : CHOICE_ICON[value]} className="text-sm" />
+            </span>
+            <span>
+              <Text k={`inquiry.choice.${value}`} />
+            </span>
           </button>
         ))}
       </div>
@@ -252,11 +276,20 @@ export function InquiryView({
           event.preventDefault()
           if (canSend) onSend()
         }}
-        className="flex flex-col gap-2"
+        // 入力欄は、下のメニューのすぐ上に固定する（長い会話でも、すぐ書ける。13.5）
+        className="sticky bottom-[var(--family-menu-height)] z-10 -mx-4 mt-auto flex flex-col gap-2 border-t border-card-line bg-card px-4 pt-3 pb-3"
       >
-        <label htmlFor="inquiry-body" className="text-sm font-bold">
-          <Text k="inquiry.input_label" />
-        </label>
+        <div className="flex items-baseline justify-between gap-3">
+          <label htmlFor="inquiry-body" className="text-sm font-bold">
+            <Text k="inquiry.input_label" />
+          </label>
+          <p
+            id="inquiry-count"
+            className={`text-sm tabular-nums ${tooLong ? 'font-bold text-red-700' : 'text-ink-sub'}`}
+          >
+            {t('inquiry.count', { count: length })}
+          </p>
+        </div>
         {guide?.inputHintKey && (
           <p id="inquiry-hint" className="text-sm">
             <Text k={guide.inputHintKey} />
@@ -268,28 +301,23 @@ export function InquiryView({
             id="inquiry-body"
             value={draft}
             onChange={(event) => onDraftChange(event.target.value)}
-            rows={3}
+            rows={2}
+            placeholder={stripRuby(t('inquiry.placeholder'))}
             aria-invalid={tooLong}
             aria-describedby={`inquiry-count${guide?.inputHintKey ? ' inquiry-hint' : ''}`}
-            className="min-w-0 flex-1 rounded-2xl border-2 border-field-line bg-white p-3"
+            className="min-w-0 flex-1 rounded-2xl border border-field-line bg-white p-3"
           />
           {/* 丸い送るボタン。絵だけにせず、読み上げの名前「送る」を付ける（2.5.3・4.1.2。13.3） */}
           <button
             type="submit"
             disabled={!canSend}
             aria-label={stripRuby(t('inquiry.send'))}
-            className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-xl text-white disabled:opacity-60"
+            className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-xl text-white shadow-md disabled:bg-primary-soft disabled:text-ink-sub disabled:shadow-none"
           >
             {/* 紙飛行機は左右が非対称で、真ん中に置くと、目には中央に見えない。1px 左下にずらす（PR #390 ようこさん） */}
             <Icon name="send" className="-translate-x-px translate-y-px" />
           </button>
         </div>
-        <p
-          id="inquiry-count"
-          className={`text-right text-sm ${tooLong ? 'font-bold text-red-700' : 'text-ink-sub'}`}
-        >
-          {t('inquiry.count', { count: length })}
-        </p>
         {tooLong && (
           <p className="text-sm text-red-700">
             <Text k="inquiry.too_long" />
@@ -301,9 +329,17 @@ export function InquiryView({
           </p>
         )}
       </form>
-      <div ref={endRef} className="scroll-mb-24" />
+      {/* 会話のいちばん下の目印（高さ 0）。縦並びの gap の分（16px）が、入力欄の下に残らないよう、上に詰める */}
+      <div ref={endRef} className="-mt-4 scroll-mb-44" />
     </div>
   )
+}
+
+// 用件の選択肢ごとのアイコン（13.5）。様子＝連絡帳・面会＝面会予約・その他＝知りたいことと同じ
+const CHOICE_ICON: Record<(typeof CHOICES)[number], IconName> = {
+  condition: 'contact-book',
+  visit: 'visits',
+  other: 'requests',
 }
 
 /** AI を表すキャラクター（ふつうの顔）。飾りなので読み上げない（alt=""。だれの発言かは「AI」の文字で示す）。 */
@@ -322,19 +358,29 @@ function MessageItem({
   message: InquiryMessage
   onStaffReplySeen?: (messageId: number) => void
 }) {
-  if (message.sender === 'family') return <FamilyBubble body={message.body} />
+  if (message.sender === 'family')
+    return <FamilyBubble body={message.body} createdAt={message.created_at} />
   if (message.sender === 'staff') return <StaffBubble message={message} onSeen={onStaffReplySeen} />
   return <AiBubble message={message} />
 }
 
-function FamilyBubble({ body }: { body: string }) {
+function FamilyBubble({ body, createdAt }: { body: string; createdAt?: string }) {
   return (
-    <li className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm border border-card-line bg-primary-soft p-3">
-      <p className="text-xs font-bold text-ink-sub">
-        <Text k="inquiry.sender_family" />
-      </p>
-      {/* 家族が書いた文は、辞書を通さず文字としてだけ出す（FR-028） */}
-      <p className="whitespace-pre-wrap">{body}</p>
+    <li className="ml-auto max-w-[85%]">
+      {/* 自分の発言は、白い吹き出し（右寄せ・薄い枠）。青の塗りは、押せるボタンに見えるので使わない（13.5）。
+          AI は、キャラクターと「YORIS（AI）」の文字と影で見分ける */}
+      <div className="rounded-2xl rounded-tr-sm border border-card-line bg-white p-3">
+        <p className="text-xs font-bold text-ink-sub">
+          <Text k="inquiry.sender_family" />
+        </p>
+        {/* 家族が書いた文は、辞書を通さず文字としてだけ出す（FR-028） */}
+        <p className="whitespace-pre-wrap">{body}</p>
+      </div>
+      {createdAt && (
+        <p className="mt-0.5 text-right text-xs text-ink-sub tabular-nums">
+          {sentAtParts(createdAt).time}
+        </p>
+      )}
     </li>
   )
 }
@@ -363,8 +409,9 @@ function AiBubble({ message }: { message: InquiryMessage }) {
           </p>
         )}
         {message.sources.length > 0 && (
-          <div className="mt-2 text-sm text-gray-700">
-            <p className="font-bold">
+          <div className="mt-2 rounded-xl bg-page p-2 text-sm">
+            <p className="flex items-center gap-1.5 text-xs font-bold text-ink-sub">
+              <Icon name="empty-record" />
               <Text k="inquiry.source_records" />
             </p>
             <ul>
@@ -375,7 +422,8 @@ function AiBubble({ message }: { message: InquiryMessage }) {
           </div>
         )}
         {/* AI の答えであることを、答えのそばに常に出す（FR-005） */}
-        <p className="mt-2 text-xs text-gray-600">
+        <p className="mt-2 flex items-center gap-1.5 text-xs text-ink-sub">
+          <Icon name="info" className="shrink-0" />
           <Text k="inquiry.ai_notice" />
         </p>
       </div>
@@ -418,9 +466,10 @@ function StaffBubble({
   const [before, after = ''] = t('inquiry.reply_from', { name: NAME_SLOT }).split(NAME_SLOT)
   return (
     // 職員の返事には、キャラクターを付けない（人の返事。13.2）
-    <li ref={ref} className="mr-8 rounded-2xl border-2 border-emerald-300 bg-emerald-50 p-3">
+    <li ref={ref} className="ml-12 rounded-2xl border border-[#86d3a0] bg-[#dcfce7] p-3 text-ink">
       {/* 職員の返事は「◯◯からの返事」と、AI の答えと区別して出す（FR-005） */}
-      <p className="text-xs text-gray-600">
+      <p className="flex flex-wrap items-center gap-x-1 text-xs font-bold text-[#166534]">
+        <Icon name="family-message" className="mr-1 shrink-0" />
         <Ruby text={before} />
         {message.staff_name}
         {/* 職種は辞書で引く（「山本（生活相談員）からの返事」。空なら名前だけ。#263） */}

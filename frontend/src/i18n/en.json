@@ -165,7 +165,9 @@
       "condition": "For anything not in the daily notes, you can ask here",
       "other": "Please write your question here"
     },
-    "count": "{{count}} / 500"
+    "count": "{{count}} / 500",
+    "choices_title": "Choose a topic",
+    "placeholder": "Write your question here"
   },
   "memo": {
     "title": "Observation memo",
