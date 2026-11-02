@@ -7,6 +7,10 @@
   その種類の定型文（FR-011・FR-012）
 - `POST /api/staff/messages/{id}/assign`：「自分が対応する」（004-T026。409 already_assigned）
 - `POST /api/staff/messages/{id}/reply`：アプリで返事（004-T027。409 already_answered）
+- `POST /api/staff/messages/{id}/phone`：電話で対応した（004-T032。お知らせ・メールは作らない）
+- `DELETE /api/staff/messages/{id}/assign`・`PUT .../assignee`：担当を外す・変える（004-T033。
+  対応待ちのときだけ）
+- `PATCH /api/staff/messages/{id}/category`：種類の付け替え（004-T033。FR-015）
 
 どれも visible_staff_messages(user) を通す。苦情は生活相談員・施設長だけに出し、
 ほかの役割が id で開いたら 404（research.md R-12）。家族が呼んだら 403。
@@ -28,7 +32,15 @@ from app.auth.deps import CurrentUser, require_staff
 from app.db import get_session
 from app.errors import AppError, ErrorCode
 from app.furigana import add_furigana
-from app.inquiry.staff_actions import StaffMessageError, assign_to_me, reply_in_app
+from app.inquiry.staff_actions import (
+    StaffMessageError,
+    assign_to_me,
+    change_assignee,
+    change_category,
+    phone_in_app,
+    reply_in_app,
+    unassign,
+)
 from app.inquiry.visibility import (
     count_waiting_staff_messages,
     visible_conversation_messages,
@@ -327,6 +339,81 @@ def assign(
     except StaffMessageError as error:
         raise AppError(ErrorCode(error.code)) from error
     session.commit()
+
+
+class AssigneeBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    staff_id: int
+
+
+class CategoryBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    category: Literal["medical", "complaint", "money", "care_request", "urgent", "other"]
+
+
+@router.delete("/messages/{message_id}/assign", status_code=204)
+def unassign_message(
+    message_id: int,
+    user: Annotated[CurrentUser, Depends(STAFF)],
+    session: Annotated[Session, Depends(get_session)],
+) -> None:
+    """担当を外す。対応待ちのときだけ（対応済みは 409 `already_answered`）。もう空なら 204。"""
+    try:
+        unassign(session, user, message_id)
+    except StaffMessageError as error:
+        raise AppError(ErrorCode(error.code)) from error
+    session.commit()
+
+
+@router.put("/messages/{message_id}/assignee", status_code=204)
+def change_message_assignee(
+    message_id: int,
+    body: AssigneeBody,
+    user: Annotated[CurrentUser, Depends(STAFF)],
+    session: Annotated[Session, Depends(get_session)],
+) -> None:
+    """担当をほかの職員に変える。対応待ちのときだけ。同じ施設の職員だけ（苦情は生活相談員・施設長）。"""
+    try:
+        change_assignee(session, user, message_id, body.staff_id)
+    except StaffMessageError as error:
+        raise AppError(ErrorCode(error.code)) from error
+    session.commit()
+
+
+@router.patch("/messages/{message_id}/category", status_code=204)
+def change_message_category(
+    message_id: int,
+    body: CategoryBody,
+    user: Annotated[CurrentUser, Depends(STAFF)],
+    session: Annotated[Session, Depends(get_session)],
+) -> None:
+    """質問の種類を付け替える。「苦情」にすると、その時点から生活相談員・施設長だけが見られる。"""
+    try:
+        change_category(session, user, message_id, body.category)
+    except StaffMessageError as error:
+        raise AppError(ErrorCode(error.code)) from error
+    session.commit()
+
+
+@router.post("/messages/{message_id}/phone", status_code=201)
+def phone(
+    message_id: int,
+    user: Annotated[CurrentUser, Depends(STAFF)],
+    session: Annotated[Session, Depends(get_session)],
+) -> ReplyOut:
+    """「電話で対応した」。対応済みにして、家族の会話に電話で対応したことを足す。
+
+    家族へのお知らせ・メールは作らない（電話で伝わっている。FR-014）。
+    後の人は 409 `already_answered`。
+    """
+    try:
+        saved = phone_in_app(session, user, message_id)
+    except StaffMessageError as error:
+        raise AppError(ErrorCode(error.code)) from error
+    session.commit()
+    return ReplyOut(id=saved.id, staff_message_id=message_id, status="answered")
 
 
 @router.post("/messages/{message_id}/reply", status_code=201)

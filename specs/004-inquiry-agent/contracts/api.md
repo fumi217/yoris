@@ -53,7 +53,7 @@
 | `GET /api/staff/messages/{id}` | S（苦情は CO・D） | ミ | 詳細：一覧の 1 件の項目（入居者の名前・家族の続柄を含む）・原文（`origin`。読みを付けた `origin_ruby` も返す）・要約（`summary`・`summary_ruby`）・種類・担当・状態・直前の 3 往復・追加された家族の書き込み・その種類の定型文の一覧。見られなければ 404。`*_ruby` は表示用で、`{漢字\|かんじ}` の書き方。保存している原文・要約は変えない | FR-011・FR-012・FR-028a |
 | `POST /api/staff/messages/{id}/assign` | S（苦情は CO・D） | ミ | 「自分が対応する」。409：`already_assigned` | FR-012b |
 | `DELETE /api/staff/messages/{id}/assign` | S（苦情は CO・D） | 作 | 担当を外す | FR-012b |
-| `PUT /api/staff/messages/{id}/assignee` | S（苦情は CO・D） | 作 | 担当をほかの職員に変える（`staff_id`） | FR-012b |
+| `PUT /api/staff/messages/{id}/assignee` | S（苦情は CO・D） | 作 | 担当をほかの職員に変える（`staff_id`）。対応待ちのときだけ。同じ施設の職員だけ（苦情は生活相談員・施設長だけ） | FR-012b |
 | `PATCH /api/staff/messages/{id}/category` | S（苦情から変えるのは CO・D だけ） | 作 | 種類を付け替える（`category`） | FR-015 |
 | `POST /api/staff/messages/{id}/reply` | S（苦情は CO・D） | ミ | アプリで返事（`template_ids`：1 つ以上、`note`：100 文字まで・任意）。家族の会話に返事を足し、家族へのお知らせとメールを作り、対応済みにする。409：`already_answered` | FR-014・FR-017 |
 | `POST /api/staff/messages/{id}/phone` | S（苦情は CO・D） | 作 | 電話で対応した。家族の会話に「施設の職員がお電話で対応しました」を足し、対応済みにする（お知らせ・メールは送らない）。409：`already_answered` | FR-014 |
@@ -66,6 +66,13 @@
   - 返した職員が担当になる。担当が空だったときは `assigned`、ほかの職員が担当だったときは `reassigned`（前の担当 → 返した職員）を履歴に残し、そのあと `answered` を残す。もう自分が担当なら `answered` だけ
   - 家族の会話に、職員の発言（`sender = staff`、`body` は空、定型文・書き足し・返した職員）を足し、家族へのお知らせとメールの送る予定を同じトランザクションで作る。メールは commit のあとにその場で送る（送れなくても送る予定が残る。R-09）
   - どちらも、職員への通知・音は出さない（SC-008）
+- **phone**（201。本文なし）：返す値は reply と同じ `{id, staff_message_id, status}`。対応済みにして、返した職員を担当にし（履歴の残し方は reply と同じ：`assigned`／`reassigned` → `answered`）、家族の会話に職員の発言（`response_type = phone`、`body`・定型文・書き足しは空）を足す。**家族へのお知らせ・メールは作らない**（電話で伝わっているため）。苦情にも使える（生活相談員・施設長）。後の人は 409 `already_answered`。
+- **担当を外す・変える**（どちらも 204）：**対応待ちのときだけ**。対応済みは 409 `already_answered`（対応した職員が担当のまま残る。担当が空のまま対応済みにならない）。
+  - `DELETE …/assign`：担当を外す。もう空なら 204（履歴は足さない）。`unassigned`（外した人・前の担当）を残す。
+  - `PUT …/assignee`（本文は `{ "staff_id": 数 }` だけ。余分な項目は 422）：同じ施設の職員にだけ変えられる（いない・ほかの施設は 422 `validation_error`）。**苦情は、苦情を読める生活相談員・施設長にだけ**渡せる（ほかの役割は 422。担当になると、自分の担当のメッセージを開けなくなるため）。もう同じ担当なら 204（履歴は足さない）。`assigned`（担当が空だったとき）か `reassigned`（前の担当 → 新しい担当）を残し、`staff_id` には変えた人を入れる。
+- **category**（`PATCH`・204。本文は `{ "category": … }` だけ）：種類は `medical`・`complaint`・`money`・`care_request`・`urgent`・`other`（違う値は 422）。`category_changed`（付け替えた人・前の種類・新しい種類）を残す。もう同じ種類なら 204（履歴は足さない）。
+  - 「苦情」に付け替えると、その時点から生活相談員・施設長だけが見られる（付け替えた本人にも、役割によっては見えなくなる）。そのとき、対応待ちで、担当が苦情を読めない役割なら、担当を外す（`unassigned` を続けて残す）。
+  - 「苦情」から別の種類に付け替えられるのは、生活相談員・施設長だけ（ほかの役割には苦情は最初から見えないので、404）。付け替えたあとは、ほかの役割にも見える。
 
 ## メール（spec 001 の仕組みに足すもの）
 
