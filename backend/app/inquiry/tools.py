@@ -90,7 +90,10 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
                 "properties": {
                     "text": {
                         "type": "string",
-                        "description": "家族の表示言語で。やさしい日本語。500 文字まで",
+                        "description": (
+                            "家族の表示言語で。やさしい日本語。「〜ですね」のような"
+                            "やわらかい言い方。500 文字まで"
+                        ),
                     },
                     "source_ids": {"type": "array", "items": {"type": "string"}},
                 },

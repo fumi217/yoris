@@ -99,6 +99,29 @@ def test_system_prompt_without_today_has_no_date_section():
     assert "## 今日の日付" not in build_system_prompt("ja")
 
 
+@pytest.mark.parametrize("language", ["ja", "id", "en"])
+def test_system_prompt_asks_for_a_soft_tone_without_adding_content(language):
+    prompt = build_system_prompt(language)
+
+    # 文末をやわらかくする（FR-007）。ただし、記録にない感想・評価は足さない（原則 III）
+    assert "## 答えの言い方（FR-007）" in prompt
+    assert "召し上がったようですね" in prompt
+    assert "事務的な言い切りにしません" in prompt
+    assert "文の終わりの言い方だけ" in prompt
+    assert "感想・評価・安心させる言葉" in prompt
+    assert "体調の良し悪しを言う言葉は、足しません" in prompt
+    # 評価で、「笑顔が多い」の記録を「楽しそう」と言い換えた答えが出た
+    assert "別の言葉に言い換えて気持ちや様子を足しません" in prompt
+    assert "「ぐっすり」「しっかり」「ゆっくり」" in prompt
+    # AI は、あとから家族に連絡できない。できない約束・謝り・助言を、答えの最後に付けない
+    assert "答えの最後に、記録にないひとことを付けません" in prompt
+    assert "あとで知らせる約束" in prompt
+    assert "謝り" in prompt
+    assert "助言・お願い" in prompt
+    assert "ぐっすり眠れていました" not in prompt
+    assert "「〜の記録は、まだありません。」で答えを終えます" in prompt
+
+
 @pytest.mark.parametrize(("language", "name"), [("id", "インドネシア語"), ("en", "英語")])
 def test_system_prompt_answers_in_family_language(language, name):
     assert f"答えは{name}で" in build_system_prompt(language)
