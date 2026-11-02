@@ -30,3 +30,41 @@ export function prefersReducedMotion(): boolean {
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
   )
 }
+
+/** 吹き出しの文（辞書のキー。出すたびに、どれかを選ぶ。デザインの決めごと 12.4 の「押せると分かるようにする」。#405） */
+export const BUBBLE_KEYS = [
+  'layout.mascot_bubble_1',
+  'layout.mascot_bubble_2',
+  'layout.mascot_bubble_3',
+] as const
+
+/** 画面を開いてから吹き出しを出すまで（0.8 秒）と、出している時間（5 秒。2.2.2） */
+export const BUBBLE_DELAY_MS = 800
+export const BUBBLE_SHOW_MS = 5000
+
+// 同じブラウザのタブで 1 回だけ出す、の印の名前
+const SEEN_KEY = 'yoris-mascot-bubble-seen'
+
+/** 吹き出しの文を選ぶ（random は 0 以上 1 未満。テストでは決めた値を渡す）。 */
+export function pickBubbleKey(random: number = Math.random()): (typeof BUBBLE_KEYS)[number] {
+  const index = Math.min(BUBBLE_KEYS.length - 1, Math.floor(random * BUBBLE_KEYS.length))
+  return BUBBLE_KEYS[index]
+}
+
+/** このタブで、もう吹き出しを出したか。sessionStorage が使えないときは、出していない扱い（出す）。 */
+export function hasSeenBubble(): boolean {
+  try {
+    return window.sessionStorage.getItem(SEEN_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+/** 吹き出しを出したことを覚える（使えないときは、何もしない）。 */
+export function markBubbleSeen(): void {
+  try {
+    window.sessionStorage.setItem(SEEN_KEY, '1')
+  } catch {
+    // 使えないときは、覚えられない（また出てもよい）
+  }
+}

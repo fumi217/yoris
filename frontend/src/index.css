@@ -86,6 +86,30 @@ body {
 }
 
 /*
+ * ヨリィくんの吹き出し（デザインの決めごと 12.4。#405）：ふわっと出て、5 秒のあいだ出て、消える。
+ * 「動きを減らす」設定のときは、動かさない（出して、JS が 5 秒で消す）。
+ */
+@keyframes mascot-bubble {
+  0% {
+    opacity: 0;
+    transform: translateX(6px);
+  }
+  8%,
+  88% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mascot-bubble {
+    animation: mascot-bubble 5s ease-out 1 both;
+  }
+}
+
+/*
  * キャラクターがあるページは、フォーカスした部品が、キャラクターとメニューの後ろに隠れないようにする（2.4.11）。
  * メニューの高さ（測った値）＋ キャラクター（約 61px）＋ 余白。文字を大きくしてメニューが高くなっても足りるように
  */

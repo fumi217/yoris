@@ -233,7 +233,10 @@
       "talk": "Dengan fasilitas",
       "app": "Pengaturan aplikasi"
     },
-    "language_label": "Bahasa"
+    "language_label": "Bahasa",
+    "mascot_bubble_1": "Mau bertanya?",
+    "mascot_bubble_2": "Ada yang ingin diketahui?",
+    "mascot_bubble_3": "Tanyakan apa saja yang Anda pikirkan"
   },
   "auth": {
     "title": "Masuk",

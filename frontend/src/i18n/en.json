@@ -233,7 +233,10 @@
       "talk": "With the facility",
       "app": "App settings"
     },
-    "language_label": "Language"
+    "language_label": "Language",
+    "mascot_bubble_1": "Would you like to ask?",
+    "mascot_bubble_2": "Anything you'd like to know?",
+    "mascot_bubble_3": "Ask about anything on your mind"
   },
   "auth": {
     "title": "Log in",

@@ -11,14 +11,27 @@ import { Link, useNavigate } from 'react-router'
 import happyFace from '../../assets/brand/mascot-happy.png'
 import normalFace from '../../assets/brand/mascot-normal.png'
 import { stripRuby } from '../../i18n/rubyText'
-import { GO_DELAY_MS, INQUIRY_PATH, isPlainClick, prefersReducedMotion } from './mascotLogic'
+import { Text } from '../../components/Text'
+import {
+  BUBBLE_DELAY_MS,
+  BUBBLE_SHOW_MS,
+  GO_DELAY_MS,
+  hasSeenBubble,
+  INQUIRY_PATH,
+  isPlainClick,
+  markBubbleSeen,
+  pickBubbleKey,
+  prefersReducedMotion,
+} from './mascotLogic'
 
 // 余白を切り取った画像の大きさ（2 枚とも同じ枠で切り取ってある。12.1）。
 // width・height を書くのは、読み込み中に表示がずれないようにするため
 const WIDTH = 308
 const HEIGHT = 263
 
-const faceClass = 'col-start-1 row-start-1 h-auto w-full drop-shadow-md'
+// 影は濃く大きく：背景に溶けず、押せるものとして目立つように（12.4。#405）
+const faceClass =
+  'col-start-1 row-start-1 h-auto w-full drop-shadow-[0_4px_8px_rgba(15,31,61,0.45)]'
 
 /**
  * YORIS のキャラクター。家族のホーム（連絡帳）の右下に置き、押すとお問い合わせへ進む
@@ -30,11 +43,27 @@ const faceClass = 'col-start-1 row-start-1 h-auto w-full drop-shadow-md'
  * - 幅 320px 以下・高さが低いときは、固定をやめて、ページの末尾に置く（index.css・本文に重ならないように）
  * - 移る処理を呼んだら、ふつうの顔・押せる状態に戻す（移った直後に「戻る」で戻っても、押せるように。下の go）
  */
-export function Mascot() {
+export function Mascot({ initialBubbleKey = null }: { initialBubbleKey?: string | null }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [happy, setHappy] = useState(false)
   const timer = useRef<number | null>(null)
+  // 最初の数秒だけ出す吹き出しの文（辞書のキー）。null は出さない。initialBubbleKey はテスト用
+  const [bubbleKey, setBubbleKey] = useState<string | null>(initialBubbleKey)
+
+  useEffect(() => {
+    if (initialBubbleKey !== null || hasSeenBubble()) return
+    let hide: number | undefined
+    const show = window.setTimeout(() => {
+      markBubbleSeen()
+      setBubbleKey(pickBubbleKey())
+      hide = window.setTimeout(() => setBubbleKey(null), BUBBLE_SHOW_MS)
+    }, BUBBLE_DELAY_MS)
+    return () => {
+      window.clearTimeout(show)
+      window.clearTimeout(hide)
+    }
+  }, [initialBubbleKey])
 
   useEffect(
     () => () => {
@@ -60,6 +89,8 @@ export function Mascot() {
     // 続けて押しても、移るのは 1 回だけ
     if (timer.current !== null) return
     setHappy(true)
+    // 押したら、吹き出しはすぐ消す
+    setBubbleKey(null)
     timer.current = window.setTimeout(go, GO_DELAY_MS)
   }
   // リンクは Enter では押せるが、Space では押せない。ボタンと同じく、Space でも押せるようにする（12.4）
@@ -74,6 +105,7 @@ export function Mascot() {
       data-mascot
       className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--family-menu-height)+1rem)] mx-auto flex max-w-xl justify-end px-4 [@media(max-width:320px)]:static [@media(max-width:320px)]:mt-4 [@media(max-height:400px)]:static [@media(max-height:400px)]:mt-4"
     >
+      {bubbleKey && <Bubble textKey={bubbleKey} />}
       <Link
         to={INQUIRY_PATH}
         aria-label={stripRuby(t('layout.mascot_link'))}
@@ -98,6 +130,23 @@ export function Mascot() {
           />
         </span>
       </Link>
+    </div>
+  )
+}
+
+/**
+ * ヨリィくんの左の吹き出し（飾り。読み上げない。押せない）。しっぽは、ヨリィくんのほう（右）。
+ * 5 秒で消える。ふわっと出る動きは index.css の mascot-bubble（動きを減らす設定のときは動かさない）。
+ */
+function Bubble({ textKey }: { textKey: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      data-mascot-bubble
+      className="mascot-bubble relative mr-3 self-center rounded-2xl border border-card-line bg-white px-3 py-2 text-sm font-bold text-ink shadow-lg"
+    >
+      <Text k={textKey} />
+      <span className="absolute top-1/2 -right-1.5 size-3 -translate-y-1/2 rotate-45 border-t border-r border-card-line bg-white" />
     </div>
   )
 }
