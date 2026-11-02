@@ -182,7 +182,7 @@ export function SignupForm({ plan, canceled, submitting, errorKey, onSubmit }: F
           </p>
           <p className="mt-3 rounded-lg border border-card-line bg-card p-3">
             {plan.plan_name}{' '}
-            <span className="font-bold">{plan.amount_jpy.toLocaleString('ja-JP')}</span>{' '}
+            <span className="font-bold">{plan.amount_jpy.toLocaleString('ja-JP')}</span>
             <Text k="signup.per_month" />
           </p>
         </div>

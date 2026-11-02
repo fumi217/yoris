@@ -33,7 +33,7 @@ def test_director_and_clerk_can_see(client, make_staff, login_as, subscription, 
     assert response.status_code == 200
     assert response.json() == {
         "status": "active",
-        "plan_name": "月額プラン",
+        "plan_name": "システム利用料",
         "amount_jpy": 10000,
         "current_period_end": None,
         "cancel_at": None,

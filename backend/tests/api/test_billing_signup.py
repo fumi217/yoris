@@ -40,7 +40,7 @@ def test_get_returns_plan(client):
     response = client.get("/api/billing/signup")
 
     assert response.status_code == 200
-    assert response.json() == {"plan_name": "月額プラン", "amount_jpy": 10000}
+    assert response.json() == {"plan_name": "システム利用料", "amount_jpy": 10000}
 
 
 def test_post_creates_application_and_returns_checkout_url(client, session, fake_stripe):

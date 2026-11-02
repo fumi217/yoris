@@ -9,7 +9,7 @@ import { SignupForm } from './Signup'
 const textOf = (html: string) =>
   html.replace(/<rt>.*?<\/rt>|<rp>.*?<\/rp>/g, '').replace(/<[^>]*>/g, '')
 
-const plan = { plan_name: '月額プラン', amount_jpy: 10000 }
+const plan = { plan_name: 'システム利用料', amount_jpy: 10000 }
 
 const renderForm = (props: Partial<Parameters<typeof SignupForm>[0]> = {}) =>
   renderToStaticMarkup(
@@ -34,7 +34,7 @@ describe('SignupForm', () => {
   it('プラン名・月額と、5 つの入力欄を出す', () => {
     const html = renderForm()
 
-    expect(html).toContain('月額プラン')
+    expect(html).toContain('システム利用料')
     expect(html).toContain('10,000')
     for (const name of ['facility_name', 'director_name', 'email', 'email_confirm', 'password']) {
       expect(html).toContain(`name="${name}"`)

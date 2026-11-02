@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import '../../i18n'
+import i18n from '../../i18n'
 import { adminMenuFor } from './adminMenu'
 import { BillingView, type BillingInfo } from './Billing'
 
@@ -10,7 +10,7 @@ const textOf = (html: string) =>
 
 const billing: BillingInfo = {
   status: 'active',
-  plan_name: '月額プラン',
+  plan_name: 'システム利用料',
   amount_jpy: 10000,
   current_period_end: '2026-11-26T00:00:00Z',
   cancel_at: null,
@@ -35,9 +35,22 @@ describe('BillingView', () => {
     const html = render()
 
     expect(html).toContain('契約中')
-    expect(html).toContain('月額プラン')
-    expect(html).toContain('10,000')
+    // 項目名が「システム利用料」なので、値には、プラン名をくり返さない
+    expect(html.match(/システム利用料/g)).toHaveLength(1)
+    expect(html).toContain('10,000円／月（税込）')
     expect(html).toContain('次の請求日')
+  })
+
+  it('日本語は金額と単位を詰め、英語・インドネシア語は空白を空ける', async () => {
+    expect(render()).toContain('10,000円／月（税込）')
+    try {
+      await i18n.changeLanguage('en')
+      expect(render()).toContain('10,000 yen / month (tax included)')
+      await i18n.changeLanguage('id')
+      expect(render()).toContain('10,000 yen / bulan (termasuk pajak)')
+    } finally {
+      await i18n.changeLanguage('ja')
+    }
   })
 
   it('状態ごとの文言を出す', () => {

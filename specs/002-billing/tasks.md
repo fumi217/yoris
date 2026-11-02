@@ -25,9 +25,9 @@ spec 001 のタスクは「001-T009」のように書く（[spec 001 の tasks.m
 **Purpose**: Stripe のライブラリ・鍵の置き場所・Webhook を手元で受ける仕組みを用意する
 
 - [X] T001 `stripe==16.0.0` を `backend/requirements.txt` に足し、`docs/技術選定.md` の 7 章の表に「Stripe の公式 Python ライブラリ。Python 3.13 で入り、既知の脆弱性がないことを確かめた」と理由を足す（research.md R-01）（ミ）
-- [X] T002 [P] `env.example` に `STRIPE_SECRET_KEY`・`STRIPE_WEBHOOK_SECRET` を足し（値は書かない）、`backend/app/config.py` の `Settings` に同じ 2 つと、定数 `PLAN_NAME`（「月額プラン」）・`PLAN_AMOUNT_JPY`（`10000`）・`PLAN_LOOKUP_KEY`（`monthly_standard`）を足す（FR-022、R-01）（ミ）
+- [X] T002 [P] `env.example` に `STRIPE_SECRET_KEY`・`STRIPE_WEBHOOK_SECRET` を足し（値は書かない）、`backend/app/config.py` の `Settings` に同じ 2 つと、定数 `PLAN_NAME`（「システム利用料」）・`PLAN_AMOUNT_JPY`（`10000`）・`PLAN_LOOKUP_KEY`（`monthly_standard`）を足す（FR-022、R-01）（ミ）
 - [X] T003 [P] `docker-compose.yml` に Stripe CLI のサービス `stripe`（イメージ `stripe/stripe-cli`、`profiles: [stripe]`、`command: listen --events checkout.session.completed,checkout.session.expired,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,invoice.payment_failed,invoice.paid --forward-to backend:8000/api/billing/webhook`（転送する知らせは R-03 の「扱う知らせ」だけ。Stripe CLI の新しい版は `--events` が必須。#69）、`.env` の `STRIPE_SECRET_KEY` を `STRIPE_API_KEY` として渡す）を足す（R-11）（ミ）
-- [X] T004 Stripe のテスト環境で、商品「月額プラン」と価格「月額 10,000 円（JPY・毎月）」を作り、価格の lookup key を `monthly_standard` にする。`docker compose --profile stripe up -d stripe` で Webhook が手元に届くことを確かめる（quickstart.md の「用意するもの」）（ミ・手作業）
+- [X] T004 Stripe のテスト環境で、商品「システム利用料」と価格「月額 10,000 円（JPY・毎月）」を作り、価格の lookup key を `monthly_standard` にする。`docker compose --profile stripe up -d stripe` で Webhook が手元に届くことを確かめる（quickstart.md の「用意するもの」）（ミ・手作業） （10/30：商品名を「月額プラン」から「システム利用料」に変え、画面には「システム利用料 10,000円/月（税込）」と出す。金額と税込の表記は仮置き。#375）
 
 **Checkpoint**: Stripe CLI が backend に知らせを転送できる（受け口は Phase 3 で作るので、この時点では 404 でよい）
 

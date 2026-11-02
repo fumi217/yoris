@@ -17,7 +17,7 @@ export type BillingInfo = {
 
 /**
  * 利用料のお支払い（`/admin/billing`。施設長・事務員。spec 002 の T026・FR-018）。
- * 契約の状態とプラン名・月額を見せる。カードの変更・解約・請求の履歴は、Stripe の画面へのボタン（T039）。
+ * 契約の状態と、システム利用料の月額を見せる。カードの変更・解約・請求の履歴は、Stripe の画面へのボタン（T039）。
  * 申し込み直しは作り込み。
  * 開けない役割（生活相談員が URL を打ったなど）は、API が 403 を返すので、その文言を出す（FR-007）。
  */
@@ -73,7 +73,7 @@ export function BillingView({ billing }: { billing: BillingInfo }) {
           </span>
         </Row>
         <Row labelKey="billing.plan">
-          {billing.plan_name} {billing.amount_jpy.toLocaleString('ja-JP')}{' '}
+          {billing.amount_jpy.toLocaleString('ja-JP')}
           <Text k="billing.per_month" />
         </Row>
         {billing.current_period_end && charges && (

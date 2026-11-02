@@ -30,7 +30,7 @@ describe('申し込みのフェーズは、ふりがななし', () => {
   it('申し込みページ・完了の画面・ステップに、ふりがな（<ruby>）が出ない', () => {
     const form = renderToStaticMarkup(
       <SignupForm
-        plan={{ plan_name: '月額プラン', amount_jpy: 10000 }}
+        plan={{ plan_name: 'システム利用料', amount_jpy: 10000 }}
         canceled
         submitting={false}
         errorKey="error.email_mismatch"

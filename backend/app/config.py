@@ -75,6 +75,6 @@ def get_settings() -> Settings:
 
 # 決済のプラン（spec 002 の FR-022・R-01）。画面に出すプラン名と金額はここから出す。
 # Stripe では、この lookup key の価格を探す（価格の ID は環境変数に書かない）
-PLAN_NAME = "月額プラン"
+PLAN_NAME = "システム利用料"
 PLAN_AMOUNT_JPY = 10000
 PLAN_LOOKUP_KEY = "monthly_standard"
