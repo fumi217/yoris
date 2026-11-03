@@ -260,6 +260,24 @@
     "login_required": "Please log in",
     "to_admin": "Admin",
     "to_staff": "Staff",
+    "tab_count": "{{count}}",
+    "account_menu": "Language and log out",
+    "staff_tab": {
+      "residents": "Residents",
+      "messages": "Messages",
+      "visits": "Visits today",
+      "memo_approvals": "Approve notes"
+    },
+    "admin_tab": {
+      "home": "Top",
+      "disclosure": "Disclosure",
+      "change_rules": "Change flags",
+      "messages": "Messages",
+      "billing": "Billing",
+      "visit_settings": "Visit settings",
+      "visits": "Reservations",
+      "staff_accounts": "Staff accounts"
+    },
     "family_menu": {
       "contact_book": "Daily notes",
       "requests": "Ask us",
@@ -271,7 +289,6 @@
       "settings": "Settings"
     },
     "confirm_stop": "Cancel",
-    "back_to_admin": "Back to Admin",
     "family_menu_desc": {
       "inquiry": "Ask the AI. For some questions, the staff will answer",
       "settings": "Notification and summary settings",

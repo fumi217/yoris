@@ -20,6 +20,22 @@ function render() {
           otherArea="admin"
           otherTo="/admin"
           otherKey="layout.to_admin"
+          tabs={[
+            {
+              to: '/staff',
+              labelKey: 'layout.staff_tab.residents',
+              icon: 'residents',
+              isActive: (path) => path === '/staff',
+            },
+            {
+              to: '/staff/messages',
+              labelKey: 'layout.staff_tab.messages',
+              icon: 'family-message',
+              count: 2,
+              isActive: (path) => path.startsWith('/staff/messages'),
+            },
+          ]}
+          tabsLabelKey="layout.to_staff"
         />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -33,11 +49,36 @@ describe('StaffHeader', () => {
     const link = html.match(/<a [^>]*href="\/staff"[^>]*>(.*?)<\/a>/)?.[1] ?? ''
     expect(link).toContain('alt="YORIS"')
     expect(link).toContain('画面')
-    // 同じ行き先（/staff）のリンクが、2 つに分かれていない
-    expect(html.match(/href="\/staff"/g)).toHaveLength(1)
+    // ロゴと題は、同じ行き先（/staff）の 1 つのリンク。タブの「入居者一覧」は、その下の段（別の部品）
+    expect(link).toContain('画面')
+    expect(html.match(/href="\/staff"/g)).toHaveLength(2)
   })
 
   it('ロゴは、職員・管理画面の大きさ（高さ 32px）', () => {
     expect(render()).toMatch(/<img[^>]*class="[^"]*h-8/)
+  })
+
+  it('名前と役割を出す（名前の頭の 1 文字の丸は、読み上げない）', () => {
+    const html = render()
+
+    expect(html).toContain('テスト職員')
+    expect(html).toContain('リーダー')
+    expect(html).toMatch(/aria-hidden="true"[^>]*>テ</)
+  })
+
+  it('下の段に、行き先のタブの帯を出す（職員の画面）', () => {
+    const html = render()
+
+    expect(html).toMatch(/<nav[^>]*aria-label="職員の画面"/)
+    expect(html).toContain('href="/staff/messages"')
+  })
+
+  it('言語とログアウトは、名前のボタンで開く段の中（はじめは閉じている。画面の上に重ねない）', () => {
+    const html = render()
+
+    expect(html).toMatch(
+      /<button[^>]*aria-expanded="false"[^>]*aria-controls="staff-account-panel"/,
+    )
+    expect(html).toMatch(/<div id="staff-account-panel" hidden=""/)
   })
 })

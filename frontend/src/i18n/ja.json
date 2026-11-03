@@ -345,6 +345,24 @@
     "login_required": "ログインしてください",
     "to_admin": "{管理|かんり}{画面|がめん}",
     "to_staff": "{職員|しょくいん}の{画面|がめん}",
+    "tab_count": "{{count}} {件|けん}",
+    "account_menu": "{言語|げんご}・ログアウト",
+    "staff_tab": {
+      "residents": "{入居者|にゅうきょしゃ}{一覧|いちらん}",
+      "messages": "メッセージ",
+      "visits": "{面会|めんかい}{予定|よてい}",
+      "memo_approvals": "メモの{承認|しょうにん}"
+    },
+    "admin_tab": {
+      "home": "トップ",
+      "disclosure": "{開示|かいじ}{設定|せってい}",
+      "change_rules": "{変化|へんか}の{目印|めじるし}",
+      "messages": "メッセージ",
+      "billing": "お{支払|しはら}い",
+      "visit_settings": "{面会|めんかい}の{設定|せってい}",
+      "visits": "{予約|よやく}の{一覧|いちらん}",
+      "staff_accounts": "{職員|しょくいん}の{登録|とうろく}"
+    },
     "family_menu": {
       "contact_book": "{連絡帳|れんらくちょう}",
       "requests": "{知|し}りたいこと",
@@ -356,7 +374,6 @@
       "settings": "{設定|せってい}"
     },
     "confirm_stop": "やめる",
-    "back_to_admin": "{管理|かんり}{画面|がめん}のトップへ",
     "family_menu_desc": {
       "inquiry": "AI に{質問|しつもん}できます。{内容|ないよう}によっては、{職員|しょくいん}から{回答|かいとう}します",
       "settings": "{通知|つうち}とまとめの{設定|せってい}",

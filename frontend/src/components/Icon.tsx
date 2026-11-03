@@ -115,6 +115,9 @@ const ICONS = {
   'theme-supplies': faBagShopping,
   // 残りの絵文字の置き換え（#388）
   check: faCheck,
+  // 職員の画面・管理画面のタブ（#437）
+  residents: faUsers,
+  home: faHouse,
   // 入居者一覧の記録のチップの「まだ」（#431）
   minus: faMinus,
   warning: faTriangleExclamation,

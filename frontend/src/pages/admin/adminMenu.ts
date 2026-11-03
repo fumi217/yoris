@@ -2,11 +2,14 @@
 // 画面を足すときは、ここに 1 行と、AdminRoutes.tsx に画面を 1 行足す。守りは API の 403（ここは見た目だけ）。
 
 import type { StaffRole } from '../../auth/me'
+import type { TabItem } from '../../components/AreaTabs'
 import type { IconName } from '../../components/Icon'
 
 export type AdminMenuItem = {
   to: string
   labelKey: string
+  // タブの短い名前（上の枠のタブ。狭い幅でも 4 つずつ並ぶように。#437）
+  tabLabelKey: string
   icon: IconName
   roles: StaffRole[]
   // 家族からのメッセージの対応待ちの件数を添える入り口（#88）
@@ -18,6 +21,7 @@ export const adminMenu: AdminMenuItem[] = [
   {
     to: '/admin/disclosure',
     labelKey: 'admin.menu.disclosure',
+    tabLabelKey: 'layout.admin_tab.disclosure',
     icon: 'disclosure',
     roles: ['counselor', 'director'],
   },
@@ -25,6 +29,7 @@ export const adminMenu: AdminMenuItem[] = [
   {
     to: '/admin/change-rules',
     labelKey: 'admin.menu.change_rules',
+    tabLabelKey: 'layout.admin_tab.change_rules',
     icon: 'warning',
     roles: ['counselor', 'director'],
   },
@@ -32,6 +37,7 @@ export const adminMenu: AdminMenuItem[] = [
   {
     to: '/admin/messages',
     labelKey: 'admin.menu.family_messages',
+    tabLabelKey: 'layout.admin_tab.messages',
     icon: 'family-message',
     roles: ['counselor', 'clerk', 'director'],
     showMessageCount: true,
@@ -40,6 +46,7 @@ export const adminMenu: AdminMenuItem[] = [
   {
     to: '/admin/billing',
     labelKey: 'admin.menu.billing',
+    tabLabelKey: 'layout.admin_tab.billing',
     icon: 'billing',
     roles: ['director', 'clerk'],
   },
@@ -47,6 +54,7 @@ export const adminMenu: AdminMenuItem[] = [
   {
     to: '/admin/visit-settings',
     labelKey: 'admin.menu.visit_settings',
+    tabLabelKey: 'layout.admin_tab.visit_settings',
     icon: 'visit-settings',
     roles: ['clerk', 'counselor', 'director'],
   },
@@ -54,6 +62,7 @@ export const adminMenu: AdminMenuItem[] = [
   {
     to: '/admin/visits',
     labelKey: 'admin.menu.visits',
+    tabLabelKey: 'layout.admin_tab.visits',
     icon: 'visit-list',
     roles: ['clerk', 'counselor', 'director'],
   },
@@ -61,6 +70,7 @@ export const adminMenu: AdminMenuItem[] = [
   {
     to: '/admin/staff-accounts',
     labelKey: 'admin.menu.staff_accounts',
+    tabLabelKey: 'layout.admin_tab.staff_accounts',
     icon: 'staff-account',
     roles: ['counselor', 'director'],
   },
@@ -73,4 +83,26 @@ export function adminMenuFor(role: StaffRole | null): AdminMenuItem[] {
 /** 管理画面のトップ（`/admin`）か。トップ以外の画面には「管理画面のトップへ」を出す（#256）。 */
 export function isAdminHome(pathname: string): boolean {
   return pathname.replace(/\/+$/, '') === '/admin'
+}
+
+/**
+ * 管理画面のタブ（デザインの決めごと 8 章。#437）：トップと、その人の役割で開ける画面。
+ * メッセージには、対応待ちの件数を添える。詳細の画面でも、もとのタブを選ばれた状態にする。
+ */
+export function adminTabs(role: StaffRole | null, messageCount: number): TabItem[] {
+  return [
+    {
+      to: '/admin',
+      labelKey: 'layout.admin_tab.home',
+      icon: 'home',
+      isActive: isAdminHome,
+    },
+    ...adminMenuFor(role).map((item) => ({
+      to: item.to,
+      labelKey: item.tabLabelKey,
+      icon: item.icon,
+      count: item.showMessageCount ? messageCount : undefined,
+      isActive: (pathname: string) => pathname.startsWith(item.to),
+    })),
+  ]
 }

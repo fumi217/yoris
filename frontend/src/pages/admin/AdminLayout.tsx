@@ -1,15 +1,20 @@
-import { Link, Outlet, useLocation } from 'react-router'
-import { Icon } from '../../components/Icon'
+import { Outlet } from 'react-router'
+import { useMe } from '../../auth/me'
 import { StaffHeader } from '../../components/StaffHeader'
-import { Text } from '../../components/Text'
 import { usePageTitle } from '../../components/usePageTitle'
-import { isAdminHome } from './adminMenu'
+import { useWaitingMessageCount } from '../staff/useWaitingMessageCount'
+import { adminTabs } from './adminMenu'
 
-/** 管理画面の枠。職員の画面も開ける人（生活相談員・施設長）には、職員の画面へのリンクを出す。 */
+/**
+ * 管理画面の枠。職員の画面も開ける人（生活相談員・施設長）には、職員の画面へのリンクも出す。
+ * 下の段に、行き先のタブ（トップと、その人の役割で開ける画面。#437）。トップ以外から戻る「◀ 管理画面のトップへ」
+ * （#256）は、タブの「トップ」で足りるので、出さない。
+ */
 export function AdminLayout() {
-  const { pathname } = useLocation()
   // ブラウザのタブの題：「管理画面 ｜ YORIS」（画面ごとの題は、10 章の 2.4.2 で別に付ける。#330）
   usePageTitle('layout.to_admin')
+  const role = useMe().data?.role ?? null
+  const messageCount = useWaitingMessageCount()
   return (
     <div className="mx-auto min-h-screen max-w-3xl">
       <StaffHeader
@@ -18,28 +23,12 @@ export function AdminLayout() {
         otherArea="staff"
         otherTo="/staff"
         otherKey="layout.to_staff"
+        tabs={adminTabs(role, messageCount)}
+        tabsLabelKey="layout.to_admin"
       />
       <main>
-        <BackToAdmin pathname={pathname} />
         <Outlet />
       </main>
     </div>
-  )
-}
-
-/**
- * トップ以外の管理画面のいちばん上に出す「◀ 管理画面のトップへ」（#256）。
- * 上の「管理画面」の文字でも戻れるが、題にしか見えず気づきにくいため。
- * 枠に置くので、管理画面を足しても、画面ごとに足さなくてよい。
- */
-export function BackToAdmin({ pathname }: { pathname: string }) {
-  if (isAdminHome(pathname)) return null
-  return (
-    <nav className="px-4 pt-3 text-sm">
-      <Link to="/admin" className="text-primary underline">
-        <Icon name="prev" className="mr-1" />
-        <Text k="layout.back_to_admin" />
-      </Link>
-    </nav>
   )
 }

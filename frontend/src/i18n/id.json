@@ -260,6 +260,24 @@
     "login_required": "Silakan masuk",
     "to_admin": "Halaman admin",
     "to_staff": "Halaman staf",
+    "tab_count": "{{count}}",
+    "account_menu": "Bahasa dan keluar",
+    "staff_tab": {
+      "residents": "Daftar penghuni",
+      "messages": "Pesan",
+      "visits": "Kunjungan hari ini",
+      "memo_approvals": "Setujui catatan"
+    },
+    "admin_tab": {
+      "home": "Beranda",
+      "disclosure": "Pengungkapan",
+      "change_rules": "Tanda perubahan",
+      "messages": "Pesan",
+      "billing": "Pembayaran",
+      "visit_settings": "Atur kunjungan",
+      "visits": "Reservasi",
+      "staff_accounts": "Akun staf"
+    },
     "family_menu": {
       "contact_book": "Buku harian",
       "requests": "Ingin tahu",
@@ -271,7 +289,6 @@
       "settings": "Pengaturan"
     },
     "confirm_stop": "Batal",
-    "back_to_admin": "Kembali ke halaman admin",
     "family_menu_desc": {
       "inquiry": "Tanya AI. Untuk beberapa pertanyaan, staf akan menjawab",
       "settings": "Pengaturan notifikasi dan ringkasan",
