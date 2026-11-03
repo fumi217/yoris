@@ -610,6 +610,7 @@
     "status_answered": "Handled",
     "assignee": "Assigned to",
     "unassigned": "No one is assigned yet",
+    "waiting_over_day": "Waiting for more than a day",
     "arrived_today": "Arrived today",
     "arrived_days": "Arrived {{count}} days ago",
     "origin_title": "Original question",

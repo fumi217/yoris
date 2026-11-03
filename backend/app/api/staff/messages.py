@@ -1,7 +1,7 @@
 """職員の「家族からのメッセージ」の一覧・件数・詳細の API（spec 004 の 004-T025）。
 
 - `GET /api/staff/messages?status=&resident_id=`：一覧。
-  対応待ち → 担当が自分か空 → 古い順（FR-012・FR-016b）
+  対応待ち → 担当が空（いちばん上）→ 担当が自分 → ほかの職員が担当 → 古い順（FR-012・FR-016b）
 - `GET /api/staff/messages/count?resident_id=`：対応待ちの件数（FR-013）
 - `GET /api/staff/messages/{id}`：詳細。原文・直前の 3 往復・追加された家族の書き込み・
   その種類の定型文（FR-011・FR-012）
@@ -16,7 +16,7 @@
 ほかの役割が id で開いたら 404（research.md R-12）。家族が呼んだら 403。
 詳細の直前の 3 往復も、ほかの役割には苦情の発言を除く（visible_conversation_messages）。
 職員への通知・音は出さない（SC-008）。職員が画面を開いたときに見せる。
-「担当が空なら 24 時間でいちばん上に」の並び（004-T035）は、作り込みで足す。
+「1 日以上待っています」と、担当が空のものをいちばん上に出す並びは、004-T035（FR-016b）。
 """
 
 from datetime import datetime, timedelta
@@ -189,11 +189,11 @@ def list_messages(
     query = _with_names(user).order_by(
         # 対応待ちを先に
         case((StaffMessage.status == "waiting", 0), else_=1),
-        # 担当が自分か空のものを先に
+        # 担当が空のものをいちばん上に、次に自分が担当のもの、ほかの職員が担当のものは後（FR-016b）
         case(
             (StaffMessage.assignee_id.is_(None), 0),
-            (StaffMessage.assignee_id == user.staff_id, 0),
-            else_=1,
+            (StaffMessage.assignee_id == user.staff_id, 1),
+            else_=2,
         ),
         # 古い順
         _waiting_since(),

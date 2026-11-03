@@ -19,6 +19,9 @@ export type InquiryHandoff = {
   urgent: boolean
   // 同じ内容の対応待ちにつないだとき true。画面は「すでにお伝えしています」を出す（FR-016）
   already: boolean
+  // 渡してから 3 日たっても対応待ちのとき true。画面は電話の案内も出す（FR-016b）。
+  // 古い API では、項目がないこともある（そのときは、緊急のときだけ電話の案内を出す）
+  over_three_days?: boolean
 }
 
 export type InquiryMessage = {
@@ -74,11 +77,13 @@ export function aiNoticeKey(message: InquiryMessage): string | null {
 
 /**
  * 職員に渡した AI の発言に、電話の案内（「お急ぎのときは、施設にお電話ください」）を添えるか。
- * 緊急のときだけ添える（spec 004 の Edge Cases。今までは、渡したときは、いつも添えていた）。
+ * 緊急のとき、または、渡してから 3 日たっても対応待ちのときに添える（spec 004 の Edge Cases・
+ * FR-016b。3 日の判定は API が返す。対応済みになれば、添えない）。
  * 根拠が非開示になった答えには添えない。`handoff` がない古い API のときも、添えない。
  */
 export function showsCallIfUrgent(message: InquiryMessage): boolean {
-  return message.ai_result === 'handed_off' && !message.hidden && message.handoff?.urgent === true
+  if (message.ai_result !== 'handed_off' || message.hidden || !message.handoff) return false
+  return message.handoff.urgent || message.handoff.over_three_days === true
 }
 
 /**

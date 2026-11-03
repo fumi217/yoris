@@ -275,6 +275,17 @@ describe('inquiryView', () => {
     expect(showsCallIfUrgent(handedOff({ status: 'waiting', urgent: false, already: false }))).toBe(
       false,
     )
+    // 渡してから 3 日たっても対応待ちのときも、電話の案内を添える（FR-016b）
+    expect(
+      showsCallIfUrgent(
+        handedOff({ status: 'waiting', urgent: false, already: false, over_three_days: true }),
+      ),
+    ).toBe(true)
+    expect(
+      showsCallIfUrgent(
+        handedOff({ status: 'waiting', urgent: false, already: false, over_three_days: false }),
+      ),
+    ).toBe(false)
     expect(showsCallIfUrgent(handedOff(undefined))).toBe(false)
     expect(
       showsCallIfUrgent({

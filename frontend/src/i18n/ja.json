@@ -735,6 +735,7 @@
     "status_answered": "{対応済|たいおうず}み",
     "assignee": "{担当|たんとう}",
     "unassigned": "{担当|たんとう}はまだいません",
+    "waiting_over_day": "1 {日|にち}{以上|いじょう}{待|ま}っています",
     "arrived_today": "{今日|きょう}{届|とど}きました",
     "arrived_days": "{{count}}{日前|にちまえ}に{届|とど}きました",
     "origin_title": "{質問|しつもん}の{原文|げんぶん}",

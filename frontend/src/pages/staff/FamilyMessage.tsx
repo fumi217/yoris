@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useParams } from 'react-router'
 import { ApiError, api, messageKeyOf } from '../../api/client'
+import { Icon } from '../../components/Icon'
 import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
 import { ResidentFamily } from '../../components/ResidentName'
@@ -138,6 +139,12 @@ export function MessageDetailView({
           )}
         </span>
       </p>
+      {message.waiting_over_a_day && (
+        <p className="font-bold text-amber-900">
+          <Icon name="warning" className="mr-1" />
+          <Text k="family_messages.waiting_over_day" />
+        </p>
+      )}
 
       {errorKey && (
         <p role="alert" className="rounded border border-red-700 p-3 text-red-700">

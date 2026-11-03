@@ -201,8 +201,26 @@ def test_list_order(staff_client, make_staff, make_family, add_message):
 
     response = client.get("/api/staff/messages", params={"resident_id": family.resident_id})
 
-    # 対応待ち → 担当が自分か空 → 古い順
-    assert ids(response) == [mine.id, empty.id, others.id, answered.id]
+    # 対応待ち → 担当が空（いちばん上）→ 担当が自分 → ほかの職員が担当 → 古い順（FR-016b）。
+    # 担当が空のものは、いちばん新しくても、自分の担当より上に出る
+    assert ids(response) == [empty.id, mine.id, others.id, answered.id]
+
+
+def test_list_order_within_the_same_assignee_is_oldest_first(
+    staff_client, make_staff, make_family, add_message
+):
+    client, me = staff_client()
+    other = make_staff(display_name="ほかの職員")
+    family = make_family()
+    empty_new = add_message(family, handed_at=NOW - timedelta(hours=1))
+    empty_old = add_message(family, handed_at=NOW - timedelta(days=2))
+    mine_new = add_message(family, assignee=me, handed_at=NOW - timedelta(hours=2))
+    mine_old = add_message(family, assignee=me, handed_at=NOW - timedelta(days=4))
+    others_old = add_message(family, assignee=other, handed_at=NOW - timedelta(days=9))
+
+    response = client.get("/api/staff/messages", params={"resident_id": family.resident_id})
+
+    assert ids(response) == [empty_old.id, empty_new.id, mine_old.id, mine_new.id, others_old.id]
 
 
 def test_list_filters_by_status(staff_client, make_family, add_message):

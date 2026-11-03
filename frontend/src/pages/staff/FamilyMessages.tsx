@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router'
 import { api, messageKeyOf } from '../../api/client'
+import { Icon } from '../../components/Icon'
 import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
 import { ResidentFamily } from '../../components/ResidentName'
@@ -164,6 +165,13 @@ function MessageItem({
           <Ruby text={t(arrivedKey(message.elapsed_days), { count: message.elapsed_days })} />
         </p>
       </div>
+      {/* 渡してから 24 時間たっても対応待ち。色だけでなく、印と文字で目立たせる（FR-016b） */}
+      {message.waiting_over_a_day && (
+        <p className="font-bold text-amber-900">
+          <Icon name="warning" className="mr-1" />
+          <Text k="family_messages.waiting_over_day" />
+        </p>
+      )}
       {/* AI の要約は、辞書を通さず、文字としてだけ出す（FR-028）。読みは自動で付けたもの（FR-028a） */}
       <p className="whitespace-pre-wrap">
         <Ruby text={message.summary_ruby} />

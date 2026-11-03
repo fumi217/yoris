@@ -19,7 +19,7 @@
 
 import logging
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import func, select, update
@@ -45,6 +45,8 @@ from app.services.resident_names import other_resident_names
 
 logger = logging.getLogger(__name__)
 
+# 対応待ちのまま、この時間（そのままの時間で数える。R-13）がたったら、家族の会話に電話の案内を添える
+WAITING_CALL = timedelta(days=3)
 # AI に渡すときの、答えなかった AI の発言の書き方（本文が空のため）
 _AI_RESULT_TEXT = {
     "handed_off": "（施設の職員にお伝えしました）",
@@ -75,6 +77,9 @@ class HandoffView:
     urgent: bool
     # 同じ内容の対応待ちにつないだなら、画面は「すでに施設の職員にお伝えしています」（FR-016）
     already: bool
+    # 渡してから（対応待ちに戻したときは、戻してから）3 日たっても対応待ちなら、画面は
+    # 「お急ぎのときは、施設にお電話ください」も出す（FR-016b・R-13）。状態は変えない
+    over_three_days: bool = False
 
 
 @dataclass(frozen=True)
@@ -392,11 +397,16 @@ def _handoffs(session: Session, messages: list[InquiryMessage]) -> dict[int, Han
     states = {
         row.id: row
         for row in session.execute(
-            select(StaffMessage.id, StaffMessage.status, StaffMessage.category).where(
-                StaffMessage.id.in_(staff_ids)
-            )
+            select(
+                StaffMessage.id,
+                StaffMessage.status,
+                StaffMessage.category,
+                StaffMessage.handed_at,
+                StaffMessage.reopened_at,
+            ).where(StaffMessage.id.in_(staff_ids))
         )
     }
+    current = now()
     first_follow_up = dict(
         session.execute(
             select(InquiryMessage.staff_message_id, func.min(InquiryMessage.id))
@@ -416,6 +426,8 @@ def _handoffs(session: Session, messages: list[InquiryMessage]) -> dict[int, Han
             status=state.status,
             urgent=state.category == "urgent",
             already=follow_up is not None and follow_up < ai_id,
+            over_three_days=state.status == "waiting"
+            and current - (state.reopened_at or state.handed_at) >= WAITING_CALL,
         )
     return views
 

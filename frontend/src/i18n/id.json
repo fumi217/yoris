@@ -610,6 +610,7 @@
     "status_answered": "Sudah ditangani",
     "assignee": "Penanggung jawab",
     "unassigned": "Belum ada penanggung jawab",
+    "waiting_over_day": "Sudah menunggu lebih dari satu hari",
     "arrived_today": "Diterima hari ini",
     "arrived_days": "Diterima {{count}} hari lalu",
     "origin_title": "Pertanyaan asli",

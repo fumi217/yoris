@@ -100,7 +100,7 @@ US1 は、001-T038（`get_disclosed_records`）と 001-T054（`get_active_replie
 - [ ] T032 [US2] 「電話で対応した」`POST /api/staff/messages/{id}/phone` を作る：対応済みにし、家族の会話に「施設の職員がお電話で対応しました」を足す（お知らせ・メールは送らない）。画面にボタンを足す（FR-014・research.md R-09）（みさき・作）
 - [ ] T033 [US2] 担当を外す `DELETE /api/staff/messages/{id}/assign`・変える `PUT /api/staff/messages/{id}/assignee`・種類を付け替える `PATCH /api/staff/messages/{id}/category` を作る。「苦情」から別の種類に変えられるのは生活相談員・施設長だけ。`staff_message_events` に残す。画面に操作を足す（FR-012b・FR-015）（みさき・作）
 - [ ] T034 [US2] 家族の続きの書き込み：職員が返事をしたあとの家族の発言も AI が受け取り、続きが要るなら同じメッセージにつないで `status='waiting'`・`reopened_at` にする（担当・種類はそのまま）。お礼だけなら職員に渡さない（FR-016a）（みさき・作）
-- [ ] T035 [US2] 24 時間・3 日の表示：一覧で `COALESCE(reopened_at, handed_at)` から 24 時間を過ぎたものに「1 日以上待っています」、担当が空ならいちばん上に。家族の会話で 3 日を過ぎたら「お急ぎのときは、施設にお電話ください」。状態は変えない（FR-016b・research.md R-13）（みさき・作）
+- [x] T035 [US2] 24 時間・3 日の表示：一覧で `COALESCE(reopened_at, handed_at)` から 24 時間を過ぎたものに「1 日以上待っています」、担当が空ならいちばん上に。家族の会話で 3 日を過ぎたら「お急ぎのときは、施設にお電話ください」。状態は変えない（FR-016b・research.md R-13）（みさき・作）
 - [ ] T036 [P] [US2] テスト `backend/tests/api/test_staff_messages_more.py`：電話で対応した、担当を外す・変える、苦情から変えられるのは生活相談員・施設長だけ、家族の続きで対応待ちに戻る、24 時間・3 日の判定（みさき・作）
 
 **Checkpoint**: 家族の質問が職員に渡り、職員が引き受けて返事ができる（quickstart の 4〜7。Day 4 の通しのデモ）

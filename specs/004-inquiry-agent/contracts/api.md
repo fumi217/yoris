@@ -33,7 +33,8 @@
 - 入居者は `CurrentUser.resident_id` から決める（FR-020）。返す値に、AI への指示の文・ツールの中身は入れない（FR-021）。
 - 職員の発言（`sender = staff`）は、`body` は空で、返した職員の**表示名**（`staff_name`）と職種のコード（`staff_occupation`。職員の `occupation`。空なら null で、画面は名前だけを出す（役割では補わない）。画面が辞書の `occupation.*` で引き、「表示名（職種）からの返事」と出す。#263）、選んだ定型文のコード（`template_codes`。選んだ順。画面が辞書で引く）、書き足した文（`note`。文字としてだけ出す）、返し方（`response_type`：`app`／`phone`）を持つ。ほかの発言では、この 5 つは null。
 - 職員に渡した AI の発言（`ai_result = handed_off`）には `handoff` を付ける：`status`（`waiting`／`answered`）、`urgent`（種類が緊急なら true。画面は「お急ぎのときは、施設にお電話ください」も出す）、
-  `already`（同じ内容の対応待ちにつないだなら true。画面は「施設の職員にお伝えしました」の代わりに「すでに施設の職員にお伝えしています」を出す）。
+  `already`（同じ内容の対応待ちにつないだなら true。画面は「施設の職員にお伝えしました」の代わりに「すでに施設の職員にお伝えしています」を出す）、
+  `over_three_days`（**渡してから 3 日たっても対応待ちなら true**。対応待ちに戻したときは、戻した日時から数える。画面は「お急ぎのときは、施設にお電話ください」も出す。そのままの時間（72 時間）で数え、開いたときに決める。状態は変えず、メール・通知・音での催促はしない。FR-016b・R-13）。
   質問の種類そのものは家族に返さない。ほかの発言では `handoff` は空（FR-009〜011・FR-016・Edge Cases）。
 - AI の発言の `body` は、答えたとき（`ai_result = answered`）だけ文が入る。`handed_off`・`no_record` のときは空で、画面が辞書の決まった文を出す（data-model.md）。
 - 根拠のうち 1 つでも、いま非開示になった答えは `hidden: true` で、`body` は空・`sources` は空にする。画面は `inquiry.answer_hidden` を出す（data-model.md）。
@@ -48,7 +49,7 @@
 
 | メソッド・パス | 役割 | 時期 | 中身 | spec |
 |---|---|---|---|---|
-| `GET /api/staff/messages?status=waiting&resident_id=` | S（苦情は CO・D だけに出る） | ミ | 一覧：入居者の名前（`resident_display_name`。職員の表示言語に合わせる。ふりがな付きは `resident_display_name_ruby`（`ja` のときだけ）。spec 001 の data-model.md「入居者の名前の出し方」）・家族の続柄（`family_relationship`。`daughter` などのコード。家族アカウントがなければ null。#389）・種類・担当・要約（`summary`。読みを付けた `summary_ruby` も返す）・受け付けた日時・経過日数・「1 日以上待っています」・状態。対応待ち → 担当が自分か空 → 古い順 | FR-012・FR-016b・FR-028a |
+| `GET /api/staff/messages?status=waiting&resident_id=` | S（苦情は CO・D だけに出る） | ミ | 一覧：入居者の名前（`resident_display_name`。職員の表示言語に合わせる。ふりがな付きは `resident_display_name_ruby`（`ja` のときだけ）。spec 001 の data-model.md「入居者の名前の出し方」）・家族の続柄（`family_relationship`。`daughter` などのコード。家族アカウントがなければ null。#389）・種類・担当・要約（`summary`。読みを付けた `summary_ruby` も返す）・受け付けた日時・経過日数・「1 日以上待っています」・状態。対応待ち → **担当が空（いちばん上）** → 担当が自分 → ほかの職員が担当 → 古い順（渡した日時。対応待ちに戻したものは戻した日時）。24 時間たっても対応待ちのものは `waiting_over_a_day`（画面は「1 日以上待っています」を、印と太字で目立たせる） | FR-012・FR-016b・FR-028a |
 | `GET /api/staff/messages/count?resident_id=` | S | ミ | 対応待ちの件数（ゆうの入居者一覧から呼ぶ。苦情は CO・D にだけ数える） | FR-013 |
 | `GET /api/staff/messages/{id}` | S（苦情は CO・D） | ミ | 詳細：一覧の 1 件の項目（入居者の名前・家族の続柄を含む）・原文（`origin`。読みを付けた `origin_ruby` も返す）・要約（`summary`・`summary_ruby`）・種類・担当・状態・直前の 3 往復・追加された家族の書き込み・その種類の定型文の一覧。見られなければ 404。`*_ruby` は表示用で、`{漢字\|かんじ}` の書き方。保存している原文・要約は変えない | FR-011・FR-012・FR-028a |
 | `POST /api/staff/messages/{id}/assign` | S（苦情は CO・D） | ミ | 「自分が対応する」。409：`already_assigned` | FR-012b |

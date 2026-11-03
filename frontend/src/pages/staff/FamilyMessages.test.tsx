@@ -162,9 +162,39 @@ describe('MessageListView（一覧）', () => {
     expect(arrivedKey(0)).toBe('family_messages.arrived_today')
     expect(arrivedKey(3)).toBe('family_messages.arrived_days')
   })
+
+  it('24 時間たっても対応待ちのものは「1 日以上待っています」と目立たせる（FR-016b）', () => {
+    const waiting = renderList([row({ waiting_over_a_day: true })])
+
+    expect(text(waiting)).toContain('1 日以上待っています')
+    // 色だけに頼らない（太字と印）。印は読み上げに入れない（意味は文に書いてある）
+    expect(waiting).toContain('font-bold')
+    expect(waiting).toMatch(/<svg[^>]*data-icon="triangle-exclamation"[^>]*aria-hidden="true"/)
+    expect(text(renderList([row({ waiting_over_a_day: false })]))).not.toContain(
+      '1 日以上待っています',
+    )
+  })
+
+  it('目立たせるのは、対応待ちの一覧にあるものだけ（API が対応済みには付けない）', () => {
+    const answered = renderList(
+      [row({ status: 'answered', waiting_over_a_day: false })],
+      'answered',
+    )
+
+    expect(text(answered)).not.toContain('1 日以上待っています')
+  })
 })
 
 describe('MessageDetailView（詳細）', () => {
+  it('24 時間たっても対応待ちなら、詳細にも「1 日以上待っています」を出す（FR-016b）', () => {
+    expect(text(renderDetail(detail({ waiting_over_a_day: true })))).toContain(
+      '1 日以上待っています',
+    )
+    expect(text(renderDetail(detail({ waiting_over_a_day: false })))).not.toContain(
+      '1 日以上待っています',
+    )
+  })
+
   it('原文・要約・種類・担当・直前のやりとり・追加の書き込みが出る（FR-011・FR-012）', () => {
     const shown = text(
       renderDetail(

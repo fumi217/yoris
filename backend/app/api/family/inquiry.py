@@ -49,6 +49,8 @@ class HandoffOut(BaseModel):
     status: str  # "waiting" / "answered"
     urgent: bool  # 画面は「お急ぎのときは、施設にお電話ください」も出す
     already: bool  # 画面は「すでに施設の職員にお伝えしています」を出す
+    # 3 日たっても対応待ちなら true。画面は「お急ぎのときは、施設にお電話ください」も出す（FR-016b）
+    over_three_days: bool
 
 
 class MessageOut(BaseModel):
@@ -104,7 +106,10 @@ def _out(view: MessageView) -> MessageOut:
         note=view.note,
         response_type=view.response_type,
         handoff=HandoffOut(
-            status=view.handoff.status, urgent=view.handoff.urgent, already=view.handoff.already
+            status=view.handoff.status,
+            urgent=view.handoff.urgent,
+            already=view.handoff.already,
+            over_three_days=view.handoff.over_three_days,
         )
         if view.handoff
         else None,

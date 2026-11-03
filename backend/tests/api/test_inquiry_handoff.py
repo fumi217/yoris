@@ -3,6 +3,8 @@
 本物の AI は呼ばず、fake_llm（テスト用の LLM（モック））に応答を足して使う。
 """
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
 from sqlalchemy import select
 
@@ -46,7 +48,12 @@ def test_hand_off_creates_staff_message_with_empty_assignee(client, session, fak
     assert data["ai"]["ai_result"] == "handed_off"
     # 家族の画面は「施設の職員にお伝えしました」（辞書の文。本文は空）
     assert data["ai"]["body"] == ""
-    assert data["ai"]["handoff"] == {"status": "waiting", "urgent": False, "already": False}
+    assert data["ai"]["handoff"] == {
+        "status": "waiting",
+        "urgent": False,
+        "already": False,
+        "over_three_days": False,
+    }
     assert data["family"]["handoff"] is None
     [message] = staff_messages(session, family)
     # 原文（渡すきっかけの家族の発言）・要約・種類が残り、担当は空（FR-011・FR-012b）
@@ -107,7 +114,12 @@ def test_same_waiting_message_is_joined_not_created(client, session, fake_llm, f
 
     # 新しく渡さずに「すでに施設の職員にお伝えしています」（FR-016）
     assert [m.id for m in staff_messages(session, family)] == [message.id]
-    assert second["ai"]["handoff"] == {"status": "waiting", "urgent": False, "already": True}
+    assert second["ai"]["handoff"] == {
+        "status": "waiting",
+        "urgent": False,
+        "already": True,
+        "over_three_days": False,
+    }
     # 家族の発言は、そのメッセージの続きの書き込みになる（職員の詳細に出る）
     assert session.get(InquiryMessage, second["family"]["id"]).staff_message_id == message.id
     # 最初に渡した発言は、読み直しても「お伝えしました」のまま
@@ -130,7 +142,12 @@ def test_urgent_is_not_joined_to_other_category(client, session, fake_llm, famil
     assert messages[1].origin_message_id == data["family"]["id"]
     assert session.get(InquiryMessage, data["family"]["id"]).staff_message_id is None
     # 家族の画面には「お急ぎのときは、施設にお電話ください」が出る
-    assert data["ai"]["handoff"] == {"status": "waiting", "urgent": True, "already": False}
+    assert data["ai"]["handoff"] == {
+        "status": "waiting",
+        "urgent": True,
+        "already": False,
+        "over_three_days": False,
+    }
 
 
 def test_complaint_is_not_joined_to_medical(
@@ -201,3 +218,76 @@ def test_other_familys_message_is_not_joined(client, session, fake_llm, make_fam
         ).all()
         == []
     )
+
+
+# --- 3 日たっても対応待ちのとき（FR-016b・R-13） ---
+
+NOW = datetime(2026, 10, 30, 3, 0, tzinfo=UTC)
+
+
+@pytest.fixture
+def fixed_now(monkeypatch):
+    """家族の会話の「3 日たったか」は、service が読む今の時刻で決まる。"""
+    monkeypatch.setattr("app.inquiry.service.now", lambda: NOW)
+
+
+def handoff_state(client) -> dict:
+    """会話の中の、職員に渡した AI の発言（新しい順の先頭）の handoff。"""
+    listed = client.get(URL).json()
+    return next(m["handoff"] for m in listed if m["ai_result"] == "handed_off")
+
+
+@pytest.mark.parametrize(
+    ("waited", "expected"),
+    [
+        (timedelta(days=3) - timedelta(seconds=1), False),
+        (timedelta(days=3), True),
+        (timedelta(days=10), True),
+    ],
+    ids=["just_under_3_days", "exactly_3_days", "10_days"],
+)
+def test_waiting_for_3_days_adds_the_call_hint(
+    client, session, fake_llm, family, fixed_now, waited, expected
+):
+    hand_off(fake_llm, "care_request", "上着")
+    client.post(URL, json={"body": "冬物の上着を持って行ってもいいですか"})
+    [message] = staff_messages(session, family)
+    message.handed_at = NOW - waited
+    session.flush()
+
+    assert handoff_state(client)["over_three_days"] is expected
+    # 状態は変えない（種類・担当・対応待ちのまま。催促もしない）
+    session.refresh(message)
+    assert (message.status, message.category, message.assignee_id) == (
+        "waiting",
+        "care_request",
+        None,
+    )
+
+
+def test_3_days_are_counted_from_the_time_it_was_put_back_to_waiting(
+    client, session, fake_llm, family, fixed_now
+):
+    hand_off(fake_llm, "care_request", "上着")
+    client.post(URL, json={"body": "冬物の上着を持って行ってもいいですか"})
+    [message] = staff_messages(session, family)
+    # 渡したのは 5 日前だが、家族の続きで対応待ちに戻ったのは 1 日前
+    message.handed_at = NOW - timedelta(days=5)
+    message.reopened_at = NOW - timedelta(days=1)
+    session.flush()
+
+    assert handoff_state(client)["over_three_days"] is False
+
+
+def test_answered_message_has_no_call_hint_even_after_3_days(
+    client, session, fake_llm, family, fixed_now
+):
+    hand_off(fake_llm, "care_request", "上着")
+    client.post(URL, json={"body": "冬物の上着を持って行ってもいいですか"})
+    [message] = staff_messages(session, family)
+    message.handed_at = NOW - timedelta(days=10)
+    message.status = "answered"
+    session.flush()
+
+    state = handoff_state(client)
+    assert (state["status"], state["over_three_days"]) == ("answered", False)
