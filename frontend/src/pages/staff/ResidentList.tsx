@@ -22,6 +22,7 @@ import {
   type ResidentListResponse,
   type ResidentRow,
 } from './residentRows'
+import { useMemoApprovalCount } from './useMemoApprovalCount'
 import { useTodayVisits } from './useTodayVisits'
 import { bookedCount } from './visitReservationRows'
 
@@ -41,6 +42,8 @@ export function ResidentList() {
 
   // 今日の面会の組数（読めないときは出さない。一覧は使えるように）
   const visits = useTodayVisits()
+  // 様子のメモの承認待ち（リーダー・施設長だけ。承認できない人・読めないときは null で、出さない）
+  const memoApprovals = useMemoApprovalCount()
 
   if (residents.isPending) return <Message k="layout.loading" />
   if (residents.isError) return <Message k={messageKeyOf(residents.error)} />
@@ -48,6 +51,7 @@ export function ResidentList() {
     <ResidentTable
       data={residents.data}
       todayVisits={visits.data ? bookedCount(visits.data) : null}
+      memoApprovals={memoApprovals}
     />
   )
 }
@@ -56,10 +60,13 @@ export function ResidentList() {
 export function ResidentTable({
   data,
   todayVisits = null,
+  memoApprovals = null,
 }: {
   data: ResidentListResponse
   // 今日の面会の組数。まだ読めていない・読めないときは null（出さない）
   todayVisits?: number | null
+  // 様子のメモの承認待ちの件数。承認できない人・まだ読めない・読めないときは null（出さない）
+  memoApprovals?: number | null
 }) {
   const { t } = useTranslation()
   const messages = totalWaitingMessages(data.residents)
@@ -77,7 +84,12 @@ export function ResidentTable({
           <Ruby text={t('resident_list.date', monthDay(data.date))} />
         </span>
       </div>
-      <TodaySummary residents={data.residents} messages={messages} todayVisits={todayVisits} />
+      <TodaySummary
+        residents={data.residents}
+        messages={messages}
+        todayVisits={todayVisits}
+        memoApprovals={memoApprovals}
+      />
       {data.residents.length === 0 ? (
         <Message k="resident_list.empty" />
       ) : (
@@ -133,10 +145,12 @@ function TodaySummary({
   residents,
   messages,
   todayVisits,
+  memoApprovals,
 }: {
   residents: ResidentRow[]
   messages: number
   todayVisits: number | null
+  memoApprovals: number | null
 }) {
   const { t } = useTranslation()
   const { recorded, total } = recordProgress(residents)
@@ -197,6 +211,16 @@ function TodaySummary({
             labelKey="resident_list.summary_visits"
             count={todayVisits}
             unitKey="resident_list.unit_groups"
+          />
+        )}
+        {memoApprovals !== null && (
+          // 押すと、様子のメモの承認の画面（UI-S07。spec 007 の T023）へ進む。0 件でも出す
+          <SummaryLink
+            to="/staff/memo-approvals"
+            icon="memo"
+            labelKey="resident_list.summary_memo_approvals"
+            count={memoApprovals}
+            unitKey="resident_list.unit_cases"
           />
         )}
       </div>

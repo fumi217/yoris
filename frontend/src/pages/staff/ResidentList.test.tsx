@@ -1,8 +1,10 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import '../../i18n'
-import { ResidentTable } from './ResidentList'
+import { APPROVALS_KEY } from './memoApprovalsView'
+import { ResidentList, ResidentTable } from './ResidentList'
 import {
   mealMarks,
   monthDay,
@@ -11,6 +13,7 @@ import {
   splitByFlag,
   totalWaitingMessages,
   visibleRows,
+  type ResidentListResponse,
   type ResidentRow,
 } from './residentRows'
 
@@ -28,11 +31,16 @@ const row = (overrides: Partial<ResidentRow> = {}): ResidentRow => ({
   ...overrides,
 })
 
-const render = (residents: ResidentRow[], unconfirmedFlagCount = 0) =>
+const render = (
+  residents: ResidentRow[],
+  unconfirmedFlagCount = 0,
+  memoApprovals: number | null = null,
+) =>
   renderToStaticMarkup(
     <MemoryRouter>
       <ResidentTable
         data={{ date: '2026-10-26', residents, unconfirmed_flag_count: unconfirmedFlagCount }}
+        memoApprovals={memoApprovals}
       />
     </MemoryRouter>,
   )
@@ -232,5 +240,85 @@ describe('変化の目印（spec 006 の 006-T015）', () => {
     expect(html.slice(html.indexOf('目印なし太郎'))).not.toContain(
       'data-icon="triangle-exclamation"',
     )
+  })
+})
+
+// ふりがなのタグ（ruby・rt・rp）と、そのほかのタグを除いた、画面に見える文字
+const visibleText = (html: string) =>
+  html.replace(/<rp>.*?<\/rp>|<rt>.*?<\/rt>/g, '').replace(/<[^>]+>/g, '')
+
+describe('様子のメモの承認待ち（spec 007 の 007-T028・FR-015）', () => {
+  it('件数があるとき、承認の画面への入り口（今日のまとめのカード）と件数を出す', () => {
+    const html = render([row()], 0, 3)
+
+    expect(html).toContain('href="/staff/memo-approvals"')
+    expect(visibleText(html)).toContain('様子のメモの承認待ち3件')
+  })
+
+  it('0 件でも入り口は出す', () => {
+    expect(visibleText(render([row()], 0, 0))).toContain('様子のメモの承認待ち0件')
+  })
+
+  it('承認できない人・読めないとき（null）は、出さない', () => {
+    const html = render([row()], 0, null)
+
+    expect(html).not.toContain('memo-approvals')
+    expect(visibleText(html)).not.toContain('承認待ち')
+  })
+
+  it('入り口は、通知・音・画面を遮る表示を出さない（カードのほかに、何も増えない）', () => {
+    const without = render([row()], 0, null)
+    const withEntry = render([row()], 0, 5)
+
+    // 入り口のリンクだけを取り除くと、出さないときの画面と同じになる
+    const linkOnly = /<a [^>]*href="\/staff\/memo-approvals"[^>]*>.*?<\/a>/
+    expect(withEntry).toMatch(linkOnly)
+    expect(withEntry.replace(linkOnly, '')).toBe(without)
+  })
+})
+
+describe('ResidentList が、承認待ちの件数を入り口へ渡す（007-T028）', () => {
+  // 読み込み済みの値を入れた QueryClient で描く（通信はしない。StaffHeader.test.tsx と同じ形）
+  const renderList = (memoCount: { count: number | null } | undefined) => {
+    const queryClient = new QueryClient()
+    const residents: ResidentListResponse = {
+      date: '2026-10-26',
+      residents: [row()],
+      unconfirmed_flag_count: 0,
+    }
+    queryClient.setQueryData(['staff', 'residents'], residents)
+    if (memoCount) queryClient.setQueryData([...APPROVALS_KEY, 'count'], memoCount)
+    return renderToStaticMarkup(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <ResidentList />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+  }
+
+  it('API の件数を、入り口に出す', () => {
+    const html = renderList({ count: 4 })
+
+    expect(html).toContain('href="/staff/memo-approvals"')
+    expect(visibleText(html)).toContain('様子のメモの承認待ち4件')
+  })
+
+  it('API が 0 件を返したときは、0 件で出す', () => {
+    expect(visibleText(renderList({ count: 0 }))).toContain('様子のメモの承認待ち0件')
+  })
+
+  it('承認できない人（API が count: null）は、出さない。一覧は使える', () => {
+    const html = renderList({ count: null })
+
+    expect(html).not.toContain('memo-approvals')
+    expect(visibleText(html)).toContain('101')
+  })
+
+  it('まだ読めていない・読めなかったとき（値がない）は、出さない。一覧は使える', () => {
+    const html = renderList(undefined)
+
+    expect(html).not.toContain('memo-approvals')
+    expect(visibleText(html)).toContain('101')
   })
 })
