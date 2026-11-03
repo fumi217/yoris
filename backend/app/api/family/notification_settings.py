@@ -1,12 +1,14 @@
 """家族の通知設定の API（spec 001 の 001-T064。contracts の「家族」・FR-023）。
 
 - `GET /api/family/notification-settings`：通知設定と、送り先のメールアドレスと、選べる記録項目
-  （`available_items`：開示されている項目だけ。非開示の項目は、画面で選択肢に出さない。FR-023）を返す。
-  設定の行がなければ、初めの設定（返事は通知・meal/mood/sleep・毎日・アルバムの写真も通知）を返す
+  （`available_items`：開示されている項目だけ。様子のメモ `memo` も、見せる設定のときは入る。
+  非開示の項目は、画面で選択肢に出さない。FR-023）を返す。
+  設定の行がなければ、初めの設定（返事は通知・meal/mood/sleep/memo・毎日・アルバムの写真も通知）を返す
   （行は作らない）。`notify_album`（アルバムの新しい写真を通知するか。spec 005 の FR-017）は、
   アルバムを見せる設定のときだけ返す（見せない設定のときは、項目ごと返さない。FR-014）
 - `PUT /api/family/notification-settings`：通知設定を変える。行がなければ作る。
-  頻度が daily／weekly／none 以外、記録項目が meal／mood／sleep 以外なら 422（何も変えない）。
+  頻度が daily／weekly／none 以外、項目が meal／mood／sleep／memo（様子のメモ。spec 007）以外なら
+  422（何も変えない）。
   `notify_album` は省略してよい（省略したら、いまの値のまま）。アルバムを見せない設定のときは、
   送られても変えない（あとで見せる設定に戻したとき、前の選択が残る）
 
@@ -30,9 +32,9 @@ from app.models.notifications import (
     DEFAULT_FREQUENCY,
     DEFAULT_NOTIFY_ITEMS,
     NOTIFICATION_FREQUENCIES,
+    NOTIFY_ITEMS,
     NotificationSetting,
 )
-from app.models.records import ITEMS
 from app.services.disclosure import is_feature_disclosed, is_item_disclosed
 
 router = APIRouter(prefix="/api/family", tags=["family"])
@@ -43,7 +45,7 @@ class NotificationSettingsOut(BaseModel):
     notify_items: list[str]
     frequency: str
     email: str  # 送り先（ログイン用と同じ）。メールが届かないとき、画面で確かめられるように
-    # 選べる記録項目（いま開示されているものだけ。ITEMS の並び）。選択肢の表示に使う
+    # 選べる項目（いま開示されているものだけ。NOTIFY_ITEMS の並び）。選択肢の表示に使う
     available_items: list[str]
     # 「アルバムの新しい写真」を通知するか。アルバムを見せない設定のときは返さない（FR-017）
     notify_album: bool | None = None
@@ -71,7 +73,7 @@ def _family_account_and_email(session: Session, user: CurrentUser) -> tuple[int,
 
 
 def _available_items(session: Session) -> list[str]:
-    return [item for item in ITEMS if is_item_disclosed(session, item)]
+    return [item for item in NOTIFY_ITEMS if is_item_disclosed(session, item)]
 
 
 def _out(
@@ -119,10 +121,12 @@ def put_notification_settings(
     user: Annotated[CurrentUser, Depends(require_family)],
     session: Annotated[Session, Depends(get_session)],
 ) -> NotificationSettingsOut:
-    if body.frequency not in NOTIFICATION_FREQUENCIES or not set(body.notify_items) <= set(ITEMS):
+    if body.frequency not in NOTIFICATION_FREQUENCIES or not set(body.notify_items) <= set(
+        NOTIFY_ITEMS
+    ):
         raise AppError(ErrorCode.VALIDATION_ERROR)
-    # 同じ項目が重なっても 1 つにまとめる（ITEMS の並びにそろえる）
-    items = [item for item in ITEMS if item in body.notify_items]
+    # 同じ項目が重なっても 1 つにまとめる（NOTIFY_ITEMS の並びにそろえる）
+    items = [item for item in NOTIFY_ITEMS if item in body.notify_items]
 
     family_account_id, email = _family_account_and_email(session, user)
     album_disclosed = is_feature_disclosed(session, "album")

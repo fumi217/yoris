@@ -62,7 +62,9 @@
     "unread_count": "{{count}} belum dibaca",
     "day_today": "Hari ini ({{day}}/{{month}})",
     "day_yesterday": "Kemarin ({{day}}/{{month}})",
-    "day_other": "{{day}}/{{month}} ({{weekday}})"
+    "day_other": "{{day}}/{{month}} ({{weekday}})",
+    "memo_label": "Catatan dari staf",
+    "memo_date_link": "Buku harian {{day}}/{{month}}"
   },
   "notification_settings": {
     "title": "Pengaturan pemberitahuan",
@@ -75,7 +77,8 @@
     "item": {
       "meal": "Makan",
       "mood": "Suasana hati",
-      "sleep": "Tidur"
+      "sleep": "Tidur",
+      "memo": "Catatan dari staf"
     },
     "frequency_title": "Seberapa sering ringkasan catatan dikirim",
     "frequency": {
@@ -483,7 +486,10 @@
     "wait_for_record": "Mohon tunggu catatan dari fasilitas",
     "next_unavailable": "Catatan besok belum tersedia",
     "more_dates": "Lihat hari sebelumnya",
-    "weekly_summary": "Ringkasan mingguan"
+    "weekly_summary": "Ringkasan mingguan",
+    "memos_title": "Catatan dari staf",
+    "memos_description": "Staf menulis catatan ini tentang hari itu",
+    "memos_ai_note": "Isi yang ditulis staf diubah oleh AI menjadi bahasa Jepang yang mudah dibaca"
   },
   "resident_list": {
     "title": "Daftar penghuni",

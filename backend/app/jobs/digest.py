@@ -18,6 +18,11 @@ run_jobs()（app/jobs/run.py）が 1 分ごとに呼ばれ、日本時間で 20:
   何もしない
 - 1 人ずつ savepoint で包む。1 人が想定外の失敗をしても、その家族の分だけ取り消し、ログ（家族の
   id・種類・エラーの種類だけ）に残して、同じ回のほかの家族のまとめは残す
+- 様子のメモ（spec 007 の FR-012b）は、家族が通知に選んでいて（notify_items に memo）、
+  開示されていて、
+  承認した日時が期間に入る（前回の締めより後〜今回の締め）承認済みのものを数える。書いた日が
+  昔でも、承認がこの期間なら入る。お知らせには、入ったメモの書いた日（memo_dates）だけを残し、
+  中身は入れない（書いた日の連絡帳へのリンクに使う）
 - 直した記録（値の変更）は、新しい記録に数えない（recorded_at は、最初に記録した日時）
 - お知らせ・メールに、記録の中身は入れない（SC-010）
 
@@ -27,7 +32,7 @@ run_jobs()（app/jobs/run.py）が 1 分ごとに呼ばれ、日本時間で 20:
 
 import argparse
 import logging
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 
 from sqlalchemy import exists, func, select
 from sqlalchemy.exc import IntegrityError
@@ -41,8 +46,9 @@ from app.models.notifications import (
     DigestRun,
     NotificationSetting,
 )
+from app.models.records import ITEMS
 from app.services.album import count_new_photos
-from app.services.disclosure import get_disclosed_records
+from app.services.disclosure import get_disclosed_memos, get_disclosed_records
 from app.services.notifications import create_digest_notice
 
 logger = logging.getLogger(__name__)
@@ -140,7 +146,8 @@ def _create_one(
         resident_id,
         period_start.astimezone(JST).date() - timedelta(days=BACKDATE_DAYS),
         period_end.astimezone(JST).date(),
-        items=items,
+        # 様子のメモ（memo）は記録項目ではないので、下で別に数える
+        items=[item for item in items if item in ITEMS],
     )
     has_records = any(period_start < record.recorded_at <= period_end for record in records)
     # 写真は、家族が通知を選んでいるときだけ数える。アルバムを見せない設定のときは、
@@ -148,7 +155,8 @@ def _create_one(
     has_album = (
         notify_album and count_new_photos(session, resident_id, period_start, period_end) > 0
     )
-    if not has_records and not has_album:
+    memo_dates = _memo_dates(session, resident_id, items, period_start, period_end)
+    if not has_records and not has_album and not memo_dates:
         return False
     # 記録か写真があるときだけ、場所を取る（作ったまとめだけを残す）。同じまとめがすでにあれば、
     # ここで IntegrityError になり、何も作らない
@@ -162,8 +170,30 @@ def _create_one(
         period_end,
         has_album=has_album,
         has_records=has_records,
+        memo_dates=memo_dates,
     )
     return True
+
+
+def _memo_dates(
+    session: Session,
+    resident_id: int,
+    items: list[str],
+    period_start: datetime,
+    period_end: datetime,
+) -> list[date]:
+    """期間に承認されたメモの、書いた日（重ねない・古い順）。通知に選んでいないときは空。"""
+    if "memo" not in items:
+        return []
+    # get_disclosed_memos の承認日時は「以上〜より前」。記録と同じ「前回の締めより後〜今回の締め」
+    # にそろえるため、終わりに 1 マイクロ秒足して取り、始まりちょうどのものは外す
+    memos = get_disclosed_memos(
+        session,
+        resident_id,
+        approved_from=period_start,
+        approved_to=period_end + timedelta(microseconds=1),
+    )
+    return sorted({memo.memo_date for memo in memos if memo.approved_at > period_start})
 
 
 def main() -> None:

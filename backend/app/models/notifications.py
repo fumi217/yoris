@@ -4,9 +4,9 @@ spec 001 の data-model.md「通知（さとこ）」。001-T048。
 返事のお知らせとメール（ミニマム版）と、まとめ・施設からのお知らせ（作り込み）が使う。
 """
 
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import ForeignKey, Identity, Index, Text, func, text
+from sqlalchemy import Date, ForeignKey, Identity, Index, Text, func, text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -19,7 +19,9 @@ NOTIFICATION_FREQUENCIES = ("daily", "weekly", "none")
 DIGEST_KINDS = ("daily", "weekly")
 # 初めの設定（設定の行がない家族は、この値で扱う。FR-023：選ばなかった場合は「1 日 1 回まとめて」）
 DEFAULT_FREQUENCY = "daily"
-DEFAULT_NOTIFY_ITEMS = ITEMS
+# 通知に選べる項目：記録項目と、様子のメモ（spec 007 の FR-012b。開示設定の項目と同じ名前 "memo"）
+NOTIFY_ITEMS = (*ITEMS, "memo")
+DEFAULT_NOTIFY_ITEMS = NOTIFY_ITEMS
 
 NOTIFICATION_KINDS = (
     "reply",
@@ -79,6 +81,11 @@ class Notification(Base):
     # has_records が false。まとめ以外の種類では使わない
     has_album: Mapped[bool] = mapped_column(server_default=text("false"))
     has_records: Mapped[bool] = mapped_column(server_default=text("true"))
+    # まとめに入った様子のメモの書いた日（日本時間・重ねない・古い順。spec 007 の FR-012b）。
+    # 書いた日の連絡帳へのリンクに使う。メモの中身は持たない
+    memo_dates: Mapped[list[date]] = mapped_column(
+        ARRAY(Date), server_default=text("'{}'"), default=list
+    )
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     read_at: Mapped[datetime | None]
 
@@ -111,8 +118,8 @@ class NotificationSetting(Base):
     """家族の通知設定（家族アカウントに 1 行。spec 001 の FR-023・001-T064）。
 
     行がない家族は、初めの設定（DEFAULT_*）として扱う。初めて保存したときに行を作る。
-    notify_items は、まとめに入れる記録項目（ITEMS のどれか）。開示されていない項目は、
-    まとめを作るときに除く（ここでは、選んだ項目をそのまま持つ）。
+    notify_items は、まとめに入れる項目（NOTIFY_ITEMS のどれか：記録項目と様子のメモ）。
+    開示されていない項目は、まとめを作るときに除く（ここでは、選んだ項目をそのまま持つ）。
     """
 
     __tablename__ = "notification_settings"
@@ -124,7 +131,7 @@ class NotificationSetting(Base):
     # 知りたいことへの返事を、すぐ通知するか（頻度の設定に関係なく。FR-023）
     notify_reply: Mapped[bool] = mapped_column(server_default=text("true"))
     notify_items: Mapped[list[str]] = mapped_column(
-        ARRAY(Text), server_default=text("'{meal,mood,sleep}'")
+        ARRAY(Text), server_default=text("'{meal,mood,sleep,memo}'")
     )
     # 「アルバムの新しい写真」を通知するか（spec 005 の FR-017）
     notify_album: Mapped[bool] = mapped_column(server_default=text("true"))

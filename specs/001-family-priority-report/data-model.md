@@ -344,7 +344,7 @@ CurrentUser:
 |---|---|---|
 | family_account_id | bigint → family_accounts | 主キー |
 | notify_reply | boolean | 知りたいことへの返事（初期値 `true`） |
-| notify_items | text[] | 通知する記録項目（初期値 `{meal,mood,sleep}`）。非開示の項目は、まとめを作るときに除く |
+| notify_items | text[] | 通知する記録項目（初期値 `{meal,mood,sleep,memo}`。`memo` は spec 007 の様子のメモ）。非開示の項目は、まとめを作るときに除く |
 | frequency | text | `daily`（初期値）／`weekly`／`none` |
 | updated_at | timestamptz | 最後に保存した日時 |
 

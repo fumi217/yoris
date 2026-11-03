@@ -5,7 +5,7 @@ DB と Redis を使う（conftest.py の client・session・redis・make_family�
 """
 
 from collections.abc import Iterator
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import select
@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.clock import today_jst
 from app.models.core import Facility
 from app.models.disclosure import DisclosureSetting, ReplyTemplate, Theme
+from app.models.memos import CareMemo
 from app.models.requests import Request
 from app.seed.themes import add_themes
 from app.services.disclosure import clear_disclosure_cache
@@ -255,3 +256,100 @@ def test_other_family_replies_are_not_returned(world, session):
 
     assert body["unread_replies"] == []
     assert "べつの家族への返事" not in str(body)
+
+
+# ---- 様子のメモ（007-T026・FR-012） ----
+
+
+def _show_memo(session: Session, facility: Facility, visible: bool = True) -> None:
+    setting = session.scalars(
+        select(DisclosureSetting).where(
+            DisclosureSetting.facility_id == facility.id,
+            DisclosureSetting.target_type == "item",
+            DisclosureSetting.target_code == "memo",
+        )
+    ).first()
+    if setting is None:
+        setting = DisclosureSetting(
+            facility_id=facility.id, target_type="item", target_code="memo", visible=visible
+        )
+        session.add(setting)
+    setting.visible = visible
+    session.flush()
+    session.commit()
+    clear_disclosure_cache(facility.id)
+
+
+def _memo(
+    session: Session,
+    world,
+    who="mine",
+    *,
+    text="よく笑っていました",
+    status="approved",
+    day=None,
+    hour=3,
+):
+    memo = CareMemo(
+        resident_id=world[who].resident_id,
+        author_staff_id=world["staff"].id,
+        memo_date=day or today_jst(),
+        written_at=datetime(2031, 3, 10, hour, 0, tzinfo=UTC),
+        approved_at=datetime(2031, 3, 10, 12, 0, tzinfo=UTC) if status == "approved" else None,
+        source_lang="id",
+        original_text="ORIGINAL-TEXT",
+        rewritten_text=text,
+        back_translation="BACK-TRANSLATION",
+        warnings=[],
+        status=status,
+    )
+    session.add(memo)
+    session.flush()
+    return memo
+
+
+def test_memos_are_returned_in_written_order_without_original_text(world, session):
+    _show_memo(session, world["facility"])
+    _memo(session, world, text="あとのメモ", hour=6)
+    _memo(session, world, text="さきのメモ", hour=2)
+
+    body = world["client"].get("/api/family/contact-book").json()
+
+    assert [memo["text"] for memo in body["memos"]] == ["さきのメモ", "あとのメモ"]
+    memo = body["memos"][0]
+    assert set(memo) == {"id", "text", "author_name", "author_occupation", "written_at"}
+    # 原文・訳し戻しは、家族に出さない（FR-012）
+    assert "ORIGINAL-TEXT" not in str(body)
+    assert "BACK-TRANSLATION" not in str(body)
+
+
+def test_only_approved_memos_of_the_day_and_of_my_resident_are_returned(world, session):
+    _show_memo(session, world["facility"])
+    yesterday = today_jst() - timedelta(days=1)
+    _memo(session, world, text="承認済み")
+    for status in ("draft", "pending", "returned", "withdrawn"):
+        _memo(session, world, text=f"{status}のメモ", status=status)
+    _memo(session, world, text="きのうのメモ", day=yesterday)
+    _memo(session, world, who="other", text="べつの入居者のメモ")
+
+    body = world["client"].get("/api/family/contact-book").json()
+    past = world["client"].get(f"/api/family/contact-book?date={yesterday}").json()
+
+    assert [memo["text"] for memo in body["memos"]] == ["承認済み"]
+    assert [memo["text"] for memo in past["memos"]] == ["きのうのメモ"]
+
+
+def test_memos_are_empty_when_the_facility_hides_them(world, session):
+    _show_memo(session, world["facility"], visible=False)
+    _memo(session, world)
+
+    assert world["client"].get("/api/family/contact-book").json()["memos"] == []
+
+
+def test_a_script_in_a_memo_is_returned_as_plain_text(world, session):
+    _show_memo(session, world["facility"])
+    _memo(session, world, text="<script>alert(1)</script>")
+
+    [memo] = world["client"].get("/api/family/contact-book").json()["memos"]
+
+    assert memo["text"] == "<script>alert(1)</script>"

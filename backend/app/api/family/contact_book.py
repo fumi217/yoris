@@ -5,11 +5,14 @@
 
 - unread_replies：まだ読んでいない返事。日付に関わらず、すべて（FR-015）
 - day_replies：その日の、もう読んだ返事（未読は上の unread_replies に出すので、重ねない）
+- memos：その日（書いた日）の、承認済みの様子のメモ（spec 007 の FR-012）。書いた時刻の順。
+  開示設定で見せない設定のとき・ないときは空。原文・訳し戻しは返さない
 - sections：開示している項目だけ、食事（朝・昼・夜・おやつ）→ 機嫌・様子 → 眠りの順。
   まだ記録がない欄は、record を null にして、message_key（辞書のキー）を返す（FR-017）。
   ただし、おやつは、記録があるときだけ欄を出す（毎日付けるとは限らないため）
 
-記録は get_disclosed_records、返事は get_active_replies を通す（直接読まない。R-06）。
+記録は get_disclosed_records、返事は get_active_replies、メモは get_disclosed_memos を通す
+（直接読まない。R-06）。
 """
 
 from datetime import date, datetime
@@ -25,9 +28,11 @@ from app.db import get_session
 from app.errors import AppError, ErrorCode
 from app.models.records import DAY_SLOT, ITEMS, MEAL_SLOTS
 from app.services.disclosure import (
+    DisclosedMemo,
     DisclosedRecord,
     DisclosedReply,
     get_active_replies,
+    get_disclosed_memos,
     get_disclosed_records,
     is_item_disclosed,
 )
@@ -76,10 +81,21 @@ class ReplyOut(BaseModel):
     read: bool
 
 
+class MemoOut(BaseModel):
+    id: int
+    # 整えた日本語。辞書を通さず、文字としてだけ出す
+    text: str
+    author_name: str
+    # 職種のコード（返事と同じ。空なら、画面は名前だけを出す）
+    author_occupation: str | None
+    written_at: datetime
+
+
 class ContactBookResponse(BaseModel):
     date: date
     unread_replies: list[ReplyOut]
     day_replies: list[ReplyOut]
+    memos: list[MemoOut]
     sections: list[SectionOut]
 
 
@@ -96,6 +112,16 @@ def _reply_out(reply: DisclosedReply) -> ReplyOut:
         replied_at=reply.replied_at,
         edited=reply.edited,
         read=reply.read,
+    )
+
+
+def _memo_out(memo: DisclosedMemo) -> MemoOut:
+    return MemoOut(
+        id=memo.id,
+        text=memo.text,
+        author_name=memo.author_name,
+        author_occupation=memo.author_occupation,
+        written_at=memo.written_at,
     )
 
 
@@ -152,6 +178,10 @@ def get_contact_book(
             _reply_out(reply)
             for reply in replies
             if reply.read and reply.contact_book_date == target
+        ],
+        memos=[
+            _memo_out(memo)
+            for memo in get_disclosed_memos(session, user.resident_id, target, target)
         ],
         sections=sections,
     )

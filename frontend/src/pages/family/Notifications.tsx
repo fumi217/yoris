@@ -12,6 +12,7 @@ import {
   groupByDay,
   kindKey,
   linkFor,
+  memoDateLink,
   noticeIconName,
   unreadCount,
   type DayGroup,
@@ -117,6 +118,9 @@ function DaySection({ group }: { group: DayGroup }) {
         {group.items.map((notification) => (
           <li key={notification.id} className="border-t border-card-line first:border-t-0">
             <NoticeRow notification={notification} />
+            {notification.memo_dates.length > 0 && (
+              <MemoDateLinks dates={notification.memo_dates} unread={!notification.read} />
+            )}
           </li>
         ))}
       </ul>
@@ -162,6 +166,36 @@ function NoticeRow({ notification }: { notification: FamilyNotification }) {
     </Link>
   ) : (
     <div className={className}>{body}</div>
+  )
+}
+
+/**
+ * まとめに入った様子のメモの、書いた日。押すと、その日の連絡帳へ（メモ自体は、書いた日の連絡帳に出る。
+ * spec 007 の FR-012b）。中身は出さない。行のリンクの外に置く（リンクの中にリンクを置かない）。
+ */
+function MemoDateLinks({ dates, unread }: { dates: string[]; unread: boolean }) {
+  const { t } = useTranslation()
+  return (
+    <div
+      className={`flex flex-wrap items-center gap-2 pb-3 pl-16 pr-4 text-sm ${unread ? 'bg-unread' : ''}`}
+    >
+      <span className="text-ink-sub">
+        <Text k="notifications.memo_label" />
+      </span>
+      {dates.map((date) => {
+        const [, month, day] = date.split('-').map(Number)
+        return (
+          <Link
+            key={date}
+            to={memoDateLink(date)}
+            className="inline-flex min-h-11 items-center gap-1 rounded-full bg-primary-soft px-4 font-bold text-primary-dark hover:bg-primary hover:text-white"
+          >
+            <Ruby text={t('notifications.memo_date_link', { month, day })} />
+            <Icon name="next" className="text-xs" />
+          </Link>
+        )
+      })}
+    </div>
   )
 }
 

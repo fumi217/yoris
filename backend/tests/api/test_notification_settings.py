@@ -15,7 +15,11 @@ from app.seed.themes import add_disclosure_settings, add_themes
 from app.services.disclosure import clear_disclosure_cache
 
 URL = "/api/family/notification-settings"
-DEFAULT = {"notify_reply": True, "notify_items": ["meal", "mood", "sleep"], "frequency": "daily"}
+DEFAULT = {
+    "notify_reply": True,
+    "notify_items": ["meal", "mood", "sleep", "memo"],
+    "frequency": "daily",
+}
 
 
 @pytest.fixture
@@ -83,7 +87,7 @@ def test_get_returns_the_first_settings_and_the_email_without_making_a_row(
     assert body == {
         **DEFAULT,
         "email": session.get(User, family.user_id).email,
-        "available_items": ["meal", "mood", "sleep"],
+        "available_items": ["meal", "mood", "sleep", "memo"],
         "notify_album": True,  # アルバムを見せる設定のときだけ返す（FR-017）
     }
     assert _count(session) == before  # 見ただけでは、行を作らない
@@ -99,8 +103,8 @@ def test_available_items_are_only_the_disclosed_ones(client, session, world, mak
         URL, json={"notify_reply": True, "notify_items": ["meal", "mood"], "frequency": "daily"}
     ).json()
 
-    assert got["available_items"] == ["meal", "sleep"]
-    assert saved["available_items"] == ["meal", "sleep"]
+    assert got["available_items"] == ["meal", "sleep", "memo"]
+    assert saved["available_items"] == ["meal", "sleep", "memo"]
     assert saved["notify_items"] == ["meal", "mood"]
 
 
@@ -203,7 +207,7 @@ def test_items_are_deduplicated_in_the_fixed_order_and_may_be_empty(client, make
     "body",
     [
         {"notify_reply": True, "notify_items": ["meal"], "frequency": "hourly"},  # 知らない頻度
-        {"notify_reply": True, "notify_items": ["memo"], "frequency": "daily"},  # 記録項目ではない
+        {"notify_reply": True, "notify_items": ["snack"], "frequency": "daily"},  # 選べない項目
         {"notify_reply": True, "notify_items": ["unknown"], "frequency": "daily"},
         {"notify_reply": "yes", "notify_items": ["meal"], "frequency": "daily"},  # 真偽ではない
         {"notify_reply": True, "notify_items": "meal", "frequency": "daily"},  # 配列ではない
@@ -279,3 +283,28 @@ def test_a_hidden_album_ignores_notify_album_and_keeps_the_other_settings(
         )
     )
     assert stored is False
+
+
+# ---- 様子のメモ（007-T027・FR-012b） ----
+
+
+def test_memo_can_be_chosen_and_is_kept_in_the_fixed_order(
+    client, session, world, make_family, login_as
+):
+    login_as(make_family().user_id)
+
+    saved = _save(client, notify_items=["memo", "meal"])
+
+    assert saved.status_code == 200
+    assert saved.json()["notify_items"] == ["meal", "memo"]
+    assert client.get(URL).json()["notify_items"] == ["meal", "memo"]
+
+
+def test_memo_is_not_offered_when_the_facility_hides_it(
+    client, session, world, make_family, login_as
+):
+    # 非開示の項目は、選択肢に出さない（選んだ値は、そのまま持つ）
+    login_as(make_family().user_id)
+    _hide_item(session, world, "memo")
+
+    assert client.get(URL).json()["available_items"] == ["meal", "mood", "sleep"]

@@ -7,6 +7,7 @@ import {
   groupByDay,
   kindKey,
   linkFor,
+  memoDateLink,
   noticeIconName,
   unreadCount,
   type FamilyNotification,
@@ -21,6 +22,7 @@ const notification = (overrides: Partial<FamilyNotification> = {}): FamilyNotifi
   announcement_id: null,
   period_start: null,
   period_end: null,
+  memo_dates: [],
   ...overrides,
 })
 
@@ -42,6 +44,30 @@ const text = (html: string) =>
     .replace(/<[^>]+>/g, '')
 
 describe('NotificationsView', () => {
+  it('まとめに入った様子のメモの書いた日から、その日の連絡帳へ進める（中身は出さない。FR-012b）', () => {
+    const html = render([
+      notification({
+        kind: 'daily_digest',
+        reply_id: null,
+        memo_dates: ['2026-10-25', '2026-10-26'],
+      }),
+    ])
+
+    expect(text(html)).toContain('様子のメモ')
+    expect(text(html)).toContain('10月25日の連絡帳')
+    expect(html).toContain('href="/family?date=2026-10-25"')
+    expect(html).toContain('href="/family?date=2026-10-26"')
+    // リンクの中にリンクを入れない
+    expect(html).not.toMatch(/<a[^>]*>(?:(?!<\/a>).)*<a /)
+  })
+
+  it('メモが入らないお知らせには、メモの日付のリンクは出ない', () => {
+    const html = render([notification({ kind: 'daily_digest', reply_id: null })])
+
+    expect(html).not.toContain('date=')
+    expect(memoDateLink('2026-10-25')).toBe('/family?date=2026-10-25')
+  })
+
   it('種類ごとの文言と、日本時間の日時が出る', () => {
     const shown = text(
       render([

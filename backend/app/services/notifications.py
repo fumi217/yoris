@@ -168,6 +168,7 @@ def create_digest_notice(
     *,
     has_album: bool = False,
     has_records: bool = True,
+    memo_dates: list[date] | None = None,
 ) -> int:
     """まとめのお知らせ（アプリ内）とメールの送る予定を作り、email_outbox の id を返す。
 
@@ -175,6 +176,8 @@ def create_digest_notice(
     commit しない（まとめの job が、同じトランザクションで呼ぶ。送るのは、あとの deliver_pending）。
     メールに渡すのは、種類・リンク・家族の言語と、写真があるときの has_album・has_records
     （文面を選ぶ真偽）だけで、記録の中身・写真・コメントは渡さない（SC-010・FR-019）。
+    様子のメモ（spec 007）が入るときの memo_dates（書いた日）は、アプリ内のお知らせにだけ残す。
+    メールは、メモだけのときも記録のときと同じ文面で、メモの中身も日付も渡さない（FR-012b）。
     """
     if kind not in DIGEST_KINDS:
         raise ValueError(f"kind: {kind}")
@@ -192,6 +195,7 @@ def create_digest_notice(
             period_end=period_end,
             has_album=has_album,
             has_records=has_records,
+            memo_dates=memo_dates or [],
         )
     )
     params: dict[str, str | bool] = {"lang": language}

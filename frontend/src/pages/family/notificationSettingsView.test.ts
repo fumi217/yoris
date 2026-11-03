@@ -12,7 +12,7 @@ const settings: NotificationSettingsData = {
   notify_items: ['meal', 'mood', 'sleep'],
   frequency: 'daily',
   email: 'family@example.test',
-  available_items: ['meal', 'mood', 'sleep'],
+  available_items: ['meal', 'mood', 'sleep', 'memo'],
 }
 
 describe('toDraft', () => {
@@ -74,8 +74,9 @@ describe('selectableItems', () => {
     expect(selectableItems(['sleep', 'meal'])).toEqual(['meal', 'sleep'])
   })
 
-  it('知らない項目（memo など）は、選択肢に出さない', () => {
-    expect(selectableItems(['memo', 'mood'])).toEqual(['mood'])
+  it('様子のメモ（memo）も選べる。知らない項目は、選択肢に出さない（並びは固定）', () => {
+    expect(selectableItems(['memo', 'mood'])).toEqual(['mood', 'memo'])
+    expect(selectableItems(['snack', 'mood'])).toEqual(['mood'])
   })
 
   it('選べる項目がなければ、空', () => {

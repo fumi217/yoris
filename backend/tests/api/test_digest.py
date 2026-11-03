@@ -23,6 +23,7 @@ from app.models.album import AlbumPhoto
 from app.models.core import Resident, User
 from app.models.disclosure import DisclosureSetting
 from app.models.files import UploadedFile
+from app.models.memos import CareMemo
 from app.models.notifications import DigestRun, EmailOutbox, Notification, NotificationSetting
 from app.models.records import DAY_SLOT, VALUES, CareRecord
 from app.seed.themes import add_disclosure_settings, add_themes
@@ -658,3 +659,144 @@ def test_the_photo_digest_mail_is_built_from_the_stored_row(session, world, add_
     assert deliver_pending(session, ids=[outbox.id], send=sent.append) == 1
     assert sent[0]["Subject"] == "アルバムに新しい写真が載りました"
     assert outbox.sent_at is not None
+
+
+# ---- 様子のメモ（007-T027・FR-012b） ----
+
+
+def add_memo(
+    session: Session,
+    world,
+    approved_at: datetime,
+    memo_date: date | None = None,
+    status: str = "approved",
+) -> CareMemo:
+    memo = CareMemo(
+        resident_id=world.family.resident_id,
+        author_staff_id=world.staff.id,
+        memo_date=memo_date or approved_at.astimezone(JST).date(),
+        written_at=approved_at - timedelta(hours=1),
+        approved_at=approved_at if status == "approved" else None,
+        source_lang="id",
+        original_text="SECRET-ORIGINAL",
+        rewritten_text="SECRET-REWRITTEN",
+        back_translation="SECRET-BACK",
+        warnings=[],
+        status=status,
+    )
+    session.add(memo)
+    session.flush()
+    return memo
+
+
+def test_a_day_with_only_an_approved_memo_makes_a_digest_with_its_written_date(session, world):
+    add_memo(session, world, at(MONDAY, 15))
+
+    create_digests(session, at(MONDAY, 20))
+
+    [notice] = digests(session, world)
+    assert notice.memo_dates == [MONDAY]
+    assert notice.has_records is False
+    assert notice.has_album is False
+
+
+def test_the_written_date_is_the_memo_date_even_when_approved_on_a_later_day(session, world):
+    # 昨日書いて今日承認したメモは、今日のまとめに入る。お知らせには、書いた日を出す
+    add_memo(session, world, at(MONDAY, 10), memo_date=SUNDAY)
+
+    create_digests(session, at(MONDAY, 20))
+
+    [notice] = digests(session, world)
+    assert notice.memo_dates == [SUNDAY]
+
+
+def test_a_memo_is_counted_by_its_approval_time_and_only_once(session, world):
+    add_memo(session, world, at(MONDAY, 10))
+    create_digests(session, at(MONDAY, 20))
+    add_memo(session, world, at(MONDAY, 21))  # 20 時のあとの承認は、次のまとめ
+
+    create_digests(session, at(TUESDAY, 20))
+
+    first, second = digests(session, world)
+    assert (first.memo_dates, second.memo_dates) == ([MONDAY], [MONDAY])
+    assert len(runs(session, world)) == 2
+
+
+def test_memo_dates_are_unique_and_in_order(session, world):
+    add_memo(session, world, at(MONDAY, 10), memo_date=MONDAY)
+    add_memo(session, world, at(MONDAY, 11), memo_date=SUNDAY)
+    add_memo(session, world, at(MONDAY, 12), memo_date=MONDAY)
+
+    create_digests(session, at(MONDAY, 20))
+
+    [notice] = digests(session, world)
+    assert notice.memo_dates == [SUNDAY, MONDAY]
+
+
+def test_memos_that_are_not_approved_make_nothing(session, world):
+    for status in ("draft", "pending", "returned", "withdrawn"):
+        add_memo(session, world, at(MONDAY, 10), status=status)
+
+    assert create_digests(session, at(MONDAY, 20)) == 0
+    assert digests(session, world) == []
+
+
+def test_a_hidden_memo_setting_leaves_memos_out(session, world):
+    add_memo(session, world, at(MONDAY, 10))
+    session.execute(
+        update(DisclosureSetting)
+        .where(
+            DisclosureSetting.facility_id == world.facility.id,
+            DisclosureSetting.target_type == "item",
+            DisclosureSetting.target_code == "memo",
+        )
+        .values(visible=False)
+    )
+    session.flush()
+    clear_disclosure_cache(world.facility.id)
+
+    assert create_digests(session, at(MONDAY, 20)) == 0
+
+
+def test_without_memo_in_notify_items_memos_are_left_out(session, world):
+    set_settings(session, world, notify_items=["meal", "mood", "sleep"])
+    add_memo(session, world, at(MONDAY, 10))
+
+    assert create_digests(session, at(MONDAY, 20)) == 0
+
+
+def test_a_family_without_a_settings_row_gets_memos(session, world):
+    add_memo(session, world, at(MONDAY, 10))
+
+    assert create_digests(session, at(MONDAY, 20)) == 1
+
+
+def test_memos_and_records_make_one_digest(session, world):
+    record(session, world, at(MONDAY, 12))
+    add_memo(session, world, at(MONDAY, 15))
+
+    create_digests(session, at(MONDAY, 20))
+
+    [notice] = digests(session, world)
+    assert (notice.has_records, notice.memo_dates) == (True, [MONDAY])
+
+
+def test_a_weekly_family_counts_the_memos_of_the_week(session, world):
+    set_settings(session, world, frequency="weekly", notify_items=["meal", "memo"])
+    add_memo(session, world, at(SUNDAY + timedelta(days=3), 10))
+
+    create_digests(session, at(SUNDAY + timedelta(days=7), 20))
+
+    [notice] = digests(session, world)
+    assert notice.kind == "weekly_digest"
+    assert len(notice.memo_dates) == 1
+
+
+def test_the_memo_content_never_reaches_the_notice_or_the_mail(session, world):
+    add_memo(session, world, at(MONDAY, 10))
+
+    create_digests(session, at(MONDAY, 20))
+
+    [mail] = session.scalars(select(EmailOutbox).order_by(EmailOutbox.id.desc()).limit(1))
+    assert "SECRET" not in str(mail.params)
+    assert "SECRET" not in str([(n.kind, n.memo_dates) for n in digests(session, world)])

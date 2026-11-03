@@ -13,6 +13,8 @@ export type FamilyNotification = {
   announcement_id: number | null
   period_start: string | null
   period_end: string | null
+  // まとめに入った様子のメモの書いた日（古い順。書いた日の連絡帳へのリンクに使う。中身は来ない）
+  memo_dates: string[]
 }
 
 /** お知らせの種類ごとの、辞書のキー。知らない種類は、施設からのお知らせと同じ文言にする。 */
@@ -124,4 +126,9 @@ export function groupByDay(
     groups.push({ date, kind, items: [notification] })
   }
   return groups
+}
+
+/** 様子のメモの書いた日の連絡帳へ進む先（spec 007 の FR-012b）。 */
+export function memoDateLink(date: string): string {
+  return `/family?date=${date}`
 }

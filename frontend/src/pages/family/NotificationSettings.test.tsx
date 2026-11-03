@@ -13,7 +13,7 @@ const settings: NotificationSettingsData = {
   notify_items: ['meal', 'mood', 'sleep'],
   frequency: 'daily',
   email: 'family@example.test',
-  available_items: ['meal', 'mood', 'sleep'],
+  available_items: ['meal', 'mood', 'sleep', 'memo'],
 }
 
 type Extra = {

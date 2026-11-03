@@ -4,8 +4,8 @@
 /** まとめを送る頻度（API の frequency と同じ）。 */
 export const FREQUENCIES = ['daily', 'weekly', 'none'] as const
 
-/** 通知に選べる記録項目（API の notify_items と同じ。並びもこの順）。 */
-export const ITEM_CODES = ['meal', 'mood', 'sleep'] as const
+/** 通知に選べる項目（記録項目と、様子のメモ memo。API の notify_items と同じ。並びもこの順）。 */
+export const ITEM_CODES = ['meal', 'mood', 'sleep', 'memo'] as const
 
 /** GET・PUT /api/family/notification-settings の返り値。 */
 export type NotificationSettingsData = {

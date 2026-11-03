@@ -9,7 +9,7 @@ id で指定するものは、ログイン中の家族のものかを必ず確�
 （id は連番で推測できる。ほかの家族のものは 404）。
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
@@ -44,6 +44,9 @@ class NotificationOut(BaseModel):
     # まとめに、写真・記録が含まれるか。画面が、文言（記録だけ・写真だけ・両方）を選ぶ（FR-018）
     has_album: bool
     has_records: bool
+    # まとめに入った様子のメモの書いた日（古い順）。書いた日の連絡帳へのリンクに使う。
+    # 中身は返さない（FR-012b）
+    memo_dates: list[date]
 
 
 def _resident_id(user: CurrentUser) -> int:
@@ -79,6 +82,7 @@ def list_notifications(
             period_end=row.period_end,
             has_album=row.has_album,
             has_records=row.has_records,
+            memo_dates=list(row.memo_dates),
         )
         for row in rows
     ]

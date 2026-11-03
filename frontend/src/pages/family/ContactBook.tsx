@@ -26,6 +26,7 @@ import {
   valueKey,
   weekdayOf,
   type ContactBookData,
+  type ContactMemo,
   type ContactReply,
   type ContactSection,
   type ContactSlot,
@@ -163,12 +164,49 @@ export function ContactBookView({ book, onRead, today, onMove }: ViewProps) {
         </div>
       </Card>
 
+      {/* 様子のメモ（spec 007 の FR-012）：承認されたものだけ。AI で整えた日本語であることを、控えめに添える */}
+      {book.memos.length > 0 && <MemoSection memos={book.memos} />}
+
       {/* 緊急の案内（FR-028）。警告の赤・オレンジにはせず、淡い青の案内の帯にする */}
       <p className="flex items-center gap-3 rounded-xl bg-primary-soft p-4 text-sm font-bold">
         <Icon name="phone" className="text-lg text-primary" />
         <Text k="contact_book.emergency" />
       </p>
     </section>
+  )
+}
+
+/** 様子のメモ：1 枚の白い面に、書いた時刻の順で並べる。職員の名前・時刻は、各メモの下。 */
+function MemoSection({ memos }: { memos: ContactMemo[] }) {
+  return (
+    <Card>
+      <div className="space-y-4">
+        <SectionHeader
+          icon="memo"
+          title={<Text k="contact_book.memos_title" />}
+          description={<Text k="contact_book.memos_description" />}
+        />
+        <ul className="divide-y divide-card-line">
+          {memos.map((memo) => (
+            <li key={memo.id} className="space-y-1 py-3 first:pt-0 last:pb-0">
+              {/* 整えた日本語は、辞書を通さず、文字としてだけ出す */}
+              <p className="whitespace-pre-wrap text-lg break-words">{memo.text}</p>
+              <p className="text-xs text-ink-sub">
+                <span className="font-bold">
+                  {memo.author_name}
+                  <OccupationLabel code={memo.author_occupation} />
+                </span>
+                <span className="ml-2">{timeInJapan(memo.written_at)}</span>
+              </p>
+            </li>
+          ))}
+        </ul>
+        <p className="flex items-center gap-1.5 text-sm text-ink-sub">
+          <Icon name="info" className="shrink-0" />
+          <Text k="contact_book.memos_ai_note" />
+        </p>
+      </div>
+    </Card>
   )
 }
 

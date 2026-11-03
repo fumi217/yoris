@@ -34,10 +34,23 @@ export type ContactReply = {
   read: boolean
 }
 
+/** 様子のメモ（spec 007 の FR-012）。整えた日本語を、書いた職員の名前つきで出す。原文・訳し戻しは来ない。 */
+export type ContactMemo = {
+  id: number
+  // 整えた日本語。辞書を通さず、文字としてだけ出す
+  text: string
+  author_name: string
+  // 職種のコード（辞書の occupation.*。空なら名前だけ）
+  author_occupation: string | null
+  written_at: string
+}
+
 export type ContactBookData = {
   date: string
   unread_replies: ContactReply[]
   day_replies: ContactReply[]
+  // その日（書いた日）の、承認済みの様子のメモ。書いた時刻の順
+  memos: ContactMemo[]
   sections: ContactSection[]
 }
 

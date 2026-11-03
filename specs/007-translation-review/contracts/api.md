@@ -1,7 +1,13 @@
 # API Contract: spec 007（D：翻訳・整文・訳し戻し・承認）
 
 共通の決まり（`/api`、Cookie のセッション、`X-Requested-With: fetch`、エラーの形）は [spec 001 contracts/api.md](../../001-family-priority-report/contracts/api.md) と同じ。担当はすべてみさき。
-家族向けの新しい API はない（家族の連絡帳は spec 001 の `GET /api/family/contact-book` が `get_disclosed_memos()` を通して返す。さとこ）。
+家族向けの新しい API はない。spec 001 の次の 3 つに項目を足す（007-T026・T027。ゆうが引き取った）。
+
+| API | 足すもの | spec |
+|---|---|---|
+| `GET /api/family/contact-book?date=` | `memos`：その日（書いた日）の承認済みのメモ。`get_disclosed_memos(resident_id, date, date)` を通す。`[{id, text, author_name, author_occupation, written_at}]` を書いた時刻の順に。見せない設定・メモがないときは空の配列。原文・訳し戻し・印は返さない | FR-012 |
+| `GET /api/family/notifications` | まとめのお知らせに `memo_dates`：入ったメモの書いた日（`["2026-10-30", …]`。重ねない・古い順）。メモが入らないお知らせは空の配列。メモの中身は返さない | FR-012b |
+| `GET/PUT /api/family/notification-settings` | `notify_items` と `available_items` に `memo` が加わる（`available_items` には、開示設定で「様子のメモ」を見せる設定のときだけ入る）。初期値は選んだ状態 | FR-012b |
 
 ### 役割の略号
 

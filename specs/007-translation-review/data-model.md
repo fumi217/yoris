@@ -11,7 +11,8 @@
 
 spec 001 のテーブルに足すもの（つなぎ目）：
 - `disclosure_settings`：`target_type = 'item'`・`target_code = 'memo'` の行（初期値 `visible = true`）（ゆう）
-- `notification_settings.notify_items`：選べる値に `memo`（初期値で選んだ状態）（さとこ）
+- `notification_settings.notify_items`：選べる値に `memo`（初期値で選んだ状態）。すでにある行にも `memo` を足す（これまでの設定は meal・mood・sleep にしか選びようがなかったため）（ゆう。007-T027）
+- `notifications.memo_dates`：`date[]`、初期値は空。まとめ（`daily_digest`・`weekly_digest`）に入ったメモの書いた日（日本時間。重ねない・古い順）。家族のお知らせが、書いた日の連絡帳へのリンクを出すために使う。メモの中身は持たない（ゆう。007-T027）
 
 ## `care_memos`
 

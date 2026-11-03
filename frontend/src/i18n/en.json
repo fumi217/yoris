@@ -62,7 +62,9 @@
     "unread_count": "{{count}} unread",
     "day_today": "Today ({{month}}/{{day}})",
     "day_yesterday": "Yesterday ({{month}}/{{day}})",
-    "day_other": "{{month}}/{{day}} ({{weekday}})"
+    "day_other": "{{month}}/{{day}} ({{weekday}})",
+    "memo_label": "Notes from staff",
+    "memo_date_link": "Daily notes for {{month}}/{{day}}"
   },
   "notification_settings": {
     "title": "Notification settings",
@@ -75,7 +77,8 @@
     "item": {
       "meal": "Meals",
       "mood": "Mood",
-      "sleep": "Sleep"
+      "sleep": "Sleep",
+      "memo": "Notes from staff"
     },
     "frequency_title": "How often to send the record summary",
     "frequency": {
@@ -483,7 +486,10 @@
     "wait_for_record": "Please wait for the facility to record it",
     "next_unavailable": "Tomorrow's notes are not available yet",
     "more_dates": "See earlier days",
-    "weekly_summary": "Weekly summary"
+    "weekly_summary": "Weekly summary",
+    "memos_title": "Notes from staff",
+    "memos_description": "Staff wrote these about the day",
+    "memos_ai_note": "What staff wrote has been rewritten in easy-to-read Japanese by AI"
   },
   "resident_list": {
     "title": "Residents",

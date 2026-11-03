@@ -15,6 +15,7 @@ import {
   valueKey,
   weekdayOf,
   type ContactBookData,
+  type ContactMemo,
   type ContactReply,
   type ContactSection,
 } from './contactBookView'
@@ -31,6 +32,15 @@ const reply = (overrides: Partial<ContactReply> = {}): ContactReply => ({
   replied_at: '2026-10-26T00:30:00Z',
   edited: false,
   read: false,
+  ...overrides,
+})
+
+const memo = (overrides: Partial<ContactMemo> = {}): ContactMemo => ({
+  id: 1,
+  text: '午後、お友だちと楽しそうに話していました。',
+  author_name: 'シティ',
+  author_occupation: 'care_worker',
+  written_at: '2026-10-26T05:00:00Z',
   ...overrides,
 })
 
@@ -60,6 +70,7 @@ const book = (overrides: Partial<ContactBookData> = {}): ContactBookData => ({
   date: '2026-10-26',
   unread_replies: [],
   day_replies: [],
+  memos: [],
   sections: sections(),
   ...overrides,
 })
@@ -164,6 +175,40 @@ describe('ContactBookView', () => {
 
   it('返事がなければ、返事のカードは出ない', () => {
     expect(render(book())).not.toContain('<article')
+  })
+
+  it('様子のメモは、職員の名前と書いた時刻、AI で整えている旨の注記つきで出る（FR-012）', () => {
+    const shown = text(render(book({ memos: [memo()] })))
+
+    expect(shown).toContain('様子のメモ')
+    expect(shown).toContain('午後、お友だちと楽しそうに話していました。')
+    expect(shown).toContain('シティ')
+    expect(shown).toContain('14:00')
+    expect(shown).toContain('職員が書いた内容を、AI で読みやすい日本語に整えています')
+  })
+
+  it('様子のメモは、書いた時刻の順（API が返した順）のまま並ぶ', () => {
+    const shown = text(
+      render(
+        book({ memos: [memo({ id: 1, text: 'さきのメモ' }), memo({ id: 2, text: 'あとのメモ' })] }),
+      ),
+    )
+
+    expect(shown.indexOf('さきのメモ')).toBeLessThan(shown.indexOf('あとのメモ'))
+  })
+
+  it('様子のメモがなければ、その欄も注記も出ない', () => {
+    const shown = text(render(book()))
+
+    expect(shown).not.toContain('様子のメモ')
+    expect(shown).not.toContain('AI で読みやすい日本語')
+  })
+
+  it('様子のメモに書かれた HTML は、文字のまま出す', () => {
+    const html = render(book({ memos: [memo({ text: '<script>alert(1)</script>' })] }))
+
+    expect(html).not.toContain('<script>alert(1)</script>')
+    expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
   })
 
   it('画面の下に、緊急のときの案内が出る', () => {
