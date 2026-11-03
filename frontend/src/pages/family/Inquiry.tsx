@@ -422,7 +422,7 @@ function AiBubble({ message }: { message: InquiryMessage }) {
           </div>
         )}
         {/* AI の答えであることを、答えのそばに常に出す（FR-005） */}
-        <p className="mt-2 flex items-center gap-1.5 text-xs text-ink-sub">
+        <p className="mt-2 flex items-center gap-1.5 text-sm text-ink-sub">
           <Icon name="info" className="shrink-0" />
           <Text k="inquiry.ai_notice" />
         </p>

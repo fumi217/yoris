@@ -342,7 +342,7 @@ function MealSlots({ section }: { section: ContactSection }) {
                   </p>
                 </>
               ) : (
-                <p className="text-sm text-ink-sub sm:text-xs">
+                <p className="text-sm text-ink-sub">
                   <Text k={slot.message_key ?? 'contact_book.not_recorded'} />
                 </p>
               )}

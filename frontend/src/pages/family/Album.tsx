@@ -128,7 +128,7 @@ export function AlbumView({ days, hasMore, loadingMore, onMore }: ViewProps) {
                   </button>
                   {/* 職員が書いた文。辞書を通さず、文字としてだけ出す。2 行まで（大きく見たときは全部） */}
                   {photo.comment && (
-                    <p className="line-clamp-2 px-0.5 text-xs break-words">{photo.comment}</p>
+                    <p className="line-clamp-2 px-0.5 text-sm break-words">{photo.comment}</p>
                   )}
                 </li>
               ))}
