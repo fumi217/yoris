@@ -14,7 +14,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from sqlalchemy import select, update
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
 
 from app.auth.deps import CurrentUser, require_family
@@ -25,6 +25,7 @@ from app.models.core import FamilyAccount
 from app.models.notifications import Notification
 from app.models.replies import Reply
 from app.models.requests import Request
+from app.services.disclosure import is_feature_disclosed
 
 router = APIRouter(prefix="/api/family", tags=["family"])
 
@@ -61,14 +62,30 @@ def list_notifications(
     user: Annotated[CurrentUser, Depends(require_family)],
     session: Annotated[Session, Depends(get_session)],
 ) -> list[NotificationOut]:
-    """ログイン中の家族のお知らせを、新しい順に（多くても LIST_LIMIT 件）。"""
+    """ログイン中の家族のお知らせを、新しい順に（多くても LIST_LIMIT 件）。
+
+    アルバムを「見せない」設定のときは、作った時点の has_album のままにせず、アルバムを出さない
+    （FR-014）。写真だけのまとめ（記録も様子のメモもない）は一覧から外し、記録やメモも入っている
+    まとめは、残して has_album だけ偽にする（メモの書いた日のリンクを、消さないため。spec 007）。
+    """
     resident_id = _resident_id(user)
-    rows = session.scalars(
+    album_disclosed = is_feature_disclosed(session, "album")
+    query = (
         select(Notification)
         .join(FamilyAccount, FamilyAccount.id == Notification.family_account_id)
         .where(FamilyAccount.resident_id == resident_id)
-        .order_by(Notification.created_at.desc(), Notification.id.desc())
-        .limit(LIST_LIMIT)
+    )
+    if not album_disclosed:
+        # 外す行を SQL で決める（取り出したあとに外すと、LIST_LIMIT の枠が欠ける）
+        query = query.where(
+            or_(
+                Notification.has_album.is_(False),
+                Notification.has_records.is_(True),
+                func.cardinality(Notification.memo_dates) > 0,
+            )
+        )
+    rows = session.scalars(
+        query.order_by(Notification.created_at.desc(), Notification.id.desc()).limit(LIST_LIMIT)
     )
     return [
         NotificationOut(
@@ -80,7 +97,7 @@ def list_notifications(
             announcement_id=row.announcement_id,
             period_start=row.period_start,
             period_end=row.period_end,
-            has_album=row.has_album,
+            has_album=row.has_album and album_disclosed,
             has_records=row.has_records,
             memo_dates=list(row.memo_dates),
         )

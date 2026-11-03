@@ -14,6 +14,8 @@ const settings: NotificationSettingsData = {
   frequency: 'daily',
   email: 'family@example.test',
   available_items: ['meal', 'mood', 'sleep', 'memo'],
+  // アルバムを見せない設定（項目を出さない）を基本にする。見せる設定のテストは、個別に上書きする
+  notify_album: null,
 }
 
 type Extra = {
@@ -46,6 +48,42 @@ const text = (html: string) =>
     .replace(/<rp>.*?<\/rp>/g, '')
     .replace(/<[^>]+>/g, '')
 
+describe('NotificationSettingsView（アルバム）', () => {
+  it('アルバムを見せない設定（null）のときは、アルバムの項目を出さない（FR-017）', () => {
+    const shown = text(render())
+
+    expect(shown).not.toContain('アルバム')
+    expect(shown).not.toContain('Album')
+  })
+
+  it('アルバムを見せる設定のときは、項目を出し、保存した値どおりに選んだ状態で出る', () => {
+    const on = render({ settings: { ...settings, notify_album: true } })
+    const off = render({ settings: { ...settings, notify_album: false } })
+
+    expect(text(on)).toContain('アルバムに新しい写真が載ったら、まとめで知らせる')
+    // 返事 + 項目 3 つ + アルバム = チェック 5 つ（オフなら 4 つ）
+    expect(on.match(/type="checkbox"[^>]*checked=""/g)).toHaveLength(5)
+    expect(off.match(/type="checkbox"[^>]*checked=""/g)).toHaveLength(4)
+  })
+
+  it('API がキーごと省略して返したとき（見せない設定。response_model_exclude_none）も、項目を出さない', () => {
+    // 実際の API は null ではなく、notify_album のキーを返さない。undefined でも出ないことを確かめる
+    const omitted: NotificationSettingsData = {
+      notify_reply: true,
+      notify_items: ['meal', 'mood', 'sleep'],
+      frequency: 'daily',
+      email: 'family@example.test',
+      available_items: ['meal', 'mood', 'sleep'],
+    }
+
+    const html = render({ settings: omitted })
+
+    expect(text(html)).not.toContain('アルバム')
+    // 返事 + 項目 3 つ = チェック 4 つ
+    expect(html.match(/type="checkbox"[^>]*checked=""/g)).toHaveLength(4)
+  })
+})
+
 describe('NotificationSettingsView', () => {
   it('緊急のときは電話で知らせる、という案内を、いつも出す（FR-028）', () => {
     expect(text(render())).toContain('緊急のときは、施設からお電話します')
@@ -62,7 +100,12 @@ describe('NotificationSettingsView', () => {
 
   it('選んでいる途中の内容（保存前）が、そのまま出る', () => {
     const html = render({
-      draft: { notify_reply: false, notify_items: ['meal'], frequency: 'weekly' },
+      draft: {
+        notify_reply: false,
+        notify_items: ['meal'],
+        frequency: 'weekly',
+        notify_album: null,
+      },
     })
 
     expect(html.match(/type="checkbox"[^>]*checked=""/g)).toHaveLength(1)
@@ -111,7 +154,7 @@ describe('NotificationSettingsView', () => {
 
   it('保存していない変更があるときだけ、「保存する」を押す案内を出す', () => {
     const changed = render({
-      draft: { notify_reply: true, notify_items: ['meal'], frequency: 'daily' },
+      draft: { notify_reply: true, notify_items: ['meal'], frequency: 'daily', notify_album: null },
     })
 
     expect(text(changed)).toContain('変更があります')
@@ -121,7 +164,7 @@ describe('NotificationSettingsView', () => {
   it('保存に失敗したときは、エラーの文を出す（選んだ内容は、残る）', () => {
     const html = render({
       errorKey: 'error.server_error',
-      draft: { notify_reply: false, notify_items: ['meal'], frequency: 'none' },
+      draft: { notify_reply: false, notify_items: ['meal'], frequency: 'none', notify_album: null },
     })
 
     expect(html).toContain('role="alert"')

@@ -10,10 +10,10 @@ import { Ruby } from '../../i18n/Ruby'
 import { weekdayOf } from './contactBookView'
 import {
   groupByDay,
-  kindKey,
   linkFor,
   memoDateLink,
   noticeIconName,
+  noticeKey,
   unreadCount,
   type DayGroup,
   type FamilyNotification,
@@ -144,7 +144,7 @@ function NoticeRow({ notification }: { notification: FamilyNotification }) {
       </span>
       <span className="min-w-0 flex-1">
         <span className={`block ${unread ? 'font-bold' : ''}`}>
-          <Text k={kindKey(notification.kind)} />
+          <Text k={noticeKey(notification)} />
         </span>
         <span className="mt-0.5 flex items-center gap-2 text-sm text-ink-sub">
           {/* 「new」は小文字で、突き出る部分がなく、枠の中で下に寄って見える。下に 3px 足して、縦中央に見せる（PR #400 ようこさん） */}

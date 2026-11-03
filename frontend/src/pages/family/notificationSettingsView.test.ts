@@ -13,6 +13,7 @@ const settings: NotificationSettingsData = {
   frequency: 'daily',
   email: 'family@example.test',
   available_items: ['meal', 'mood', 'sleep', 'memo'],
+  notify_album: true,
 }
 
 describe('toDraft', () => {
@@ -21,7 +22,24 @@ describe('toDraft', () => {
       notify_reply: true,
       notify_items: ['meal', 'mood', 'sleep'],
       frequency: 'daily',
+      notify_album: true,
     })
+  })
+
+  it('アルバムを見せない設定（notify_album が null）は、null のまま持つ', () => {
+    expect(toDraft({ ...settings, notify_album: null }).notify_album).toBeNull()
+  })
+
+  it('API がキーごと省略した（見せない設定）ときも、null にそろえる', () => {
+    const omitted: NotificationSettingsData = {
+      notify_reply: true,
+      notify_items: ['meal'],
+      frequency: 'daily',
+      email: 'family@example.test',
+      available_items: ['meal'],
+    }
+
+    expect(toDraft(omitted).notify_album).toBeNull()
   })
 
   it('項目の配列は、元の配列とは別のものにする（選んでいる途中で、元を書き換えない）', () => {
@@ -66,6 +84,7 @@ describe('isChanged', () => {
     expect(isChanged(saved, { ...saved, notify_reply: false })).toBe(true)
     expect(isChanged(saved, { ...saved, frequency: 'weekly' })).toBe(true)
     expect(isChanged(saved, { ...saved, notify_items: ['meal'] })).toBe(true)
+    expect(isChanged(saved, { ...saved, notify_album: false })).toBe(true)
   })
 })
 

@@ -8,16 +8,19 @@
 DB と Redis を使う（conftest.py の client・session・redis・make_family・make_staff・login_as）。
 """
 
+from datetime import date
+
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.auth.deps import CurrentUser, require_family
-from app.models.disclosure import ReplyTemplate, Theme
+from app.models.disclosure import DisclosureSetting, ReplyTemplate, Theme
 from app.models.notifications import Notification
 from app.models.replies import Reply
 from app.models.requests import Request
-from app.seed.themes import add_themes
+from app.seed.themes import add_disclosure_settings, add_themes
+from app.services.disclosure import clear_disclosure_cache
 from app.services.replies import save_reply
 
 
@@ -100,7 +103,10 @@ def _digest(session: Session, family, *, has_album: bool, has_records: bool) -> 
     session.commit()
 
 
-def test_list_has_album_and_records_flags_for_a_digest(world, session):
+def test_list_has_album_and_records_flags_for_a_digest(world, session, redis, facility):
+    # アルバムを見せる設定のとき（見せない設定のときは、下の「見せない」設定のテスト）
+    add_disclosure_settings(session, facility_id=facility.id)
+    clear_disclosure_cache(facility.id)
     _digest(session, world["mine"], has_album=False, has_records=True)
     _digest(session, world["mine"], has_album=True, has_records=False)
     _digest(session, world["mine"], has_album=True, has_records=True)
@@ -182,3 +188,103 @@ def test_family_without_resident_is_403(client):
         assert client.post("/api/family/replies/1/read").status_code == 403
     finally:
         client.app.dependency_overrides.pop(require_family, None)
+
+
+# --- アルバムを「見せない」設定のとき（005-T024・FR-014） ---
+
+
+@pytest.fixture
+def album_world(session: Session, redis, facility, world):
+    """開示設定は初期データ（アルバムは見せる）。家族 mine に、4 通りのまとめのお知らせを作る。"""
+    add_disclosure_settings(session, facility_id=facility.id)
+    clear_disclosure_cache(facility.id)
+    # 作る順 = id の順。写真だけのまとめを最後（いちばん新しい）にして、一覧の枠の確かめに使う
+    rows = {
+        "records_only": Notification(
+            family_account_id=world["mine"].id,
+            kind="daily_digest",
+            has_album=False,
+            has_records=True,
+        ),
+        "both": Notification(
+            family_account_id=world["mine"].id,
+            kind="weekly_digest",
+            has_album=True,
+            has_records=True,
+        ),
+        # 写真 + 様子のメモ（記録なし）：メモの書いた日のリンクがあるので、見せない設定でも残す
+        "album_and_memo": Notification(
+            family_account_id=world["mine"].id,
+            kind="daily_digest",
+            has_album=True,
+            has_records=False,
+            memo_dates=[date(2026, 11, 1)],
+        ),
+        "album_only": Notification(
+            family_account_id=world["mine"].id,
+            kind="daily_digest",
+            has_album=True,
+            has_records=False,
+        ),
+    }
+    session.add_all(rows.values())
+    session.commit()
+    yield {**world, "rows": {name: row.id for name, row in rows.items()}, "facility": facility}
+    clear_disclosure_cache(facility.id)
+
+
+def _hide_album(session: Session, facility) -> None:
+    session.execute(
+        update(DisclosureSetting)
+        .where(
+            DisclosureSetting.facility_id == facility.id,
+            DisclosureSetting.target_type == "feature",
+            DisclosureSetting.target_code == "album",
+        )
+        .values(visible=False)
+    )
+    session.flush()
+    clear_disclosure_cache(facility.id)
+
+
+def _flags(response) -> dict[int, tuple[bool, bool]]:
+    return {item["id"]: (item["has_album"], item["has_records"]) for item in response.json()}
+
+
+def test_digests_keep_their_photos_while_the_album_is_disclosed(album_world):
+    rows = album_world["rows"]
+
+    flags = _flags(album_world["client"].get("/api/family/notifications"))
+
+    assert flags[rows["album_only"]] == (True, False)
+    assert flags[rows["album_and_memo"]] == (True, False)
+    assert flags[rows["both"]] == (True, True)
+    assert flags[rows["records_only"]] == (False, True)
+
+
+def test_a_hidden_album_leaves_no_trace_in_the_list(session, album_world):
+    """見せない設定にしたあと、過去の写真のお知らせも出さない（FR-014）。"""
+    rows = album_world["rows"]
+    _hide_album(session, album_world["facility"])
+
+    flags = _flags(album_world["client"].get("/api/family/notifications"))
+
+    # 写真だけのまとめは、一覧から外れる
+    assert rows["album_only"] not in flags
+    # 記録も入っていたまとめは、記録の文言に戻る（has_album が偽になる）
+    assert flags[rows["both"]] == (False, True)
+    assert flags[rows["records_only"]] == (False, True)
+    # 様子のメモが入るまとめは、一覧に残す（メモの書いた日のリンクを消さない）。写真だけが偽になる
+    assert flags[rows["album_and_memo"]] == (False, False)
+
+
+def test_the_list_limit_is_not_eaten_by_hidden_album_notices(session, album_world, monkeypatch):
+    """外す行は SQL で決めるので、見せない設定でも、枠の分だけ返る。"""
+    monkeypatch.setattr("app.api.family.notifications.LIST_LIMIT", 2)
+    _hide_album(session, album_world["facility"])
+    rows = album_world["rows"]
+
+    flags = _flags(album_world["client"].get("/api/family/notifications"))
+
+    # 写真だけのまとめが最も新しい。外れたあとの 2 件が返る（取り出したあとに外すと 1 件になる）
+    assert set(flags) == {rows["album_and_memo"], rows["both"]}

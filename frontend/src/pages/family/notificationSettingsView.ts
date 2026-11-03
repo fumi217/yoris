@@ -16,13 +16,16 @@ export type NotificationSettingsData = {
   email: string
   // いま選べる記録項目（開示されているものだけ）
   available_items: string[]
+  // アルバムの新しい写真を知らせるか。アルバムを見せない設定のときは、API がキーごと省略して返す
+  // （`response_model_exclude_none`）ので、キーなしも「項目を出さない」（spec 005 の FR-014・FR-017）
+  notify_album?: boolean | null
 }
 
-/** 画面で選んでいる途中の内容（PUT で送るもの）。 */
+/** 画面で選んでいる途中の内容（PUT で送るもの）。notify_album は、出さない項目なら null。 */
 export type SettingsDraft = Pick<
   NotificationSettingsData,
   'notify_reply' | 'notify_items' | 'frequency'
->
+> & { notify_album: boolean | null }
 
 /** 保存した設定から、選んでいる途中の内容を作る（email などは含めない）。 */
 export function toDraft(settings: NotificationSettingsData): SettingsDraft {
@@ -30,6 +33,7 @@ export function toDraft(settings: NotificationSettingsData): SettingsDraft {
     notify_reply: settings.notify_reply,
     notify_items: [...settings.notify_items],
     frequency: settings.frequency,
+    notify_album: settings.notify_album ?? null,
   }
 }
 
@@ -51,6 +55,7 @@ export function isChanged(saved: SettingsDraft, draft: SettingsDraft): boolean {
   return (
     saved.notify_reply !== draft.notify_reply ||
     saved.frequency !== draft.frequency ||
+    saved.notify_album !== draft.notify_album ||
     saved.notify_items.join(',') !== draft.notify_items.join(',')
   )
 }

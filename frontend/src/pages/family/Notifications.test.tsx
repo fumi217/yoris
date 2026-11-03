@@ -9,6 +9,7 @@ import {
   linkFor,
   memoDateLink,
   noticeIconName,
+  noticeKey,
   unreadCount,
   type FamilyNotification,
 } from './notificationsView'
@@ -23,6 +24,8 @@ const notification = (overrides: Partial<FamilyNotification> = {}): FamilyNotifi
   period_start: null,
   period_end: null,
   memo_dates: [],
+  has_album: false,
+  has_records: true,
   ...overrides,
 })
 
@@ -42,6 +45,20 @@ const text = (html: string) =>
     .replace(/<rt>.*?<\/rt>/g, '')
     .replace(/<rp>.*?<\/rp>/g, '')
     .replace(/<[^>]+>/g, '')
+
+describe('NotificationsView（アルバム）', () => {
+  it('写真だけ・両方のまとめは、写真が届いた文言で出る。写真だけはアルバムへのリンクになる', () => {
+    const html = render([
+      notification({ id: 1, kind: 'daily_digest', has_album: true, has_records: false }),
+      notification({ id: 2, kind: 'weekly_digest', has_album: true, has_records: true }),
+    ])
+    const shown = text(html)
+
+    expect(shown).toContain('アルバムに新しい写真が載りました')
+    expect(shown).toContain('今週の連絡帳がまとまり、アルバムに新しい写真が載りました')
+    expect(html).toContain('href="/family/album"')
+  })
+})
 
 describe('NotificationsView', () => {
   it('まとめに入った様子のメモの書いた日から、その日の連絡帳へ進める（中身は出さない。FR-012b）', () => {
@@ -187,6 +204,62 @@ describe('notificationsView', () => {
     expect(kindKey('visit_cancelled')).toBe('notifications.kind.visit_cancelled')
     expect(kindKey('visit_reminder')).toBe('notifications.kind.visit_reminder')
     expect(kindKey('something_new')).toBe('notifications.kind.announcement')
+  })
+
+  it('まとめの文言は、記録だけ・写真だけ・両方の 3 通りから選ぶ（FR-018）', () => {
+    const digest = (has_album: boolean, has_records: boolean, kind = 'daily_digest') =>
+      noticeKey(notification({ kind, has_album, has_records }))
+
+    expect(digest(false, true)).toBe('notifications.kind.daily_digest')
+    expect(digest(true, false)).toBe('notifications.kind.daily_digest_album')
+    expect(digest(true, true)).toBe('notifications.kind.daily_digest_with_album')
+    expect(digest(true, false, 'weekly_digest')).toBe('notifications.kind.weekly_digest_album')
+    expect(digest(true, true, 'weekly_digest')).toBe('notifications.kind.weekly_digest_with_album')
+  })
+
+  it('まとめ以外は has_album が真でも、文言を変えない', () => {
+    expect(noticeKey(notification({ kind: 'reply', has_album: true }))).toBe(
+      'notifications.kind.reply',
+    )
+  })
+
+  it('写真だけのまとめは、アルバムへ進む。記録が入っていれば連絡帳', () => {
+    expect(
+      linkFor(notification({ kind: 'daily_digest', has_album: true, has_records: false })),
+    ).toBe('/family/album')
+    expect(
+      linkFor(notification({ kind: 'weekly_digest', has_album: true, has_records: false })),
+    ).toBe('/family/album')
+    expect(
+      linkFor(notification({ kind: 'daily_digest', has_album: true, has_records: true })),
+    ).toBe('/family')
+    expect(
+      linkFor(notification({ kind: 'daily_digest', has_album: false, has_records: true })),
+    ).toBe('/family')
+  })
+
+  it('様子のメモが入るまとめは、記録がなくても「写真だけ」にしない（連絡帳へ進み、文言は「両方」）', () => {
+    // 写真 + メモ（記録なし）：メモの書いた日の連絡帳へのリンクがあるので、アルバムだけには進めない
+    const photoAndMemo = notification({
+      kind: 'daily_digest',
+      has_album: true,
+      has_records: false,
+      memo_dates: ['2026-10-26'],
+    })
+
+    expect(linkFor(photoAndMemo)).toBe('/family')
+    expect(noticeKey(photoAndMemo)).toBe('notifications.kind.daily_digest_with_album')
+    // メモだけ（写真なし）：今までの文言のまま
+    expect(
+      noticeKey(
+        notification({
+          kind: 'daily_digest',
+          has_album: false,
+          has_records: false,
+          memo_dates: ['2026-10-26'],
+        }),
+      ),
+    ).toBe('notifications.kind.daily_digest')
   })
 
   it('進む先', () => {

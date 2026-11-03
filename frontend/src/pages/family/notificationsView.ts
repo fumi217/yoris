@@ -15,6 +15,9 @@ export type FamilyNotification = {
   period_end: string | null
   // まとめに入った様子のメモの書いた日（古い順。書いた日の連絡帳へのリンクに使う。中身は来ない）
   memo_dates: string[]
+  // まとめ（daily_digest・weekly_digest）に、写真・記録が含まれるか（spec 005 の FR-018）
+  has_album: boolean
+  has_records: boolean
 }
 
 /** お知らせの種類ごとの、辞書のキー。知らない種類は、施設からのお知らせと同じ文言にする。 */
@@ -33,16 +36,43 @@ export function kindKey(kind: string): string {
   return 'notifications.kind.announcement'
 }
 
+/** 写真が含まれるまとめか（記録だけのまとめ・まとめ以外は false）。 */
+function hasAlbum(notification: FamilyNotification): boolean {
+  return (
+    (notification.kind === 'daily_digest' || notification.kind === 'weekly_digest') &&
+    notification.has_album
+  )
+}
+
+/**
+ * 写真だけのまとめか（写真が含まれ、記録も様子のメモもない）。文言と進む先の両方が、これで決まる。
+ * 様子のメモが入るまとめは、メモの書いた日の連絡帳へのリンクがあるので、写真だけにしない（spec 007）。
+ */
+function isAlbumOnly(notification: FamilyNotification): boolean {
+  return hasAlbum(notification) && !notification.has_records && notification.memo_dates.length === 0
+}
+
+/**
+ * 一覧に出す文言の辞書のキー。まとめは、記録だけ・写真だけ・両方の 3 通りから選ぶ
+ * （写真だけは `_album`、記録かメモと写真の両方は `_with_album`）。まとめ以外は `kindKey` と同じ。
+ */
+export function noticeKey(notification: FamilyNotification): string {
+  const base = kindKey(notification.kind)
+  if (!hasAlbum(notification)) return base
+  return isAlbumOnly(notification) ? `${base}_album` : `${base}_with_album`
+}
+
 /**
  * 押したときに進む先。返事・まとめは連絡帳（返事のカードが出て、既読になる）。
  * 職員の返事（問い合わせ AI のメッセージへの返事）は「お問い合わせ」の画面（返事の発言が出て、既読になる）。
  * 面会のお知らせ（確定・取り消し・前日の知らせ）は、面会の画面。
  * 施設からのお知らせは、画面（作り込み）ができるまで、進む先がない。
+ * 写真だけのまとめ（記録もメモもない）は、見る場所がアルバムなので、アルバムへ進む。
  */
 export function linkFor(notification: FamilyNotification): string | null {
   if (notification.kind === 'reply') return '/family'
   if (notification.kind === 'daily_digest' || notification.kind === 'weekly_digest')
-    return '/family'
+    return isAlbumOnly(notification) ? '/family/album' : '/family'
   if (notification.kind === 'staff_message_reply') return '/family/inquiry'
   if (
     notification.kind === 'visit_confirmed' ||

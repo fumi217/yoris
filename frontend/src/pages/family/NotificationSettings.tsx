@@ -159,6 +159,26 @@ export function NotificationSettingsView({
         )}
       </fieldset>
 
+      {/* アルバムを見せない設定のとき（API がキーを省略して返す。draft では null）は、項目を出さない */}
+      {typeof draft.notify_album === 'boolean' && (
+        <fieldset className="space-y-2">
+          <legend className="mb-1 font-bold">
+            <Text k="notification_settings.album_title" />
+          </legend>
+          <label
+            className={`${optionClass} ${draft.notify_album ? 'border-primary' : 'border-field-line'}`}
+          >
+            <input
+              type="checkbox"
+              className="h-5 w-5"
+              checked={draft.notify_album}
+              onChange={(event) => onChange({ ...draft, notify_album: event.target.checked })}
+            />
+            <Text k="notification_settings.album_label" />
+          </label>
+        </fieldset>
+      )}
+
       <fieldset className="space-y-2">
         <legend className="mb-1 font-bold">
           <Text k="notification_settings.frequency_title" />
