@@ -78,7 +78,7 @@ spec 004 の 004-T003（`LLMClient`）・004-T004（テスト用の LLM（モッ
 - [x] T016 [P] [US2] テスト `backend/tests/api/test_memos_confirm.py`：訳し戻しが付く、原文や整えた日本語を直してやり直せる（`draft`・`returned` のときだけ）、「確かめました」で `pending`、取り下げで `withdrawn`、本人以外は id を指定しても 404（承認待ちをリーダー・施設長が見るのは承認の一覧。T020 のテスト）（FR-007〜010）（みさき・作）
 - [x] T017 [US2] 訳し戻しを `POST /api/staff/memos/{id}/rewrite` に足し、整えた日本語を自分で直したあとは訳し戻しだけを作る（`back_translate_only`）（research.md R-02、FR-007・FR-008）（みさき・作）
 - [x] T018 [US2] `PATCH /api/staff/memos/{id}`・`POST /api/staff/memos/{id}/confirm`・`POST /api/staff/memos/{id}/withdraw` を作る：どれも本人だけ、条件つきの 1 回の更新で状態を進める（409 `invalid_state`）（research.md R-05、FR-008〜010）（みさき・作）
-- [ ] T019 [US2] 書く画面に、訳し戻し・印・直す・「確かめました」・取り下げる・戻された理由を足す（FR-007〜010・FR-013・FR-016）（みさき・作）
+- [x] T019 [US2] 書く画面に、訳し戻し・印・直す・「確かめました」・取り下げる・戻された理由を足す（FR-007〜010・FR-013・FR-016）（みさき・作）
 
 **Checkpoint**: 本人が母国語で確かめて、承認に回せる（quickstart の 4・5）
 
@@ -111,9 +111,9 @@ spec 004 の 004-T003（`LLMClient`）・004-T004（テスト用の LLM（モッ
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T029 [P] インドネシア語・英語の文言を `frontend/src/i18n/id.json`・`en.json` に足し、日本語の固定の文言にふりがなを付ける（001-T082・001-T083 と一緒に）（みさき・作）
+- [x] T029 [P] インドネシア語・英語の文言を `frontend/src/i18n/id.json`・`en.json` に足し、日本語の固定の文言にふりがなを付ける（001-T082・001-T083 と一緒に）（みさき・作）。済み：`memo`・`memo_approval` が id・en にある（`i18n.test.ts` が、訳し忘れとふりがなの付け忘れを止める）
 - [x] T030 [P] ログの確かめ：本番の設定で、原文・整えた日本語・訳し戻し・氏名・理由の文がログに出ず、メモの id・状態・操作・印・時間・モデル名だけが出ることをテストで確かめる（FR-018・research.md R-11）。メモのログは今まで 1 行もなかったので、`memos/service.py`・`memos/approvals.py` に足した（`tests/api/test_memo_logging.py`）（みさき・作）
-- [ ] T031 [P] 書いた内容を文字としてのみ出すことのテスト：原文・整えた日本語に `<script>` を入れても、職員・家族の画面で実行されない（FR-017）。書く画面（`MemoEditor.test.tsx`）は済み。承認の画面（T023）と家族の連絡帳（T026）は、その画面を作る PR で足す（みさき・作）
+- [x] T031 [P] 書いた内容を文字としてのみ出すことのテスト：原文・整えた日本語に `<script>` を入れても、職員・家族の画面で実行されない（FR-017）（みさき・作）。済み：職員の書く画面（`MemoEditorConfirm.test.tsx`）・承認の画面（`MemoApprovals.test.tsx`）と、backend の各 API のテスト。家族の画面のテストは、今回は作らない（2026-10-30 に決定）
 - [x] T032 評価のスクリプトを `backend/evals/memos/run.py`・`backend/evals/memos/cases.yaml` に作り、原文 10 件（インドネシア語 4・英語 3・日本語 3。医療の言葉・指示のような文・急変を含む）を流す。spec 004 のモデルの比較（004-T043）と一緒に、`OPENROUTER_REWRITE_MODEL` を決め、結果を research.md R-01 に書く（SC-003・research.md R-10）。**スクリプトと原文 10 件、そのテスト（`tests/unit/test_memo_evals.py`）は作った。本物のモデルでの評価は、2026-10-31 に流した：決めたモデル `deepseek/deepseek-v4-flash-0731` で 10 件すべて合格、足された内容 0 件（結果は research.md R-01）。`OPENROUTER_REWRITE_MODEL` は 3 つのモデルを比べて `openai/gpt-oss-120b` に決めた（2026-10-31。research.md R-01）**（みさき・作）
 - [ ] T033 quickstart.md の確認をすべて通し、`docs/テスト設計書.md` に spec 007 のシナリオと結果を書く（みさき・作）
 

@@ -9,6 +9,7 @@ import {
   isMemoWriter,
   errorKeyFor,
   initialLang,
+  isStateChanged,
   ORIGINAL_MAX,
   originalLength,
   originalProblem,
@@ -101,6 +102,19 @@ describe('MemoEditorView（書く前）', () => {
     expect(render({ text: ORIGINAL })).not.toMatch(/<button type="submit" disabled=""/)
   })
 
+  it('原文が日本語のときは、ボタンの名前が「整える」になる（FR-003）', () => {
+    const ja = memo({ source_lang: 'ja', rewritten_text: REWRITTEN })
+
+    expect(visibleText(render({ lang: 'ja', text: 'あ' }))).toContain('整える')
+    expect(visibleText(render({ lang: 'ja', text: 'あ', pending: true }))).toContain(
+      '整えています…',
+    )
+    expect(visibleText(render({ lang: 'ja', memo: ja }))).toContain('整え直す')
+    // 日本語以外のときは、今までどおり
+    expect(visibleText(render({ lang: 'en', text: 'Hello' }))).toContain('日本語にする')
+    expect(visibleText(render({ lang: 'ja', text: 'あ' }))).not.toContain('日本語にする')
+  })
+
   it('500 文字を超えると、案内を出して、押せない（FR-001）', () => {
     const html = render({ text: 'あ'.repeat(501) })
 
@@ -135,13 +149,23 @@ describe('MemoEditorView（整えたあと）', () => {
     expect(text).toContain('もう一度日本語にする')
   })
 
-  it('保存したあとの原文は、読み取り専用（書く欄は出ない）', () => {
+  it('下書きは、原文も整えた日本語も直せる（書く欄が 2 つ。FR-008）。言語は変えられない', () => {
     const html = render({ memo: memo({ rewritten_text: REWRITTEN }) })
 
-    expect(html).not.toContain('<textarea')
+    expect(html.match(/<textarea/g)).toHaveLength(2)
     expect(visibleText(html)).toContain('書いた原文は保存しました')
-    // 言語も変えられない
     expect(html).toMatch(/<select[^>]*disabled=""/)
+  })
+
+  it('承認待ち・承認済み・取り下げたメモは、読むだけ（書く欄も、日本語にするボタンも出ない）', () => {
+    for (const status of ['pending', 'approved', 'withdrawn'] as const) {
+      const html = render({ memo: memo({ status, rewritten_text: REWRITTEN }) })
+
+      expect(html).not.toContain('<textarea')
+      expect(html).not.toMatch(/<button type="submit"/)
+      expect(visibleText(html)).toContain(ORIGINAL)
+      expect(visibleText(html)).toContain(REWRITTEN)
+    }
   })
 
   it('原文・整えた日本語は、文字のまま出る（HTML・ふりがなとして読まない。FR-017）', () => {
@@ -234,6 +258,19 @@ describe('memoEditorLogic.ts', () => {
     )
     expect(errorKeyFor(new ApiError(404, 'not_found', 'error.not_found'))).toBe('error.not_found')
     expect(errorKeyFor(new Error('x'))).toBe('error.server_error')
+  })
+
+  it('状態が変わっていた（409 invalid_state）ときだけ、画面を読み直す（isStateChanged。#96）', () => {
+    expect(isStateChanged(new ApiError(409, 'invalid_state', 'error.invalid_state'))).toBe(true)
+    // 同じ 409 でも、状態の食い違いではないもの（回数の上限など）は、読み直さない
+    expect(isStateChanged(new ApiError(409, 'memo_limit', 'error.memo_limit'))).toBe(false)
+    expect(isStateChanged(new ApiError(503, 'ai_unavailable', 'error.ai_unavailable'))).toBe(false)
+    expect(isStateChanged(new Error('x'))).toBe(false)
+    expect(isStateChanged(null)).toBe(false)
+    // 文言は共通のまま（MemoEditorConfirm.test.tsx で確かめている）
+    expect(errorKeyFor(new ApiError(409, 'invalid_state', 'error.invalid_state'))).toBe(
+      'error.invalid_state',
+    )
   })
 
   it('文言が、ふりがなを外して読める', () => {
