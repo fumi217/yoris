@@ -37,6 +37,7 @@ import {
   faHouse,
   faImages,
   faLockOpen,
+  faMinus,
   faMoon,
   faPalette,
   faPaperPlane,
@@ -114,6 +115,8 @@ const ICONS = {
   'theme-supplies': faBagShopping,
   // 残りの絵文字の置き換え（#388）
   check: faCheck,
+  // 入居者一覧の記録のチップの「まだ」（#431）
+  minus: faMinus,
   warning: faTriangleExclamation,
   info: faCircleInfo,
   camera: faCamera,

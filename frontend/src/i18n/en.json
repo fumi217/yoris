@@ -488,14 +488,23 @@
   "resident_list": {
     "title": "Residents",
     "date": "{{month}}/{{day}}",
-    "messages_total": "Messages from families: {{count}}",
-    "legend": "= recorded, ・ = not recorded yet",
+    "today_record": "Today's records",
+    "today_record_count": "{{done}} / {{total}} entries",
+    "today_record_left": "{{count}} entries are not recorded yet",
+    "today_record_done": "Everything is recorded",
+    "summary_messages": "Messages from families",
+    "summary_visits": "Visits today",
+    "unit_cases": "",
+    "unit_groups": "groups",
+    "caution_title": "Residents to watch",
+    "others_title": "Other residents",
+    "people": "{{count}}",
+    "room": "Room",
     "waiting_requests": "Requests waiting for a reply: {{count}}",
     "waiting_messages": "Messages from families: {{count}}",
     "recorded": "Recorded",
     "not_recorded": "Not recorded yet",
-    "empty": "There are no residents",
-    "today_visits": "Visits today: {{count}} groups"
+    "empty": "There are no residents"
   },
   "admin": {
     "menu": {

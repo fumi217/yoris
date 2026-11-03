@@ -585,14 +585,23 @@
   "resident_list": {
     "title": "{入居者|にゅうきょしゃ}{一覧|いちらん}",
     "date": "{{month}}{月|がつ}{{day}}{日|にち}",
-    "messages_total": "{家族|かぞく}からのメッセージ：{{count}}{件|けん}",
-    "legend": "は{記録済|きろくず}み、・ はまだ{記録|きろく}していません",
+    "today_record": "{今日|きょう}の{記録|きろく}",
+    "today_record_count": "{{done}} / {{total}} {欄|らん}",
+    "today_record_left": "まだ{記録|きろく}がない{欄|らん}が {{count}} あります",
+    "today_record_done": "すべて{記録|きろく}しました",
+    "summary_messages": "{家族|かぞく}からのメッセージ",
+    "summary_visits": "{今日|きょう}の{面会|めんかい}",
+    "unit_cases": "{件|けん}",
+    "unit_groups": "{組|くみ}",
+    "caution_title": "{気|き}をつけたい{人|ひと}",
+    "others_title": "{入居者|にゅうきょしゃ}のみなさん",
+    "people": "{{count}} {人|にん}",
+    "room": "{部屋|へや}",
     "waiting_requests": "{返事|へんじ}{待|ま}ちのリクエスト：{{count}}{件|けん}",
     "waiting_messages": "{家族|かぞく}からのメッセージ：{{count}}{件|けん}",
     "recorded": "{記録済|きろくず}み",
     "not_recorded": "まだ{記録|きろく}していません",
-    "empty": "{入居者|にゅうきょしゃ}がいません",
-    "today_visits": "{今日|きょう}の{面会|めんかい}：{{count}}{組|くみ}"
+    "empty": "{入居者|にゅうきょしゃ}がいません"
   },
   "admin": {
     "menu": {

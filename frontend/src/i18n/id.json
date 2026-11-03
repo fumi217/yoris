@@ -488,14 +488,23 @@
   "resident_list": {
     "title": "Daftar penghuni",
     "date": "{{day}}/{{month}}",
-    "messages_total": "Pesan dari keluarga: {{count}}",
-    "legend": "= sudah dicatat, ・ = belum dicatat",
+    "today_record": "Catatan hari ini",
+    "today_record_count": "{{done}} / {{total}} kolom",
+    "today_record_left": "{{count}} kolom belum dicatat",
+    "today_record_done": "Semua sudah dicatat",
+    "summary_messages": "Pesan dari keluarga",
+    "summary_visits": "Kunjungan hari ini",
+    "unit_cases": "",
+    "unit_groups": "kelompok",
+    "caution_title": "Penghuni yang perlu diperhatikan",
+    "others_title": "Penghuni lainnya",
+    "people": "{{count}}",
+    "room": "Kamar",
     "waiting_requests": "Permintaan yang menunggu balasan: {{count}}",
     "waiting_messages": "Pesan dari keluarga: {{count}}",
     "recorded": "Sudah dicatat",
     "not_recorded": "Belum dicatat",
-    "empty": "Tidak ada penghuni",
-    "today_visits": "Kunjungan hari ini: {{count}} kelompok"
+    "empty": "Tidak ada penghuni"
   },
   "admin": {
     "menu": {

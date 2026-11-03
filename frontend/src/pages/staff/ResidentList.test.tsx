@@ -6,6 +6,9 @@ import { ResidentTable } from './ResidentList'
 import {
   mealMarks,
   monthDay,
+  recordProgress,
+  showCautionSection,
+  splitByFlag,
   totalWaitingMessages,
   visibleRows,
   type ResidentRow,
@@ -64,13 +67,24 @@ describe('ResidentTable', () => {
     expect(html).toContain('佐藤 文江')
   })
 
-  it('朝・昼・夜のまだは目立たせ、おやつのまだは目立たせない', () => {
+  it('記録のチップ：記録済みは緑と ✔、まだは点線と －。色だけに頼らない', () => {
     const html = render([
       row({ meals: { breakfast: true, lunch: true, dinner: false, snack: false } }),
     ])
 
-    // 目立たせるのは夜ごはんだけ（おやつは毎日付けるとは限らない）
-    expect(html.match(/text-orange-700/g)).toHaveLength(2) // 夜・眠り
+    // 朝・昼・機嫌は記録済み（✔）、夜・眠りはまだ（－）。おやつは記録がないので、チップを出さない
+    expect(html.match(/data-icon="check"/g)).toHaveLength(3)
+    expect(html.match(/data-icon="minus"/g)).toHaveLength(2)
+    expect(html.match(/border-dashed/g)).toHaveLength(2)
+    expect(html).not.toContain('おやつ')
+  })
+
+  it('おやつは、記録があるときだけチップを出す', () => {
+    const html = render([
+      row({ meals: { breakfast: true, lunch: true, dinner: true, snack: true } }),
+    ])
+
+    expect(html).toContain('おやつ')
   })
 
   it('未記録は読み上げでも分かる', () => {
@@ -111,6 +125,68 @@ describe('ResidentTable', () => {
 
   it('メッセージがなければ、メッセージへのリンクは出さない', () => {
     expect(render([row({ waiting_messages: 0 })])).not.toContain('resident_id=')
+  })
+})
+
+describe('今日の進み具合・気をつけたい人（#431）', () => {
+  const flagged = { has_flag: true, has_unconfirmed: true }
+
+  it('朝・昼・夜・機嫌・眠りの記録した欄を数える（おやつは数えない）', () => {
+    const rows = [
+      row({
+        meals: { breakfast: true, lunch: true, dinner: true, snack: true },
+        mood: true,
+        sleep: true,
+      }),
+      row({
+        id: 2,
+        meals: { breakfast: false, lunch: false, dinner: false, snack: true },
+        mood: false,
+        sleep: false,
+      }),
+    ]
+
+    expect(recordProgress(rows)).toEqual({ recorded: 5, total: 10 })
+  })
+
+  it('進み具合を文字と棒（progressbar）で出す', () => {
+    const html = render([row()])
+
+    expect(html).toContain('role="progressbar"')
+    expect(html).toContain('aria-valuenow="2"')
+    expect(html).toContain('aria-valuemax="5"')
+    expect(html).toContain('2 / 5')
+  })
+
+  it('目印のある入居者は「気をつけたい人」に、ほかは「入居者のみなさん」にまとめる', () => {
+    const rows = [row({ id: 1 }), row({ id: 2, change_flag: flagged })]
+
+    const { caution, others } = splitByFlag(rows)
+    expect(caution.map((r) => r.id)).toEqual([2])
+    expect(others.map((r) => r.id)).toEqual([1])
+    // ふりがなを外して、画面に出る文字で比べる
+    const text = render(rows, 1).replace(/<rt>.*?<\/rt>|<rp>.*?<\/rp>|<\/?ruby>/g, '')
+    expect(text).toContain('気をつけたい人')
+    expect(text).toContain('入居者のみなさん')
+  })
+
+  it('目印がだれにもいないときは、「気をつけたい人」の面を出さない', () => {
+    expect(render([row()]).replace(/<rt>.*?<\/rt>|<rp>.*?<\/rp>|<\/?ruby>/g, '')).not.toContain(
+      '気をつけたい人',
+    )
+  })
+
+  it('絞り込み中は、目印が 0 件になっても「気をつけたい人」の面を残す（戻すボタンを消さない）', () => {
+    expect(showCautionSection(0, 0, false)).toBe(false)
+    expect(showCautionSection(1, 0, false)).toBe(true)
+    expect(showCautionSection(0, 2, false)).toBe(true)
+    expect(showCautionSection(0, 0, true)).toBe(true)
+  })
+
+  it('家族からのメッセージの件数のリンクを出す', () => {
+    const html = render([row({ waiting_messages: 2 })])
+
+    expect(html).toContain('href="/staff/messages"')
   })
 })
 

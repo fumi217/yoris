@@ -25,8 +25,8 @@ export function UnconfirmedFlagFilter({ count, active, onToggle }: Props) {
       // 目印がなくて絞っていないときは、押しても何も変わらない
       disabled={count === 0 && !active}
       onClick={onToggle}
-      className={`min-h-11 rounded border-2 px-3 py-2 text-left disabled:opacity-60 ${
-        active ? 'border-amber-700 bg-amber-100 font-bold' : 'border-ink-sub bg-white'
+      className={`min-h-11 rounded-full border px-4 py-2 text-left text-sm font-bold disabled:opacity-60 ${
+        active ? 'border-primary bg-primary text-white' : 'border-field-line bg-card'
       }`}
     >
       <Icon name={active ? 'check' : 'warning'} className="mr-1" />

@@ -76,3 +76,53 @@ export function visibleRows(rows: ResidentRow[], onlyUnconfirmed: boolean): Resi
   const shown = onlyUnconfirmed ? rows.filter((row) => row.change_flag?.has_unconfirmed) : rows
   return [...shown.filter((row) => row.change_flag), ...shown.filter((row) => !row.change_flag)]
 }
+
+/**
+ * 行に並べる記録のチップ（朝・昼・夜・機嫌・眠りの順。#431）。
+ * おやつは、記録があるときだけ出す（まだでも出さず、目立たせない。毎日付けるとは限らないため。#187）。
+ */
+export function recordChips(row: ResidentRow): RecordMark[] {
+  const meals = mealMarks(row).filter((mark) => !mark.optional || mark.recorded)
+  return [...meals, ...dayMarks(row)]
+}
+
+/** 今日の記録の進み具合：記録した欄の数と、全部の欄の数（朝・昼・夜・機嫌・眠り。おやつは数えない）。 */
+export function recordProgress(rows: ResidentRow[]): { recorded: number; total: number } {
+  const required = (row: ResidentRow) => [
+    row.meals.breakfast,
+    row.meals.lunch,
+    row.meals.dinner,
+    row.mood,
+    row.sleep,
+  ]
+  return rows.reduce(
+    (sum, row) => ({
+      recorded: sum.recorded + required(row).filter(Boolean).length,
+      total: sum.total + required(row).length,
+    }),
+    { recorded: 0, total: 0 },
+  )
+}
+
+/** 並べた行を、「気をつけたい人」（変化の目印がある）と、そのほかに分ける。順番はそのまま。 */
+export function splitByFlag(rows: ResidentRow[]): {
+  caution: ResidentRow[]
+  others: ResidentRow[]
+} {
+  return {
+    caution: rows.filter((row) => row.change_flag),
+    others: rows.filter((row) => !row.change_flag),
+  }
+}
+
+/**
+ * 「気をつけたい人」の面を出すか。目印のある人がいる・確かめていない目印がある、のどちらかのとき。
+ * 絞り込み中は、件数が 0 になっても出す（出さないと、絞り込みを戻すボタンも消えて、一覧が空のまま戻せない。#432）。
+ */
+export function showCautionSection(
+  cautionCount: number,
+  unconfirmedFlagCount: number,
+  onlyUnconfirmed: boolean,
+): boolean {
+  return cautionCount > 0 || unconfirmedFlagCount > 0 || onlyUnconfirmed
+}

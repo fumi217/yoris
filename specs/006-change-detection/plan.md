@@ -129,7 +129,7 @@ frontend/
 └── src/
     ├── components/change-flags/
     │   ├── ChangeFlagPanel.tsx          # 入居者を開いた画面の目印の欄（当てはまった決まり・もとの記録・確かめた・履歴）
-    │   └── UnconfirmedFlagFilter.tsx    # 入居者一覧の上の「確かめていない目印：◯件」と絞り込み
+    │   └── UnconfirmedFlagFilter.tsx    # 入居者一覧の「気をつけたい人」の見出しの横の「確かめていない目印：◯件」と絞り込み
     ├── pages/staff/ResidentList.tsx     # （spec 001・ゆう）目印と上の部品を置く
     ├── pages/staff/RecordPage.tsx       # （spec 001・ゆう）ChangeFlagPanel を置く
     └── pages/admin/ChangeRules.tsx      # 「変化の目印」の設定（オン／オフ・変更履歴）
