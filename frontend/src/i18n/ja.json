@@ -342,7 +342,9 @@
     "switch": "{切|き}り{替|か}える",
     "staff_label": "{{name}}／{{role}}",
     "staff_label_with_language": "{{name}}／{{role}}（{{language}}）",
-    "user_id": "user_id"
+    "user_id": "user_id",
+    "open": "{開発用|かいはつよう}のユーザー{切|き}り{替|か}えを{開|ひら}く",
+    "close": "{閉|と}じる"
   },
   "role": {
     "care_worker": "{介護|かいご}{職員|しょくいん}",

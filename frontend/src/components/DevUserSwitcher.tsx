@@ -1,26 +1,89 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import { api, messageKeyOf } from '../api/client'
 import { stripRuby } from '../i18n/rubyText'
+import { isFamilyPath, useDevHidden } from './devMode'
+import { DEV_USERS_QUERY_KEY, switchDevUser } from './devSwitch'
 import { devUserLabel, type DevUser } from './devUsers'
+import { Icon } from './Icon'
 import { Text } from './Text'
 
 /**
- * 開発用のユーザー切り替え（spec 001 の T013・T019・research.md R-02）。開発のときだけ App.tsx が出す。
- * 画面の右下に出す（上の部分のリンクにかぶらないように）。家族の下のメニューと、ホームの右下の
- * キャラクター（#339）の、さらに上に置く（デモで、キャラクターが隠れないように）。
+ * 開発用のユーザー切り替え（spec 001 の T013・T019・research.md R-02・#428）。開発のときだけ App.tsx が出す。
+ * ふだんは出す。URL の `?dev=0` で隠し（デモの録画など）、`?dev=1` で出し直す（devMode.ts）。
+ * 幅 1280px 未満は、左下の小さなアイコンに畳み、押すとその上にシートが開く。
+ * 家族の画面は、下のメニューの上に置く（右寄せのキャラクター（#339）には重ならない）。
+ * 幅 1280px 以上は、アイコンにせず、今までのパネルを右下に出す。
  * 初期データ（`python -m app.seed`）の人の一覧から選ぶ。
  */
-const DEV_USERS_QUERY_KEY = ['dev', 'users'] as const
+type ShellProps = {
+  open: boolean
+  inFamily: boolean
+  onToggle: () => void
+  onSubmit: (event: FormEvent) => void
+  children: ReactNode
+}
+
+/** アイコンとシートの枠（開閉と置き場所だけ。中身は children） */
+export function DevSwitcherShell({ open, inFamily, onToggle, onSubmit, children }: ShellProps) {
+  const { t } = useTranslation()
+  return (
+    <div
+      // 家族の画面は下のメニューの上、ほかは画面の下から少し上。幅が広いときは、右下に今までの高さで出す
+      className={`fixed left-2 z-50 flex max-w-[calc(100vw-1rem)] flex-col items-start gap-2 xl:right-2 xl:left-auto xl:bottom-[calc(var(--family-menu-height)+5.5rem)] ${
+        inFamily ? 'bottom-[calc(var(--family-menu-height)+1rem)]' : 'bottom-4'
+      }`}
+    >
+      <form
+        onSubmit={onSubmit}
+        className={`max-w-full rounded border border-amber-400 bg-amber-50 p-2 text-xs shadow xl:block ${
+          open ? 'block' : 'hidden'
+        }`}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <p className="font-bold">
+            <Text k="dev.switch_user" />
+          </p>
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-label={stripRuby(t('dev.close'))}
+            className="xl:hidden"
+          >
+            <Icon name="close" />
+          </button>
+        </div>
+        {children}
+      </form>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-label={stripRuby(t(open ? 'dev.close' : 'dev.open'))}
+        className="flex size-10 items-center justify-center rounded-full border border-amber-400 bg-amber-50 text-amber-700 shadow xl:hidden"
+      >
+        <Icon name="dev-switch" className="text-lg" />
+      </button>
+    </div>
+  )
+}
 
 export function DevUserSwitcher() {
+  const hidden = useDevHidden()
+  // 隠すときは、人の一覧も読み込まない
+  return hidden ? null : <DevSwitcher />
+}
+
+function DevSwitcher() {
   const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
   const [userId, setUserId] = useState('')
   const [errorKey, setErrorKey] = useState<string | null>(null)
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const users = useQuery({
     queryKey: DEV_USERS_QUERY_KEY,
     queryFn: () => api.get<DevUser[]>('/api/dev/users'),
@@ -28,21 +91,12 @@ export function DevUserSwitcher() {
     retry: false,
   })
 
-  async function switchUser(event: FormEvent) {
+  async function onSubmit(event: FormEvent) {
     event.preventDefault()
     setErrorKey(null)
-    try {
-      await api.post('/api/dev/switch-user', { user_id: Number(userId) })
-    } catch (error) {
-      setErrorKey(messageKeyOf(error))
-      return
-    }
-    // 前の人のデータを画面に残さない（読み込んだものを捨ててから、最初の画面へ）。
-    // 人の一覧は、だれがログインしていても同じなので残す
-    queryClient.removeQueries({
-      predicate: (query) => query.queryKey[0] !== DEV_USERS_QUERY_KEY[0],
-    })
-    void navigate('/')
+    setErrorKey(
+      await switchDevUser(Number(userId), { queryClient, navigate, close: () => setOpen(false) }),
+    )
   }
 
   const staff = users.data?.filter((user) => user.kind === 'staff') ?? []
@@ -50,13 +104,12 @@ export function DevUserSwitcher() {
   const shownErrorKey = errorKey ?? (users.isError ? messageKeyOf(users.error) : null)
 
   return (
-    <form
-      onSubmit={switchUser}
-      className="fixed right-2 bottom-[calc(var(--family-menu-height)+5.5rem)] z-50 max-w-[calc(100vw-1rem)] rounded border border-amber-400 bg-amber-50 p-2 text-xs shadow"
+    <DevSwitcherShell
+      open={open}
+      inFamily={isFamilyPath(pathname)}
+      onToggle={() => setOpen((value) => !value)}
+      onSubmit={onSubmit}
     >
-      <p className="font-bold">
-        <Text k="dev.switch_user" />
-      </p>
       <div className="flex items-center gap-1">
         {users.isError ? (
           // 一覧が読めないときは、user_id を直接入れて切り替える
@@ -111,6 +164,6 @@ export function DevUserSwitcher() {
           <Text k={shownErrorKey} />
         </p>
       )}
-    </form>
+    </DevSwitcherShell>
   )
 }

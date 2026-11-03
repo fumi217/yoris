@@ -44,6 +44,7 @@ import {
   faPhone,
   faPhoneVolume,
   faRightFromBracket,
+  faRightLeft,
   faSquareCheck,
   faSun,
   faTriangleExclamation,
@@ -127,6 +128,8 @@ const ICONS = {
   uploading: faUpload,
   file: faFile,
   'urgent-call': faPhoneVolume,
+  // 開発用のユーザー切り替え（#428）
+  'dev-switch': faRightLeft,
 } as const satisfies Record<string, IconDefinition>
 
 export type IconName = keyof typeof ICONS
