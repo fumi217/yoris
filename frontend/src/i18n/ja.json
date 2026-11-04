@@ -786,6 +786,9 @@
     "unconfirmed_count": "{確|たし}かめていない{目印|めじるし}：{{count}} {件|けん}"
   },
   "staff_contact_book": {
+    "title_suffix": "の{連絡帳|れんらくちょう}",
+    "replies_title": "{返事|へんじ}",
+    "day_title": "{機嫌|きげん}・{様子|ようす}／{眠|ねむ}り",
     "title": "{連絡帳|れんらくちょう}の{見返|みかえ}し",
     "date": "{{month}}{月|がつ}{{day}}{日|にち}",
     "previous": "{前|まえ}の{日|ひ}",
@@ -840,6 +843,14 @@
     "back_to_residents": "{入居者|にゅうきょしゃ}{一覧|いちらん}へ"
   },
   "reply_page": {
+    "title_count": "{知|し}りたいことへの{返事|へんじ}（{{count}} {件|けん}）",
+    "room": "{{room}} {号室|ごうしつ}",
+    "from": "ご{家族|かぞく}から",
+    "question": "「{{theme}}」を{知|し}りたい",
+    "waiting_days": "{{count}} {日|にち}{待|ま}っています",
+    "today_records": "{今日|きょう}の{記録|きろく}：",
+    "not_yet": "まだ",
+    "send_reply": "{返事|へんじ}を{送|おく}る",
     "title": "「{知|し}りたいこと」への{返事|へんじ}",
     "received": "{{month}}{月|がつ}{{day}}{日|にち} {{time}}に{届|とど}きました",
     "days_today": "{今日|きょう}",

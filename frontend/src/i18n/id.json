@@ -661,6 +661,9 @@
     "waiting_sub": "Permintaan dari keluarga"
   },
   "staff_contact_book": {
+    "title_suffix": " - buku harian",
+    "replies_title": "Balasan",
+    "day_title": "Suasana hati / Tidur",
     "title": "Tinjauan buku harian",
     "date": "{{day}}/{{month}}",
     "previous": "Hari sebelumnya",
@@ -715,6 +718,14 @@
     "back_to_residents": "Ke daftar penghuni"
   },
   "reply_page": {
+    "title_count": "Balasan permintaan ({{count}})",
+    "room": "Kamar {{room}}",
+    "from": "Dari keluarga",
+    "question": "Ingin tahu: {{theme}}",
+    "waiting_days": "Menunggu {{count}} hari",
+    "today_records": "Catatan hari ini:",
+    "not_yet": "belum",
+    "send_reply": "Kirim balasan",
     "title": "Balasan untuk \"hal yang ingin diketahui\"",
     "received": "Diterima pada {{day}}/{{month}} pukul {{time}}",
     "days_today": "Hari ini",

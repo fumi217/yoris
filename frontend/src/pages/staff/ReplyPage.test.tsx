@@ -61,7 +61,8 @@ describe('ReplyView', () => {
     expect(html).not.toContain('🍚')
     expect(html).toContain('10:00')
     expect(html).toContain('24<ruby>日')
-    expect(html).toContain('2<ruby>日')
+    // 送られてからの日数（1 日以上は「◯ 日待っています」。#457）
+    expect(html).toContain('2 <ruby>日')
     expect(html.match(/aria-pressed="false"/g)).toHaveLength(2)
   })
 
@@ -79,5 +80,26 @@ describe('ReplyView', () => {
 
   it('記録の画面に戻るリンクがある', () => {
     expect(render()).toContain('href="/staff/residents/3"')
+  })
+
+  it('家族の問いを見出しにし、今日の記録を手がかりとして 1 行で出す（#457）', () => {
+    const html = render({
+      records: [
+        {
+          id: 1,
+          item: 'meal',
+          slot: 'breakfast',
+          value: '10',
+          recorded_at: '2026-10-26T00:00:00Z',
+          recorded_by_name: '職員A',
+        },
+      ],
+    })
+    const shown = html.replace(/<rt>.*?<\/rt>|<rp>.*?<\/rp>/g, '').replace(/<[^>]+>/g, '')
+
+    expect(shown).toContain('を知りたい')
+    expect(shown).toContain('今日の記録')
+    expect(shown).toMatch(/朝\s*全部/)
+    expect(shown).toMatch(/夜\s*まだ/)
   })
 })

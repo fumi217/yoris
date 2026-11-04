@@ -661,6 +661,9 @@
     "waiting_sub": "Requests from the family"
   },
   "staff_contact_book": {
+    "title_suffix": "'s daily notes",
+    "replies_title": "Replies",
+    "day_title": "Mood / Sleep",
     "title": "Daily notes review",
     "date": "{{month}}/{{day}}",
     "previous": "Previous day",
@@ -715,6 +718,14 @@
     "back_to_residents": "Back to residents"
   },
   "reply_page": {
+    "title_count": "Replies to requests ({{count}})",
+    "room": "Room {{room}}",
+    "from": "From the family",
+    "question": "Wants to know: {{theme}}",
+    "waiting_days": "Waiting {{count}} day(s)",
+    "today_records": "Today's records:",
+    "not_yet": "not yet",
+    "send_reply": "Send reply",
     "title": "Replies to \"what families want to know\"",
     "received": "Received on {{month}}/{{day}} at {{time}}",
     "days_today": "Today",
