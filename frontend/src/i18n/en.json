@@ -183,6 +183,8 @@
   },
   "memo": {
     "title": "Observation memo",
+    "step_write": "Write the note",
+    "step_confirm": "Check it and send for approval",
     "write": "Write an observation memo",
     "original": "Original text",
     "rewritten": "AI-edited Japanese",

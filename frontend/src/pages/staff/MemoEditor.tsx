@@ -276,258 +276,291 @@ export function MemoEditorView({
 
   return (
     <section className="space-y-4 p-4">
-      <h1 className="text-xl font-bold">
+      <Link
+        to={`/staff/residents/${residentId}`}
+        className="-my-2 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-primary"
+      >
+        <Icon name="prev" />
+        <Text k="memo.back_to_record" />
+      </Link>
+      <h1 className="text-2xl font-bold">
         <Text k="memo.write" />
         {resident && (
-          <span className="ml-3 text-base font-normal">
-            <span className="mr-2 text-gray-600">{resident.room}</span>
+          <span className="ml-3 text-base font-semibold text-ink-sub">
+            <span className="mr-2">{resident.room}</span>
             <ResidentName name={resident.display_name} ruby={resident.display_name_ruby} />
           </span>
         )}
       </h1>
 
       {/* 急変・事故は、このメモでは伝えられない。いつも出す（FR-016） */}
-      <p role="note" className="rounded border border-red-700 bg-red-50 p-3 font-bold text-red-800">
+      <p
+        role="note"
+        className="rounded-2xl border border-red-700 bg-red-50 px-4 py-2.5 font-bold text-red-800"
+      >
         <Icon name="urgent-call" className="mr-2" />
         <Text k="memo.call_if_urgent" />
       </p>
 
       {memo && <StatusBox memo={memo} />}
 
-      <form
-        className="space-y-3"
-        onSubmit={(event) => {
-          event.preventDefault()
-          if (editable && problem === null && !pending) onSubmit()
-        }}
-      >
-        <label className="block text-sm">
-          <Text k="memo.language" />
-          <select
-            value={lang}
-            disabled={memo !== null}
-            onChange={(event) => onLang(event.target.value as SourceLang)}
-            className="mt-1 block w-full rounded border-2 border-field-line p-2"
-          >
-            {SOURCE_LANGS.map((code) => (
-              <option key={code} value={code}>
-                {stripRuby(t(langKey(code)))}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {readOnlyMemo ? (
-          // 承認待ち・承認済み・取り下げたメモの原文。直せない。文字としてだけ出す（FR-017）
-          <div className="space-y-1">
-            <p className="text-sm font-bold">
-              <Text k="memo.original" />
-            </p>
-            <p
-              lang={readOnlyMemo.source_lang}
-              className="whitespace-pre-wrap rounded-lg border border-card-line bg-card p-3"
+      {/* 3 つの手順（書く → 日本語にする → 確かめる。#442）。手順の中身・動きは今のまま */}
+      <StepCard number={1} done={memo !== null} titleKey="memo.step_write">
+        <form
+          className="space-y-3"
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (editable && problem === null && !pending) onSubmit()
+          }}
+        >
+          <label className="block text-sm font-bold">
+            <Text k="memo.language" />
+            <select
+              value={lang}
+              disabled={memo !== null}
+              onChange={(event) => onLang(event.target.value as SourceLang)}
+              className="mt-1 block min-h-11 w-full rounded-xl border border-field-line bg-card px-3 text-base font-normal"
             >
-              {readOnlyMemo.original_text}
-            </p>
-          </div>
-        ) : (
-          <label className="block text-sm">
-            <Text k={memo ? 'memo.edit_original' : 'memo.input_label'} />
-            {memo && !originalChanged(memo, original) && (
-              <span className="ml-3 text-xs text-gray-600">
-                <Text k="memo.original_saved" />
-              </span>
-            )}
-            <textarea
-              value={original}
-              lang={memo ? memo.source_lang : lang}
-              onChange={(event) => (memo ? onEditedOriginal : onText)?.(event.target.value)}
-              rows={5}
-              aria-invalid={problem === 'too_long'}
-              className="mt-1 block w-full rounded border-2 border-field-line p-2 aria-[invalid=true]:border-red-700"
-            />
-            <span
-              className={`block text-right ${
-                problem === 'too_long' ? 'font-bold text-red-700' : 'text-gray-600'
-              }`}
-            >
-              {t('memo.counter', { count: originalLength(original) })}
-            </span>
+              {SOURCE_LANGS.map((code) => (
+                <option key={code} value={code}>
+                  {stripRuby(t(langKey(code)))}
+                </option>
+              ))}
+            </select>
           </label>
-        )}
 
-        {problem === 'too_long' && editable && (
-          <p role="alert" className="text-red-700">
-            <Text k="memo.too_long" />
-          </p>
-        )}
-
-        {editable && (
-          <button
-            type="submit"
-            disabled={problem !== null || pending}
-            className="w-full rounded bg-primary p-3 text-lg font-bold text-white disabled:opacity-50"
-          >
-            {pending && (action === null || action === 'submit') ? (
-              <Text k={isJapanese ? 'memo.polishing' : 'memo.thinking'} />
-            ) : errorKey && !rewritten ? (
-              <Text k="memo.retry" />
-            ) : rewritten ? (
-              <Text k={isJapanese ? 'memo.polish_redo' : 'memo.redo'} />
-            ) : (
-              <Text k={isJapanese ? 'memo.polish' : 'memo.to_japanese'} />
-            )}
-          </button>
-        )}
-
-        {errorKey && (
-          // AI が止まったときも、原文は消えない（上に出ている）。時間をおいて、もう一度押せる
-          <p role="alert" className="rounded border border-red-700 p-3 text-red-700">
-            <Text k={errorKey} />
-          </p>
-        )}
-      </form>
-
-      {rewritten !== null && memo && (
-        <section aria-label={stripRuby(t('memo.rewritten'))} className="space-y-2">
-          <p className="text-sm font-bold">
-            <Text k="memo.rewritten" />
-          </p>
-          {editable ? (
-            <div className="space-y-2">
-              <textarea
-                value={rewrittenValue}
-                lang="ja"
-                onChange={(event) => onEditedRewritten?.(event.target.value)}
-                rows={5}
-                aria-label={stripRuby(t('memo.edit_rewritten'))}
-                aria-invalid={rewrittenIssue === 'too_long'}
-                className="block w-full rounded border-2 border-primary p-3 aria-[invalid=true]:border-red-700"
-              />
-              <span
-                className={`block text-right ${
-                  rewrittenIssue === null ? 'text-gray-600' : 'font-bold text-red-700'
-                }`}
+          {readOnlyMemo ? (
+            // 承認待ち・承認済み・取り下げたメモの原文。直せない。文字としてだけ出す（FR-017）
+            <div className="space-y-1">
+              <p className="text-sm font-bold">
+                <Text k="memo.original" />
+              </p>
+              <p
+                lang={readOnlyMemo.source_lang}
+                className="rounded-xl bg-page p-3 whitespace-pre-wrap"
               >
-                {t('memo.rewritten_counter', { count: textLength(rewrittenValue) })}
-              </span>
-              {rewrittenIssue !== null && (
-                <p role="alert" className="text-red-700">
-                  <Icon name="warning" className="mr-1" />
-                  <Text
-                    k={
-                      rewrittenIssue === 'empty'
-                        ? 'memo.rewritten_empty'
-                        : 'memo.rewritten_too_long'
-                    }
-                  />
-                </p>
-              )}
-              {rewrittenEdited && (
-                <button
-                  type="button"
-                  disabled={rewrittenIssue !== null || pending}
-                  onClick={onSave}
-                  className="min-h-11 rounded border-2 border-primary px-4 py-2 font-bold text-primary disabled:opacity-50"
-                >
-                  {pending && action === 'save' ? (
-                    <Text k="memo.back_translating" />
-                  ) : (
-                    <Text
-                      k={needsBackTranslation(staffLanguage) ? 'memo.save_back' : 'memo.save_edit'}
-                    />
-                  )}
-                </button>
-              )}
+                {readOnlyMemo.original_text}
+              </p>
             </div>
           ) : (
-            // 整えた日本語は、辞書を通さず、文字としてだけ出す（FR-017）
-            <p className="whitespace-pre-wrap rounded border-2 border-primary p-3">{rewritten}</p>
+            <label className="block text-sm font-bold">
+              <Text k={memo ? 'memo.edit_original' : 'memo.input_label'} />
+              {memo && !originalChanged(memo, original) && (
+                <span className="ml-3 text-xs font-normal text-ink-sub">
+                  <Text k="memo.original_saved" />
+                </span>
+              )}
+              <textarea
+                value={original}
+                lang={memo ? memo.source_lang : lang}
+                onChange={(event) => (memo ? onEditedOriginal : onText)?.(event.target.value)}
+                rows={5}
+                aria-invalid={problem === 'too_long'}
+                className="mt-1 block w-full rounded-xl border border-field-line bg-card p-3 text-base font-normal aria-[invalid=true]:border-2 aria-[invalid=true]:border-red-700"
+              />
+              <span
+                className={`block text-right font-normal ${
+                  problem === 'too_long' ? 'font-bold text-red-700' : 'text-ink-sub'
+                }`}
+              >
+                {t('memo.counter', { count: originalLength(original) })}
+              </span>
+            </label>
           )}
-          <p className="text-xs text-gray-600">
-            <Text k="memo.ai_notice" />
-          </p>
-        </section>
-      )}
 
-      {rewritten !== null && needsBackTranslation(staffLanguage) && memo && (
-        <section aria-label={stripRuby(t('memo.back_translation'))} className="space-y-1">
-          <p className="text-sm font-bold">
-            <Text k="memo.back_translation" />
-          </p>
-          {memo.back_translation !== null && !rewrittenEdited ? (
-            // 訳し戻しも、文字としてだけ出す（FR-017）。原文と同じ意味か、本人が確かめる（FR-007）
-            <p
-              lang={staffLanguage}
-              className="whitespace-pre-wrap rounded-lg border border-card-line bg-card p-3"
-            >
-              {memo.back_translation}
+          {problem === 'too_long' && editable && (
+            <p role="alert" className="text-red-700">
+              <Text k="memo.too_long" />
             </p>
-          ) : (
-            editable && (
-              <p className="text-sm text-gray-700">
-                <Text k="memo.no_back_translation" />
-              </p>
-            )
           )}
-          {/* 直した日本語は保存できたのに、訳し戻しだけが失敗したとき（サーバーは、直すと訳し戻しを空にする）。
-              「確かめました」が押せず、「もう一度日本語にする」では直した文が消えてしまうので、
-              訳し戻しだけをやり直すボタンを出す（直しの途中のときは、上の「直した文を訳し戻す」を使う） */}
-          {editable && memo.back_translation === null && !rewrittenEdited && onBackTranslate && (
+
+          {editable && (
             <button
-              type="button"
-              disabled={pending}
-              onClick={onBackTranslate}
-              className="min-h-11 rounded border-2 border-primary px-4 py-2 font-bold text-primary disabled:opacity-50"
+              type="submit"
+              disabled={problem !== null || pending}
+              className="min-h-13 w-full rounded-2xl bg-primary p-3 text-lg font-bold text-white disabled:opacity-50"
             >
-              {pending && action === 'back_translate' ? (
-                <Text k="memo.back_translating" />
+              {pending && (action === null || action === 'submit') ? (
+                <Text k={isJapanese ? 'memo.polishing' : 'memo.thinking'} />
+              ) : errorKey && !rewritten ? (
+                <Text k="memo.retry" />
+              ) : rewritten ? (
+                <Text k={isJapanese ? 'memo.polish_redo' : 'memo.redo'} />
               ) : (
-                <Text k="memo.save_back" />
+                <Text k={isJapanese ? 'memo.polish' : 'memo.to_japanese'} />
               )}
             </button>
           )}
-        </section>
-      )}
 
-      {warnings.length > 0 && (
-        <div role="note" className="rounded border-2 border-amber-700 bg-amber-50 p-3">
-          <p className="font-bold">
-            <Icon name="warning" className="mr-1" />
-            <Text k="memo.warnings_title" />
-          </p>
-          <ul className="list-disc pl-5 text-sm">
-            {warnings.map((key) => (
-              <li key={key}>
-                <Text k={key} />
-              </li>
-            ))}
-          </ul>
-        </div>
+          {errorKey && (
+            // AI が止まったときも、原文は消えない（上に出ている）。時間をおいて、もう一度押せる
+            <p
+              role="alert"
+              className="rounded-2xl border border-red-700 p-3 font-bold text-red-700"
+            >
+              <Text k={errorKey} />
+            </p>
+          )}
+        </form>
+      </StepCard>
+
+      {rewritten !== null && memo && (
+        <StepCard
+          number={2}
+          done={!needsBackTranslation(staffLanguage) || memo.back_translation !== null}
+          titleKey={isJapanese ? 'memo.polish' : 'memo.to_japanese'}
+        >
+          <section aria-label={stripRuby(t('memo.rewritten'))} className="space-y-2">
+            <p className="text-sm font-bold text-ink-sub">
+              <Text k="memo.rewritten" />
+            </p>
+            {editable ? (
+              <div className="space-y-2">
+                <textarea
+                  value={rewrittenValue}
+                  lang="ja"
+                  onChange={(event) => onEditedRewritten?.(event.target.value)}
+                  rows={5}
+                  aria-label={stripRuby(t('memo.edit_rewritten'))}
+                  aria-invalid={rewrittenIssue === 'too_long'}
+                  className="block w-full rounded-xl border-2 border-primary bg-card p-3 text-lg leading-relaxed aria-[invalid=true]:border-red-700"
+                />
+                <span
+                  className={`block text-right text-sm ${
+                    rewrittenIssue === null ? 'text-ink-sub' : 'font-bold text-red-700'
+                  }`}
+                >
+                  {t('memo.rewritten_counter', { count: textLength(rewrittenValue) })}
+                </span>
+                {rewrittenIssue !== null && (
+                  <p role="alert" className="text-red-700">
+                    <Icon name="warning" className="mr-1" />
+                    <Text
+                      k={
+                        rewrittenIssue === 'empty'
+                          ? 'memo.rewritten_empty'
+                          : 'memo.rewritten_too_long'
+                      }
+                    />
+                  </p>
+                )}
+                {rewrittenEdited && (
+                  <button
+                    type="button"
+                    disabled={rewrittenIssue !== null || pending}
+                    onClick={onSave}
+                    className="min-h-11 rounded-2xl border-2 border-primary bg-card px-4 py-2 font-bold text-primary-dark disabled:opacity-50"
+                  >
+                    {pending && action === 'save' ? (
+                      <Text k="memo.back_translating" />
+                    ) : (
+                      <Text
+                        k={
+                          needsBackTranslation(staffLanguage) ? 'memo.save_back' : 'memo.save_edit'
+                        }
+                      />
+                    )}
+                  </button>
+                )}
+              </div>
+            ) : (
+              // 整えた日本語は、辞書を通さず、文字としてだけ出す（FR-017）
+              <p className="rounded-xl border-2 border-primary p-3 text-lg leading-relaxed whitespace-pre-wrap">
+                {rewritten}
+              </p>
+            )}
+            <p className="flex items-center gap-1.5 text-sm text-ink-sub">
+              <Icon name="info" className="shrink-0" />
+              <Text k="memo.ai_notice" />
+            </p>
+          </section>
+
+          {needsBackTranslation(staffLanguage) && (
+            <section aria-label={stripRuby(t('memo.back_translation'))} className="space-y-1">
+              <p className="text-sm font-bold text-ink-sub">
+                <Text k="memo.back_translation" />
+              </p>
+              {memo.back_translation !== null && !rewrittenEdited ? (
+                // 訳し戻しも、文字としてだけ出す（FR-017）。原文と同じ意味か、本人が確かめる（FR-007）
+                <p lang={staffLanguage} className="rounded-xl bg-page p-3 whitespace-pre-wrap">
+                  {memo.back_translation}
+                </p>
+              ) : (
+                editable && (
+                  <p className="text-sm text-ink-sub">
+                    <Text k="memo.no_back_translation" />
+                  </p>
+                )
+              )}
+              {/* 直した日本語は保存できたのに、訳し戻しだけが失敗したとき（サーバーは、直すと訳し戻しを空にする）。
+              「確かめました」が押せず、「もう一度日本語にする」では直した文が消えてしまうので、
+              訳し戻しだけをやり直すボタンを出す（直しの途中のときは、上の「直した文を訳し戻す」を使う） */}
+              {editable &&
+                memo.back_translation === null &&
+                !rewrittenEdited &&
+                onBackTranslate && (
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={onBackTranslate}
+                    className="min-h-11 rounded-2xl border-2 border-primary bg-card px-4 py-2 font-bold text-primary-dark disabled:opacity-50"
+                  >
+                    {pending && action === 'back_translate' ? (
+                      <Text k="memo.back_translating" />
+                    ) : (
+                      <Text k="memo.save_back" />
+                    )}
+                  </button>
+                )}
+            </section>
+          )}
+
+          {warnings.length > 0 && (
+            <div
+              role="note"
+              className="rounded-2xl border border-amber-300 bg-amber-100 px-4 py-2.5"
+            >
+              <p className="font-bold text-amber-800">
+                <Icon name="warning" className="mr-1" />
+                <Text k="memo.warnings_title" />
+              </p>
+              <ul className="list-disc pl-5 text-sm">
+                {warnings.map((key) => (
+                  <li key={key}>
+                    <Text k={key} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </StepCard>
       )}
 
       {memo && isEditable(memo.status) && rewritten !== null && (
-        <div className="space-y-2">
-          <ul className="list-disc pl-5 text-sm">
+        <StepCard number={3} done={false} titleKey="memo.step_confirm">
+          <ul className="space-y-1 text-sm text-ink-sub">
             <li>
+              <Icon name="check" className="mr-1.5 text-primary" />
               <Text k="memo.check_other_names" />
             </li>
             <li>
+              <Icon name="check" className="mr-1.5 text-primary" />
               <Text k="memo.check_medical" />
             </li>
           </ul>
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-ink-sub">
             <Text k={confirmKey(confirmable, needsBackTranslation(staffLanguage))} />
           </p>
           <button
             type="button"
             disabled={!confirmable || pending}
             onClick={onConfirm}
-            className="w-full rounded bg-primary p-3 text-lg font-bold text-white disabled:opacity-50"
+            className="flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary p-3 text-lg font-bold text-white disabled:opacity-50"
           >
+            <Icon name="check" />
             <Text k={pending && action === 'confirm' ? 'memo.confirming' : 'memo.confirm'} />
           </button>
-        </div>
+        </StepCard>
       )}
 
       {memo && canWithdraw(memo.status) && (
@@ -535,17 +568,13 @@ export function MemoEditorView({
           type="button"
           disabled={pending}
           onClick={onWithdraw}
-          className="min-h-11 rounded border-2 border-ink-sub bg-white px-4 py-2 disabled:opacity-50"
+          className="min-h-11 rounded-2xl border border-field-line bg-card px-4 py-2 font-semibold disabled:opacity-50"
         >
           <Text k={pending && action === 'withdraw' ? 'memo.withdrawing' : 'memo.withdraw'} />
         </button>
       )}
 
       <MineList memos={mine} openId={memo?.id ?? null} onOpen={onOpen} onNew={onNew} />
-
-      <Link to={`/staff/residents/${residentId}`} className="inline-block text-primary underline">
-        <Text k="memo.back_to_record" />
-      </Link>
     </section>
   )
 }
@@ -553,9 +582,13 @@ export function MemoEditorView({
 /** 開いているメモの状態。戻されたときは、理由を目立たせる（FR-013）。 */
 function StatusBox({ memo }: { memo: Memo }) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5 rounded-2xl border border-card-line bg-card px-4 py-3">
       <p className="font-bold">
-        <Text k="memo.status_label" />：<Text k={statusKey(memo.status)} />
+        <Text k="memo.status_label" />：
+        {/* ラベルは「状態：」と同じ大きさにし、縦は真ん中にそろえる。背景は白い面の上でも見える薄い青（PR #445 ようこさん） */}
+        <span className="ml-1 inline-block rounded-full bg-primary-soft px-2.5 py-0.5 align-middle text-primary-dark">
+          <Text k={statusKey(memo.status)} />
+        </span>
       </p>
       {memo.status === 'draft' && memo.rewritten_text !== null && (
         <p className="text-sm">
@@ -573,8 +606,8 @@ function StatusBox({ memo }: { memo: Memo }) {
         </p>
       )}
       {memo.status === 'returned' && memo.return_reason && (
-        <div role="note" className="rounded border-2 border-amber-700 bg-amber-50 p-3">
-          <p className="font-bold">
+        <div role="note" className="rounded-xl border border-amber-300 bg-amber-100 p-3">
+          <p className="font-bold text-amber-800">
             <Text k="memo.return_reason_title" />
           </p>
           {/* 戻した人が書いた理由は、辞書を通さず、文字としてだけ出す（FR-017） */}
@@ -603,11 +636,11 @@ function MineList({
         <Text k="memo.mine_title" />
       </h2>
       {memos.length === 0 ? (
-        <p className="text-sm text-gray-700">
+        <p className="text-sm text-ink-sub">
           <Text k="memo.mine_empty" />
         </p>
       ) : (
-        <ul className="divide-y rounded border">
+        <ul className="divide-y divide-card-line overflow-hidden rounded-2xl border border-card-line bg-card">
           {memos.map((item) => (
             <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
               <div className="min-w-0 space-y-1">
@@ -618,7 +651,7 @@ function MineList({
                   {item.memo_date}
                 </p>
                 {/* 原文は、辞書を通さず、文字としてだけ出す（FR-017） */}
-                <p lang={item.source_lang} className="truncate text-sm text-gray-700">
+                <p lang={item.source_lang} className="truncate text-sm text-ink-sub">
                   {item.original_text}
                 </p>
               </div>
@@ -627,7 +660,7 @@ function MineList({
                 disabled={item.id === openId}
                 aria-pressed={item.id === openId}
                 onClick={() => onOpen?.(item)}
-                className="min-h-11 rounded border-2 border-ink-sub bg-white px-4 py-2 disabled:opacity-50"
+                className="min-h-11 rounded-full border border-field-line bg-card px-4 py-2 font-semibold disabled:opacity-50"
               >
                 <Text k="memo.open" />
               </button>
@@ -636,10 +669,39 @@ function MineList({
         </ul>
       )}
       {openId !== null && (
-        <button type="button" onClick={onNew} className="min-h-11 text-primary underline">
+        <button type="button" onClick={onNew} className="min-h-11 font-bold text-primary underline">
           <Text k="memo.new_memo" />
         </button>
       )}
+    </section>
+  )
+}
+
+/** 手順の白い面（番号の丸・見出し・中身）。済んだ手順は、番号の代わりに緑の ✔（色だけでなく印でも示す）。 */
+function StepCard({
+  number,
+  done,
+  titleKey,
+  children,
+}: {
+  number: number
+  done: boolean
+  titleKey: string
+  children: React.ReactNode
+}) {
+  return (
+    <section className="space-y-3 rounded-2xl border border-card-line bg-card p-4">
+      <h2 className="flex items-center gap-2.5 text-lg font-bold">
+        <span
+          className={`flex size-8 shrink-0 items-center justify-center rounded-full text-base text-white ${
+            done ? 'bg-green-800' : 'bg-primary'
+          }`}
+        >
+          {done ? <Icon name="check" label={String(number)} /> : number}
+        </span>
+        <Text k={titleKey} />
+      </h2>
+      {children}
     </section>
   )
 }

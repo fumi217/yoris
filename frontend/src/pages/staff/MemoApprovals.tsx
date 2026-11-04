@@ -109,24 +109,28 @@ export function MemoApprovalsView({
   }, [topError, errorKey, errorId])
   return (
     <div className="space-y-4 p-4">
-      <h1 className="text-xl font-bold">
+      <h1 className="text-2xl font-bold">
         <Text k="memo_approval.title" />
       </h1>
-      <p className="rounded border-2 border-red-700 bg-red-50 p-2 font-bold">
+      <p className="flex items-center gap-2 rounded-2xl border border-red-700 bg-red-50 px-4 py-2.5 font-bold text-red-800">
+        <Icon name="urgent-call" className="shrink-0" />
         <Text k="memo.call_if_urgent" />
       </p>
 
-      <div role="group" aria-label={stripRuby(t('memo_approval.state'))} className="flex gap-2">
+      {/* 丸い切り替え（#442）。選ばれたものは、塗りと太字と aria-pressed で示す */}
+      <div
+        role="group"
+        aria-label={stripRuby(t('memo_approval.state'))}
+        className="grid auto-cols-fr grid-flow-col gap-1 rounded-full border border-card-line bg-card p-1"
+      >
         {(['pending', 'approved'] as const).map((value) => (
           <button
             key={value}
             type="button"
             aria-pressed={tab === value}
             onClick={() => onTab(value)}
-            className={`min-h-11 rounded border-2 px-4 py-2 ${
-              tab === value
-                ? 'border-sky-700 bg-sky-700 font-bold text-white'
-                : 'border-gray-500 bg-white'
+            className={`min-h-11 rounded-full px-4 ${
+              tab === value ? 'bg-primary font-bold text-white' : 'font-semibold text-ink-sub'
             }`}
           >
             <Text k={`memo_approval.tab_${value}`} />
@@ -134,16 +138,21 @@ export function MemoApprovalsView({
         ))}
       </div>
       {tab === 'approved' && (
-        <p className="text-sm text-gray-700">
+        <p className="text-sm text-ink-sub">
           <Text k="memo_approval.approved_note" />
         </p>
       )}
 
-      <p role="status" aria-live="polite" className="min-h-6 text-sm font-bold">
-        {doneAction && <Text k={`memo_approval.done_${doneAction}`} />}
+      <p role="status" aria-live="polite" className="min-h-6 text-sm">
+        {doneAction && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 font-bold text-green-800">
+            <Icon name="check" />
+            <Text k={`memo_approval.done_${doneAction}`} />
+          </span>
+        )}
       </p>
       {topError && errorKey && (
-        <p ref={topErrorRef} role="alert" className="text-sm text-red-700">
+        <p ref={topErrorRef} role="alert" className="text-sm font-bold text-red-700">
           <Text k={errorKey} />
         </p>
       )}
@@ -153,7 +162,7 @@ export function MemoApprovalsView({
       ) : items === null ? (
         <Message k="layout.loading" />
       ) : items.length === 0 ? (
-        <p>
+        <p className="rounded-2xl border border-card-line bg-card p-4 text-center text-ink-sub">
           <Text k={`memo_approval.empty_${tab}`} />
         </p>
       ) : (
@@ -201,14 +210,17 @@ function MemoCard({
   return (
     <article
       aria-labelledby={`memo-${item.id}`}
-      className="space-y-3 rounded border-2 border-gray-500 bg-white p-3"
+      // 1 日以上待っているメモは、左の線（注意の色）でも目立たせる（文字の「1 日以上待っています」も出す）
+      className={`space-y-3 rounded-2xl border border-card-line bg-card p-4 ${
+        item.overdue ? 'shadow-[inset_4px_0_0_var(--color-amber-800)]' : ''
+      }`}
     >
       <header className="space-y-1">
         {/* 入居者の呼び名・職員の名前・メモの文は、辞書を通さず、文字のまま出す（FR-017） */}
-        <h2 id={`memo-${item.id}`} className="text-lg font-bold">
+        <h2 id={`memo-${item.id}`} className="text-xl font-bold">
           <ResidentName name={item.resident_name} ruby={item.resident_name_ruby} />
         </h2>
-        <p className="text-sm">
+        <p className="text-sm text-ink-sub">
           <Text k="memo_approval.author" />
           {item.author_name}
           <span className="ml-3">
@@ -216,7 +228,14 @@ function MemoCard({
           </span>
         </p>
         {hours !== null && (
-          <p className={item.overdue ? 'font-bold text-amber-900' : 'text-sm'}>
+          <p
+            className={
+              item.overdue
+                ? // flex にせず、アイコンと文字を 1 つの行に入れる（ふりがなの付き方で高さがずれないように。PR #445 ようこさん）
+                  'inline-block rounded-full border border-amber-800 px-3 py-0.5 text-sm font-bold text-amber-800'
+                : 'text-sm text-ink-sub'
+            }
+          >
             {item.overdue && <Icon name="warning" className="mr-1" />}
             <Ruby
               text={
@@ -233,7 +252,7 @@ function MemoCard({
           </p>
         )}
         {tab === 'approved' && item.approved_at && (
-          <p className="text-sm">
+          <p className="text-sm text-ink-sub">
             <Ruby
               text={t('memo_approval.approved_on', { date: dateText(jstDate(item.approved_at)) })}
             />
@@ -242,8 +261,8 @@ function MemoCard({
       </header>
 
       {warnings.length > 0 && (
-        <div className="rounded border-2 border-amber-700 bg-amber-50 p-2">
-          <h3 className="font-bold">
+        <div className="rounded-2xl border border-amber-300 bg-amber-100 px-4 py-2.5">
+          <h3 className="font-bold text-amber-800">
             <Icon name="warning" className="mr-1" />
             <Text k="memo_approval.warnings_title" />
           </h3>
@@ -257,46 +276,51 @@ function MemoCard({
         </div>
       )}
 
-      <section>
-        <h3 className="font-bold">
-          <Text k="memo.original" />（<Text k={`memo.lang.${item.source_lang}`} />）
-        </h3>
-        <p className="whitespace-pre-wrap break-words">{item.original_text}</p>
-      </section>
-      <section>
-        <h3 className="font-bold">
+      {/* 家族に見える「整えた日本語」を大きく先に。原文と訳し戻しは、その下に左右に並べて見比べる（#442） */}
+      <section className="rounded-2xl border-2 border-primary px-4 py-3">
+        <h3 className="text-sm font-bold text-ink-sub">
           <Text k="memo.rewritten" />
         </h3>
-        <p className="whitespace-pre-wrap break-words">
+        <p className="text-lg leading-relaxed font-semibold break-words whitespace-pre-wrap">
           {item.rewritten_text ?? <Text k="memo_approval.no_rewritten" />}
         </p>
       </section>
-      <section>
-        <h3 className="font-bold">
-          <Text k="memo.back_translation" />
-        </h3>
-        <p className="whitespace-pre-wrap break-words">
-          {item.back_translation ?? <Text k="memo_approval.no_back_translation" />}
-        </p>
-      </section>
+      <div className="grid gap-2.5 sm:grid-cols-2">
+        <section className="min-w-0 rounded-2xl bg-page px-3.5 py-2.5">
+          <h3 className="text-sm font-bold text-ink-sub">
+            <Text k="memo.original" />（<Text k={`memo.lang.${item.source_lang}`} />）
+          </h3>
+          <p className="break-words whitespace-pre-wrap">{item.original_text}</p>
+        </section>
+        <section className="min-w-0 rounded-2xl bg-page px-3.5 py-2.5">
+          <h3 className="text-sm font-bold text-ink-sub">
+            <Text k="memo.back_translation" />
+          </h3>
+          <p className="break-words whitespace-pre-wrap">
+            {item.back_translation ?? <Text k="memo_approval.no_back_translation" />}
+          </p>
+        </section>
+      </div>
 
       {tab === 'pending' && (
         <>
-          <ul className="list-disc pl-5 text-sm">
+          <ul className="space-y-1 text-sm text-ink-sub">
             <li>
+              <Icon name="check" className="mr-1.5 text-primary" />
               <Text k="memo.check_other_names" />
             </li>
             <li>
+              <Icon name="check" className="mr-1.5 text-primary" />
               <Text k="memo.check_medical" />
             </li>
           </ul>
           {item.is_own ? (
             // 本人のメモは承認も戻すもできない。ほかのリーダー・施設長を待つ（FR-011a）
-            <p className="text-sm font-bold">
+            <p className="rounded-2xl bg-page p-3 text-center text-sm font-bold text-ink-sub">
               <Text k="memo.waiting_other_leader" />
             </p>
           ) : mode === null ? (
-            <div className="flex flex-wrap gap-3">
+            <div className="grid gap-2.5 sm:grid-cols-[2fr_1fr]">
               {/* 承認すると家族に見える。押し間違えないよう、2 回押して決める */}
               <ConfirmButton
                 labelKey="memo_approval.approve"
@@ -305,14 +329,14 @@ function MemoCard({
                 busy={busy}
                 describedBy={`memo-${item.id}`}
                 onConfirm={() => onAct(item.id, 'approve')}
-                className="min-h-11 rounded bg-sky-700 px-4 py-2 font-bold text-white"
+                className="min-h-13 w-full rounded-2xl bg-primary px-4 py-2 text-lg font-bold text-white"
               />
               <button
                 type="button"
                 disabled={busy}
                 aria-describedby={`memo-${item.id}`}
                 onClick={() => setMode('return')}
-                className="min-h-11 rounded border-2 border-gray-500 bg-white px-4 py-2 disabled:opacity-60"
+                className="min-h-13 w-full rounded-2xl border-2 border-primary bg-card px-4 py-2 text-lg font-bold text-primary-dark disabled:opacity-60"
               >
                 <Text k="memo_approval.return" />
               </button>
@@ -338,7 +362,7 @@ function MemoCard({
             disabled={busy}
             aria-describedby={`memo-${item.id}`}
             onClick={() => setMode('unpublish')}
-            className="min-h-11 rounded border-2 border-gray-500 bg-white px-4 py-2 disabled:opacity-60"
+            className="min-h-12 rounded-2xl border-2 border-field-line bg-card px-4 py-2 font-bold disabled:opacity-60"
           >
             <Text k="memo_approval.unpublish" />
           </button>
@@ -355,7 +379,7 @@ function MemoCard({
         ))}
 
       {errorKey && (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm font-bold text-red-700">
           <Text k={errorKey} />
         </p>
       )}
@@ -396,7 +420,7 @@ export function ReasonForm({
         onSubmit(reason.trim())
       }}
     >
-      <label className="block text-sm">
+      <label className="block text-sm font-bold">
         <Text k={labelKey} />
         <textarea
           value={reason}
@@ -404,11 +428,11 @@ export function ReasonForm({
           rows={2}
           aria-invalid={tooLong}
           aria-describedby={`${id}-count`}
-          className="mt-1 block w-full rounded border-2 border-gray-500 bg-white p-2 aria-[invalid=true]:border-red-700"
+          className="mt-1 block w-full rounded-xl border border-field-line bg-card p-3 text-base font-normal aria-[invalid=true]:border-2 aria-[invalid=true]:border-red-700"
         />
         <span
           id={`${id}-count`}
-          className={`block text-right ${tooLong ? 'font-bold text-red-700' : 'text-gray-700'}`}
+          className={`block text-right font-normal ${tooLong ? 'font-bold text-red-700' : 'text-ink-sub'}`}
         >
           {t('memo_approval.reason_count', { count: length })}
         </span>
@@ -417,11 +441,15 @@ export function ReasonForm({
         <button
           type="submit"
           disabled={!isValidReason(reason) || busy}
-          className="min-h-11 rounded bg-sky-700 px-4 py-2 font-bold text-white disabled:opacity-60"
+          className="min-h-12 rounded-2xl bg-primary px-5 py-2 font-bold text-white disabled:opacity-60"
         >
           <Text k={busy ? busyKey : submitKey} />
         </button>
-        <button type="button" onClick={onCancel} className="min-h-11 text-sky-700 underline">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="min-h-11 font-bold text-primary underline"
+        >
           <Text k="layout.confirm_stop" />
         </button>
       </div>

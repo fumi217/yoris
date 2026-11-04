@@ -183,6 +183,8 @@
   },
   "memo": {
     "title": "Catatan keadaan",
+    "step_write": "Tulis catatan",
+    "step_confirm": "Periksa dan kirim untuk disetujui",
     "write": "Tulis catatan keadaan",
     "original": "Teks asli",
     "rewritten": "Bahasa Jepang yang sudah dirapikan",
