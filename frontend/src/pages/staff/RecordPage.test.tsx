@@ -172,3 +172,81 @@ describe('RecordView の変化の目印の欄（spec 006 の 006-T015）', () =>
     expect(render()).not.toContain('目印の欄')
   })
 })
+
+describe('記録の画面の見た目（#439）', () => {
+  const text = (html: string) =>
+    html
+      .replace(/<rt>.*?<\/rt>/g, '')
+      .replace(/<rp>.*?<\/rp>/g, '')
+      .replace(/<[^>]+>/g, '')
+
+  it('「今日の記録」の札に、記録済みは値、まだは「未記録」を出す（おやつは数えない）', () => {
+    const html = render({
+      book: book([
+        record({ slot: 'breakfast', value: '10' }),
+        record({ id: 2, item: 'mood', slot: 'day', value: 'smile' }),
+      ]),
+    })
+    const shown = text(html)
+
+    expect(shown).toContain('今日の記録')
+    expect(shown).toMatch(/朝.*全部/)
+    expect(shown).toMatch(/機嫌.*笑顔が多い/)
+    // 札は 5 つ（朝・昼・夜・機嫌・眠り）。まだは 3 つ
+    expect(html.match(/border-dashed border-field-line bg-card text-ink-sub/g)).toHaveLength(3)
+  })
+
+  it('「食事なし」は、札では短い名前にする', () => {
+    const shown = text(render({ book: book([record({ slot: 'breakfast', value: 'none' })]) }))
+
+    expect(shown).toContain('食事なし')
+  })
+
+  it('食べた量のボタンには、お皿の絵（飾り）を付ける。「食事なし」は点線の別のボタン', () => {
+    const html = render()
+
+    // お皿の絵は 5 つ（全部・ほぼ全部・半分・少し・食べていない）
+    expect(html.match(/<svg width="34"/g)).toHaveLength(5)
+    expect(html).toMatch(/<button[^>]*aria-pressed="false"[^>]*class="[^"]*border-dashed/)
+  })
+
+  it('機嫌・眠りのボタンには、顔の絵を付ける', () => {
+    const html = render()
+
+    expect(html).toContain('data-icon="face-smile"')
+    expect(html).toContain('data-icon="face-meh"')
+    expect(html).toContain('data-icon="face-frown"')
+  })
+
+  it('選ばれたボタンには、色に加えて ✔ を出す', () => {
+    const html = render({ book: book([record({ item: 'mood', slot: 'day', value: 'low' })]) })
+
+    const pressed = html.match(/<button[^>]*aria-pressed="true"[\s\S]*?<\/button>/)?.[0] ?? ''
+    expect(pressed).toContain('data-icon="check"')
+  })
+
+  it('記録があれば、記録した人と時刻を出す（名前はふりがなの書き方として解釈しない）', () => {
+    const html = render({
+      book: book([
+        record({ item: 'mood', slot: 'day', value: 'low', recorded_by_name: '職員{A|え}' }),
+      ]),
+    })
+
+    expect(text(html)).toContain('08:00')
+    expect(html).not.toContain('<rt>え</rt>')
+  })
+
+  it('保存の知らせは、その欄の見出しの横に出す', () => {
+    const html = render({ notice: 'saved', noticeAt: 'sleep' })
+    const sleep = html.slice(html.indexOf('id="record-sleep"'))
+
+    expect(text(sleep)).toContain('保存しました')
+    expect(text(html.slice(0, html.indexOf('id="record-sleep"')))).not.toContain('保存しました')
+  })
+
+  it('食事の問いは、区分の名前を差し込んだ 1 つの文にする（言語ごとに語順が違うため）', () => {
+    const shown = text(render({ book: book([record({ slot: 'breakfast', value: '10' })]) }))
+
+    expect(shown).toContain('昼ごはんは、どのくらい食べましたか')
+  })
+})

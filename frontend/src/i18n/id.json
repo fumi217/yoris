@@ -619,7 +619,14 @@
     "cancel": "Batalkan catatan ini",
     "cancel_confirm": "Tekan sekali lagi untuk membatalkan",
     "cancelled": "Catatan dibatalkan",
-    "album": "Tambah foto"
+    "album": "Tambah foto",
+    "today": "Catatan hari ini",
+    "not_recorded": "Belum",
+    "meal_none_short": "Tidak makan",
+    "meal_question": "{{slot}}: berapa banyak yang dimakan?",
+    "recorded_by": "Dicatat oleh {{name}} pukul {{time}}",
+    "to_contact_book_sub": "Yang dilihat keluarga, dan balasan",
+    "waiting_sub": "Permintaan dari keluarga"
   },
   "staff_contact_book": {
     "title": "Tinjauan buku harian",

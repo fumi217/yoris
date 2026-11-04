@@ -28,6 +28,8 @@ import {
   faCookieBite,
   faCreditCard,
   faEnvelope,
+  faFaceFrown,
+  faFaceMeh,
   faFaceSmile,
   faFile,
   faGear,
@@ -115,6 +117,10 @@ const ICONS = {
   'theme-supplies': faBagShopping,
   // 残りの絵文字の置き換え（#388）
   check: faCheck,
+  // 記録の画面の機嫌・眠りのボタン（#439）
+  'face-good': faFaceSmile,
+  'face-normal': faFaceMeh,
+  'face-low': faFaceFrown,
   // 職員の画面・管理画面のタブ（#437）
   residents: faUsers,
   home: faHouse,

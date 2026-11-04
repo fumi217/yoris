@@ -619,7 +619,14 @@
     "cancel": "Cancel this record",
     "cancel_confirm": "Press again to cancel",
     "cancelled": "The record was cancelled",
-    "album": "Add photos"
+    "album": "Add photos",
+    "today": "Today's records",
+    "not_recorded": "Not yet",
+    "meal_none_short": "No meal",
+    "meal_question": "{{slot}}: how much did they eat?",
+    "recorded_by": "Recorded by {{name}} at {{time}}",
+    "to_contact_book_sub": "What the family sees, and replies",
+    "waiting_sub": "Requests from the family"
   },
   "staff_contact_book": {
     "title": "Daily notes review",
