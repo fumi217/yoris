@@ -123,6 +123,17 @@ describe('SignupForm', () => {
     expect(textOf(html)).toContain('お支払いの画面を開けませんでした')
     expect(html).not.toContain('aria-invalid')
   })
+
+  it('フォームを白いカードに載せ、入力欄の中も白にする（家族の画面と同じ。#447）', () => {
+    const html = renderForm()
+
+    expect(html).toMatch(/<form[^>]*class="[^"]*rounded-2xl[^"]*border-card-line[^"]*bg-card/)
+    const inputs = html.match(/<input[^>]*class="[^"]*"/g) ?? []
+    expect(inputs).toHaveLength(5)
+    for (const input of inputs) expect(input).toContain('bg-card')
+    // 補足の文字は、決めごとの名前（ink-sub）にそろえる
+    expect(html).toContain('text-ink-sub')
+  })
 })
 
 describe('CompleteView', () => {
@@ -193,5 +204,11 @@ describe('CompleteView', () => {
 
     expect(textOf(html)).toContain('確認できませんでした')
     expect(html).toContain('href="/signup"')
+  })
+
+  it('完了の画面の中身も、白いカードに載せる（#447）', () => {
+    const html = renderComplete({ status: 'completed', loginId: 's00001' })
+
+    expect(html).toMatch(/<div class="[^"]*rounded-2xl[^"]*border-card-line[^"]*bg-card[^"]*"/)
   })
 })

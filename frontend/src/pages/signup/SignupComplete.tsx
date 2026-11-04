@@ -111,7 +111,7 @@ function CopyButton({ text }: { text: string }) {
       <button
         type="button"
         onClick={copy}
-        className={`rounded border-2 px-3 py-2 font-bold transition active:scale-95 ${
+        className={`rounded-xl border-2 px-3 py-2 font-bold transition active:scale-95 ${
           state === 'copied'
             ? 'border-green-700 bg-green-50 text-green-800'
             : 'border-primary text-primary hover:bg-sky-50 active:bg-sky-100'
@@ -158,7 +158,7 @@ export function CompleteView({
       <header className="p-4">
         <Logo className="h-7" />
       </header>
-      <main className="mx-auto max-w-md space-y-6 p-6">
+      <main className="mx-auto max-w-xl space-y-8 px-6 pt-4 pb-12">
         {/* 確認中・確認できなかったときは「お支払い」、できたら「完了」にいる */}
         <StepNavigation
           labelKey="steps.label"
@@ -166,68 +166,70 @@ export function CompleteView({
           current={status === 'completed' ? 3 : 2}
           errorStep={status === 'not_completed' ? 2 : undefined}
         />
-        {status === 'confirming' && (
-          <>
-            <p role="status" aria-live="polite">
-              <Text k={timedOut ? 'signup_complete.slow' : 'signup_complete.confirming'} />
-            </p>
-            {timedOut && (
-              <button
-                type="button"
-                onClick={onRetry}
-                className="block w-full rounded border border-field-line p-3 text-center text-lg"
-              >
-                <Text k="signup_complete.recheck" />
-              </button>
-            )}
-          </>
-        )}
-
-        {status === 'completed' && (
-          <>
-            <h1 className="text-2xl font-bold">
-              <Text k="signup_complete.done_title" />
-            </h1>
-            {loginId ? (
-              <div className="space-y-2 rounded border-2 border-primary p-4">
-                <p className="text-sm">
-                  <Text k="signup_complete.login_id" />
-                </p>
-                <p className="text-3xl font-bold tracking-wider" data-testid="login-id">
-                  {loginId}
-                </p>
-                {canCopy && <CopyButton text={loginId} />}
-                <p className="font-bold text-red-700">
-                  <Text k="signup_complete.keep" />
-                </p>
-              </div>
-            ) : (
-              <p>
-                <Text k="signup_complete.id_expired" />
+        <div className="space-y-6 rounded-2xl border border-card-line bg-card p-6 shadow-sm">
+          {status === 'confirming' && (
+            <>
+              <p role="status" aria-live="polite">
+                <Text k={timedOut ? 'signup_complete.slow' : 'signup_complete.confirming'} />
               </p>
-            )}
-            <Link
-              to="/login"
-              className="block rounded bg-primary p-3 text-center text-lg font-bold text-white"
-            >
-              <Text k="signup_complete.to_login" />
-            </Link>
-          </>
-        )}
+              {timedOut && (
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  className="block w-full rounded-xl border border-field-line bg-card p-3 text-center text-lg"
+                >
+                  <Text k="signup_complete.recheck" />
+                </button>
+              )}
+            </>
+          )}
 
-        {status === 'not_completed' && (
-          <>
-            <p role="alert">
-              <Text k="signup_complete.not_completed" />
-            </p>
-            <Link
-              to="/signup"
-              className="block rounded border border-field-line p-3 text-center text-lg"
-            >
-              <Text k="signup_complete.retry" />
-            </Link>
-          </>
-        )}
+          {status === 'completed' && (
+            <>
+              <h1 className="text-2xl font-bold">
+                <Text k="signup_complete.done_title" />
+              </h1>
+              {loginId ? (
+                <div className="space-y-2 rounded border-2 border-primary p-4">
+                  <p className="text-sm">
+                    <Text k="signup_complete.login_id" />
+                  </p>
+                  <p className="text-3xl font-bold tracking-wider" data-testid="login-id">
+                    {loginId}
+                  </p>
+                  {canCopy && <CopyButton text={loginId} />}
+                  <p className="font-bold text-red-700">
+                    <Text k="signup_complete.keep" />
+                  </p>
+                </div>
+              ) : (
+                <p>
+                  <Text k="signup_complete.id_expired" />
+                </p>
+              )}
+              <Link
+                to="/login"
+                className="block rounded-xl bg-primary p-3 text-center text-lg font-bold text-white"
+              >
+                <Text k="signup_complete.to_login" />
+              </Link>
+            </>
+          )}
+
+          {status === 'not_completed' && (
+            <>
+              <p role="alert">
+                <Text k="signup_complete.not_completed" />
+              </p>
+              <Link
+                to="/signup"
+                className="block rounded-xl border border-field-line bg-card p-3 text-center text-lg"
+              >
+                <Text k="signup_complete.retry" />
+              </Link>
+            </>
+          )}
+        </div>
       </main>
     </>
   )

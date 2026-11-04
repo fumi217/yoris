@@ -171,16 +171,16 @@ export function SignupForm({ plan, canceled, submitting, errorKey, onSubmit }: F
       <header className="p-4">
         <Logo className="h-7" />
       </header>
-      <main className="mx-auto max-w-md space-y-6 p-6">
+      <main className="mx-auto max-w-xl space-y-8 px-6 pt-4 pb-12">
         <StepNavigation labelKey="steps.label" steps={SIGNUP_STEPS} current={1} />
         <div>
           <h1 className="text-2xl font-bold">
             <Text k="signup.title" />
           </h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-ink-sub">
             <Text k="signup.lead" />
           </p>
-          <p className="mt-3 rounded-lg border border-card-line bg-card p-3">
+          <p className="mt-4 rounded-2xl border border-card-line bg-card p-4">
             {plan.plan_name}{' '}
             <span className="font-bold">{plan.amount_jpy.toLocaleString('ja-JP')}</span>
             <Text k="signup.per_month" />
@@ -193,7 +193,11 @@ export function SignupForm({ plan, canceled, submitting, errorKey, onSubmit }: F
           </p>
         )}
 
-        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          className="flex flex-col gap-5 rounded-2xl border border-card-line bg-card p-6 shadow-sm"
+        >
           <Field
             name="facility_name"
             labelKey="signup.facility_name"
@@ -248,7 +252,7 @@ export function SignupForm({ plan, canceled, submitting, errorKey, onSubmit }: F
           <button
             type="submit"
             disabled={submitting}
-            className="rounded bg-primary p-3 text-lg font-bold text-white disabled:opacity-60"
+            className="rounded-xl bg-primary p-3 text-lg font-bold text-white disabled:opacity-60"
           >
             <Text k={submitting ? 'signup.submitting' : 'signup.submit'} />
           </button>
@@ -295,7 +299,7 @@ function Field({
         </span>
       </span>
       {hintKey && (
-        <span id={hintId} className="text-sm text-gray-600">
+        <span id={hintId} className="text-sm text-ink-sub">
           <Text k={hintKey} />
         </span>
       )}
@@ -310,7 +314,7 @@ function Field({
         }
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className={`rounded p-3 text-lg ${errorKey ? 'border-2 border-red-700 bg-red-50' : 'border border-field-line'}`}
+        className={`rounded-xl p-3 text-lg ${errorKey ? 'border-2 border-red-700 bg-red-50' : 'border border-field-line bg-card'}`}
         {...rest}
       />
       {errorKey && (

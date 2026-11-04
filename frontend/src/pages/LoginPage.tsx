@@ -54,11 +54,14 @@ export function LoginPage() {
       <header className="p-4">
         <Logo className="h-7" />
       </header>
-      <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 p-6">
+      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center gap-8 px-6 pt-4 pb-12">
         <h1 className="text-center text-2xl font-bold">
           <Text k="auth.title" />
         </h1>
-        <form onSubmit={submit} className="flex flex-col gap-4">
+        <form
+          onSubmit={submit}
+          className="flex flex-col gap-5 rounded-2xl border border-card-line bg-card p-5 shadow-sm min-[600px]:p-6"
+        >
           <label className="flex flex-col gap-1">
             {/* span で包む（flex の中で、ふりがなと文字が別の行に割れないように。#192・#196） */}
             <span>
@@ -72,7 +75,7 @@ export function LoginPage() {
               autoCapitalize="none"
               value={login}
               onChange={(event) => setLogin(event.target.value)}
-              className="rounded border border-field-line p-3 text-lg"
+              className="rounded-xl border border-field-line bg-card p-3 text-lg"
             />
           </label>
           <label className="flex flex-col gap-1">
@@ -87,7 +90,7 @@ export function LoginPage() {
               autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="rounded border border-field-line p-3 text-lg"
+              className="rounded-xl border border-field-line bg-card p-3 text-lg"
             />
           </label>
           {errorKey && (
@@ -98,7 +101,7 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="rounded bg-primary p-3 text-lg font-bold text-white disabled:opacity-60"
+            className="rounded-xl bg-primary p-3 text-lg font-bold text-white disabled:opacity-60"
           >
             <Text k={submitting ? 'auth.submitting' : 'auth.submit'} />
           </button>

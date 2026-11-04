@@ -34,4 +34,15 @@ describe('LoginPage', () => {
 
     expect(h1.replace(/<[^>]+>/g, '')).toBe('ログイン')
   })
+
+  it('フォームを白いカードに載せ、入力欄の中も白にする（家族の画面と同じ。#447）', () => {
+    const html = render()
+
+    expect(html).toMatch(/<form[^>]*class="[^"]*rounded-2xl[^"]*border-card-line[^"]*bg-card/)
+    const inputs = html.match(/<input[^>]*class="[^"]*"/g) ?? []
+    expect(inputs).toHaveLength(2)
+    // 幅と余白は、申込・完了の画面と同じ（max-w は上限だけなので、スマホでは画面の幅いっぱい）
+    expect(html).toMatch(/<main[^>]*class="[^"]*max-w-xl/)
+    for (const input of inputs) expect(input).toContain('bg-card')
+  })
 })
