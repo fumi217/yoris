@@ -60,7 +60,8 @@ describe('NotificationSettingsView（アルバム）', () => {
     const on = render({ settings: { ...settings, notify_album: true } })
     const off = render({ settings: { ...settings, notify_album: false } })
 
-    expect(text(on)).toContain('アルバムに新しい写真が載ったら、まとめで知らせる')
+    // アルバムは「記録のまとめに入れるもの」の中に、つまみで並べる（#449）
+    expect(text(on)).toContain('アルバムの新しい写真')
     // 返事 + 項目 3 つ + アルバム = チェック 5 つ（オフなら 4 つ）
     expect(on.match(/type="checkbox"[^>]*checked=""/g)).toHaveLength(5)
     expect(off.match(/type="checkbox"[^>]*checked=""/g)).toHaveLength(4)
@@ -134,10 +135,13 @@ describe('NotificationSettingsView', () => {
     expect(shown).toContain('迷惑メール')
   })
 
-  it('「保存する」ボタンを出す。保存中は押せず、文言が変わる', () => {
-    const idle = render()
+  it('変えたときだけ、下に「変更があります」と「保存する」の帯を出す。保存中は押せず、文言が変わる（#449）', () => {
+    const unchanged = render()
+    const idle = render({ draft: { ...toDraft(settings), frequency: 'weekly' } })
     const saving = render({ saving: true })
 
+    expect(text(unchanged)).not.toContain('保存する')
+    expect(text(idle)).toContain('変更があります')
     expect(text(idle)).toContain('保存する')
     expect(idle).not.toMatch(/<button[^>]*disabled=""/)
     expect(text(saving)).toContain('保存しています')
@@ -176,5 +180,22 @@ describe('NotificationSettingsView', () => {
 
     expect(html).not.toContain('<b>x</b>')
     expect(html).toContain('&lt;b&gt;x&lt;/b&gt;@example.test')
+  })
+})
+
+describe('通知の設定の見た目（#449）', () => {
+  it('オン・オフは、つまみ（role="switch"）で読み上げに伝える', () => {
+    const html = render()
+
+    // 返事 1 ＋ 項目 4（食事・機嫌・眠り・様子のメモ）
+    expect(html.match(/role="switch"/g)).toHaveLength(5)
+  })
+
+  it('頻度は、いつ届くかのひとことを添える', () => {
+    expect(text(render())).toContain('その日の分をまとめて')
+  })
+
+  it('緊急のときは電話で知らせる案内を、いつも出す', () => {
+    expect(text(render())).toContain('緊急のときは、施設からお電話します')
   })
 })

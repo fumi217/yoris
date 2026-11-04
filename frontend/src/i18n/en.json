@@ -72,6 +72,13 @@
   },
   "notification_settings": {
     "title": "Notification settings",
+    "back": "More",
+    "album_item": "New photos in the album",
+    "frequency_hint": {
+      "daily": "Everything from that day",
+      "weekly": "Everything from the week",
+      "none": "You can always see it in the app"
+    },
     "intro": "Notifications are sent by email and shown in the app.",
     "reply_title": "Replies to what you would like to know",
     "reply_label": "Notify me when a reply arrives (by email and in the app)",
@@ -95,6 +102,7 @@
     "email_title": "Email address for notifications",
     "email_hint": "If emails do not arrive, please check your spam folder. You can always see notices in the app.",
     "changed": "You have unsaved changes. Please press \"Save\".",
+    "changed_short": "You have unsaved changes",
     "save": "Save",
     "saving": "Saving…",
     "saved": "Saved"

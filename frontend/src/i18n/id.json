@@ -72,6 +72,13 @@
   },
   "notification_settings": {
     "title": "Pengaturan pemberitahuan",
+    "back": "Lainnya",
+    "album_item": "Foto baru di album",
+    "frequency_hint": {
+      "daily": "Semua dari hari itu",
+      "weekly": "Semua dari minggu itu",
+      "none": "Selalu bisa dilihat di aplikasi"
+    },
     "intro": "Pemberitahuan dikirim melalui email dan ditampilkan di aplikasi.",
     "reply_title": "Balasan untuk hal yang ingin Anda ketahui",
     "reply_label": "Beri tahu saya saat ada balasan (melalui email dan di aplikasi)",
@@ -95,6 +102,7 @@
     "email_title": "Alamat email untuk pemberitahuan",
     "email_hint": "Jika email tidak masuk, silakan periksa folder spam. Pemberitahuan selalu dapat dilihat di aplikasi.",
     "changed": "Ada perubahan yang belum disimpan. Silakan tekan \"Simpan\".",
+    "changed_short": "Ada perubahan",
     "save": "Simpan",
     "saving": "Menyimpan…",
     "saved": "Tersimpan"
