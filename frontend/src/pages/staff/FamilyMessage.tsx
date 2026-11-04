@@ -12,7 +12,6 @@ import {
   arrivedKey,
   canAssign,
   canReply,
-  categoryKey,
   hasTemplates,
   MESSAGES_KEY,
   messagesBase,
@@ -21,6 +20,7 @@ import {
   type ConversationMessage,
   type MessageDetail,
 } from './messagesView'
+import { AssigneeLabel, CategoryLabel } from './FamilyMessages'
 import { MAX_NOTE_LENGTH, noteLength, replyBody, toggleTemplate } from './replyForm'
 
 /**
@@ -111,56 +111,71 @@ export function MessageDetailView({
   const { t } = useTranslation()
   return (
     <section className="space-y-4 p-4">
-      <h1 className="text-xl font-bold">
-        <ResidentFamily
-          name={message.resident_display_name}
-          ruby={message.resident_display_name_ruby}
-          relationship={message.family_relationship}
-        />
-        <span className="ml-2 rounded bg-gray-100 px-2 py-0.5 text-base font-normal">
-          <Text k={categoryKey(message.category)} />
-        </span>
-      </h1>
+      <Link
+        to={backTo}
+        className="-my-2 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-primary"
+      >
+        <Icon name="prev" />
+        <Text k="family_messages.back" />
+      </Link>
 
-      <p className="flex flex-wrap items-baseline gap-x-4 text-sm text-gray-600">
-        <span>
-          <Text k={`family_messages.status_${message.status}`} />
-        </span>
-        <span>
-          <Ruby text={t(arrivedKey(message.elapsed_days), { count: message.elapsed_days })} />
-        </span>
-        <span>
-          {message.assignee ? (
-            <>
-              <Text k="family_messages.assignee" />：{message.assignee.display_name}
-            </>
-          ) : (
-            <Text k="family_messages.unassigned" />
-          )}
-        </span>
-      </p>
-      {message.waiting_over_a_day && (
-        <p className="font-bold text-amber-900">
-          <Icon name="warning" className="mr-1" />
-          <Text k="family_messages.waiting_over_day" />
-        </p>
-      )}
+      {/* 見出しの面：だれからか・種類・状態・届いてからの日数・担当（#441） */}
+      <div className="space-y-2.5 rounded-2xl border border-card-line bg-card p-4">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h1 className="text-[22px] font-bold">
+            <ResidentFamily
+              name={message.resident_display_name}
+              ruby={message.resident_display_name_ruby}
+              relationship={message.family_relationship}
+            />
+          </h1>
+          <CategoryLabel category={message.category} />
+        </div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-ink-sub">
+          <span
+            className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+              message.status === 'waiting'
+                ? 'bg-red-100 text-red-800'
+                : 'bg-green-100 text-green-800'
+            }`}
+          >
+            <Text k={`family_messages.status_${message.status}`} />
+          </span>
+          <span>
+            <Icon name="upload-waiting" className="mr-1" />
+            <Ruby text={t(arrivedKey(message.elapsed_days), { count: message.elapsed_days })} />
+          </span>
+          <AssigneeLabel assignee={message.assignee} />
+        </div>
+        {message.waiting_over_a_day && (
+          <p className="text-sm font-bold text-amber-800">
+            <Icon name="warning" className="mr-1" />
+            <Text k="family_messages.waiting_over_day" />
+          </p>
+        )}
+      </div>
 
       {errorKey && (
-        <p role="alert" className="rounded border border-red-700 p-3 text-red-700">
+        <p
+          role="alert"
+          className="rounded-2xl border border-red-700 bg-card p-3 font-bold text-red-700"
+        >
           <Text k={errorKey} />
         </p>
       )}
 
-      <p className="text-xs text-gray-600">
+      <p className="flex items-center gap-1.5 text-sm text-ink-sub">
+        <Icon name="info" className="shrink-0" />
         <Text k="family_messages.furigana_auto" />
       </p>
       <Block titleKey="family_messages.origin_title">
-        <Bubble message={message.origin} bodyRuby={message.origin_ruby} />
+        <div className="flex justify-end">
+          <Bubble message={message.origin} bodyRuby={message.origin_ruby} />
+        </div>
       </Block>
       <Block titleKey="family_messages.summary_title">
         {/* AI の要約は、辞書を通さず、文字としてだけ出す（FR-028）。読みは自動で付けたもの（FR-028a） */}
-        <p className="whitespace-pre-wrap rounded-lg border border-card-line bg-card p-3">
+        <p className="whitespace-pre-wrap rounded-2xl bg-primary-soft px-4 py-3 leading-relaxed">
           <Ruby text={message.summary_ruby} />
         </p>
       </Block>
@@ -180,8 +195,9 @@ export function MessageDetailView({
           type="button"
           disabled={assigning}
           onClick={onAssign}
-          className="w-full rounded border-2 border-primary p-3 text-lg font-bold text-primary disabled:opacity-50"
+          className="flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl border-2 border-primary bg-card p-3 text-lg font-bold text-primary-dark disabled:opacity-50"
         >
+          <Icon name="staff-account" />
           <Text k={assigning ? 'family_messages.assigning' : 'family_messages.assign'} />
         </button>
       )}
@@ -189,22 +205,19 @@ export function MessageDetailView({
       {canReply(message) ? (
         <ReplyForm templates={message.templates} sending={sending} onSend={onReply} />
       ) : (
-        <p className="rounded-lg border border-card-line bg-card p-3 text-center">
+        <p className="rounded-2xl bg-green-100 p-3 text-center font-bold text-green-800">
+          <Icon name="check" className="mr-1" />
           <Text k="family_messages.answered_done" />
         </p>
       )}
-
-      <Link to={backTo} className="inline-block text-primary underline">
-        <Text k="family_messages.back" />
-      </Link>
     </section>
   )
 }
 
 function Block({ titleKey, children }: { titleKey: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1">
-      <h2 className="text-sm font-bold text-gray-700">
+    <div className="space-y-1.5">
+      <h2 className="ml-1 text-sm font-bold text-ink-sub">
         <Text k={titleKey} />
       </h2>
       {children}
@@ -214,9 +227,9 @@ function Block({ titleKey, children }: { titleKey: string; children: React.React
 
 function Conversation({ messages }: { messages: ConversationMessage[] }) {
   return (
-    <ol className="space-y-2">
+    <ol className="flex flex-col gap-2.5">
       {messages.map((message) => (
-        <li key={message.id}>
+        <li key={message.id} className={`flex ${message.sender === 'family' ? 'justify-end' : ''}`}>
           <Bubble message={message} />
         </li>
       ))}
@@ -228,14 +241,22 @@ function Conversation({ messages }: { messages: ConversationMessage[] }) {
  * 発言 1 つ。家族・AI・職員の文は、辞書を通さず、文字としてだけ出す（FR-028）。
  * bodyRuby があるとき（質問の原文だけ）は、読みを付けた文を `Ruby` で出す（FR-028a）。
  */
+// 発言の吹き出しの色：家族は白（右寄せ）、AI は薄い青の枠、職員は「成功」の色
+const BUBBLE: Record<ConversationMessage['sender'], string> = {
+  family: 'rounded-tr-sm border border-card-line bg-card',
+  ai: 'rounded-tl-sm border-2 border-primary-soft bg-card',
+  staff: 'rounded-tl-sm bg-green-100',
+}
+
 function Bubble({ message, bodyRuby }: { message: ConversationMessage; bodyRuby?: string }) {
   return (
-    <div className="space-y-1 rounded border border-card-line p-3">
-      <p className="text-xs text-gray-600">
+    // だれの発言かは、位置と色に加えて、上の文字（ご家族・AI・職員）でも示す（1.3.1・1.4.1）
+    <div className={`max-w-[88%] space-y-1 rounded-2xl px-4 py-2.5 ${BUBBLE[message.sender]}`}>
+      <p className="text-xs font-bold text-ink-sub">
         <Text k={senderKey(message.sender)} />
       </p>
       {message.body !== '' && (
-        <p className="whitespace-pre-wrap">
+        <p className="whitespace-pre-wrap leading-relaxed">
           {bodyRuby === undefined ? message.body : <Ruby text={bodyRuby} />}
         </p>
       )}
@@ -264,14 +285,15 @@ function ReplyForm({ templates, sending, onSend }: ReplyFormProps) {
   // 苦情には定型文がない。電話で対応する（FR-014）
   if (!hasTemplates(templates)) {
     return (
-      <p className="rounded border border-card-line p-3">
+      <p className="rounded-2xl border border-card-line bg-card p-3">
+        <Icon name="urgent-call" className="mr-1 text-primary" />
         <Text k="family_messages.no_templates" />
       </p>
     )
   }
   return (
     <form
-      className="space-y-3 rounded border-2 border-field-line p-4"
+      className="space-y-3 rounded-2xl border border-card-line bg-card p-4"
       onSubmit={(event) => {
         event.preventDefault()
         onSend({ templateIds: selected, note })
@@ -293,24 +315,28 @@ function ReplyForm({ templates, sending, onSend }: ReplyFormProps) {
                 type="button"
                 aria-pressed={on}
                 onClick={() => setSelected((current) => toggleTemplate(current, template.id))}
-                className={`min-h-12 rounded border-2 p-2 text-left ${
-                  on ? 'border-primary bg-primary text-white' : 'border-field-line bg-white'
+                // 選んだ定型文は、薄い青の背景・枠・✔ と aria-pressed で示す（色だけに頼らない）
+                className={`flex min-h-14 items-center gap-2 rounded-2xl border-2 px-3 py-2 text-left font-bold ${
+                  on
+                    ? 'border-primary bg-primary-soft text-primary-dark'
+                    : 'border-field-line bg-card'
                 }`}
               >
+                {on && <Icon name="check" className="shrink-0" />}
                 <Text k={template.code} />
               </button>
             )
           })}
         </div>
       </fieldset>
-      <label className="block text-sm">
+      <label className="block text-sm font-bold">
         <Text k="family_messages.note" />
         <textarea
           value={note}
           onChange={(event) => setNote(event.target.value)}
           rows={2}
           aria-invalid={tooLong}
-          className="mt-1 block w-full rounded border-2 border-field-line p-2 aria-[invalid=true]:border-red-700"
+          className="mt-1 block w-full rounded-xl border border-field-line bg-card p-3 text-base aria-[invalid=true]:border-2 aria-[invalid=true]:border-red-700"
         />
         <span
           className={`block text-right ${tooLong ? 'font-bold text-red-700' : 'text-gray-600'}`}
@@ -321,8 +347,9 @@ function ReplyForm({ templates, sending, onSend }: ReplyFormProps) {
       <button
         type="submit"
         disabled={selected.length === 0 || tooLong || sending}
-        className="w-full rounded bg-primary p-3 text-lg font-bold text-white disabled:opacity-50"
+        className="flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary p-3 text-lg font-bold text-white disabled:opacity-50"
       >
+        <Icon name="send" />
         <Text k={sending ? 'family_messages.sending' : 'family_messages.send'} />
       </button>
     </form>

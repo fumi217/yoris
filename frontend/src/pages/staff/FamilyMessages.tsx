@@ -39,11 +39,11 @@ export function FamilyMessages() {
 
   return (
     <section className="space-y-4 p-4">
-      <h1 className="text-xl font-bold">
+      <h1 className="text-2xl font-bold">
         <Text k="family_messages.title" />
       </h1>
       {residentId !== null && (
-        <p className="flex flex-wrap items-center gap-x-3 rounded-lg border border-card-line bg-card p-3 text-sm">
+        <p className="flex flex-wrap items-center gap-x-3 rounded-2xl border border-card-line bg-card p-3 text-sm">
           <span>
             <Text k="family_messages.filtered" />
           </span>
@@ -77,7 +77,11 @@ export function FamilyMessages() {
 export function BackToResidents({ base }: { base: string }) {
   if (base !== '/staff/messages') return null
   return (
-    <Link to="/staff" className="inline-block text-primary underline">
+    <Link
+      to="/staff"
+      className="inline-flex min-h-11 items-center gap-1 text-sm font-bold text-primary"
+    >
+      <Icon name="prev" />
       <Text k="family_messages.back_to_residents" />
     </Link>
   )
@@ -85,7 +89,11 @@ export function BackToResidents({ base }: { base: string }) {
 
 function MessageTabs({ status, onChange }: { status: Status; onChange: (next: Status) => void }) {
   return (
-    <div role="tablist" className="flex gap-2">
+    // 丸い切り替え（記録の画面の区分と同じ形。#441）。選ばれたものは、塗りと太字で示す
+    <div
+      role="tablist"
+      className="grid auto-cols-fr grid-flow-col gap-1 rounded-full border border-card-line bg-card p-1"
+    >
       {STATUS_TABS.map((tab) => (
         <button
           key={tab}
@@ -93,8 +101,8 @@ function MessageTabs({ status, onChange }: { status: Status; onChange: (next: St
           role="tab"
           aria-selected={status === tab}
           onClick={() => onChange(tab)}
-          className={`min-h-12 flex-1 rounded border-2 p-2 ${
-            status === tab ? 'border-primary bg-primary text-white' : 'border-field-line bg-white'
+          className={`min-h-11 rounded-full px-3 ${
+            status === tab ? 'bg-primary font-bold text-white' : 'font-semibold text-ink-sub'
           }`}
         >
           <Text k={`family_messages.tab_${tab}`} />
@@ -124,12 +132,13 @@ export function MessageListView({
   }
   return (
     <>
-      <p className="text-xs text-gray-600">
+      <p className="flex items-center gap-1.5 text-sm text-ink-sub">
+        <Icon name="info" className="shrink-0" />
         <Text k="family_messages.furigana_auto" />
       </p>
-      <ul className="divide-y rounded border border-card-line">
+      <ul className="overflow-hidden rounded-2xl border border-card-line bg-card">
         {messages.map((message) => (
-          <li key={message.id}>
+          <li key={message.id} className="border-t border-card-line first:border-t-0">
             <MessageItem base={base} message={message} search={search} />
           </li>
         ))}
@@ -148,43 +157,76 @@ function MessageItem({
   search: string
 }) {
   const { t } = useTranslation()
+  const waiting = message.status === 'waiting'
   return (
-    <Link to={`${base}/${message.id}${search}`} className="block space-y-1 p-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="font-bold">
+    // 対応待ちは、左の線で目立たせる（色だけでなく、上のタブと「担当なし」の文字でも分かる）。
+    // 行の背景は白のまま（薄い青はページの背景とほぼ同じ色で、行が溶けて見えるため。PR #444 ようこさん）
+    <Link
+      to={`${base}/${message.id}${search}`}
+      className={`block space-y-1.5 px-4 py-3.5 hover:bg-primary-soft ${
+        waiting ? 'shadow-[inset_4px_0_0_var(--color-primary)]' : ''
+      }`}
+    >
+      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+        <p className="text-[17px] font-bold">
           <ResidentFamily
             name={message.resident_display_name}
             ruby={message.resident_display_name_ruby}
             relationship={message.family_relationship}
           />
-          <span className="ml-2 rounded bg-gray-100 px-2 py-0.5 text-sm font-normal">
-            <Text k={categoryKey(message.category)} />
-          </span>
         </p>
-        <p className="text-sm text-gray-600">
+        <CategoryLabel category={message.category} />
+        {/* アイコンと文字は 1 つの行に入れる（flex だと、ふりがなの分だけアイコンが浮く。PR #444 ようこさん） */}
+        <p className="ml-auto text-sm text-ink-sub">
+          <Icon name="upload-waiting" className="mr-1" />
           <Ruby text={t(arrivedKey(message.elapsed_days), { count: message.elapsed_days })} />
         </p>
       </div>
       {/* 渡してから 24 時間たっても対応待ち。色だけでなく、印と文字で目立たせる（FR-016b） */}
       {message.waiting_over_a_day && (
-        <p className="font-bold text-amber-900">
+        <p className="text-sm font-bold text-amber-800">
           <Icon name="warning" className="mr-1" />
           <Text k="family_messages.waiting_over_day" />
         </p>
       )}
       {/* AI の要約は、辞書を通さず、文字としてだけ出す（FR-028）。読みは自動で付けたもの（FR-028a） */}
-      <p className="whitespace-pre-wrap">
+      <p className="whitespace-pre-wrap leading-relaxed">
         <Ruby text={message.summary_ruby} />
       </p>
-      <p className="text-sm text-gray-600">
-        {message.assignee ? (
-          <>
-            <Text k="family_messages.assignee" />：{message.assignee.display_name}
-          </>
-        ) : (
-          <Text k="family_messages.unassigned" />
-        )}
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <AssigneeLabel assignee={message.assignee} />
+        <Icon name="next" className="text-ink-sub" />
+      </div>
     </Link>
+  )
+}
+
+// 急ぎ・体調・苦情は、目立つ色（警告）。ほかは落ち着いた色。どちらも文字で種類を出す（色だけに頼らない）
+const URGENT_CATEGORIES: MessageRow['category'][] = ['urgent', 'medical', 'complaint']
+
+/** 質問の種類の丸いラベル（一覧・詳細で同じ）。 */
+export function CategoryLabel({ category }: { category: MessageRow['category'] }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
+        URGENT_CATEGORIES.includes(category) ? 'bg-red-100 text-red-800' : 'bg-page text-ink-sub'
+      }`}
+    >
+      <Text k={categoryKey(category)} />
+    </span>
+  )
+}
+
+/** 担当の丸いラベル（一覧・詳細で同じ）。いないときは、点線の「担当なし」。 */
+export function AssigneeLabel({ assignee }: { assignee: MessageRow['assignee'] }) {
+  return assignee ? (
+    <span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2.5 py-0.5 text-sm font-bold text-primary-dark">
+      <Icon name="staff-account" />
+      <Text k="family_messages.assignee" />：{assignee.display_name}
+    </span>
+  ) : (
+    <span className="inline-flex items-center rounded-full border border-dashed border-field-line px-2.5 py-0.5 text-sm text-ink-sub">
+      <Text k="family_messages.unassigned" />
+    </span>
   )
 }
