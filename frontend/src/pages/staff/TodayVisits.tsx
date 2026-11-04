@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
+import { Icon } from '../../components/Icon'
 import { messageKeyOf } from '../../api/client'
 import { Message } from '../../components/Message'
 import { Text } from '../../components/Text'
@@ -18,7 +19,7 @@ export function TodayVisits() {
 
   return (
     <section className="space-y-4 p-4">
-      <h1 className="text-xl font-bold">
+      <h1 className="text-2xl font-bold">
         <Text k="visit_list.today_title" />
       </h1>
       {today.isPending ? (
@@ -28,14 +29,24 @@ export function TodayVisits() {
       ) : (
         <TodayVisitsView rows={today.data} />
       )}
-      <div className="flex flex-wrap gap-4 text-primary underline">
-        <Link to="/staff/visits">
+      {/* 予約の一覧（UI-S11。取り消しはここから）への入口（#443） */}
+      <Link
+        to="/staff/visits"
+        className="flex min-h-14 items-center gap-3 rounded-2xl border border-card-line bg-card px-4 py-2.5 font-bold text-primary-dark hover:bg-primary-soft"
+      >
+        <Icon name="visit-list" className="text-lg" />
+        <span className="flex-1">
           <Text k="visit_list.to_list" />
-        </Link>
-        <Link to="/staff">
-          <Text k="visit_list.back_to_residents" />
-        </Link>
-      </div>
+        </span>
+        <Icon name="next" className="text-ink-sub" />
+      </Link>
+      <Link
+        to="/staff"
+        className="inline-flex min-h-11 items-center gap-1 text-sm font-bold text-primary"
+      >
+        <Icon name="prev" />
+        <Text k="visit_list.back_to_residents" />
+      </Link>
     </section>
   )
 }
@@ -46,30 +57,49 @@ export function TodayVisitsView({ rows }: { rows: StaffReservation[] }) {
   if (rows.length === 0) return <Message k="visit_list.today_empty" />
 
   return (
-    <ul className="divide-y rounded border border-card-line">
+    <ol className="overflow-hidden rounded-2xl border border-card-line bg-card">
       {rows.map((row) => {
         const start = hhmm(row.start_time)
         return (
-          <li key={row.id} className="flex flex-wrap items-baseline p-3">
-            <span className="w-36 shrink-0 text-lg font-bold">
-              {t('visit.time_range', { start, end: endOf(start) })}
+          <li
+            key={row.id}
+            className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-card-line px-4 py-3 first:border-t-0"
+          >
+            {/* 時刻を大きく（いつ来るかが、まず目に入るように。#443） */}
+            <span className="flex w-20 shrink-0 flex-col leading-tight">
+              <span className="text-2xl font-bold tabular-nums">{start}</span>
+              <span className="text-sm text-ink-sub tabular-nums">〜{endOf(start)}</span>
             </span>
-            <span className="w-12 shrink-0 text-gray-600">{row.room}</span>
-            <span className="w-80 shrink-0">
-              {/* 続柄は出さない：予約したのは代表者だが、来る人が同じとは限らないため（デザインの決めごと 15 章） */}
-              <ResidentFamily
-                name={row.resident_name}
-                ruby={row.resident_name_ruby}
-                relationship={null}
-              />
-            </span>
-            {/* 来館する人の数（入居者の人数に見えないよう「来館者」と付ける。#311） */}
-            <span>
-              <Ruby text={t('visit.visitors', { count: row.party_size })} />
+            <RoomTile room={row.room} />
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="text-lg font-bold">
+                {/* 続柄は出さない：予約したのは代表者だが、来る人が同じとは限らないため（デザインの決めごと 15 章） */}
+                <ResidentFamily
+                  name={row.resident_name}
+                  ruby={row.resident_name_ruby}
+                  relationship={null}
+                />
+              </span>
+              {/* 来館する人の数（入居者の人数に見えないよう「来館者」と付ける。#311） */}
+              <span className="text-sm text-ink-sub">
+                <Ruby text={t('visit.visitors', { count: row.party_size })} />
+              </span>
             </span>
           </li>
         )
       })}
-    </ul>
+    </ol>
+  )
+}
+
+/** 居室の札（入居者一覧・記録の画面と同じ形）。予約の一覧でも使う。 */
+export function RoomTile({ room }: { room: string }) {
+  return (
+    <span className="flex w-13 shrink-0 flex-col items-center rounded-xl bg-page py-1 leading-tight">
+      <span className="text-xs font-bold text-ink-sub">
+        <Text k="resident_list.room" />
+      </span>
+      <span className="text-lg font-bold">{room}</span>
+    </span>
   )
 }

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router'
 import { api, messageKeyOf } from '../../api/client'
 import { ConfirmButton } from '../../components/ConfirmButton'
+import { Icon } from '../../components/Icon'
 import { Message } from '../../components/Message'
 import { ReasonField } from '../../components/ReasonField'
 import { Text } from '../../components/Text'
@@ -20,6 +21,7 @@ import {
   VISITS_KEY,
   type StaffReservation,
 } from './visitReservationRows'
+import { RoomTile } from './TodayVisits'
 
 /**
  * 面会の予約の一覧（UI-S11。spec 003 の T026・T031。職員のすべて）。
@@ -50,19 +52,24 @@ export function VisitReservations() {
 
   return (
     <section className="space-y-4 p-4">
-      <h1 className="text-xl font-bold">
+      <h1 className="text-2xl font-bold">
         <Text k="visit_list.title" />
       </h1>
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-ink-sub">
         <Text k="visit_list.range_note" />
       </p>
       <p role="status" aria-live="polite" className="min-h-6 text-sm">
         {cancel.isError ? (
-          <span className="text-red-700">
+          <span className="font-bold text-red-700">
             <Text k={messageKeyOf(cancel.error)} />
           </span>
         ) : (
-          notice && <Text k="visit_list.cancelled_notice" />
+          notice && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 font-bold text-green-800">
+              <Icon name="check" />
+              <Text k="visit_list.cancelled_notice" />
+            </span>
+          )
         )}
       </p>
       {list.isPending ? (
@@ -78,7 +85,11 @@ export function VisitReservations() {
       )}
       {base === '/staff/visits' && (
         // 管理画面で開いたときは、枠の「管理画面のトップへ」で戻る
-        <Link to="/staff" className="inline-block text-primary underline">
+        <Link
+          to="/staff"
+          className="inline-flex min-h-11 items-center gap-1 text-sm font-bold text-primary"
+        >
+          <Icon name="prev" />
           <Text k="visit_list.back_to_residents" />
         </Link>
       )}
@@ -96,16 +107,26 @@ type ListProps = {
 /** 一覧の中身（テストではこれを直接出す）。 */
 export function VisitListView({ rows, cancellingId, onCancel }: ListProps) {
   const { t } = useTranslation()
+  const today = todayInJapan()
   if (rows.length === 0) return <Message k="visit_list.empty" />
 
   return (
     <div className="space-y-4">
       {groupByDate(rows).map((group) => (
-        <section key={group.date}>
-          <h2 className="mb-1 font-bold">
-            <Ruby text={dateLabel(t, group.date)} />
+        <section key={group.date} className="space-y-2">
+          <h2 className="ml-1 flex items-center gap-2 font-bold text-ink-sub">
+            {/* Ruby は枠を作らず文字の断片を並べるので、span で 1 つの部品にする
+                （flex の中で断片がばらばらに並び、間があいて高さもずれないように。PR #446 ようこさん） */}
+            <span>
+              <Ruby text={dateLabel(t, group.date)} />
+            </span>
+            {group.date === today && (
+              <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs text-white">
+                <Text k="visit_list.today_mark" />
+              </span>
+            )}
           </h2>
-          <ul className="divide-y rounded border border-card-line">
+          <ul className="overflow-hidden rounded-2xl border border-card-line bg-card">
             {group.rows.map((row) => (
               <ReservationItem
                 key={row.id}
@@ -146,58 +167,68 @@ function ReservationItem({ row, cancelling, disabled, onCancel }: ItemProps) {
   const active = row.status === 'booked'
 
   return (
-    <li className={`space-y-1 p-3 ${active ? '' : 'text-ink-sub'}`}>
-      {/* 時刻・居室・名前の列に決まった幅を付け、「来館者」の開始位置を、行によらずそろえる
-          （名前の長さで、あとの列がずれないように）。ふりがなで行の高さが変わっても、文字の下の線をそろえる */}
-      <p className="flex flex-wrap items-baseline">
-        <span className="w-36 shrink-0 font-bold">
-          {t('visit.time_range', { start, end: endOf(start) })}
+    <li className="space-y-2 border-t border-card-line px-4 py-3 first:border-t-0">
+      {/* 1 段目：時刻・状態・取り消す。2 段目：居室の札・名前・来館者（狭い幅でも名前が細く折れないように。#443） */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        {/* 取り消した予約は、薄く（取り消し線）して、状態のラベルの文字でも示す（色だけに頼らない） */}
+        <span className={`tabular-nums ${active ? '' : 'text-ink-sub line-through'}`}>
+          <span className="text-xl font-bold">{start}</span>
+          <span className="ml-1 text-sm text-ink-sub">〜{endOf(start)}</span>
         </span>
-        <span className="w-12 shrink-0 text-gray-600">{row.room}</span>
-        <span className="w-80 shrink-0">
-          {/* 続柄は出さない：予約したのは代表者だが、来る人が同じとは限らないため（デザインの決めごと 15 章） */}
-          <ResidentFamily
-            name={row.resident_name}
-            ruby={row.resident_name_ruby}
-            relationship={null}
-          />
+        <span
+          className={`rounded-full px-2.5 py-0.5 text-xs font-bold whitespace-nowrap ${
+            active ? 'bg-green-100 text-green-800' : 'border border-card-line bg-page text-ink-sub'
+          }`}
+        >
+          <Text k={`visit.status.${row.status}`} />
         </span>
-        {/* 来館する人の数（入居者の人数に見えないよう「来館者」と付ける。#311） */}
-        <span>
-          <Ruby text={t('visit.visitors', { count: row.party_size })} />
+        {active && !open && (
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => setOpen(true)}
+            className="ml-auto inline-flex min-h-11 items-center gap-1 rounded-full border border-field-line bg-card px-4 text-sm font-semibold disabled:opacity-50"
+          >
+            <Icon name="close" />
+            <Text k="visit_list.cancel" />
+          </button>
+        )}
+      </div>
+      <div className="flex items-center gap-3">
+        <RoomTile room={row.room} />
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className={`text-lg font-bold ${active ? '' : 'text-ink-sub'}`}>
+            {/* 続柄は出さない：予約したのは代表者だが、来る人が同じとは限らないため（デザインの決めごと 15 章） */}
+            <ResidentFamily
+              name={row.resident_name}
+              ruby={row.resident_name_ruby}
+              relationship={null}
+            />
+          </span>
+          {/* 来館する人の数（入居者の人数に見えないよう「来館者」と付ける。#311） */}
+          <span className="text-sm text-ink-sub">
+            <Ruby text={t('visit.visitors', { count: row.party_size })} />
+            <span className="ml-3 inline-block">
+              <Ruby text={t('visit_list.booked_at', changedAtParts(row.created_at))} />
+            </span>
+          </span>
         </span>
-      </p>
-      <p className="text-sm">
-        <Text k={`visit.status.${row.status}`} />
-        <span className="ml-3 text-gray-600">
-          <Ruby text={t('visit_list.booked_at', changedAtParts(row.created_at))} />
-        </span>
-      </p>
+      </div>
       {row.cancel_reason && (
-        <p className="text-sm">
+        <p className="text-sm text-ink-sub">
           <Text k="visit.cancel_reason" />
           {/* 施設が入力した理由は、辞書を通さず文字としてだけ出す（FR-016） */}
           <span className="whitespace-pre-wrap">{row.cancel_reason}</span>
         </p>
       )}
-      {active &&
-        (open ? (
-          <CancelForm
-            busy={cancelling}
-            disabled={disabled}
-            onConfirm={(reason) => onCancel(row.id, reason)}
-            onStop={() => setOpen(false)}
-          />
-        ) : (
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={() => setOpen(true)}
-            className="rounded border-2 border-field-line px-3 py-1 text-sm disabled:opacity-50"
-          >
-            <Text k="visit_list.cancel" />
-          </button>
-        ))}
+      {active && open && (
+        <CancelForm
+          busy={cancelling}
+          disabled={disabled}
+          onConfirm={(reason) => onCancel(row.id, reason)}
+          onStop={() => setOpen(false)}
+        />
+      )}
     </li>
   )
 }
@@ -217,14 +248,14 @@ export function CancelForm({ busy, disabled, onConfirm, onStop }: CancelFormProp
   const problem = reasonProblem(reason)
 
   return (
-    <div className="space-y-2 rounded border-2 border-orange-600 bg-orange-50 p-3">
+    <div className="space-y-2 rounded-2xl border border-amber-300 bg-amber-100 p-3">
       <ReasonField
         value={reason}
         onChange={setReason}
         tooLong={problem === 'too_long'}
         locked={armed || busy}
       />
-      <p className="text-xs text-gray-600">
+      <p className="text-sm text-ink-sub">
         <Text k="visit_list.cancel_note" />
       </p>
       <div className="flex flex-wrap gap-3">
@@ -236,9 +267,13 @@ export function CancelForm({ busy, disabled, onConfirm, onStop }: CancelFormProp
           disabled={problem !== null || disabled}
           onConfirm={() => onConfirm(reason)}
           onArmedChange={setArmed}
-          className="rounded bg-orange-700 px-4 py-2 font-bold text-white disabled:opacity-50"
+          className="min-h-12 rounded-2xl bg-red-700 px-5 py-2 font-bold text-white disabled:opacity-50"
         />
-        <button type="button" onClick={onStop} className="text-sm text-gray-700 underline">
+        <button
+          type="button"
+          onClick={onStop}
+          className="min-h-11 text-sm font-bold text-primary underline"
+        >
           <Text k="visit_list.cancel_stop" />
         </button>
       </div>

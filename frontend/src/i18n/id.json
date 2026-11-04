@@ -752,6 +752,7 @@
   },
   "visit_list": {
     "title": "Daftar reservasi kunjungan",
+    "today_mark": "Hari ini",
     "range_note": "Reservasi dari hari ini sampai 4 minggu ke depan. Yang dibatalkan juga ditampilkan",
     "empty": "Tidak ada reservasi pada periode ini",
     "booked_at": "Waktu reservasi: {{day}}/{{month}} {{time}}",

@@ -752,6 +752,7 @@
   },
   "visit_list": {
     "title": "Visit reservations",
+    "today_mark": "Today",
     "range_note": "Reservations from today up to 4 weeks ahead. Cancelled ones are shown too",
     "empty": "There are no reservations in this period",
     "booked_at": "Reserved on: {{month}}/{{day}} {{time}}",

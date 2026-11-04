@@ -82,7 +82,8 @@ describe('VisitListView', () => {
     const html = renderList([reservation()])
 
     expect(html).toContain('（水）')
-    expect(html).toContain('10:00〜11:30')
+    // 始まりの時刻を大きく、終わりをその下に（#443）
+    expect(html).toMatch(/10:00[\s\S]*?〜11:30/)
     expect(html).toContain('101')
     expect(html).toContain('佐藤 文江')
     // 予約した日時は日本時間（01:05Z → 10:05）
@@ -147,7 +148,7 @@ describe('TodayVisitsView', () => {
       <TodayVisitsView rows={[reservation({ start_time: '13:30:00' })]} />,
     )
 
-    expect(html).toContain('13:30〜15:00')
+    expect(html).toMatch(/13:30[\s\S]*?〜15:00/)
     expect(html).toContain('佐藤 文江')
     expect(html).toMatch(/来館者.*2/)
     expect(html).not.toContain('（娘）')
