@@ -52,4 +52,14 @@ describe('ReplyEditor', () => {
   it('保存できなかったら、理由を出す', () => {
     expect(render({ errorKey: 'error.not_today' })).toContain('したりできます')
   })
+
+  it('選んでいる定型文には、色に加えて ✓ を付ける（返事の画面と同じ形。#459）', () => {
+    const html = render()
+    const pressed = html.match(/<button[^>]*aria-pressed="true"[\s\S]*?<\/button>/)?.[0] ?? ''
+
+    expect(pressed).toContain('data-icon="check"')
+    expect(html).not.toMatch(
+      /<button[^>]*aria-pressed="false"[^>]*>[\s\S]*?data-icon="check"[\s\S]*?<\/button>/,
+    )
+  })
 })
