@@ -59,12 +59,13 @@ describe('DisclosureForm', () => {
     // テーマのアイコン（絵文字ではなく、Font Awesome）
     expect(html).toContain('data-icon="utensils"')
     expect(html).not.toContain('🍚')
-    // 見せる：食事・眠り・テーマ・アルバム、見せない：機嫌（行ごとに 1 つ選ばれている）
-    expect(html.match(/type="radio"[^>]*checked=""/g)).toHaveLength(5)
+    // 見せる：食事・眠り・テーマ・アルバム（つまみがオン。#452）、見せない：機嫌（オフ）
+    expect(html.match(/role="switch"/g)).toHaveLength(5)
+    expect(html.match(/type="checkbox"[^>]*role="switch"[^>]*checked=""/g)).toHaveLength(4)
   })
 
-  it('何も変えていなければ、保存のボタンは押せない', () => {
-    expect(render()).toMatch(/<button type="submit" disabled=""/)
+  it('何も変えていなければ、保存の帯（保存のボタン）は出さない（#452）', () => {
+    expect(render()).not.toContain('type="submit"')
   })
 
   it('保存できなかったら、理由を出す', () => {

@@ -604,6 +604,9 @@
     "no_menu": "Belum ada halaman admin yang dapat dibuka dengan peran ini"
   },
   "disclosure": {
+    "unsaved_count": "{{count}} perubahan belum disimpan",
+    "revert": "Batalkan",
+    "changed": "Diubah",
     "title": "Pengaturan keterbukaan",
     "note": "Pilih apa yang ditampilkan di buku harian keluarga dan \"hal yang ingin diketahui\". Perubahan berlaku saat keluarga membuka aplikasi berikutnya setelah Anda menyimpan",
     "items": "Butir catatan",

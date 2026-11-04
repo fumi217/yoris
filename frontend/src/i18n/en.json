@@ -604,6 +604,9 @@
     "no_menu": "There are no admin pages available for your role yet"
   },
   "disclosure": {
+    "unsaved_count": "{{count}} unsaved change(s)",
+    "revert": "Undo changes",
+    "changed": "Changed",
     "title": "Disclosure settings",
     "note": "Choose what to show in the families' daily notes and \"what you want to know\". Changes take effect the next time a family opens the app after you save",
     "items": "Record items",
