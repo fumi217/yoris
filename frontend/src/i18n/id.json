@@ -547,6 +547,25 @@
     "empty": "Tidak ada penghuni"
   },
   "admin": {
+    "today_title": "Hari ini",
+    "today_lead": "Ketuk kartu untuk membuka layarnya",
+    "see_all": "Lihat semua",
+    "to_visits": "Reservasi",
+    "to_disclosure": "Pengungkapan",
+    "panel_hidden": "Disembunyikan dari keluarga",
+    "messages_empty": "Tidak ada pesan yang menunggu",
+    "kpi": {
+      "messages": "Pesan menunggu",
+      "messages_sub": "Tangani yang paling lama dulu",
+      "over_day": "Ada yang menunggu lebih dari sehari",
+      "visits": "Kunjungan hari ini",
+      "next_visit": "Berikutnya pukul {{time}}",
+      "no_visit": "Tidak ada kunjungan hari ini",
+      "memos": "Catatan untuk disetujui",
+      "memos_sub": "Setujui di layar staf",
+      "hidden": "Item tersembunyi",
+      "hidden_none": "Semua ditampilkan"
+    },
     "menu": {
       "disclosure": "Pengaturan keterbukaan (yang dapat dilihat keluarga)",
       "family_messages": "Pesan dari keluarga",

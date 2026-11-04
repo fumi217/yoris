@@ -547,6 +547,25 @@
     "empty": "There are no residents"
   },
   "admin": {
+    "today_title": "Today",
+    "today_lead": "Tap a card to open that screen",
+    "see_all": "See all",
+    "to_visits": "Reservations",
+    "to_disclosure": "Disclosure",
+    "panel_hidden": "Hidden from families",
+    "messages_empty": "No messages waiting",
+    "kpi": {
+      "messages": "Messages waiting",
+      "messages_sub": "Handle the oldest first",
+      "over_day": "Some have waited over a day",
+      "visits": "Visits today",
+      "next_visit": "Next at {{time}}",
+      "no_visit": "No visits today",
+      "memos": "Notes to approve",
+      "memos_sub": "Approve on the staff screen",
+      "hidden": "Hidden items",
+      "hidden_none": "Everything is shown"
+    },
     "menu": {
       "disclosure": "Disclosure settings (what families can see)",
       "family_messages": "Messages from families",
