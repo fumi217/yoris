@@ -758,6 +758,10 @@
     }
   },
   "visit_settings": {
+    "revert": "Batalkan",
+    "lead": "Waktu dan jumlah kelompok yang bisa dipesan, serta hari libur",
+    "unsaved": "Ada perubahan yang belum disimpan",
+    "closed_instant": "Langsung berlaku",
     "title": "Pengaturan kunjungan",
     "times_title": "Pilihan jam mulai kunjungan",
     "times_note": "Satu kunjungan berlangsung 1 jam 30 menit. Keluarga dapat memesan kunjungan yang dimulai pada jam yang Anda centang (mulai pukul 10.00, sampai jam yang selesai paling lambat pukul 17.00)",

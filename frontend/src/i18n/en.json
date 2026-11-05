@@ -758,6 +758,10 @@
     }
   },
   "visit_settings": {
+    "revert": "Undo changes",
+    "lead": "Times and groups families can book, and closed days",
+    "unsaved": "You have unsaved changes",
+    "closed_instant": "Takes effect right away",
     "title": "Visit settings",
     "times_title": "Possible visit start times",
     "times_note": "A visit lasts 1 hour 30 minutes. Families can reserve visits that start at the times you check (from 10:00, up to times that end by 17:00)",

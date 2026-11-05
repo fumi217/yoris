@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, messageKeyOf } from '../../api/client'
 import { ConfirmButton } from '../../components/ConfirmButton'
+import { Icon } from '../../components/Icon'
 import { Message } from '../../components/Message'
 import { ReasonField } from '../../components/ReasonField'
 import { Text } from '../../components/Text'
@@ -50,10 +51,16 @@ export function VisitSettings() {
   if (settings.isPending) return <Message k="layout.loading" />
   if (settings.isError) return <Message k={messageKeyOf(settings.error)} />
   return (
-    <section className="space-y-8 p-4">
-      <h1 className="text-xl font-bold">
-        <Text k="visit_settings.title" />
-      </h1>
+    // 下の余白は、保存の帯（fixed）に隠れないように、いつも付ける（帯が出入りしても、中身がずれない）
+    <section className="space-y-4 p-4 pb-24">
+      <div>
+        <h1 className="text-2xl font-bold">
+          <Text k="visit_settings.title" />
+        </h1>
+        <p className="mt-1 text-sm text-ink-sub">
+          <Text k="visit_settings.lead" />
+        </p>
+      </div>
       {/* 保存し直したら、読み直した値から始める */}
       <SettingsFormView
         key={JSON.stringify(settings.data)}
@@ -76,12 +83,16 @@ type SettingsFormProps = {
   onSave: (body: VisitSettingsData) => void
 }
 
-/** 開始時刻の候補と組数（テストではこれを直接出す）。 */
+/**
+ * 開始時刻の候補と組数（テストではこれを直接出す）。
+ * 見た目（#453）：白い面に、時刻は押して選ぶ札、組数は −／＋。保存は、変えたときだけ下に出る帯。
+ */
 export function SettingsFormView({ initial, saving, saved, errorKey, onSave }: SettingsFormProps) {
   const { t } = useTranslation()
   const [times, setTimes] = useState<string[]>(initial.start_times)
   const [limit, setLimit] = useState(initial.daily_limit)
   const noTime = times.length === 0
+  const changed = limit !== initial.daily_limit || times.join(',') !== initial.start_times.join(',')
 
   return (
     <form
@@ -91,92 +102,137 @@ export function SettingsFormView({ initial, saving, saved, errorKey, onSave }: S
         if (!noTime && !saving) onSave({ daily_limit: limit, start_times: times })
       }}
     >
-      <fieldset>
-        <legend className="font-bold">
-          <Text k="visit_settings.times_title" />
-        </legend>
-        <p className="text-sm text-gray-600">
-          <Text k="visit_settings.times_note" />
-        </p>
-        {/* 外せるのは「その時刻に始まる面会」だけ。その時刻を面会なしにする設定ではない */}
-        <p className="mb-2 text-sm text-gray-600">
-          <Text k="visit_settings.times_note_overlap" />
-        </p>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-          {CANDIDATE_TIMES.map((time) => (
-            <label
-              key={time}
-              className="flex items-center gap-2 rounded border-2 border-field-line p-2 has-[:checked]:border-primary"
-            >
-              <input
-                type="checkbox"
-                checked={times.includes(time)}
-                onChange={() => setTimes((current) => toggleTime(current, time))}
-              />
-              {hhmm(time)}
-            </label>
-          ))}
-        </div>
-        {noTime && (
-          <p role="alert" className="mt-2 text-red-700">
-            <Text k="visit_settings.no_time" />
+      <p role="status" aria-live="polite" className="text-sm empty:hidden">
+        {saved && !changed && (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 font-bold text-green-800">
+            <Icon name="check" />
+            <Text k="visit_settings.saved" />
+          </span>
+        )}
+      </p>
+
+      <div className="divide-y divide-card-line overflow-hidden rounded-xl border border-card-line bg-card">
+        <fieldset className="px-4 py-3.5">
+          <legend className="float-left w-full font-bold">
+            <Icon name="upload-waiting" className="mr-2 text-primary" />
+            <Text k="visit_settings.times_title" />
+          </legend>
+          <p className="clear-left pt-1 text-sm text-ink-sub">
+            <Text k="visit_settings.times_note" />
           </p>
-        )}
-      </fieldset>
+          {/* 外せるのは「その時刻に始まる面会」だけ。その時刻を面会なしにする設定ではない */}
+          <p className="mb-3 text-sm text-ink-sub">
+            <Text k="visit_settings.times_note_overlap" />
+          </p>
+          <div className="grid grid-cols-3 gap-2 min-[480px]:grid-cols-4 sm:grid-cols-6">
+            {CANDIDATE_TIMES.map((time) => {
+              const on = times.includes(time)
+              return (
+                // 選んだ時刻は、薄い青の背景・青の枠・✓ で示す（色だけに頼らない）
+                <label
+                  key={time}
+                  className={`flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-lg font-bold tabular-nums has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-primary ${
+                    on
+                      ? 'border-2 border-primary bg-primary-soft text-primary-dark'
+                      : 'border border-field-line bg-card'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={on}
+                    onChange={() => setTimes((current) => toggleTime(current, time))}
+                  />
+                  {on && <Icon name="check" className="text-xs" />}
+                  {hhmm(time)}
+                </label>
+              )
+            })}
+          </div>
+          {noTime && (
+            <p role="alert" className="mt-2 font-bold text-red-700">
+              <Text k="visit_settings.no_time" />
+            </p>
+          )}
+          <p className="mt-3 text-sm text-ink-sub">
+            <Text k="visit_settings.kept_note" />
+          </p>
+        </fieldset>
 
-      <fieldset>
-        <legend className="font-bold">
-          <Text k="visit_settings.daily_limit" />
-        </legend>
-        <div className="mt-2 flex items-center gap-3">
-          <button
-            type="button"
-            aria-label={stripRuby(t('visit_settings.fewer'))}
-            disabled={limit <= DAILY_LIMIT_MIN}
-            onClick={() => setLimit((value) => clampDailyLimit(value - 1))}
-            className="h-12 w-12 rounded border-2 border-field-line text-xl disabled:opacity-40"
-          >
-            −
-          </button>
-          <span className="min-w-16 text-center text-lg font-bold">
-            <Ruby text={t('visit_settings.groups', { count: limit })} />
-          </span>
-          <button
-            type="button"
-            aria-label={stripRuby(t('visit_settings.more'))}
-            disabled={limit >= DAILY_LIMIT_MAX}
-            onClick={() => setLimit((value) => clampDailyLimit(value + 1))}
-            className="h-12 w-12 rounded border-2 border-field-line text-xl disabled:opacity-40"
-          >
-            ＋
-          </button>
+        <fieldset className="px-4 py-3.5">
+          <legend className="float-left w-full font-bold">
+            <Icon name="residents" className="mr-2 text-primary" />
+            <Text k="visit_settings.daily_limit" />
+          </legend>
+          <div className="clear-left flex items-center pt-3">
+            <span className="inline-flex items-center overflow-hidden rounded-lg border border-field-line">
+              <button
+                type="button"
+                aria-label={stripRuby(t('visit_settings.fewer'))}
+                disabled={limit <= DAILY_LIMIT_MIN}
+                onClick={() => setLimit((value) => clampDailyLimit(value - 1))}
+                className="h-12 w-12 bg-card text-lg disabled:opacity-40"
+              >
+                <Icon name="minus" />
+              </button>
+              <span className="flex h-12 min-w-24 items-center justify-center border-x border-card-line px-3 text-lg font-bold">
+                <span>
+                  <Ruby text={t('visit_settings.groups', { count: limit })} />
+                </span>
+              </span>
+              <button
+                type="button"
+                aria-label={stripRuby(t('visit_settings.more'))}
+                disabled={limit >= DAILY_LIMIT_MAX}
+                onClick={() => setLimit((value) => clampDailyLimit(value + 1))}
+                className="h-12 w-12 bg-card text-lg disabled:opacity-40"
+              >
+                <Icon name="plus" />
+              </button>
+            </span>
+          </div>
+        </fieldset>
+      </div>
+
+      {/* 変えたときだけ、下に保存の帯を出す（開示設定・家族の通知の設定と同じ形。#453） */}
+      {(changed || saving || noTime || errorKey) && (
+        <div className="fixed inset-x-0 bottom-0 z-10 space-y-1 border-t border-card-line bg-card px-4 py-2.5 shadow-[0_-4px_12px_rgb(15_31_61/0.08)]">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <p className="min-w-0 flex-1 basis-48 text-sm font-bold text-primary-dark">
+              {changed && <Text k="visit_settings.unsaved" />}
+            </p>
+            {changed && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => {
+                  setTimes(initial.start_times)
+                  setLimit(initial.daily_limit)
+                }}
+                className="min-h-11 rounded-lg border border-primary bg-card px-4 font-bold text-primary-dark disabled:opacity-50"
+              >
+                <Text k="visit_settings.revert" />
+              </button>
+            )}
+            <button
+              type="submit"
+              disabled={noTime || saving}
+              className="min-h-11 rounded-lg bg-primary px-5 font-bold text-white disabled:opacity-50"
+            >
+              <Text k={saving ? 'visit_settings.saving' : 'visit_settings.save'} />
+            </button>
+          </div>
+          {errorKey && (
+            <p className="text-sm font-bold text-red-700">
+              <Text k={errorKey} />
+            </p>
+          )}
         </div>
-      </fieldset>
-
-      <p className="text-sm text-gray-600">
-        <Text k="visit_settings.kept_note" />
-      </p>
-      <p role="status" aria-live="polite" className="min-h-6 text-sm">
-        {errorKey ? (
-          <span className="text-red-700">
-            <Text k={errorKey} />
-          </span>
-        ) : (
-          saved && <Text k="visit_settings.saved" />
-        )}
-      </p>
-      <button
-        type="submit"
-        disabled={noTime || saving}
-        className="w-full rounded bg-primary p-3 font-bold text-white disabled:opacity-50 sm:w-auto sm:px-8"
-      >
-        <Text k={saving ? 'visit_settings.saving' : 'visit_settings.save'} />
-      </button>
+      )}
     </form>
   )
 }
 
-// 予約が入っていた日（件数を出して、理由を入れて取り消すかを聞く）
 type Pending = { date: string; count: number }
 
 function ClosedDays() {
@@ -291,9 +347,14 @@ export function ClosedDaysView({
     })
 
   return (
-    <section className="space-y-4 border-t pt-6">
-      <h2 className="font-bold">
+    <section className="space-y-3 rounded-xl border border-card-line bg-card px-4 py-3.5">
+      <h2 className="flex flex-wrap items-center gap-x-2 font-bold">
+        <Icon name="close" className="text-primary" />
         <Text k="visit_settings.closed_title" />
+        {/* 開始時刻・組数と違い、押したらすぐに反映する（今と同じ） */}
+        <span className="ml-auto text-xs font-semibold text-ink-sub">
+          <Text k="visit_settings.closed_instant" />
+        </span>
       </h2>
 
       <form
@@ -303,20 +364,20 @@ export function ClosedDaysView({
           if (date && !busy) onClose(date)
         }}
       >
-        <label className="text-sm">
+        <label className="text-sm font-bold">
           <Text k="visit_settings.closed_date" />
           <input
             type="date"
             value={date}
             min={today}
             onChange={(event) => setDate(event.target.value)}
-            className="mt-1 block rounded border-2 border-field-line p-2"
+            className="mt-1 block min-h-11 rounded-lg border border-field-line bg-card px-3 font-normal"
           />
         </label>
         <button
           type="submit"
           disabled={!date || busy}
-          className="rounded bg-primary px-4 py-2 font-bold text-white disabled:opacity-50"
+          className="min-h-11 rounded-lg border border-primary bg-card px-4 font-bold text-primary-dark disabled:opacity-50"
         >
           <Text k="visit_settings.close" />
         </button>
@@ -335,11 +396,18 @@ export function ClosedDaysView({
 
       <p role="status" aria-live="polite" className="min-h-6 text-sm">
         {errorKey ? (
-          <span className="text-red-700">
+          <span className="font-bold text-red-700">
             <Text k={errorKey} />
           </span>
         ) : (
-          notice && <Ruby text={t(notice.key, { count: notice.count })} />
+          notice && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 font-bold text-green-800">
+              <Icon name="check" />
+              <span>
+                <Ruby text={t(notice.key, { count: notice.count })} />
+              </span>
+            </span>
+          )
         )}
       </p>
 
@@ -348,13 +416,16 @@ export function ClosedDaysView({
           <Text k={loadErrorKey} />
         </p>
       ) : days === null ? null : days.length === 0 ? (
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-ink-sub">
           <Text k="visit_settings.closed_empty" />
         </p>
       ) : (
-        <ul className="divide-y rounded border border-card-line">
+        <ul className="-mx-4 border-t border-card-line">
           {days.map((day) => (
-            <li key={day.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
+            <li
+              key={day.id}
+              className="flex flex-wrap items-center justify-between gap-2 border-b border-card-line px-4 py-2 last:border-b-0"
+            >
               <span className="font-bold">
                 <Ruby text={formatDate(day.closed_date)} />
               </span>
@@ -363,13 +434,13 @@ export function ClosedDaysView({
                 confirmKey="visit_settings.open_confirm"
                 disabled={busy}
                 onConfirm={() => onOpen(day.id)}
-                className="rounded border-2 border-field-line px-3 py-1 text-sm"
+                className="min-h-11 text-sm font-bold text-primary underline"
               />
             </li>
           ))}
         </ul>
       )}
-      <p className="text-xs text-gray-600">
+      <p className="text-sm text-ink-sub">
         <Text k="visit_settings.open_note" />
       </p>
     </section>
@@ -394,7 +465,7 @@ function ReservationsWarning({ pending, label, busy, onConfirm, onDismiss }: War
   const problem = reasonProblem(reason)
 
   return (
-    <div role="alert" className="space-y-3 rounded border-2 border-orange-600 bg-orange-50 p-3">
+    <div role="alert" className="space-y-3 rounded-xl border border-amber-300 bg-amber-100 p-3">
       <p className="font-bold">
         <Ruby text={label} />
       </p>
@@ -416,9 +487,13 @@ function ReservationsWarning({ pending, label, busy, onConfirm, onDismiss }: War
           disabled={problem !== null || busy}
           onConfirm={() => onConfirm(reason)}
           onArmedChange={setArmed}
-          className="rounded bg-orange-700 px-4 py-2 font-bold text-white disabled:opacity-50"
+          className="min-h-11 rounded-lg bg-red-700 px-4 py-2 font-bold text-white disabled:opacity-50"
         />
-        <button type="button" onClick={onDismiss} className="text-sm text-gray-700 underline">
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="min-h-11 text-sm font-bold text-primary underline"
+        >
           <Text k="visit_settings.dismiss" />
         </button>
       </div>

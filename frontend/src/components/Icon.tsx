@@ -45,6 +45,7 @@ import {
   faPaperPlane,
   faPenToSquare,
   faPhone,
+  faPlus,
   faPhoneVolume,
   faRightFromBracket,
   faRightLeft,
@@ -126,6 +127,8 @@ const ICONS = {
   home: faHouse,
   // 入居者一覧の記録のチップの「まだ」（#431）
   minus: faMinus,
+  // 面会の設定の組数を増やす（#453）
+  plus: faPlus,
   warning: faTriangleExclamation,
   info: faCircleInfo,
   camera: faCamera,
