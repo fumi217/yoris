@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { Icon } from '../../components/Icon'
 import { ConfirmButton } from '../../components/ConfirmButton'
 import { Text } from '../../components/Text'
 import { Ruby } from '../../i18n/Ruby'
@@ -36,72 +35,95 @@ export function AlbumPosted({
 }: Props) {
   const { t } = useTranslation()
   return (
-    <section className="space-y-3">
-      <h2 className="text-lg font-bold">
-        <Text k="album_upload.posted_title" />
+    <section aria-labelledby="album-posted">
+      <h2
+        id="album-posted"
+        className="flex items-baseline justify-between border-b border-card-line pb-1 font-bold"
+      >
+        <span>
+          <Text k="album_upload.posted_title" />
+        </span>
+        {album && album.photos.length > 0 && (
+          <span className="text-sm font-normal text-ink-sub">
+            <Ruby text={t('album_upload.count', { count: album.photos.length })} />
+          </span>
+        )}
       </h2>
       {album && !album.family_visible && (
-        <p className="rounded border-2 border-amber-600 bg-amber-50 p-2 font-bold">
-          <Icon name="warning" className="mr-1" />
+        <p className="mt-3 font-bold text-amber-800">
           <Text k="album_upload.family_hidden" />
         </p>
       )}
       {/* 知らせは、読み上げにも伝わるように、先に場所を用意しておく */}
-      <p role="status" className="font-bold">
+      <p role="status" className="mt-3 font-bold empty:hidden">
         {noticeKey && <Text k={noticeKey} />}
       </p>
       {deleteErrorKey && (
-        <p role="alert" className="text-red-800">
+        <p role="alert" className="mt-3 text-red-800">
           <Text k={deleteErrorKey} />
         </p>
       )}
       {!album && loadErrorKey && (
-        <p role="alert" className="text-red-800">
+        <p role="alert" className="mt-3 text-red-800">
           <Text k={loadErrorKey} />
         </p>
       )}
       {album && album.photos.length === 0 && (
-        <p className="text-gray-600">
+        <p className="mt-3 text-ink-sub">
           <Text k="album_upload.posted_empty" />
         </p>
       )}
       {album && album.photos.length > 0 && (
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <ul>
           {album.photos.map((photo) => (
-            <li key={photo.id} className="space-y-1">
+            <li
+              key={photo.id}
+              className="grid grid-cols-[72px_1fr] gap-3.5 border-b border-card-line py-3.5 min-[420px]:grid-cols-[80px_1fr]"
+            >
               <img
                 src={photo.url}
                 alt=""
                 loading="lazy"
                 decoding="async"
-                className="aspect-square w-full rounded bg-gray-100 object-cover"
+                className="aspect-square w-full rounded-md bg-card object-cover"
               />
-              {/* 「削除する」が、どの写真のものか読み上げで分かるように、ボタンにつなぐ説明。
-                  コメントがあればそれを、なければ載せた日時を使う（画面には出さない） */}
-              {photo.comment ? (
-                // 職員が書いた文。辞書を通さず、文字としてだけ出す
-                <p id={`album-photo-${photo.id}-desc`} className="text-sm break-words">
-                  {photo.comment}
+              <div className="flex min-w-0 flex-col gap-1">
+                {/* 「削除する」が、どの写真のものか読み上げで分かるように、ボタンにつなぐ説明。
+                    コメントがあればそれを、なければ載せた日時を使う */}
+                {photo.comment ? (
+                  // 職員が書いた文。辞書を通さず、文字としてだけ出す
+                  <p id={`album-photo-${photo.id}-desc`} className="leading-relaxed break-words">
+                    {photo.comment}
+                  </p>
+                ) : (
+                  <p id={`album-photo-${photo.id}-desc`} className="sr-only">
+                    <Ruby text={t('album_upload.posted_at', postedAtParts(photo.posted_at))} />
+                  </p>
+                )}
+                <p className="text-sm text-ink-sub tabular-nums">
+                  {postedAtLabel(photo.posted_at)}
                 </p>
-              ) : (
-                <p id={`album-photo-${photo.id}-desc`} className="sr-only">
-                  <Ruby text={t('album_upload.posted_at', postedAtParts(photo.posted_at))} />
-                </p>
-              )}
-              <ConfirmButton
-                describedBy={`album-photo-${photo.id}-desc`}
-                labelKey="album_upload.delete"
-                confirmKey="album_upload.delete_confirm"
-                busyKey="album_upload.deleting"
-                busy={deletingId === photo.id}
-                disabled={deletingId !== null}
-                onConfirm={() => onDelete(photo.id)}
-                className="min-h-12 text-sm text-gray-700 underline"
-              />
+                <ConfirmButton
+                  describedBy={`album-photo-${photo.id}-desc`}
+                  labelKey="album_upload.delete"
+                  confirmKey="album_upload.delete_confirm"
+                  busyKey="album_upload.deleting"
+                  busy={deletingId === photo.id}
+                  disabled={deletingId !== null}
+                  onConfirm={() => onDelete(photo.id)}
+                  className="min-h-11 self-start text-sm text-ink-sub underline"
+                />
+              </div>
             </li>
           ))}
         </ul>
       )}
     </section>
   )
+}
+
+/** 載せた日時（"11/3 14:20"）。 */
+function postedAtLabel(iso: string): string {
+  const parts = postedAtParts(iso)
+  return `${parts.month}/${parts.day} ${parts.time}`
 }

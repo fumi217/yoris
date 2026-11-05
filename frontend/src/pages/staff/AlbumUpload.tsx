@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Icon, type IconName } from '../../components/Icon'
+import { Icon } from '../../components/Icon'
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router'
@@ -7,6 +7,7 @@ import { api, messageKeyOf } from '../../api/client'
 import { Text } from '../../components/Text'
 import { ResidentName } from '../../components/ResidentName'
 import { Ruby } from '../../i18n/Ruby'
+import { stripRuby } from '../../i18n/rubyText'
 import { AlbumPosted, type StaffAlbum } from './AlbumPosted'
 import {
   ACCEPT,
@@ -22,20 +23,12 @@ import {
   retryItem,
   updateItem,
   type UploadItem,
-  type UploadStatus,
 } from './albumUploadLogic'
 import type { StaffContactBook } from './recordValues'
 
 type Resident = StaffContactBook['resident']
 
 const postedKey = (residentId: string) => ['staff', 'album', residentId] as const
-
-const STATUS_MARK: Record<UploadStatus, IconName> = {
-  waiting: 'upload-waiting',
-  sending: 'uploading',
-  done: 'check',
-  failed: 'warning',
-}
 
 /**
  * 写真を載せる画面（UI-S10。spec 005 の 005-T014）。`/staff/residents/:residentId/album`
@@ -210,8 +203,9 @@ type ViewProps = {
   posted?: ReactNode
 }
 
+// 「撮る」「写真から選ぶ」：青い細い枠線の白いボタン（押せると分かるように。#461）
 const pickClass =
-  'flex min-h-12 cursor-pointer items-center justify-center rounded border-2 border-primary px-4 font-bold text-primary-dark'
+  'inline-flex min-h-12 cursor-pointer items-center rounded-xl border border-primary bg-card px-4 text-[17px] font-bold text-primary-dark'
 
 /** 画面の中身（テストではこれを直接出す）。 */
 export function AlbumUploadView({
@@ -232,101 +226,138 @@ export function AlbumUploadView({
   const { done, total } = progress(items)
 
   return (
-    <section className="space-y-4 p-4">
-      <h1 className="text-xl font-bold">
-        <Text k="album_upload.title" />
+    // 見た目（#461）：カード・影・丸いラベル・状態の印を使わず、細い線と余白と文字だけで区切る。
+    // 色が付くのは「送る」と、失敗の赤い文字だけ（状態は、文字で言い分ける）
+    <section className="space-y-6 p-4">
+      <div>
+        <Link
+          to={`/staff/residents/${residentId}`}
+          className="-mb-1 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-primary"
+        >
+          <Icon name="prev" />
+          <Text k="album_upload.back" />
+        </Link>
         {resident && (
-          <span className="ml-3 text-base font-normal">
-            <span className="mr-2 text-gray-600">{resident.room}</span>
-            <ResidentName name={resident.display_name} ruby={resident.display_name_ruby} />
-          </span>
+          <>
+            <p className="mt-1 text-sm text-ink-sub">
+              <Ruby text={t('album_upload.room', { room: resident.room })} />
+            </p>
+            <p className="text-2xl font-extrabold">
+              <ResidentName name={resident.display_name} ruby={resident.display_name_ruby} />
+            </p>
+          </>
         )}
-      </h1>
-
-      <div className="grid grid-cols-2 gap-3">
-        {/* 端末のカメラを開く（capture）。複数枚は選べないので、「選ぶ」と分ける（R-01） */}
-        <label className={pickClass}>
-          {/* アイコンと文字は、1 つの行（インライン）に入れる。横に並べる枠（flex）に分けると、
-              ふりがな付きの文字の高さの真ん中にアイコンが置かれ、文字より上に見える（PR #390 ようこさん） */}
-          <span>
-            <Icon name="camera" className="mr-2" />
-            <Text k="album_upload.take" />
-          </span>
-          <input
-            type="file"
-            accept={ACCEPT}
-            capture="environment"
-            className="sr-only"
-            onChange={onPick}
-          />
-        </label>
-        <label className={pickClass}>
-          <span>
-            <Icon name="album" className="mr-2" />
-            <Text k="album_upload.choose" />
-          </span>
-          <input type="file" accept={ACCEPT} multiple className="sr-only" onChange={onPick} />
-        </label>
+        <h1 className={resident ? 'mt-1 text-ink-sub' : 'text-2xl font-bold'}>
+          <Text k="album_upload.title" />
+        </h1>
       </div>
-      <p className="text-sm text-gray-600">
-        <Ruby text={t('album_upload.hint', { max: MAX_PHOTOS })} />
-      </p>
-      {skipped > 0 && (
-        <p role="alert" className="font-bold text-red-800">
-          <Icon name="warning" className="mr-1" />
-          <Ruby text={t('album_upload.over_limit', { max: MAX_PHOTOS, skipped })} />
+
+      <div>
+        <div className="flex flex-wrap gap-3">
+          {/* 端末のカメラを開く（capture）。複数枚は選べないので、「選ぶ」と分ける（R-01） */}
+          <label className={pickClass}>
+            <span>
+              <Text k="album_upload.take" />
+            </span>
+            <input
+              type="file"
+              accept={ACCEPT}
+              capture="environment"
+              className="sr-only"
+              onChange={onPick}
+            />
+          </label>
+          <label className={pickClass}>
+            <span>
+              <Text k="album_upload.choose" />
+            </span>
+            <input type="file" accept={ACCEPT} multiple className="sr-only" onChange={onPick} />
+          </label>
+        </div>
+        <p className="mt-2 text-sm text-ink-sub">
+          <Ruby text={t('album_upload.hint', { max: MAX_PHOTOS })} />
         </p>
-      )}
+        {skipped > 0 && (
+          <p role="alert" className="mt-2 font-bold text-red-800">
+            <Ruby text={t('album_upload.over_limit', { max: MAX_PHOTOS, skipped })} />
+          </p>
+        )}
+      </div>
 
       {items.length > 0 && (
-        <>
-          <ul className="space-y-3">
+        <section aria-labelledby="album-selected">
+          <h2
+            id="album-selected"
+            className="flex items-baseline justify-between border-b border-card-line pb-1 font-bold"
+          >
+            <span>
+              <Text k="album_upload.selected_title" />
+            </span>
+            <span className="text-sm font-normal text-ink-sub">
+              <Ruby text={t('album_upload.count', { count: items.length })} />
+            </span>
+          </h2>
+          <ul>
             {items.map((item) => (
-              <li key={item.id} className="flex gap-3 rounded border border-card-line p-3">
+              <li
+                key={item.id}
+                className="grid grid-cols-[72px_1fr] gap-3.5 border-b border-card-line py-3.5 min-[420px]:grid-cols-[80px_1fr]"
+              >
                 {item.file.type.startsWith('image/') ? (
                   <img
                     src={previews[item.id]}
                     alt=""
-                    className="aspect-square h-24 w-24 shrink-0 rounded bg-gray-100 object-cover"
+                    className="aspect-square w-full rounded-md bg-card object-cover"
                   />
                 ) : (
                   // 画像でないファイル（PDF など）は、プレビューできない。壊れた画像の印を出さない
                   <div
                     aria-hidden="true"
-                    className="flex h-24 w-24 shrink-0 items-center justify-center rounded bg-gray-100 text-3xl"
+                    className="flex aspect-square w-full items-center justify-center rounded-md bg-card text-3xl text-ink-sub"
                   >
                     <Icon name="file" />
                   </div>
                 )}
-                <div className="min-w-0 flex-1 space-y-2">
-                  {/* 状態は、印と文字で出す（色だけに頼らない） */}
-                  <p className="font-bold">
-                    <Icon name={STATUS_MARK[item.status]} className="mr-1" />
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  {/* 状態は、文字で言い分ける（載せました／送っています／待っています／載せられませんでした）。
+                      失敗だけ赤い文字（色だけに頼らない。1.4.1） */}
+                  <p
+                    className={
+                      item.status === 'failed'
+                        ? 'font-bold text-red-800'
+                        : item.status === 'done'
+                          ? 'font-bold'
+                          : 'text-ink-sub'
+                    }
+                  >
                     <Text k={`album_upload.status.${item.status}`} />
                   </p>
                   {item.errorKey && (
-                    <p role="alert" className="text-red-800">
+                    <p role="alert" className="text-sm text-red-800">
                       <Text k={item.errorKey} />
                     </p>
                   )}
                   {item.status !== 'done' && item.retryable && (
-                    <label className="block text-sm">
-                      <Ruby text={t('album_upload.comment', { max: MAX_COMMENT })} />
+                    <label className="block text-sm text-ink-sub">
+                      <span className="sr-only">
+                        <Ruby text={t('album_upload.comment', { max: MAX_COMMENT })} />
+                      </span>
                       <input
                         type="text"
                         maxLength={MAX_COMMENT}
                         value={item.comment}
                         disabled={item.status === 'sending'}
-                        className="mt-1 block w-full rounded border-2 border-field-line p-2"
+                        placeholder={stripRuby(t('album_upload.comment_placeholder'))}
+                        className="block w-full rounded-lg border border-field-line bg-card px-3 py-1.5 text-base text-ink placeholder:text-ink-sub"
                         onChange={(event) => onComment(item.id, event.target.value)}
                       />
                     </label>
                   )}
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-x-4">
                     {item.status === 'failed' && item.retryable && (
                       <button
                         type="button"
-                        className="min-h-12 rounded border-2 border-primary px-4 font-bold text-primary-dark"
+                        className="min-h-11 text-sm font-bold text-primary underline"
                         onClick={() => onRetry(item.id)}
                       >
                         <Text k="album_upload.retry" />
@@ -335,7 +366,7 @@ export function AlbumUploadView({
                     {(item.status === 'waiting' || item.status === 'failed') && (
                       <button
                         type="button"
-                        className="min-h-12 rounded border-2 border-field-line px-4"
+                        className="min-h-11 text-sm text-ink-sub underline"
                         onClick={() => onRemove(item.id)}
                       >
                         <Text k="album_upload.remove" />
@@ -346,27 +377,23 @@ export function AlbumUploadView({
               </li>
             ))}
           </ul>
-          <p aria-live="polite" className="font-bold">
-            <Ruby text={t('album_upload.progress', { done, total })} />
-          </p>
-          <button
-            type="button"
-            className="min-h-12 w-full rounded bg-primary px-4 font-bold text-white disabled:opacity-60"
-            disabled={!canSend(items) || sending}
-            onClick={onSend}
-          >
-            <Text k="album_upload.send" />
-          </button>
-        </>
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-3">
+            <p aria-live="polite" className="min-w-0 flex-1 basis-48 text-sm text-ink-sub">
+              <Ruby text={t('album_upload.progress', { done, total })} />
+            </p>
+            <button
+              type="button"
+              className="min-h-13 w-full rounded-lg bg-primary px-8 text-[17px] font-bold text-white disabled:opacity-60 min-[420px]:w-auto"
+              disabled={!canSend(items) || sending}
+              onClick={onSend}
+            >
+              <Text k="album_upload.send" />
+            </button>
+          </div>
+        </section>
       )}
 
       {posted}
-
-      <p>
-        <Link to={`/staff/residents/${residentId}`} className="text-primary underline">
-          <Text k="album_upload.back" />
-        </Link>
-      </p>
     </section>
   )
 }

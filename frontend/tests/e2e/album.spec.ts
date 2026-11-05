@@ -102,7 +102,7 @@ test('アルバム：載せる → 家族 A が見る → 家族 B には見え�
     const mine = after.photos.find((p) => p.comment === comment)
     if (!mine) throw new Error('コメント付きの写真が、一覧に見つかりません')
     // 載せたあと、すぐ下の「載せた写真」の一覧にも出る
-    await expect(staff.locator('ul.grid li', { hasText: comment })).toBeVisible()
+    await expect(staff.locator('#album-posted ~ ul li', { hasText: comment })).toBeVisible()
 
     // --- 5：家族 A が、下のメニューの「アルバム」（1 タップ。#396）で開く。コメントが見える ---
     await familyA.goto('/family')
@@ -142,7 +142,7 @@ test('アルバム：載せる → 家族 A が見る → 家族 B には見え�
 
     // --- 11：職員が、確認のうえ（2 回押して）削除する。一覧から消える ---
     await staff.reload()
-    const row = staff.locator('ul.grid li', { hasText: comment })
+    const row = staff.locator('#album-posted ~ ul li', { hasText: comment })
     await row.getByRole('button', { name: /削除/ }).click()
     // 1 回目からすぐ（0.5 秒以内）の 2 回目は受け付けない
     await staff.waitForTimeout(800)

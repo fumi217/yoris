@@ -824,6 +824,10 @@
     "paren": " ({{occupation}})"
   },
   "album_upload": {
+    "room": "Kamar {{room}}",
+    "selected_title": "Foto yang dipilih",
+    "count": "{{count}}",
+    "comment_placeholder": "Catatan singkat (opsional)",
     "title": "Unggah foto",
     "take": "Ambil foto",
     "choose": "Pilih dari foto",

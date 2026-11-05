@@ -45,6 +45,10 @@
     "supplies": "{足|た}りないものがないか"
   },
   "album_upload": {
+    "room": "{{room}} {号室|ごうしつ}",
+    "selected_title": "{選|えら}んだ{写真|しゃしん}",
+    "count": "{{count}} {枚|まい}",
+    "comment_placeholder": "ひとこと（なくてもよい）",
     "title": "{写真|しゃしん}を{載|の}せる",
     "take": "{撮|と}る",
     "choose": "{写真|しゃしん}から{選|えら}ぶ",

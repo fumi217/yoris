@@ -824,6 +824,10 @@
     "paren": " ({{occupation}})"
   },
   "album_upload": {
+    "room": "Room {{room}}",
+    "selected_title": "Selected photos",
+    "count": "{{count}}",
+    "comment_placeholder": "A short note (optional)",
     "title": "Post photos",
     "take": "Take a photo",
     "choose": "Choose from photos",

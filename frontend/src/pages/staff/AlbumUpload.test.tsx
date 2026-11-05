@@ -65,7 +65,7 @@ describe('AlbumUploadView', () => {
     expect(text(html)).toContain('0 / 2 枚を載せました')
   })
 
-  it('状態は、印と文字で出す（色だけに頼らない）', () => {
+  it('状態は、文字で言い分ける。失敗だけ赤い文字（印は使わない。色だけに頼らない。#461）', () => {
     const { items } = addFiles([], [file(), file(), file()], 1)
     const mixed = updateItem(
       updateItem(updateItem(items, 1, { status: 'done' }), 2, { status: 'sending' }),
@@ -75,10 +75,11 @@ describe('AlbumUploadView', () => {
     const html = render(mixed)
 
     expect(text(html)).toContain('載せました')
-    expect(html).toContain('data-icon="check"')
     expect(text(html)).toContain('送っています')
     expect(text(html)).toContain('載せられませんでした')
-    expect(html).toContain('data-icon="triangle-exclamation"')
+    // 失敗だけ赤い文字（ほかの状態は赤にしない）
+    expect(html.match(/text-red-800/g)).toHaveLength(2)
+    expect(html).not.toContain('data-icon="check"')
     expect(text(html)).toContain('1 / 3 枚を載せました')
   })
 
@@ -129,5 +130,15 @@ describe('AlbumUploadView', () => {
 
     expect(html).not.toContain('<script>')
     expect(html).toContain('&lt;script&gt;')
+  })
+
+  it('選んだ写真は、写真を左・状態とひとこと・操作を右に並べた 1 行ずつ（カードにしない。#461）', () => {
+    const { items } = addFiles([], [file()], 1)
+    const html = render(items)
+
+    expect(html).toContain('grid-cols-[72px_1fr]')
+    expect(html).not.toContain('shadow')
+    // ひとこと欄は、白い背景に細い枠線（入力欄だと分かるように）。見出しの名前は読み上げ用に残す
+    expect(html).toMatch(/<input type="text"[^>]*border-field-line[^>]*bg-card/)
   })
 })
