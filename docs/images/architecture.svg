@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" width="1440" height="760" font-family="'Noto Sans JP','Hiragino Sans','Yu Gothic','Meiryo',sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#333"/>
+    </marker>
+  </defs>
+
+  <rect width="1440" height="760" fill="#ffffff"/>
+  <text x="40" y="70" font-size="40" font-weight="700" fill="#222">システム構成</text>
+  <text x="40" y="104" font-size="18" fill="#666">ローカルで動かす構成（Docker Compose）。デプロイはしていません</text>
+
+  <!-- ユーザー -->
+  <circle cx="130" cy="330" r="34" fill="#fff" stroke="#333" stroke-width="4"/>
+  <path d="M70,420 Q70,375 130,375 Q190,375 190,420 Z" fill="#fff" stroke="#333" stroke-width="4"/>
+  <text x="130" y="470" font-size="22" text-anchor="middle" fill="#222">ユーザー</text>
+  <text x="130" y="498" font-size="15" text-anchor="middle" fill="#555">家族・職員・施設管理者</text>
+  <rect x="82" y="530" width="96" height="62" rx="6" fill="#fff" stroke="#333" stroke-width="4"/>
+  <path d="M64,604 L196,604" stroke="#333" stroke-width="6" stroke-linecap="round"/>
+  <text x="130" y="640" font-size="22" text-anchor="middle" fill="#222">Web ブラウザ</text>
+
+  <!-- ブラウザ → フロントエンド -->
+  <path d="M215,560 L255,560 L255,400 L338,400" fill="none" stroke="#333" stroke-width="4" marker-end="url(#arrow)"/>
+  <text x="278" y="540" font-size="14" fill="#555" transform="rotate(-90 278 540)">localhost:5173</text>
+
+  <!-- Docker Compose の枠 -->
+  <rect x="300" y="130" width="860" height="590" rx="26" fill="none" stroke="#888" stroke-width="3" stroke-dasharray="3 8" stroke-linecap="round"/>
+  <text x="330" y="172" font-size="26" fill="#333">Docker Compose</text>
+
+  <!-- フロントエンド -->
+  <rect x="340" y="200" width="210" height="480" rx="22" fill="#eaf2fc" stroke="#4a90d9" stroke-width="3"/>
+  <text x="445" y="244" font-size="24" font-weight="700" text-anchor="middle" fill="#1f4f8a">フロントエンド</text>
+  <text x="445" y="270" font-size="15" text-anchor="middle" fill="#1f4f8a">frontend（:5173）</text>
+  <g font-size="20" fill="#222" text-anchor="middle">
+    <rect x="365" y="310" width="160" height="58" rx="10" fill="#fff" stroke="#9bbbe0"/><text x="445" y="346">React（Vite）</text>
+    <rect x="365" y="388" width="160" height="58" rx="10" fill="#fff" stroke="#9bbbe0"/><text x="445" y="424">TypeScript</text>
+    <rect x="365" y="466" width="160" height="58" rx="10" fill="#fff" stroke="#9bbbe0"/><text x="445" y="502">Tailwind CSS</text>
+  </g>
+  <text x="445" y="580" font-size="13" text-anchor="middle" fill="#1f4f8a">日本語・インドネシア語・英語</text>
+  <text x="445" y="604" font-size="13" text-anchor="middle" fill="#1f4f8a">/api をバックエンドへ中継</text>
+
+  <!-- フロント → バックエンド -->
+  <path d="M550,300 L618,300" fill="none" stroke="#333" stroke-width="4" marker-end="url(#arrow)"/>
+  <text x="584" y="286" font-size="14" text-anchor="middle" fill="#555">/api</text>
+
+  <!-- バックエンド -->
+  <rect x="620" y="200" width="500" height="250" rx="22" fill="#e9f5ec" stroke="#3c9a5f" stroke-width="3"/>
+  <text x="870" y="244" font-size="24" font-weight="700" text-anchor="middle" fill="#1d6a3c">バックエンド</text>
+  <text x="870" y="270" font-size="15" text-anchor="middle" fill="#1d6a3c">backend（:8000）・worker</text>
+  <g font-size="20" fill="#222" text-anchor="middle">
+    <rect x="640" y="296" width="145" height="58" rx="10" fill="#fff" stroke="#8cc9a3"/><text x="712" y="332">Python</text>
+    <rect x="795" y="296" width="145" height="58" rx="10" fill="#fff" stroke="#8cc9a3"/><text x="867" y="332">FastAPI</text>
+    <rect x="950" y="296" width="145" height="58" rx="10" fill="#fff" stroke="#8cc9a3"/><text x="1022" y="332">SQLAlchemy</text>
+  </g>
+  <text x="870" y="388" font-size="13" text-anchor="middle" fill="#1d6a3c">worker が、メールの送信と 20 時のまとめを担当</text>
+  <text x="870" y="414" font-size="13" text-anchor="middle" fill="#1d6a3c">開示された記録だけを、共通の関数で家族に返す</text>
+
+  <!-- バックエンド → データ -->
+  <path d="M870,450 L870,500" fill="none" stroke="#333" stroke-width="4" marker-end="url(#arrow)"/>
+
+  <!-- データ・メール -->
+  <rect x="620" y="505" width="500" height="175" rx="22" fill="#fdf6e3" stroke="#d9a520" stroke-width="3"/>
+  <g text-anchor="middle" fill="#222">
+    <rect x="640" y="530" width="150" height="125" rx="12" fill="#fff" stroke="#e5c56a"/>
+    <text x="715" y="578" font-size="21" font-weight="700">PostgreSQL</text>
+    <text x="715" y="606" font-size="14" fill="#555">記録・ユーザー</text>
+    <text x="715" y="626" font-size="14" fill="#555">開示設定など</text>
+    <rect x="795" y="530" width="150" height="125" rx="12" fill="#fff" stroke="#e5c56a"/>
+    <text x="870" y="578" font-size="21" font-weight="700">Redis</text>
+    <text x="870" y="606" font-size="14" fill="#555">セッション</text>
+    <text x="870" y="626" font-size="14" fill="#555">回数制限など</text>
+    <rect x="950" y="530" width="150" height="125" rx="12" fill="#fff" stroke="#e5c56a"/>
+    <text x="1025" y="578" font-size="21" font-weight="700">Mailpit</text>
+    <text x="1025" y="606" font-size="14" fill="#555">送ったメールを</text>
+    <text x="1025" y="626" font-size="14" fill="#555">開発で確かめる</text>
+  </g>
+
+  <!-- 外部サービス -->
+  <path d="M1120,260 L1228,260" fill="none" stroke="#333" stroke-width="4" marker-end="url(#arrow)"/>
+  <path d="M1120,380 L1228,380" fill="none" stroke="#333" stroke-width="4" marker-end="url(#arrow)"/>
+  <rect x="1232" y="205" width="180" height="110" rx="16" fill="#f1ecfb" stroke="#7a5cc9" stroke-width="3"/>
+  <text x="1322" y="252" font-size="22" font-weight="700" text-anchor="middle" fill="#3f2a82">OpenRouter</text>
+  <text x="1322" y="280" font-size="15" text-anchor="middle" fill="#3f2a82">AI（モデル）</text>
+  <text x="1322" y="300" font-size="13" text-anchor="middle" fill="#3f2a82">OpenAI SDK で呼ぶ</text>
+  <rect x="1232" y="325" width="180" height="110" rx="16" fill="#f1ecfb" stroke="#7a5cc9" stroke-width="3"/>
+  <text x="1322" y="372" font-size="22" font-weight="700" text-anchor="middle" fill="#3f2a82">Stripe</text>
+  <text x="1322" y="400" font-size="15" text-anchor="middle" fill="#3f2a82">月額の決済</text>
+  <text x="1322" y="420" font-size="13" text-anchor="middle" fill="#3f2a82">テストモード</text>
+  <text x="1322" y="472" font-size="14" text-anchor="middle" fill="#666">外部のサービス</text>
+</svg>
